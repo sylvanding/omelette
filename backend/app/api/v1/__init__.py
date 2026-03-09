@@ -14,6 +14,7 @@ from app.api.v1 import (
     writing,
     tasks,
     settings_api,
+    subscription,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -25,6 +26,7 @@ api_router.include_router(search.router)
 api_router.include_router(dedup.router)
 api_router.include_router(crawler.router)
 api_router.include_router(ocr.router)
+api_router.include_router(subscription.router)
 api_router.include_router(rag.router)
 api_router.include_router(writing.router)
 api_router.include_router(tasks.router)
