@@ -1,0 +1,77 @@
+[project]
+name = "omelette"
+version = "0.1.0"
+description = "Scientific Literature Lifecycle Management System / 科研文献全生命周期管理系统"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+authors = [
+    {name = "Sylvan Ding", email = "sylvanding@qq.com"},
+]
+keywords = ["scientific-literature", "rag", "ocr", "knowledge-base", "writing-assistant"]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy>=2.0.40",
+    "alembic>=1.18.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.28.0",
+    "aiohttp>=3.11.0",
+    "chromadb>=1.0.0",
+    "openai>=1.60.0",
+    "pdfplumber>=0.11.0",
+    "pymupdf>=1.25.0",
+    "feedparser>=6.0.0",
+    "python-multipart>=0.0.18",
+    "websockets>=14.0",
+    "aiofiles>=24.1.0",
+    "jinja2>=3.1.0",
+    "rich>=13.0.0",
+    "typer>=0.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.0",
+    "mypy>=1.14.0",
+]
+ocr = [
+    "paddlepaddle-gpu>=3.0.0",
+    "paddleocr>=3.0.0",
+]
+ml = [
+    "sentence-transformers>=4.0.0",
+    "torch>=2.6.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_configs = true

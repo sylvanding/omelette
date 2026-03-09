@@ -1,0 +1,17 @@
+---
+description: Python backend coding standards for the Omelette project
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Omelette Backend Standards
+
+- Use Python 3.12+ features (type hints, StrEnum, match-case)
+- All database operations use async SQLAlchemy with `AsyncSession`
+- Pydantic v2 for all request/response schemas
+- Follow FastAPI dependency injection pattern via `app/api/deps.py`
+- LLM calls go through `app/services/llm_client.py` — never call OpenAI directly
+- All API responses use `ApiResponse[T]` wrapper from `app/schemas/common.py`
+- Background tasks use `Task` model for tracking progress
+- Run `conda activate omelette` before any Python command
+- Data files go to `/data0/djx/omelette/`, code stays in `/home/djx/repos/omelette/`
