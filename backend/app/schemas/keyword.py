@@ -24,6 +24,8 @@ class KeywordUpdate(BaseModel):
 
 
 class KeywordRead(BaseModel):
+    """Flat keyword read schema — avoids lazy-loading children in async context."""
+
     id: int
     project_id: int
     term: str
@@ -33,7 +35,6 @@ class KeywordRead(BaseModel):
     parent_id: int | None
     synonyms: str
     created_at: datetime
-    children: list["KeywordRead"] = []
 
     model_config = {"from_attributes": True}
 

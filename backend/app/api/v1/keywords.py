@@ -8,6 +8,7 @@ from app.api.deps import get_db, get_llm
 from app.models import Keyword, Project
 from app.schemas.common import ApiResponse
 from app.schemas.keyword import KeywordCreate, KeywordRead, KeywordUpdate, KeywordExpandRequest, KeywordExpandResponse
+from app.services.keyword_service import KeywordService
 from app.services.llm_client import LLMClient
 
 router = APIRouter(prefix="/projects/{project_id}/keywords", tags=["keywords"])
@@ -54,6 +55,20 @@ async def bulk_create_keywords(
         created += 1
     await db.flush()
     return ApiResponse(data={"created": created})
+
+
+@router.get("/search-formula", response_model=ApiResponse[dict])
+async def generate_search_formula(
+    project_id: int,
+    database: str = "wos",
+    db: AsyncSession = Depends(get_db),
+    llm: LLMClient = Depends(get_llm),
+):
+    """Generate a boolean search formula from project keywords."""
+    await _ensure_project(project_id, db)
+    service = KeywordService(db, llm)
+    result = await service.generate_search_formula(project_id, database)
+    return ApiResponse(data=result)
 
 
 @router.put("/{keyword_id}", response_model=ApiResponse[KeywordRead])
