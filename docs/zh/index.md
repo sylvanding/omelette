@@ -1,9 +1,12 @@
 ---
 layout: home
 hero:
-  name: "Omelette 🍳"
+  name: "Omelette"
   text: "科研文献全生命周期管理"
   tagline: "从关键词检索到 RAG 驱动的写作辅助 — 覆盖完整研究流程。"
+  image:
+    src: /omelette/logo-mascot.png
+    alt: Omelette 吉祥物
   actions:
     - theme: brand
       text: 快速开始
