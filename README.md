@@ -17,9 +17,9 @@
 </p>
 
 <p align="center">
+  <a href="README_zh.md">中文</a> ·
   <a href="https://sylvanding.github.io/omelette/">Documentation</a> ·
-  <a href="https://sylvanding.github.io/omelette/zh/">中文文档</a> ·
-  <a href="#quick-start">Quick Start</a> ·
+  <a href="#-quick-start">Quick Start</a> ·
   <a href="https://github.com/sylvanding/omelette/issues">Report Bug</a>
 </p>
 
