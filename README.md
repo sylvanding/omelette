@@ -13,12 +13,12 @@ Omelette automates the full pipeline: keyword management → multi-source litera
 | Module | Description |
 |--------|-------------|
 | **Keywords** | Manage and expand research keywords with LLM assistance |
-| **Search** | Multi-source literature search (Semantic Scholar, arXiv, RSS, etc.) |
-| **Dedup** | Deduplicate papers across sources |
-| **Crawler** | Crawl and download PDFs from open-access sources |
-| **OCR** | Extract text from PDFs (PaddleOCR for scanned documents) |
-| **RAG** | Build and query a vector knowledge base (ChromaDB + embeddings) |
-| **Writing** | LLM-powered writing assistance, summarization, and citation generation |
+| **Search** | Multi-source literature search (Semantic Scholar, arXiv, OpenAlex, Crossref) |
+| **Dedup** | Three-stage deduplication: DOI → title similarity → LLM verification |
+| **Crawler** | Download PDFs via Unpaywall, arXiv, and direct URLs |
+| **OCR** | Extract text from PDFs (native + PaddleOCR for scanned documents) |
+| **RAG** | Build and query a vector knowledge base (ChromaDB + LLM answers) |
+| **Writing** | Summarization, citation generation, review outline, gap analysis |
 | **Projects** | Organize literature by research project |
 
 ---
@@ -30,13 +30,15 @@ Omelette automates the full pipeline: keyword management → multi-source litera
 - [Conda](https://docs.conda.io/) or Miniconda
 - Node.js 22+
 - (Optional) CUDA for GPU-accelerated OCR and embeddings
-- (Optional) API keys: Aliyun Bailian or Volcengine for LLM; Semantic Scholar for higher search limits
+- (Optional) API keys: Aliyun Bailian or Volcengine for LLM; Semantic Scholar for higher rate limits
 
 ### 1. Clone and setup environment
 
 ```bash
 git clone git@github.com:sylvanding/omelette.git
 cd omelette
+
+# Create conda env and install all backend dependencies
 conda env create -f environment.yml
 conda activate omelette
 ```
@@ -45,18 +47,19 @@ conda activate omelette
 
 ```bash
 cp .env.example .env
-# Edit .env with your API keys (LLM, Semantic Scholar, etc.)
+# Edit .env with your API keys and data paths
 ```
 
-### 3. Backend
+### 3. Start backend
 
 ```bash
 cd backend
-pip install -e ".[dev]"
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4. Frontend
+> **Troubleshooting:** If you get `ModuleNotFoundError: No module named 'fastapi'`, make sure the conda environment is activated: `conda activate omelette`. You can verify with `which uvicorn` — it should point to the conda env, not `~/.local/bin/`.
+
+### 4. Start frontend
 
 ```bash
 cd frontend
@@ -66,33 +69,33 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Optional: OCR and Embeddings
+### 5. (Optional) OCR and Embeddings
 
-For full OCR and embedding support, install optional dependencies:
+For full OCR and embedding support:
 
 ```bash
-conda activate omelette
 cd backend
 pip install -e ".[ocr,ml]"
 ```
 
-- **OCR:** PaddleOCR (GPU recommended via `paddlepaddle-gpu`)
-- **Embeddings:** sentence-transformers with BAAI/bge-m3 (downloads on first use)
+---
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           Omelette Pipeline                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│  Keywords → Search → Dedup → Crawler → OCR → RAG → Writing              │
-└─────────────────────────────────────────────────────────────────────────┘
-         │         │       │        │       │     │        │
-         ▼         ▼       ▼        ▼       ▼     ▼        ▼
-    [FastAPI]  [Sources] [SQLite] [PDFs] [Paddle] [Chroma] [LLM]
+┌─────────────────────────────────────────────────────────────────┐
+│                       Omelette Pipeline                         │
+├─────────────────────────────────────────────────────────────────┤
+│  Keywords → Search → Dedup → Crawler → OCR → RAG → Writing     │
+└─────────────────────────────────────────────────────────────────┘
+       │         │       │        │       │      │        │
+       ▼         ▼       ▼        ▼       ▼      ▼        ▼
+   [FastAPI] [Sources] [SQLite] [PDFs] [Paddle] [Chroma] [LLM]
 ```
 
-- **Backend:** FastAPI with async SQLAlchemy, Pydantic v2, dependency injection
-- **Frontend:** React + Vite + TanStack Query + Zustand
-- **Storage:** SQLite (metadata), ChromaDB (vectors), filesystem (PDFs, OCR output)
+- **Backend:** FastAPI + async SQLAlchemy + Pydantic v2
+- **Frontend:** React 18 + TypeScript + Vite + TailwindCSS v4
+- **Storage:** SQLite (metadata), ChromaDB (vectors), filesystem (PDFs)
 - **LLM:** OpenAI-compatible API (Aliyun Bailian, Volcengine Doubao)
 
 ---
@@ -102,12 +105,12 @@ pip install -e ".[ocr,ml]"
 | Layer | Technology |
 |-------|------------|
 | Backend | FastAPI, SQLAlchemy 2 (async), Pydantic v2 |
-| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS |
-| Database | SQLite |
+| Frontend | React 18, Vite, TypeScript, TailwindCSS v4 |
+| Database | SQLite + aiosqlite |
 | Vector DB | ChromaDB |
-| OCR | PaddleOCR |
+| OCR | PaddleOCR (optional) |
 | LLM | OpenAI-compatible (Aliyun Bailian / Volcengine) |
-| Embeddings | BAAI/bge-m3 (sentence-transformers) |
+| Embeddings | BAAI/bge-m3 via sentence-transformers (optional) |
 
 ---
 
@@ -117,34 +120,62 @@ pip install -e ".[ocr,ml]"
 omelette/
 ├── backend/              # FastAPI application
 │   ├── app/
-│   │   ├── api/v1/       # REST endpoints (keywords, search, dedup, crawler, ocr, rag, writing)
-│   │   ├── models/       # SQLAlchemy models (Project, Paper, Keyword, Task, etc.)
+│   │   ├── api/v1/       # REST endpoints
+│   │   ├── models/       # SQLAlchemy ORM models
 │   │   ├── schemas/      # Pydantic request/response schemas
-│   │   ├── services/     # LLM client, future: search, crawler, OCR services
+│   │   ├── services/     # Business logic (LLM, search, crawler, OCR, RAG, writing)
+│   │   ├── config.py     # Settings from .env
+│   │   ├── database.py   # Async engine and session
 │   │   └── main.py       # App entry, lifespan, CORS
-│   └── tests/
+│   ├── tests/            # pytest-asyncio tests (120+)
+│   └── pyproject.toml    # Python dependencies (single source of truth)
 ├── frontend/             # React SPA
 │   └── src/
-│       ├── pages/        # Dashboard, ProjectDetail, Settings
+│       ├── pages/        # Dashboard, ProjectDetail, module pages
 │       ├── components/   # Layout, shared UI
-│       ├── stores/       # Zustand state (projects, etc.)
-│       └── lib/          # API client, utils
-├── environment.yml       # Conda environment
+│       ├── services/     # Typed API client
+│       ├── stores/       # Zustand state
+│       └── lib/          # Axios client, utils
+├── docs/                 # VitePress documentation (EN/ZH)
+├── environment.yml       # Conda environment (Python 3.12 + pip install)
+├── Makefile              # Dev workflow shortcuts
 ├── .env.example          # Configuration template
-└── .github/workflows/    # CI (ruff, mypy, pytest, tsc, build)
+├── .pre-commit-config.yaml  # Code quality hooks
+└── .github/workflows/    # CI (ruff, pytest, tsc, build, docs deploy)
 ```
 
 ---
 
-## Contributing
+## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style, and PR process.
+```bash
+# Install pre-commit hooks
+make pre-commit-install
+
+# Run linters
+make lint
+
+# Auto-format code
+make format
+
+# Run all tests
+make test
+
+# Start both backend and frontend
+make dev
+```
 
 ---
 
-## License
+## Running Tests
 
-MIT License — see [LICENSE](LICENSE).
+```bash
+# Backend (120+ tests)
+cd backend && pytest tests/ -v
+
+# Frontend type check and build
+cd frontend && npx tsc --noEmit && npm run build
+```
 
 ---
 
@@ -155,46 +186,36 @@ Key environment variables (see `.env.example`):
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | SQLite path (default: `sqlite:///./data/omelette.db`) |
+| `DATA_DIR` | Base path for PDFs, OCR output, ChromaDB |
 | `LLM_PROVIDER` | `aliyun`, `volcengine`, or `mock` |
 | `ALIYUN_API_KEY` | Aliyun Bailian API key |
 | `VOLCENGINE_API_KEY` | Volcengine Doubao API key |
-| `EMBEDDING_MODEL` | HuggingFace model (e.g. `BAAI/bge-m3`) |
-| `DATA_DIR` | Base path for PDFs, OCR output, ChromaDB |
-| `SEMANTIC_SCHOLAR_API_KEY` | Optional; increases rate limit |
+| `SEMANTIC_SCHOLAR_API_KEY` | Optional; increases Semantic Scholar rate limit |
 
 ## API Overview
 
-The backend exposes REST APIs under `/api/v1/`:
+REST APIs under `/api/v1/`:
 
 - `GET/POST /projects` — Project CRUD
+- `GET/POST /projects/{id}/papers` — Paper management
 - `GET/POST /projects/{id}/keywords` — Keyword management
-- `POST /projects/{id}/keywords/expand` — LLM keyword expansion
-- `POST /projects/{id}/search` — Execute literature search
-- `POST /projects/{id}/dedup` — Run deduplication
-- `POST /projects/{id}/crawl` — Start PDF crawl
-- `POST /projects/{id}/ocr` — Run OCR on papers
-- `POST /projects/{id}/rag/build` — Build vector index
+- `GET /projects/{id}/keywords/search-formula` — Generate search formula
+- `POST /projects/{id}/search` — Execute multi-source search
+- `POST /projects/{id}/dedup/run` — Run deduplication
+- `POST /projects/{id}/crawl/start` — Start PDF download
+- `POST /projects/{id}/ocr/process` — Run OCR on papers
+- `POST /projects/{id}/rag/index` — Build vector index
 - `POST /projects/{id}/rag/query` — RAG retrieval
 - `POST /projects/{id}/writing/assist` — Writing assistance
-- `GET /tasks/{id}` — Poll async task status
+- `GET /settings/health` — Health check
 
-## Running Tests
+## Contributing
 
-```bash
-# Backend
-cd backend && pytest tests/ -v
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-# Frontend
-cd frontend && npx tsc --noEmit && npm run build
-```
+## License
 
-## Data Persistence
-
-- **SQLite:** Database file path is set by `DATABASE_URL` (default: `./data/omelette.db`)
-- **ChromaDB:** Vector store path is set by `CHROMA_DB_DIR` (default: `{DATA_DIR}/chroma_db`)
-- **PDFs & OCR:** Stored under `PDF_DIR` and `OCR_OUTPUT_DIR` respectively
-
-Ensure `DATA_DIR` exists and is writable before running crawls or OCR.
+MIT License — see [LICENSE](LICENSE).
 
 ## Name Origin
 
