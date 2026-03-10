@@ -7,7 +7,11 @@ export default defineConfig({
 
   ignoreDeadLinks: ['http://localhost:3000', 'http://127.0.0.1:3000'],
 
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/omelette/logo.svg' }]],
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/omelette/logo.svg' }],
+    ['meta', { property: 'og:image', content: 'https://sylvanding.github.io/omelette/banner.png' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+  ],
 
   locales: {
     root: {
@@ -120,6 +124,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/logo-mascot.png',
     socialLinks: [
       { icon: 'github', link: 'https://github.com/sylvanding/omelette' },
     ],
