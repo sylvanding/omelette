@@ -1,13 +1,13 @@
 """Tests for DedupService and deduplication API endpoints."""
 
-import pytest
-from httpx import ASGITransport, AsyncClient
 from unittest.mock import AsyncMock, patch
 
-from app.main import app
-from app.database import Base, engine
-from app.services.dedup_service import DedupService
+import pytest
+from httpx import ASGITransport, AsyncClient
 
+from app.database import Base, engine
+from app.main import app
+from app.services.dedup_service import DedupService
 
 # --- Fixtures ---
 

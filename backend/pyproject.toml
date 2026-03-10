@@ -1,8 +1,8 @@
 [project]
-name = "omelette"
+name = "omelette-backend"
 version = "0.1.0"
 description = "Scientific Literature Lifecycle Management System / 科研文献全生命周期管理系统"
-readme = "README.md"
+readme = "../README.md"
 license = {text = "MIT"}
 requires-python = ">=3.12"
 authors = [
@@ -20,7 +20,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
     "aiohttp>=3.11.0",
-    "chromadb>=1.0.0",
+    "chromadb>=0.6.0",
     "openai>=1.60.0",
     "pdfplumber>=0.11.0",
     "pymupdf>=1.25.0",
@@ -31,15 +31,17 @@ dependencies = [
     "jinja2>=3.1.0",
     "rich>=13.0.0",
     "typer>=0.14.0",
+    "aiosqlite>=0.20.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
-    "pytest-asyncio>=1.0.0",
+    "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
     "ruff>=0.9.0",
     "mypy>=1.14.0",
+    "pre-commit>=4.0.0",
 ]
 ocr = [
     "paddlepaddle-gpu>=3.0.0",
@@ -52,18 +54,32 @@ ml = [
 
 [build-system]
 requires = ["setuptools>=75.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+src = ["app", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B", "A", "SIM"]
-ignore = ["E501"]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # function call in default argument (FastAPI Depends pattern)
+    "B905",   # zip without strict (intentional for varying-length results)
+    "UP046",  # Pydantic Generic[T] pattern still needed for BaseModel
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -75,3 +91,4 @@ python_version = "3.12"
 strict = false
 warn_return_any = true
 warn_unused_configs = true
+ignore_missing_imports = true

@@ -1,7 +1,6 @@
 """Pydantic schemas for Paper operations."""
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 

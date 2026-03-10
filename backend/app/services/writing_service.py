@@ -50,11 +50,13 @@ Provide:
                 task_type="summarize",
             )
 
-            summaries.append({
-                "paper_id": paper.id,
-                "title": paper.title,
-                "summary": summary,
-            })
+            summaries.append(
+                {
+                    "paper_id": paper.id,
+                    "title": paper.title,
+                    "summary": summary,
+                }
+            )
 
         return summaries
 
@@ -88,32 +90,24 @@ Provide:
             else:
                 citation = f"{author_str}. {paper.title}. {paper.journal}, {paper.year or 'n.d.'}."
 
-            citations.append({
-                "paper_id": paper.id,
-                "citation": citation,
-                "style": style,
-                "doi": paper.doi,
-            })
+            citations.append(
+                {
+                    "paper_id": paper.id,
+                    "citation": citation,
+                    "style": style,
+                    "doi": paper.doi,
+                }
+            )
 
         return citations
 
-    async def generate_review_outline(
-        self, project_id: int, topic: str, language: str = "en"
-    ) -> dict:
+    async def generate_review_outline(self, project_id: int, topic: str, language: str = "en") -> dict:
         """Generate a literature review outline based on project papers."""
-        stmt = (
-            select(Paper)
-            .where(Paper.project_id == project_id)
-            .order_by(Paper.citation_count.desc())
-            .limit(20)
-        )
+        stmt = select(Paper).where(Paper.project_id == project_id).order_by(Paper.citation_count.desc()).limit(20)
         result = await self.db.execute(stmt)
         papers = result.scalars().all()
 
-        paper_summaries = "\n".join([
-            f"- {p.title} ({p.year}, {p.journal}) [cited:{p.citation_count}]"
-            for p in papers
-        ])
+        paper_summaries = "\n".join([f"- {p.title} ({p.year}, {p.journal}) [cited:{p.citation_count}]" for p in papers])
 
         prompt = f"""Generate a structured literature review outline in {language} on the topic: {topic}
 
@@ -149,19 +143,11 @@ For each section, suggest which papers are most relevant."""
 
     async def analyze_gaps(self, project_id: int, research_topic: str) -> dict:
         """Analyze research gaps in the project's literature."""
-        stmt = (
-            select(Paper)
-            .where(Paper.project_id == project_id)
-            .order_by(Paper.year.desc())
-            .limit(30)
-        )
+        stmt = select(Paper).where(Paper.project_id == project_id).order_by(Paper.year.desc()).limit(30)
         result = await self.db.execute(stmt)
         papers = result.scalars().all()
 
-        paper_list = "\n".join([
-            f"- [{p.year}] {p.title} (Journal: {p.journal})"
-            for p in papers
-        ])
+        paper_list = "\n".join([f"- [{p.year}] {p.title} (Journal: {p.journal})" for p in papers])
 
         prompt = f"""Analyze the research gaps based on these papers in the field of: {research_topic}
 

@@ -1,7 +1,7 @@
 """Writing assistance API endpoints."""
 
-from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_llm
@@ -69,17 +69,13 @@ async def writing_assist(
 
     if body.task == "summarize":
         summaries = await svc.summarize_papers(paper_ids=paper_ids, language=body.language)
-        content = "\n\n".join([
-            f"## {s['title']}\n{s['summary']}" for s in summaries
-        ])
+        content = "\n\n".join([f"## {s['title']}\n{s['summary']}" for s in summaries])
     elif body.task == "cite":
         citations = await svc.generate_citations(paper_ids=paper_ids, style=body.style)
         content = "\n".join(c["citation"] for c in citations)
     elif body.task == "review_outline":
         topic = body.topic or body.text or "Literature Review"
-        result = await svc.generate_review_outline(
-            project_id=project_id, topic=topic, language=body.language
-        )
+        result = await svc.generate_review_outline(project_id=project_id, topic=topic, language=body.language)
         content = result["outline"]
     elif body.task == "gap_analysis":
         topic = body.topic or body.text or "Research"
@@ -92,11 +88,13 @@ async def writing_assist(
             data=WritingAssistResponse(content="", citations=[], suggestions=[]),
         )
 
-    return ApiResponse(data=WritingAssistResponse(
-        content=content,
-        citations=citations,
-        suggestions=suggestions,
-    ))
+    return ApiResponse(
+        data=WritingAssistResponse(
+            content=content,
+            citations=citations,
+            suggestions=suggestions,
+        )
+    )
 
 
 @router.post("/summarize", response_model=ApiResponse[dict])

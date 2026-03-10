@@ -51,13 +51,15 @@ class RAGService:
             chunk_id = f"paper_{chunk['paper_id']}_chunk_{chunk['chunk_index']}"
             ids.append(chunk_id)
             documents.append(chunk["content"])
-            metadatas.append({
-                "paper_id": chunk["paper_id"],
-                "paper_title": chunk.get("paper_title", ""),
-                "chunk_type": chunk.get("chunk_type", "text"),
-                "page_number": chunk.get("page_number", 0),
-                "chunk_index": chunk.get("chunk_index", 0),
-            })
+            metadatas.append(
+                {
+                    "paper_id": chunk["paper_id"],
+                    "paper_title": chunk.get("paper_title", ""),
+                    "chunk_type": chunk.get("chunk_type", "text"),
+                    "page_number": chunk.get("page_number", 0),
+                    "chunk_index": chunk.get("chunk_index", 0),
+                }
+            )
 
         # ChromaDB handles embedding internally with its default model
         collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
@@ -101,17 +103,17 @@ class RAGService:
             results["metadatas"][0],
             results["distances"][0],
         ):
-            contexts.append(
-                f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{doc}"
+            contexts.append(f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{doc}")
+            sources.append(
+                {
+                    "paper_id": meta.get("paper_id"),
+                    "paper_title": meta.get("paper_title", ""),
+                    "page_number": meta.get("page_number"),
+                    "chunk_type": meta.get("chunk_type", "text"),
+                    "relevance_score": round(1 - dist, 3),  # cosine similarity
+                    "excerpt": doc[:200] + "..." if len(doc) > 200 else doc,
+                }
             )
-            sources.append({
-                "paper_id": meta.get("paper_id"),
-                "paper_title": meta.get("paper_title", ""),
-                "page_number": meta.get("page_number"),
-                "chunk_type": meta.get("chunk_type", "text"),
-                "relevance_score": round(1 - dist, 3),  # cosine similarity
-                "excerpt": doc[:200] + "..." if len(doc) > 200 else doc,
-            })
 
         context_text = "\n\n---\n\n".join(contexts)
 

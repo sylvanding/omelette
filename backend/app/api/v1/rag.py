@@ -1,10 +1,10 @@
 """RAG knowledge base query API endpoints."""
 
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from pydantic import BaseModel
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, get_llm
 from app.models import Paper, PaperStatus
@@ -69,20 +69,24 @@ async def build_index(
     chunks_to_index = []
     for paper in papers:
         for chunk in paper.chunks:
-            chunks_to_index.append({
-                "paper_id": chunk.paper_id,
-                "paper_title": paper.title,
-                "chunk_type": chunk.chunk_type or "text",
-                "page_number": chunk.page_number or 0,
-                "chunk_index": chunk.chunk_index or 0,
-                "content": chunk.content,
-            })
+            chunks_to_index.append(
+                {
+                    "paper_id": chunk.paper_id,
+                    "paper_title": paper.title,
+                    "chunk_type": chunk.chunk_type or "text",
+                    "page_number": chunk.page_number or 0,
+                    "chunk_index": chunk.chunk_index or 0,
+                    "content": chunk.content,
+                }
+            )
 
     if not chunks_to_index:
-        return ApiResponse(data={
-            "indexed": 0,
-            "message": "No paper chunks found. Ensure papers are OCR-complete first.",
-        })
+        return ApiResponse(
+            data={
+                "indexed": 0,
+                "message": "No paper chunks found. Ensure papers are OCR-complete first.",
+            }
+        )
 
     index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
 
@@ -90,11 +94,13 @@ async def build_index(
     for paper in papers:
         paper.status = PaperStatus.INDEXED
 
-    return ApiResponse(data={
-        "indexed": index_result["indexed"],
-        "collection": index_result["collection"],
-        "papers_updated": len(papers),
-    })
+    return ApiResponse(
+        data={
+            "indexed": index_result["indexed"],
+            "collection": index_result["collection"],
+            "papers_updated": len(papers),
+        }
+    )
 
 
 @router.get("/stats", response_model=ApiResponse[dict])

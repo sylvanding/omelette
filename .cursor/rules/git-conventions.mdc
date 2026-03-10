@@ -1,14 +1,27 @@
 ---
-description: Git commit and workflow conventions
+description: Git commit conventions and workflow rules
 alwaysApply: true
 ---
 
 # Git Conventions
 
-- Conventional Commits: `<type>(<scope>): <description>`
-- Types: feat, fix, docs, style, refactor, test, chore, ci, perf
+## Commit Format (Conventional Commits, enforced by pre-commit)
+```
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+- Types: feat, fix, docs, style, refactor, test, chore, ci, perf, build, revert
 - Scopes: backend, frontend, docs, ci, config, keywords, search, dedup, crawler, ocr, rag, writing
-- Commit messages and code reviews in English
-- Branch naming: `feat/<feature>`, `fix/<issue>`, `docs/<topic>`
-- Remote: `git@github.com:sylvanding/omelette.git` (main branch)
-- Always `git add` relevant files before commit, never commit .env
+- Description in English, imperative mood, lowercase, no period
+- Body explains *why* not *what*
+
+## Rules
+- Never commit `.env`, `*.db`, `node_modules/`, `__pycache__/`
+- Run `make lint` before committing (pre-commit hook handles this)
+- No force push to main
+
+## Pre-commit
+- Install: `make pre-commit-install`
+- Hooks: trailing whitespace, ruff lint+format, conventional commit msg

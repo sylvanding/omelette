@@ -1,13 +1,13 @@
 """Tests for SearchService and search API — all HTTP calls mocked."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.database import Base, engine
+from app.main import app
 from app.services.search_service import (
     ArXivProvider,
     CrossrefProvider,
@@ -17,7 +17,6 @@ from app.services.search_service import (
     StandardizedPaper,
     _reconstruct_abstract_from_inverted_index,
 )
-
 
 # --- Unit tests for abstract reconstruction ---
 
@@ -204,9 +203,7 @@ async def test_crossref_provider_parsing():
                     "DOI": "10.9999/crossref-test",
                     "title": ["Crossref Paper Title"],
                     "abstract": "Crossref abstract.",
-                    "author": [
-                        {"given": "John", "family": "Doe", "affiliation": [{"name": "Harvard"}]}
-                    ],
+                    "author": [{"given": "John", "family": "Doe", "affiliation": [{"name": "Harvard"}]}],
                     "container-title": ["Journal of Tests"],
                     "published": {"date-parts": [[2021, 5]]},
                     "is-referenced-by-count": 15,
@@ -402,9 +399,7 @@ async def test_execute_search_api(client: AsyncClient):
     project_id = create_resp.json()["data"]["id"]
 
     mock_results = {
-        "papers": [
-            {"title": "API Test Paper", "doi": "10.1234/api", "abstract": "Abstract"}
-        ],
+        "papers": [{"title": "API Test Paper", "doi": "10.1234/api", "abstract": "Abstract"}],
         "total": 1,
         "source_stats": {"openalex": {"count": 1}},
     }

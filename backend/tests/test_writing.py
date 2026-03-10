@@ -3,8 +3,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.database import Base, async_session_factory, engine
 from app.main import app
-from app.database import Base, engine, async_session_factory
 from app.models import Paper, PaperStatus, Project
 
 

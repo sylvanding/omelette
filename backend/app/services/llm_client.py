@@ -11,14 +11,16 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 MOCK_RESPONSES: dict[str, str] = {
-    "keyword_expand": json.dumps({
-        "expanded_terms": [
-            {"term": "STED microscopy", "term_zh": "受激发射损耗显微"},
-            {"term": "STORM imaging", "term_zh": "随机光学重建显微"},
-            {"term": "PALM microscopy", "term_zh": "光激活定位显微"},
-            {"term": "structured illumination", "term_zh": "结构光照明"},
-        ]
-    }),
+    "keyword_expand": json.dumps(
+        {
+            "expanded_terms": [
+                {"term": "STED microscopy", "term_zh": "受激发射损耗显微"},
+                {"term": "STORM imaging", "term_zh": "随机光学重建显微"},
+                {"term": "PALM microscopy", "term_zh": "光激活定位显微"},
+                {"term": "structured illumination", "term_zh": "结构光照明"},
+            ]
+        }
+    ),
     "summarize": "This paper presents a novel approach to super-resolution microscopy...",
     "dedup_check": json.dumps({"is_duplicate": False, "confidence": 0.85, "reason": "Different methodology"}),
     "default": "This is a mock LLM response for testing purposes.",
@@ -91,7 +93,7 @@ class LLMClient:
             return content
         except Exception as e:
             logger.error(f"[LLM:{self.provider}] Error: {e}")
-            raise
+            raise e from e
 
     async def chat_json(
         self,
@@ -108,12 +110,12 @@ class LLMClient:
         )
         try:
             return json.loads(content)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             start = content.find("{")
             end = content.rfind("}") + 1
             if start >= 0 and end > start:
                 return json.loads(content[start:end])
-            raise ValueError(f"Could not parse JSON from LLM response: {content[:200]}")
+            raise ValueError(f"Could not parse JSON from LLM response: {content[:200]}") from e
 
 
 def get_llm_client(provider: str | None = None) -> LLMClient:

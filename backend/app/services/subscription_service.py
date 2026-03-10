@@ -1,13 +1,13 @@
 """Incremental subscription service — scheduled literature updates via API and RSS."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import feedparser
 import httpx
 
 from app.config import settings
-from app.services.search_service import SearchService, StandardizedPaper
+from app.services.search_service import SearchService
 
 logger = logging.getLogger(__name__)
 
@@ -77,10 +77,7 @@ class SubscriptionService:
 
         # Filter by publication year if needed
         cutoff_year = datetime.now().year
-        recent_papers = [
-            p for p in results["papers"]
-            if not p.get("year") or p["year"] >= cutoff_year - 1
-        ]
+        recent_papers = [p for p in results["papers"] if not p.get("year") or p["year"] >= cutoff_year - 1]
 
         return {
             "new_papers": recent_papers,
@@ -92,9 +89,17 @@ class SubscriptionService:
     def get_common_feeds() -> list[dict]:
         """Return common academic RSS feed templates."""
         return [
-            {"name": "arXiv - Physics Optics", "url": "http://export.arxiv.org/rss/physics.optics", "category": "preprint"},
+            {
+                "name": "arXiv - Physics Optics",
+                "url": "http://export.arxiv.org/rss/physics.optics",
+                "category": "preprint",
+            },
             {"name": "arXiv - Quantum Physics", "url": "http://export.arxiv.org/rss/quant-ph", "category": "preprint"},
             {"name": "Nature Photonics", "url": "https://www.nature.com/nphoton.rss", "category": "journal"},
-            {"name": "Science - Latest", "url": "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science", "category": "journal"},
+            {
+                "name": "Science - Latest",
+                "url": "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
+                "category": "journal",
+            },
             {"name": "PubMed - Custom", "url": "https://pubmed.ncbi.nlm.nih.gov/rss/search/", "category": "database"},
         ]

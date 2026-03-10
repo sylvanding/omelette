@@ -97,16 +97,12 @@ async def ocr_stats(project_id: int, db: AsyncSession = Depends(get_db)):
     stats = {}
     for status in PaperStatus:
         count = (
-            await db.execute(
-                select(func.count(Paper.id)).where(Paper.project_id == project_id, Paper.status == status)
-            )
+            await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id, Paper.status == status))
         ).scalar() or 0
         stats[status.value] = count
 
     chunk_count = (
-        await db.execute(
-            select(func.count(PaperChunk.id)).join(Paper).where(Paper.project_id == project_id)
-        )
+        await db.execute(select(func.count(PaperChunk.id)).join(Paper).where(Paper.project_id == project_id))
     ).scalar() or 0
 
     return ApiResponse(data={**stats, "total_chunks": chunk_count})

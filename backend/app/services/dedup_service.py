@@ -1,11 +1,11 @@
 """Three-stage deduplication: DOI hard dedup → title similarity → LLM verification."""
 
-import re
 import logging
+import re
 import unicodedata
 from difflib import SequenceMatcher
 
-from sqlalchemy import case, select, func
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Paper, PaperStatus
@@ -38,9 +38,7 @@ class DedupService:
         stage3_candidates = await self.find_llm_dedup_candidates(project_id, threshold=0.80)
 
         remaining = (
-            await self.db.execute(
-                select(func.count(Paper.id)).where(Paper.project_id == project_id)
-            )
+            await self.db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))
         ).scalar() or 0
 
         return {
@@ -69,7 +67,7 @@ class DedupService:
         removed_count = 0
         duplicates_info = []
 
-        for doi, count in duplicate_dois:
+        for doi, _count in duplicate_dois:
             papers_stmt = (
                 select(Paper)
                 .where(Paper.project_id == project_id, Paper.doi == doi)
@@ -79,20 +77,20 @@ class DedupService:
 
             keep = papers[0]
             for paper in papers[1:]:
-                duplicates_info.append({
-                    "kept_id": keep.id,
-                    "removed_id": paper.id,
-                    "doi": doi,
-                    "reason": "doi_duplicate",
-                })
+                duplicates_info.append(
+                    {
+                        "kept_id": keep.id,
+                        "removed_id": paper.id,
+                        "doi": doi,
+                        "reason": "doi_duplicate",
+                    }
+                )
                 await self.db.delete(paper)
                 removed_count += 1
 
         await self.db.flush()
         remaining = (
-            await self.db.execute(
-                select(func.count(Paper.id)).where(Paper.project_id == project_id)
-            )
+            await self.db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))
         ).scalar() or 0
 
         return {"removed": removed_count, "remaining": remaining, "duplicates": duplicates_info}
@@ -128,10 +126,7 @@ class DedupService:
                 if not norm_a or not norm_b:
                     continue
 
-                if norm_a == norm_b:
-                    similarity = 1.0
-                else:
-                    similarity = SequenceMatcher(None, norm_a, norm_b).ratio()
+                similarity = 1.0 if norm_a == norm_b else SequenceMatcher(None, norm_a, norm_b).ratio()
 
                 if similarity >= threshold:
                     keep, remove = (
@@ -140,14 +135,16 @@ class DedupService:
                         else (papers[j], papers[i])
                     )
 
-                    duplicates_info.append({
-                        "kept_id": keep.id,
-                        "removed_id": remove.id,
-                        "similarity": round(similarity, 3),
-                        "title_a": keep.title[:100],
-                        "title_b": remove.title[:100],
-                        "reason": "title_similarity",
-                    })
+                    duplicates_info.append(
+                        {
+                            "kept_id": keep.id,
+                            "removed_id": remove.id,
+                            "similarity": round(similarity, 3),
+                            "title_a": keep.title[:100],
+                            "title_b": remove.title[:100],
+                            "reason": "title_similarity",
+                        }
+                    )
                     await self.db.delete(remove)
                     removed_ids.add(remove.id)
                     removed_count += 1
@@ -173,15 +170,17 @@ class DedupService:
                 similarity = SequenceMatcher(None, norm_a, norm_b).ratio()
 
                 if threshold <= similarity < 0.90:
-                    candidates.append({
-                        "paper_a_id": papers[i].id,
-                        "paper_b_id": papers[j].id,
-                        "title_a": papers[i].title,
-                        "title_b": papers[j].title,
-                        "doi_a": papers[i].doi,
-                        "doi_b": papers[j].doi,
-                        "similarity": round(similarity, 3),
-                    })
+                    candidates.append(
+                        {
+                            "paper_a_id": papers[i].id,
+                            "paper_b_id": papers[j].id,
+                            "title_a": papers[i].title,
+                            "title_b": papers[j].title,
+                            "doi_a": papers[i].doi,
+                            "doi_b": papers[j].doi,
+                            "similarity": round(similarity, 3),
+                        }
+                    )
 
         return candidates
 
@@ -200,14 +199,14 @@ class DedupService:
 
 Paper A:
 - Title: {paper_a.title}
-- DOI: {paper_a.doi or 'N/A'}
+- DOI: {paper_a.doi or "N/A"}
 - Authors: {paper_a.authors}
 - Year: {paper_a.year}
 - Journal: {paper_a.journal}
 
 Paper B:
 - Title: {paper_b.title}
-- DOI: {paper_b.doi or 'N/A'}
+- DOI: {paper_b.doi or "N/A"}
 - Authors: {paper_b.authors}
 - Year: {paper_b.year}
 - Journal: {paper_b.journal}
@@ -216,7 +215,10 @@ Return JSON: {{"is_duplicate": true/false, "confidence": 0.0-1.0, "reason": "...
 
         result = await self.llm.chat_json(
             messages=[
-                {"role": "system", "content": "You are a scientific literature deduplication expert. Return valid JSON only."},
+                {
+                    "role": "system",
+                    "content": "You are a scientific literature deduplication expert. Return valid JSON only.",
+                },
                 {"role": "user", "content": prompt},
             ],
             task_type="dedup_check",

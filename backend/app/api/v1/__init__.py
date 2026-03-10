@@ -3,18 +3,18 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
-    projects,
-    papers,
-    keywords,
-    search,
-    dedup,
     crawler,
+    dedup,
+    keywords,
     ocr,
+    papers,
+    projects,
     rag,
-    writing,
-    tasks,
+    search,
     settings_api,
     subscription,
+    tasks,
+    writing,
 )
 
 api_router = APIRouter(prefix="/api/v1")

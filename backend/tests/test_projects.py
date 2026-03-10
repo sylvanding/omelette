@@ -3,8 +3,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.database import Base, engine
 from app.main import app
-from app.database import engine, Base
 
 
 @pytest.fixture(autouse=True)
@@ -35,11 +35,14 @@ async def test_list_projects_empty(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_project(client: AsyncClient):
-    resp = await client.post("/api/v1/projects", json={
-        "name": "Super-Resolution Microscopy",
-        "description": "Literature review for SRM techniques",
-        "domain": "optics",
-    })
+    resp = await client.post(
+        "/api/v1/projects",
+        json={
+            "name": "Super-Resolution Microscopy",
+            "description": "Literature review for SRM techniques",
+            "domain": "optics",
+        },
+    )
     assert resp.status_code == 201
     body = resp.json()
     assert body["code"] == 201

@@ -3,8 +3,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.database import Base, engine
 from app.main import app
-from app.database import engine, Base
 
 
 @pytest.fixture(autouse=True)

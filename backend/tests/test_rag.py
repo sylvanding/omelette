@@ -1,13 +1,13 @@
 """Tests for RAG service and API endpoints."""
 
-import pytest
 import chromadb
+import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
-from app.database import Base, engine, async_session_factory
-from app.models import Paper, PaperChunk, PaperStatus, Project
 from app.api.v1.rag import get_rag_service
+from app.database import Base, async_session_factory, engine
+from app.main import app
+from app.models import Paper, PaperChunk, PaperStatus, Project
 from app.services.rag_service import RAGService
 
 
@@ -144,7 +144,9 @@ async def test_query_with_indexed_data(rag_service, project_with_chunks):
 
 @pytest.mark.asyncio
 async def test_delete_index(rag_service, project_with_chunks):
-    chunks = [{"paper_id": 1, "paper_title": "X", "chunk_type": "text", "page_number": 1, "chunk_index": 0, "content": "Y"}]
+    chunks = [
+        {"paper_id": 1, "paper_title": "X", "chunk_type": "text", "page_number": 1, "chunk_index": 0, "content": "Y"}
+    ]
     await rag_service.index_chunks(project_id=project_with_chunks, chunks=chunks)
 
     result = await rag_service.delete_index(project_id=project_with_chunks)
@@ -162,8 +164,22 @@ async def test_get_stats_empty(rag_service, project_with_chunks):
 @pytest.mark.asyncio
 async def test_get_stats_after_index(rag_service, project_with_chunks):
     chunks = [
-        {"paper_id": 1, "paper_title": "A", "chunk_type": "text", "page_number": 1, "chunk_index": 0, "content": "Content"},
-        {"paper_id": 1, "paper_title": "A", "chunk_type": "text", "page_number": 2, "chunk_index": 1, "content": "More"},
+        {
+            "paper_id": 1,
+            "paper_title": "A",
+            "chunk_type": "text",
+            "page_number": 1,
+            "chunk_index": 0,
+            "content": "Content",
+        },
+        {
+            "paper_id": 1,
+            "paper_title": "A",
+            "chunk_type": "text",
+            "page_number": 2,
+            "chunk_index": 1,
+            "content": "More",
+        },
     ]
     await rag_service.index_chunks(project_id=project_with_chunks, chunks=chunks)
     result = await rag_service.get_stats(project_id=project_with_chunks)

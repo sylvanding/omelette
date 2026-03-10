@@ -1,0 +1,27 @@
+---
+description: Omelette project overview and architecture context
+alwaysApply: true
+---
+
+# Omelette Project Overview
+
+Omelette is a scientific literature lifecycle management system with 8 modules:
+1. Keyword Management — three-level hierarchy + LLM expansion + search formula
+2. Multi-Source Search — Semantic Scholar, OpenAlex, arXiv, Crossref
+3. Deduplication — DOI + title similarity + LLM verification
+4. Incremental Subscription — RSS/API updates
+5. PDF Crawler — Unpaywall + multi-channel fallback
+6. OCR Processing — pdfplumber (native) + PaddleOCR (scanned)
+7. RAG Knowledge Base — ChromaDB + hybrid retrieval + LLM answers
+8. Writing Assistant — summarize, cite, outline, gap analysis
+
+## Stack
+- Backend: FastAPI + SQLAlchemy async + SQLite + ChromaDB + Pydantic v2
+- Frontend: React 18 + TypeScript + Vite + TailwindCSS v4
+- Docs: VitePress (bilingual EN/ZH)
+- CI: GitHub Actions, pre-commit hooks (ruff, conventional commits)
+
+## Key Paths
+- Code: `/home/djx/repos/omelette/`
+- Data: `/data0/djx/omelette/`
+- Conda: `omelette` (Python 3.12)

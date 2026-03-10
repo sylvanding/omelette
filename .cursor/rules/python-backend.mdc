@@ -1,17 +1,31 @@
 ---
-description: Python backend coding standards for the Omelette project
+description: Python backend standards for Omelette — enforced on every backend file
 globs: backend/**/*.py
 alwaysApply: false
 ---
 
 # Omelette Backend Standards
 
-- Use Python 3.12+ features (type hints, StrEnum, match-case)
-- All database operations use async SQLAlchemy with `AsyncSession`
-- Pydantic v2 for all request/response schemas
-- Follow FastAPI dependency injection pattern via `app/api/deps.py`
-- LLM calls go through `app/services/llm_client.py` — never call OpenAI directly
-- All API responses use `ApiResponse[T]` wrapper from `app/schemas/common.py`
-- Background tasks use `Task` model for tracking progress
-- Run `conda activate omelette` before any Python command
-- Data files go to `/data0/djx/omelette/`, code stays in `/home/djx/repos/omelette/`
+## Environment
+- Python 3.12+, conda env `omelette`
+- Run from `backend/` directory: `cd backend && uvicorn app.main:app --reload`
+- Data on `/data0/djx/omelette/`, code on `/home/djx/repos/omelette/`
+
+## Code Style (enforced by ruff + pre-commit)
+- Line length: 120
+- Import sorting: ruff isort, first-party = `app`
+- Format: `ruff format`, double quotes, 4-space indent
+- Lint: `ruff check` with E, F, I, N, W, UP, B, SIM
+
+## Architecture
+- All endpoints return `ApiResponse[T]` from `app/schemas/common.py`
+- LLM calls through `app/services/llm_client.py`, never import openai directly
+- Background tasks tracked via `Task` ORM model
+- Async SQLAlchemy + `AsyncSession` for all DB operations
+- Business logic in `app/services/`, thin controllers in `app/api/v1/`
+- Pydantic v2 schemas in `app/schemas/` mirror every API request/response
+
+## Testing
+- pytest-asyncio with `ASGITransport` + `AsyncClient`
+- Mock LLM via `LLM_PROVIDER=mock` env var
+- Every service has a corresponding `tests/test_<module>.py`

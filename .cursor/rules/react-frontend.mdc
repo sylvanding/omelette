@@ -1,18 +1,25 @@
 ---
-description: React frontend coding standards for the Omelette project
-globs: frontend/**/*.{ts,tsx}
+description: React frontend standards for Omelette
+globs: frontend/src/**/*.{ts,tsx}
 alwaysApply: false
 ---
 
 # Omelette Frontend Standards
 
-- React 18 + TypeScript strict mode
-- Use `@/` path alias for imports (configured in tsconfig and vite)
-- TailwindCSS v4 for styling — use utility classes, avoid CSS modules
+## Stack
+- React 18 + TypeScript strict + Vite + TailwindCSS v4
+- TanStack Query for data fetching, Zustand for client state
+- lucide-react for icons, axios for HTTP
+
+## Conventions
+- Import alias `@/` maps to `frontend/src/`
+- API client at `@/lib/api.ts`, typed services at `@/services/api.ts`
+- Types at `@/types/index.ts` must mirror backend Pydantic schemas
 - Use `cn()` from `@/lib/utils` for conditional class merging
-- TanStack Query for all API data fetching
-- Zustand for client-side state management
-- API calls through `@/lib/api.ts` axios instance
-- Types in `@/types/index.ts` must match backend Pydantic schemas
 - Functional components only, no class components
-- Vite dev server on port 3000, proxies `/api` to backend port 8000
+- Colocate hooks in `@/hooks/`, stores in `@/stores/`
+
+## Dev Server
+- Port 3000 on `0.0.0.0`, proxies `/api` → backend `:8000`
+- Build: `cd frontend && npm run build`
+- Type check: `npx tsc --noEmit`

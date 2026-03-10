@@ -3,8 +3,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.database import Base, engine
 from app.main import app
-from app.database import engine, Base
 
 
 @pytest.fixture(autouse=True)
@@ -177,9 +177,7 @@ async def test_generate_search_formula_scopus(client: AsyncClient, project_id: i
         json={"term": "microscopy", "term_en": "microscopy", "level": 1},
     )
 
-    resp = await client.get(
-        f"/api/v1/projects/{project_id}/keywords/search-formula?database=scopus"
-    )
+    resp = await client.get(f"/api/v1/projects/{project_id}/keywords/search-formula?database=scopus")
     assert resp.status_code == 200
     body = resp.json()
     assert "TITLE-ABS-KEY" in body["data"]["formula"]
@@ -193,9 +191,7 @@ async def test_generate_search_formula_pubmed(client: AsyncClient, project_id: i
         json={"term": "fluorescence", "term_en": "fluorescence", "level": 1},
     )
 
-    resp = await client.get(
-        f"/api/v1/projects/{project_id}/keywords/search-formula?database=pubmed"
-    )
+    resp = await client.get(f"/api/v1/projects/{project_id}/keywords/search-formula?database=pubmed")
     assert resp.status_code == 200
     body = resp.json()
     assert "[Title/Abstract]" in body["data"]["formula"]

@@ -78,18 +78,14 @@ class CrawlerService:
         proxy = _get_proxy()
         timeout = httpx.Timeout(60.0, connect=15.0)
 
-        async with httpx.AsyncClient(
-            proxy=proxy, timeout=timeout, follow_redirects=True
-        ) as client:
+        async with httpx.AsyncClient(proxy=proxy, timeout=timeout, follow_redirects=True) as client:
             # If Unpaywall, first get the OA URL
             if "api.unpaywall.org" in url:
                 resp = await client.get(url)
                 resp.raise_for_status()
                 data = resp.json()
                 best_oa = data.get("best_oa_location", {})
-                pdf_url = (
-                    best_oa.get("url_for_pdf") or best_oa.get("url") if best_oa else None
-                )
+                pdf_url = best_oa.get("url_for_pdf") or best_oa.get("url") if best_oa else None
                 if not pdf_url:
                     return {"success": False, "error": "No open access PDF found"}
                 url = pdf_url
@@ -102,7 +98,7 @@ class CrawlerService:
             resp.raise_for_status()
 
             content_type = resp.headers.get("content-type", "")
-            if "pdf" not in content_type and not resp.content[:5] == b"%PDF-":
+            if "pdf" not in content_type and resp.content[:5] != b"%PDF-":
                 return {"success": False, "error": f"Not a PDF: {content_type}"}
 
             # Save file
@@ -125,15 +121,10 @@ class CrawlerService:
     def _get_file_path(self, paper: Paper) -> Path:
         """Generate file path: pdfs/{year}/{sanitized_doi_or_id}.pdf"""
         year = str(paper.year) if paper.year else "unknown"
-        if paper.doi:
-            safe_name = paper.doi.replace("/", "_").replace(":", "_")
-        else:
-            safe_name = f"paper_{paper.id}"
+        safe_name = paper.doi.replace("/", "_").replace(":", "_") if paper.doi else f"paper_{paper.id}"
         return self.pdf_dir / year / f"{safe_name}.pdf"
 
-    async def batch_download(
-        self, papers: list[Paper], max_concurrent: int = 5
-    ) -> dict:
+    async def batch_download(self, papers: list[Paper], max_concurrent: int = 5) -> dict:
         """Download PDFs for multiple papers with concurrency control."""
         import asyncio
 

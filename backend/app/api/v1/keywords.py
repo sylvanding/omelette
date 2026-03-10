@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_llm
 from app.models import Keyword, Project
 from app.schemas.common import ApiResponse
-from app.schemas.keyword import KeywordCreate, KeywordRead, KeywordUpdate, KeywordExpandRequest, KeywordExpandResponse
+from app.schemas.keyword import KeywordCreate, KeywordExpandRequest, KeywordExpandResponse, KeywordRead, KeywordUpdate
 from app.services.keyword_service import KeywordService
 from app.services.llm_client import LLMClient
 
@@ -44,9 +44,7 @@ async def create_keyword(project_id: int, body: KeywordCreate, db: AsyncSession 
 
 
 @router.post("/bulk", response_model=ApiResponse[dict])
-async def bulk_create_keywords(
-    project_id: int, keywords: list[KeywordCreate], db: AsyncSession = Depends(get_db)
-):
+async def bulk_create_keywords(project_id: int, keywords: list[KeywordCreate], db: AsyncSession = Depends(get_db)):
     await _ensure_project(project_id, db)
     created = 0
     for kw_data in keywords:
@@ -72,9 +70,7 @@ async def generate_search_formula(
 
 
 @router.put("/{keyword_id}", response_model=ApiResponse[KeywordRead])
-async def update_keyword(
-    project_id: int, keyword_id: int, body: KeywordUpdate, db: AsyncSession = Depends(get_db)
-):
+async def update_keyword(project_id: int, keyword_id: int, body: KeywordUpdate, db: AsyncSession = Depends(get_db)):
     await _ensure_project(project_id, db)
     keyword = await db.get(Keyword, keyword_id)
     if not keyword or keyword.project_id != project_id:
@@ -111,7 +107,7 @@ async def expand_keywords(
         f"Language: {body.language}\n"
         f"Generate up to {body.max_results} related terms including synonyms, abbreviations, "
         "alternate names, and cross-disciplinary terms.\n"
-        "Return JSON: {\"expanded_terms\": [{\"term\": \"...\", \"term_zh\": \"...\", \"relation\": \"synonym|abbreviation|related\"}]}"
+        'Return JSON: {"expanded_terms": [{"term": "...", "term_zh": "...", "relation": "synonym|abbreviation|related"}]}'
     )
 
     result = await llm.chat_json(
@@ -122,7 +118,9 @@ async def expand_keywords(
         task_type="keyword_expand",
     )
 
-    return ApiResponse(data=KeywordExpandResponse(
-        expanded_terms=result.get("expanded_terms", []),
-        source=f"llm:{llm.provider}",
-    ))
+    return ApiResponse(
+        data=KeywordExpandResponse(
+            expanded_terms=result.get("expanded_terms", []),
+            source=f"llm:{llm.provider}",
+        )
+    )

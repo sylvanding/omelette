@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from app.main import app
+
 from app.database import Base, engine
-from app.models import Paper, PaperChunk, PaperStatus, Project
+from app.main import app
 
 
 @pytest.fixture(autouse=True)
@@ -73,17 +73,16 @@ class TestOCRService:
     def test_save_result(self, mock_pages):
         from app.services.ocr_service import OCRService
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("app.services.ocr_service.settings") as mock_settings:
-                mock_settings.ocr_output_dir = tmpdir
-                service = OCRService()
-                service.output_dir = Path(tmpdir)
-                result = {"method": "native", "pages": mock_pages, "total_pages": 2}
-                path = service.save_result(paper_id=42, result=result)
-                assert path.exists()
-                data = json.loads(path.read_text())
-                assert data["method"] == "native"
-                assert len(data["pages"]) == 2
+        with tempfile.TemporaryDirectory() as tmpdir, patch("app.services.ocr_service.settings") as mock_settings:
+            mock_settings.ocr_output_dir = tmpdir
+            service = OCRService()
+            service.output_dir = Path(tmpdir)
+            result = {"method": "native", "pages": mock_pages, "total_pages": 2}
+            path = service.save_result(paper_id=42, result=result)
+            assert path.exists()
+            data = json.loads(path.read_text())
+            assert data["method"] == "native"
+            assert len(data["pages"]) == 2
 
     @patch("app.services.ocr_service.pdfplumber")
     def test_extract_text_native(self, mock_pdfplumber, mock_pages):
@@ -165,10 +164,12 @@ class TestOCRService:
         mock_pdfplumber.open.return_value = cm
 
         # Mock PaddleOCR as unavailable
-        with patch.object(OCRService, "_get_paddle_ocr", return_value=None):
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=None),
+            tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f,
+        ):
             service = OCRService()
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                pdf_path = f.name
+            pdf_path = f.name
             try:
                 result = service.process_pdf(pdf_path, force_ocr=False)
                 # Should fall back to OCR, which returns [] when unavailable

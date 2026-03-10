@@ -1,6 +1,7 @@
 """Keyword service — business logic for three-level keyword hierarchy and AI expansion."""
 
 import logging
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -71,9 +72,7 @@ Return JSON only:
             logger.error(f"Keyword expansion failed: {e}")
             return []
 
-    async def generate_search_formula(
-        self, project_id: int, database: str = "wos"
-    ) -> dict:
+    async def generate_search_formula(self, project_id: int, database: str = "wos") -> dict:
         """Generate boolean search formula from project keywords for a specific database."""
         stmt = select(Keyword).where(Keyword.project_id == project_id).order_by(Keyword.level)
         result = await self.db.execute(stmt)

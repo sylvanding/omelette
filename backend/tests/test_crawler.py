@@ -1,14 +1,14 @@
 """Tests for CrawlerService and crawler API — all HTTP calls mocked."""
 
-import pytest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.config import settings
-from app.main import app
 from app.database import Base, engine
+from app.main import app
 from app.services.crawler_service import CrawlerService
 
 
@@ -92,9 +92,7 @@ def test_get_channels_priority_order(tmp_path, monkeypatch):
 def test_get_channels_semantic_scholar_dict(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "pdf_dir", str(tmp_path))
     service = CrawlerService()
-    paper = _make_paper(
-        extra_metadata={"openAccessPdf": {"url": "https://ss.com/paper.pdf"}}
-    )
+    paper = _make_paper(extra_metadata={"openAccessPdf": {"url": "https://ss.com/paper.pdf"}})
     channels = service._get_channels(paper)
     assert ("semantic_scholar", "https://ss.com/paper.pdf") in channels
 
@@ -102,9 +100,7 @@ def test_get_channels_semantic_scholar_dict(tmp_path, monkeypatch):
 def test_get_channels_semantic_scholar_string(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "pdf_dir", str(tmp_path))
     service = CrawlerService()
-    paper = _make_paper(
-        extra_metadata={"openAccessPdf": "https://ss.com/direct.pdf"}
-    )
+    paper = _make_paper(extra_metadata={"openAccessPdf": "https://ss.com/direct.pdf"})
     channels = service._get_channels(paper)
     assert ("semantic_scholar", "https://ss.com/direct.pdf") in channels
 

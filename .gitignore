@@ -29,6 +29,8 @@ env/
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 
 # Data directory (managed externally)
@@ -40,21 +42,17 @@ Thumbs.db
 
 # Node
 node_modules/
-frontend/node_modules/
-frontend/dist/
 
 # Testing
 .coverage
 htmlcov/
 .pytest_cache/
 coverage.xml
+.mypy_cache/
 
 # Build artifacts
 *.log
 *.pid
-
-# Alembic
-backend/alembic/versions/*.pyc
 
 # ChromaDB local data
 chroma_data/
@@ -65,9 +63,4 @@ chroma_data/
 # Documentation build
 docs/.vitepress/dist/
 docs/.vitepress/cache/
-
-# Cursor/Claude generated
-.cursor/projects/
-agent-transcripts/
-
-
+docs/node_modules/

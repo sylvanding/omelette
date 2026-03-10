@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.paper import PaperCreate, PaperRead, PaperUpdate, PaperBulkImport
+from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
 router = APIRouter(prefix="/projects/{project_id}/papers", tags=["papers"])
 
@@ -50,20 +50,21 @@ async def list_papers(
     total = (await db.execute(count_base)).scalar() or 0
 
     sort_col = getattr(Paper, sort_by, Paper.created_at)
-    if order == "asc":
-        base = base.order_by(sort_col.asc())
-    else:
-        base = base.order_by(sort_col.desc())
+    base = base.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
 
     base = base.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(base)
     papers = result.scalars().all()
 
-    return ApiResponse(data=PaginatedData(
-        items=[PaperRead.model_validate(p) for p in papers],
-        total=total, page=page, page_size=page_size,
-        total_pages=(total + page_size - 1) // page_size if total else 1,
-    ))
+    return ApiResponse(
+        data=PaginatedData(
+            items=[PaperRead.model_validate(p) for p in papers],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
 
 
 @router.post("", response_model=ApiResponse[PaperRead], status_code=201)
@@ -83,9 +84,9 @@ async def bulk_import_papers(project_id: int, body: PaperBulkImport, db: AsyncSe
     skipped = 0
     for paper_data in body.papers:
         if paper_data.doi:
-            existing = (await db.execute(
-                select(Paper).where(Paper.project_id == project_id, Paper.doi == paper_data.doi)
-            )).scalar_one_or_none()
+            existing = (
+                await db.execute(select(Paper).where(Paper.project_id == project_id, Paper.doi == paper_data.doi))
+            ).scalar_one_or_none()
             if existing:
                 skipped += 1
                 continue
@@ -106,9 +107,7 @@ async def get_paper(project_id: int, paper_id: int, db: AsyncSession = Depends(g
 
 
 @router.put("/{paper_id}", response_model=ApiResponse[PaperRead])
-async def update_paper(
-    project_id: int, paper_id: int, body: PaperUpdate, db: AsyncSession = Depends(get_db)
-):
+async def update_paper(project_id: int, paper_id: int, body: PaperUpdate, db: AsyncSession = Depends(get_db)):
     await _ensure_project(project_id, db)
     paper = await db.get(Paper, paper_id)
     if not paper or paper.project_id != project_id:

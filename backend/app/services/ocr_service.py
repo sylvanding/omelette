@@ -98,17 +98,18 @@ class OCRService:
                     text_lines = page_result["rec_texts"]
                 elif isinstance(page_result, list):
                     text_lines = [
-                        item[-1][0] if isinstance(item[-1], (list, tuple)) else str(item)
-                        for item in page_result
+                        item[-1][0] if isinstance(item[-1], (list, tuple)) else str(item) for item in page_result
                     ]
 
-                pages.append({
-                    "page_number": i + 1,
-                    "text": "\n".join(text_lines) if text_lines else "",
-                    "ocr_results": text_lines,
-                    "has_text": bool(text_lines),
-                    "method": "paddleocr",
-                })
+                pages.append(
+                    {
+                        "page_number": i + 1,
+                        "text": "\n".join(text_lines) if text_lines else "",
+                        "ocr_results": text_lines,
+                        "has_text": bool(text_lines),
+                        "method": "paddleocr",
+                    }
+                )
         except Exception as e:
             logger.error("PaddleOCR failed for %s: %s", pdf_path, e)
 
@@ -173,13 +174,15 @@ class OCRService:
 
             for para in paragraphs:
                 if len(current_chunk) + len(para) > chunk_size and current_chunk:
-                    chunks.append({
-                        "content": current_chunk.strip(),
-                        "page_number": current_page,
-                        "chunk_index": chunk_index,
-                        "chunk_type": "text",
-                        "token_count": len(current_chunk.split()),
-                    })
+                    chunks.append(
+                        {
+                            "content": current_chunk.strip(),
+                            "page_number": current_page,
+                            "chunk_index": chunk_index,
+                            "chunk_type": "text",
+                            "token_count": len(current_chunk.split()),
+                        }
+                    )
                     # Keep overlap
                     words = current_chunk.split()
                     overlap_text = " ".join(words[-overlap:]) if len(words) > overlap else ""
@@ -191,13 +194,15 @@ class OCRService:
 
         # Add final chunk
         if current_chunk.strip():
-            chunks.append({
-                "content": current_chunk.strip(),
-                "page_number": current_page,
-                "chunk_index": chunk_index,
-                "chunk_type": "text",
-                "token_count": len(current_chunk.split()),
-            })
+            chunks.append(
+                {
+                    "content": current_chunk.strip(),
+                    "page_number": current_page,
+                    "chunk_index": chunk_index,
+                    "chunk_type": "text",
+                    "token_count": len(current_chunk.split()),
+                }
+            )
 
         # Also extract tables as separate chunks
         for page in pages:
@@ -206,12 +211,14 @@ class OCRService:
                     table_text = "\n".join([" | ".join(str(cell) for cell in row if cell) for row in table if row])
                     if table_text.strip():
                         chunk_index += 1
-                        chunks.append({
-                            "content": table_text,
-                            "page_number": page["page_number"],
-                            "chunk_index": chunk_index,
-                            "chunk_type": "table",
-                            "token_count": len(table_text.split()),
-                        })
+                        chunks.append(
+                            {
+                                "content": table_text,
+                                "page_number": page["page_number"],
+                                "chunk_index": chunk_index,
+                                "chunk_type": "table",
+                                "token_count": len(table_text.split()),
+                            }
+                        )
 
         return chunks

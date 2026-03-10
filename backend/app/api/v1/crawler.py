@@ -35,10 +35,7 @@ async def start_crawl(
         .where(Paper.status.in_([PaperStatus.PENDING, PaperStatus.METADATA_ONLY]))
     )
 
-    if priority == "high":
-        stmt = stmt.order_by(Paper.citation_count.desc())
-    else:
-        stmt = stmt.order_by(Paper.created_at.desc())
+    stmt = stmt.order_by(Paper.citation_count.desc() if priority == "high" else Paper.created_at.desc())
 
     stmt = stmt.limit(max_papers)
     result = await db.execute(stmt)
@@ -70,11 +67,7 @@ async def crawl_stats(project_id: int, db: AsyncSession = Depends(get_db)):
     stats = {}
     for status in PaperStatus:
         count = (
-            await db.execute(
-                select(func.count(Paper.id)).where(
-                    Paper.project_id == project_id, Paper.status == status
-                )
-            )
+            await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id, Paper.status == status))
         ).scalar() or 0
         stats[status.value] = count
 

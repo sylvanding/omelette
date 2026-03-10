@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.main import app
 from app.database import Base, engine
+from app.main import app
 from app.services.subscription_service import SubscriptionService
 
 

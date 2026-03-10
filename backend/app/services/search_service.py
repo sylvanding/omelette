@@ -5,11 +5,13 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
+
 import httpx
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
 
 # Use proxy if configured
 def _get_proxy() -> str | None:
@@ -25,7 +27,7 @@ class StandardizedPaper:
         self.abstract = kwargs.get("abstract", "")
         self.authors = kwargs.get("authors", [])  # list of {"name": "...", "affiliation": "..."}
         self.journal = kwargs.get("journal", "")
-        self.year = kwargs.get("year", None)
+        self.year = kwargs.get("year")
         self.citation_count = kwargs.get("citation_count", 0)
         self.source = kwargs.get("source", "")
         self.source_id = kwargs.get("source_id", "")
@@ -52,13 +54,11 @@ class StandardizedPaper:
 
 class SearchProvider(ABC):
     @abstractmethod
-    async def search(self, query: str, max_results: int = 100) -> list[StandardizedPaper]:
-        ...
+    async def search(self, query: str, max_results: int = 100) -> list[StandardizedPaper]: ...
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
 
 def _reconstruct_abstract_from_inverted_index(inv_index: dict) -> str:
@@ -159,9 +159,7 @@ class OpenAlexProvider(SearchProvider):
                     insts = auth.get("institutions") or []
                     if not insts:
                         return ""
-                    return "; ".join(
-                        i.get("display_name", "") for i in insts if i.get("display_name")
-                    )
+                    return "; ".join(i.get("display_name", "") for i in insts if i.get("display_name"))
 
                 authors.append({"name": name, "affiliation": _affiliation(a)})
 
@@ -317,10 +315,8 @@ class CrossrefProvider(SearchProvider):
                 given = a.get("given", "")
                 family = a.get("family", "")
                 name = f"{given} {family}".strip() or a.get("name", "")
-                aff = (a.get("affiliation") or [])
-                affiliation = "; ".join(
-                    str(x.get("name", x) if isinstance(x, dict) else x) for x in aff
-                ) if aff else ""
+                aff = a.get("affiliation") or []
+                affiliation = "; ".join(str(x.get("name", x) if isinstance(x, dict) else x) for x in aff) if aff else ""
                 authors.append({"name": name, "affiliation": affiliation})
 
             doi = item.get("DOI", "")
@@ -370,9 +366,7 @@ class SearchService:
             "crossref": CrossrefProvider(),
         }
 
-    async def search(
-        self, query: str, sources: list[str] | None = None, max_results: int = 100
-    ) -> dict:
+    async def search(self, query: str, sources: list[str] | None = None, max_results: int = 100) -> dict:
         """Run federated search across selected sources."""
         if sources is None:
             sources = list(self.providers.keys())
@@ -400,8 +394,6 @@ class SearchService:
             "source_stats": source_stats,
         }
 
-    async def _search_source(
-        self, source: str, query: str, max_results: int
-    ) -> list[StandardizedPaper]:
+    async def _search_source(self, source: str, query: str, max_results: int) -> list[StandardizedPaper]:
         provider = self.providers[source]
         return await provider.search(query, max_results)
