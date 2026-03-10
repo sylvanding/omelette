@@ -45,6 +45,7 @@ jobs:
           APP_ENV: testing
           LLM_PROVIDER: mock
           DATABASE_URL: "sqlite:///./test.db"
+          DATA_DIR: ${{ runner.temp }}/omelette-test-data
 
   frontend-lint-build:
     name: Frontend Lint & Build
