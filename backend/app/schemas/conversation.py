@@ -58,7 +58,7 @@ class ConversationUpdateSchema(BaseModel):
 
 class ChatStreamRequest(BaseModel):
     conversation_id: int | None = None
-    knowledge_base_ids: list[int] = Field(min_length=1)
+    knowledge_base_ids: list[int] = Field(default_factory=list)
     model: str | None = None
     tool_mode: str = "qa"
     message: str = Field(min_length=1)
