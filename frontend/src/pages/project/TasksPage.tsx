@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { taskApi } from '@/services/api';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function TasksPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = projectId ? Number(projectId) : undefined;
 
@@ -24,12 +26,12 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('tasks.title')}</h1>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-12 text-muted-foreground">
-            Loading...
+            {t('common.loading')}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -37,16 +39,16 @@ export default function TasksPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Type
+                    {t('common.type')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Status
+                    {t('common.status')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Progress
+                    {t('common.progress')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Created
+                    {t('project.created')}
                   </th>
                 </tr>
               </thead>
@@ -90,7 +92,7 @@ export default function TasksPage() {
         )}
         {tasks.length === 0 && !isLoading && (
           <div className="py-12 text-center text-muted-foreground">
-            No tasks
+            {t('tasks.noTasks')}
           </div>
         )}
       </div>

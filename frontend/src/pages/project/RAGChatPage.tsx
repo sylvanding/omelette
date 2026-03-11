@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send, RefreshCw, Loader2, FileText, MessageSquare } from 'lucide-react';
 import { ragApi } from '@/services/api';
@@ -24,6 +25,7 @@ function MarkdownBlock({ content }: { content: string }) {
 }
 
 export default function RAGChatPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const pid = Number(projectId!);
@@ -75,7 +77,7 @@ export default function RAGChatPage() {
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">RAG Chat</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('rag.title')}</h1>
         <div className="flex items-center gap-2">
           <span
             className={cn(
@@ -84,7 +86,7 @@ export default function RAGChatPage() {
                 ? 'bg-green-100 text-green-800'
                 : 'bg-yellow-100 text-yellow-800'
             )}>
-            {hasIndex ? 'Indexed' : 'Not indexed'}
+            {hasIndex ? t('rag.indexed') : t('rag.notIndexed')}
           </span>
           <button
             onClick={() => indexMutation.mutate()}
@@ -95,7 +97,7 @@ export default function RAGChatPage() {
             ) : (
               <RefreshCw className="size-4" />
             )}{' '}
-            Rebuild Index
+            {t('rag.rebuildIndex')}
           </button>
         </div>
       </div>
@@ -105,11 +107,11 @@ export default function RAGChatPage() {
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
               <MessageSquare className="mb-2 size-12" />
-              <p>Ask a question about your project&apos;s literature.</p>
+              <p>{t('rag.emptyHint')}</p>
               <p className="mt-1 text-sm">
                 {hasIndex
-                  ? 'The RAG system will search through your indexed papers.'
-                  : 'Build the index first to enable RAG queries.'}
+                  ? t('rag.emptyHintIndexed')
+                  : t('rag.emptyHintNoIndex')}
               </p>
             </div>
           )}
@@ -126,7 +128,7 @@ export default function RAGChatPage() {
               {msg.sources && msg.sources.length > 0 && (
                 <div className="mt-3 border-t border-border/50 pt-2">
                   <div className="text-xs font-medium text-muted-foreground">
-                    Sources:
+                    {t('rag.sources')}
                   </div>
                   <ul className="mt-1 space-y-1">
                     {msg.sources.map((s, j) => (
@@ -143,7 +145,7 @@ export default function RAGChatPage() {
           {queryMutation.isPending && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
-              Thinking...
+              {t('rag.thinking')}
             </div>
           )}
           <div ref={bottomRef} />
@@ -154,7 +156,7 @@ export default function RAGChatPage() {
           className="flex gap-2 border-t border-border p-4">
           <input
             type="text"
-            placeholder="Ask a question..."
+            placeholder={t('rag.askPlaceholder')}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             disabled={queryMutation.isPending || !hasIndex}
@@ -165,7 +167,7 @@ export default function RAGChatPage() {
             disabled={queryMutation.isPending || !question.trim() || !hasIndex}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
             <Send className="size-4" />
-            Send
+            {t('rag.send')}
           </button>
         </form>
       </div>

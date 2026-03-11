@@ -1,0 +1,242 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "create": "创建",
+    "delete": "删除",
+    "confirm": "确认",
+    "search": "搜索",
+    "noData": "暂无数据",
+    "error": "发生错误",
+    "success": "操作成功",
+    "generate": "生成",
+    "generating": "生成中...",
+    "copy": "复制",
+    "copied": "已复制！",
+    "add": "添加",
+    "back": "返回",
+    "year": "年份",
+    "title": "标题",
+    "actions": "操作",
+    "status": "状态",
+    "progress": "进度",
+    "type": "类型",
+    "output": "输出",
+    "asc": "↑ 升序",
+    "desc": "↓ 降序"
+  },
+  "nav": {
+    "chat": "对话",
+    "knowledgeBases": "知识库",
+    "history": "历史记录",
+    "settings": "设置",
+    "home": "Omelette 首页"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "lang": {
+    "switchTo": "English",
+    "label": "语言"
+  },
+  "playground": {
+    "title": "Playground",
+    "welcome": "有什么可以帮你的？",
+    "welcomeDesc": "选择知识库后，可以进行智能问答、引用查找、综述大纲生成和研究空白分析。",
+    "inputPlaceholder": "输入你的问题...",
+    "inputPlaceholderNoKB": "选择知识库后开始提问，或直接对话...",
+    "newChat": "新对话",
+    "knowledgeBase": "知识库",
+    "noKB": "暂无知识库，请先创建项目",
+    "disclaimer": "AI 回答可能存在不准确之处，请注意甄别",
+    "streamError": "抱歉，发生了错误，请重试。",
+    "suggestions": {
+      "summarize": "帮我总结这个领域的研究现状",
+      "citation": "找出支持这一观点的引用",
+      "outline": "生成一份文献综述大纲",
+      "gap": "分析当前研究的空白点"
+    },
+    "toolMode": {
+      "qa": "问答",
+      "qaDesc": "基于知识库的智能问答",
+      "citation_lookup": "引用查找",
+      "citation_lookupDesc": "为文本寻找引用来源",
+      "review_outline": "综述大纲",
+      "review_outlineDesc": "生成文献综述提纲",
+      "gap_analysis": "研究空白",
+      "gap_analysisDesc": "分析研究领域空白"
+    },
+    "citations": "引用来源"
+  },
+  "kb": {
+    "title": "知识库",
+    "subtitle": "管理你的文献知识库",
+    "new": "新建知识库",
+    "searchPlaceholder": "搜索知识库...",
+    "empty": "还没有知识库",
+    "emptyDesc": "创建你的第一个知识库来管理文献",
+    "noMatch": "没有找到匹配的知识库",
+    "noMatchDesc": "试试其他搜索词",
+    "noDesc": "暂无描述",
+    "paperCount": "{{count}} 篇",
+    "createTitle": "新建知识库",
+    "namePlaceholder": "例如：深度学习综述",
+    "descPlaceholder": "简要描述这个知识库的主题（可选）",
+    "confirmDelete": "确定删除知识库「{{name}}」吗？",
+    "name": "名称",
+    "description": "描述"
+  },
+  "history": {
+    "title": "对话历史",
+    "subtitle": "查看和管理你的历史对话",
+    "searchPlaceholder": "搜索对话...",
+    "empty": "还没有对话记录",
+    "emptyDesc": "去 Playground 开始你的第一次对话",
+    "noMatch": "没有找到匹配的对话",
+    "noMatchDesc": "试试其他搜索词",
+    "messageCount": "{{count}} 条消息",
+    "confirmDelete": "确定删除这条对话？",
+    "timeJustNow": "刚刚",
+    "timeMinutes": "{{count}} 分钟前",
+    "timeHours": "{{count}} 小时前",
+    "timeDays": "{{count}} 天前"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "配置 LLM 模型、Embedding 和系统参数",
+    "llmConfig": "LLM 模型配置",
+    "provider": "模型提供商",
+    "temperature": "温度",
+    "modelName": "模型名称",
+    "apiKey": "API Key",
+    "serverUrl": "服务地址",
+    "testConnection": "测试连接",
+    "testSuccess": "连接成功",
+    "testFailed": "连接失败",
+    "mockDesc": "Mock 模式将返回预设测试数据，无需配置。",
+    "embeddingConfig": "Embedding 配置",
+    "embeddingProvider": "Embedding 提供商",
+    "envHint": "也可以通过编辑 .env 文件来配置，前端设置优先级更高。",
+    "providers": {
+      "mock": "Mock（测试）",
+      "openai": "OpenAI",
+      "anthropic": "Anthropic",
+      "aliyun": "阿里云百炼",
+      "volcengine": "火山引擎",
+      "ollama": "Ollama（本地）"
+    },
+    "embeddingProviders": {
+      "mock": "Mock（测试）",
+      "local": "本地 GPU/CPU",
+      "api": "API"
+    }
+  },
+  "project": {
+    "overview": "概览",
+    "papers": "论文",
+    "keywords": "关键词",
+    "search": "检索",
+    "ragChat": "RAG 问答",
+    "writing": "写作",
+    "tasks": "任务",
+    "backToKB": "返回知识库",
+    "notFound": "项目不存在",
+    "noDesc": "暂无描述",
+    "domain": "领域",
+    "created": "创建时间",
+    "navHint": "使用侧边栏导航到论文、关键词、检索、RAG 问答、写作或任务。"
+  },
+  "papers": {
+    "title": "论文",
+    "searchPlaceholder": "搜索标题或摘要...",
+    "journal": "期刊",
+    "citations": "引用数",
+    "abstract": "摘要：",
+    "authors": "作者：",
+    "downloadPdf": "下载 PDF",
+    "runOcr": "运行 OCR",
+    "confirmDelete": "确定删除这篇论文？",
+    "total": "{{count}} 篇论文",
+    "statuses": {
+      "all": "全部",
+      "pending": "待处理",
+      "metadata_only": "仅元数据",
+      "pdf_downloaded": "已下载 PDF",
+      "ocr_complete": "OCR 完成",
+      "indexed": "已索引",
+      "error": "错误"
+    },
+    "sortBy": {
+      "created_at": "创建时间",
+      "year": "年份",
+      "citation_count": "引用数",
+      "title": "标题"
+    }
+  },
+  "keywords": {
+    "title": "关键词",
+    "addKeyword": "添加关键词",
+    "term": "术语（必填）",
+    "termEn": "英文术语",
+    "category": "分类",
+    "synonyms": "同义词（逗号分隔）",
+    "aiExpand": "AI 扩展",
+    "seedTerms": "种子词（逗号分隔）",
+    "expand": "扩展",
+    "searchFormula": "检索式",
+    "level": "级别 {{level}}",
+    "noKeywords": "暂无关键词",
+    "confirmDelete": "确定删除这个关键词？"
+  },
+  "searchPage": {
+    "title": "检索",
+    "query": "查询",
+    "queryPlaceholder": "输入检索词，或留空使用项目关键词",
+    "sources": "数据源",
+    "maxResults": "最大结果数：{{count}}",
+    "sourceStats": "数据源统计",
+    "available": "可用",
+    "results": "结果（{{count}}）",
+    "importAll": "全部导入项目",
+    "imported": "已导入 {{count}} 篇论文"
+  },
+  "rag": {
+    "title": "RAG 问答",
+    "indexed": "已索引",
+    "notIndexed": "未索引",
+    "rebuildIndex": "重建索引",
+    "askPlaceholder": "输入问题...",
+    "send": "发送",
+    "emptyHint": "向你的文献库提问吧。",
+    "emptyHintIndexed": "RAG 系统将搜索你已索引的论文。",
+    "emptyHintNoIndex": "请先构建索引以启用 RAG 查询。",
+    "sources": "来源",
+    "thinking": "思考中..."
+  },
+  "writing": {
+    "title": "写作",
+    "tabs": {
+      "summarize": "摘要",
+      "cite": "引用",
+      "outline": "综述大纲",
+      "gap": "研究空白分析"
+    },
+    "selectPapers": "选择论文",
+    "topic": "主题",
+    "researchTopic": "研究主题",
+    "noPapers": "项目中暂无论文",
+    "topicPlaceholder": "输入文献综述主题",
+    "researchTopicPlaceholder": "输入研究主题进行空白分析",
+    "citeStyle": "引用格式",
+    "language": "语言",
+    "langEn": "English",
+    "langZh": "中文"
+  },
+  "tasks": {
+    "title": "任务",
+    "noTasks": "暂无任务"
+  }
+}

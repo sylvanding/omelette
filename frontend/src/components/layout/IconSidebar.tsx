@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   MessageSquare,
   Library,
@@ -7,6 +8,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,29 +19,34 @@ import {
 } from '@/components/ui/tooltip';
 
 const navItems = [
-  { path: '/', label: '对话', icon: MessageSquare },
-  { path: '/knowledge-bases', label: '知识库', icon: Library },
-  { path: '/history', label: '历史记录', icon: History },
+  { path: '/', labelKey: 'nav.chat', icon: MessageSquare },
+  { path: '/knowledge-bases', labelKey: 'nav.knowledgeBases', icon: Library },
+  { path: '/history', labelKey: 'nav.history', icon: History },
 ] as const;
 
 const themeIcons = { light: Sun, dark: Moon, system: Monitor } as const;
-const themeLabels = { light: '浅色', dark: '深色', system: '跟随系统' } as const;
 const themeOrder: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
 
 export default function IconSidebar() {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
 
   const cycleTheme = () => {
     const idx = themeOrder.indexOf(theme);
     setTheme(themeOrder[(idx + 1) % themeOrder.length]);
   };
 
+  const toggleLang = () => {
+    const next = i18n.language?.startsWith('zh') ? 'en' : 'zh';
+    i18n.changeLanguage(next);
+  };
+
   const ThemeIcon = themeIcons[theme];
 
   return (
     <aside className="flex h-screen w-14 flex-col items-center border-r border-sidebar-border bg-sidebar py-3">
-      <Link to="/" className="mb-4 text-2xl" aria-label="Omelette 首页">
+      <Link to="/" className="mb-4 text-2xl" aria-label={t('nav.home')}>
         🍳
       </Link>
 
@@ -65,7 +72,7 @@ export default function IconSidebar() {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>
-                {item.label}
+                {t(item.labelKey)}
               </TooltipContent>
             </Tooltip>
           );
@@ -76,6 +83,20 @@ export default function IconSidebar() {
         <Tooltip delayDuration={200}>
           <TooltipTrigger asChild>
             <button
+              onClick={toggleLang}
+              className="flex size-10 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <Languages className="size-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {t('lang.switchTo')}
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <button
               onClick={cycleTheme}
               className="flex size-10 items-center justify-center rounded-lg text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
@@ -83,7 +104,7 @@ export default function IconSidebar() {
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>
-            {themeLabels[theme]}
+            {t(`theme.${theme}`)}
           </TooltipContent>
         </Tooltip>
 
@@ -102,7 +123,7 @@ export default function IconSidebar() {
             </Link>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>
-            设置
+            {t('nav.settings')}
           </TooltipContent>
         </Tooltip>
       </div>

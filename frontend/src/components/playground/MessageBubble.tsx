@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -20,6 +21,7 @@ export default function MessageBubble({
   citations,
   isStreaming,
 }: MessageBubbleProps) {
+  const { t } = useTranslation();
   const isUser = role === 'user';
 
   return (
@@ -61,7 +63,7 @@ export default function MessageBubble({
 
         {citations && citations.length > 0 && (
           <div className="mt-3 border-t border-border/30 pt-2">
-            <p className="mb-1 text-xs font-medium opacity-70">引用来源</p>
+            <p className="mb-1 text-xs font-medium opacity-70">{t('playground.citations')}</p>
             <ul className="space-y-1">
               {citations.map((c) => (
                 <li

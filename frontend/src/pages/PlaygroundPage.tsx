@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, ChevronDown, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +22,7 @@ interface LocalMessage {
 }
 
 export default function PlaygroundPage() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>('qa');
@@ -102,7 +104,7 @@ export default function PlaygroundPage() {
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
-                ? { ...m, content: m.content || '抱歉，发生了错误，请重试。' }
+                ? { ...m, content: m.content || t('playground.streamError') }
                 : m,
             ),
           );
@@ -117,7 +119,7 @@ export default function PlaygroundPage() {
         abortRef.current = null;
       }
     },
-    [conversationId, selectedKBs, toolMode],
+    [conversationId, selectedKBs, toolMode, t],
   );
 
   const handleNewChat = () => {
@@ -151,7 +153,7 @@ export default function PlaygroundPage() {
               onClick={() => setShowKBPicker(!showKBPicker)}
               className="gap-1.5"
             >
-              知识库
+              {t('playground.knowledgeBase')}
               {selectedKBs.length > 0 && (
                 <Badge variant="secondary" className="ml-1 px-1.5">
                   {selectedKBs.length}
@@ -163,7 +165,7 @@ export default function PlaygroundPage() {
               <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-popover p-2 shadow-lg">
                 {projects.length === 0 ? (
                   <p className="p-2 text-xs text-muted-foreground">
-                    暂无知识库，请先创建项目
+                    {t('playground.noKB')}
                   </p>
                 ) : (
                   <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -190,7 +192,7 @@ export default function PlaygroundPage() {
           </div>
           <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5">
             <Plus className="size-3.5" />
-            新对话
+            {t('playground.newChat')}
           </Button>
         </div>
       </header>
@@ -209,18 +211,18 @@ export default function PlaygroundPage() {
                 <Sparkles className="size-8 text-primary" />
               </div>
               <h2 className="mb-2 text-2xl font-bold tracking-tight">
-                有什么可以帮你的？
+                {t('playground.welcome')}
               </h2>
               <p className="mx-auto max-w-md text-sm text-muted-foreground">
-                选择知识库后，可以进行智能问答、引用查找、综述大纲生成和研究空白分析。
+                {t('playground.welcomeDesc')}
               </p>
 
               <div className="mx-auto mt-8 grid max-w-lg grid-cols-2 gap-3">
                 {[
-                  '帮我总结这个领域的研究现状',
-                  '找出支持这一观点的引用',
-                  '生成一份文献综述大纲',
-                  '分析当前研究的空白点',
+                  t('playground.suggestions.summarize'),
+                  t('playground.suggestions.citation'),
+                  t('playground.suggestions.outline'),
+                  t('playground.suggestions.gap'),
                 ].map((q) => (
                   <button
                     key={q}
@@ -266,12 +268,12 @@ export default function PlaygroundPage() {
             isLoading={isStreaming}
             placeholder={
               selectedKBs.length > 0
-                ? '输入你的问题...'
-                : '选择知识库后开始提问，或直接对话...'
+                ? t('playground.inputPlaceholder')
+                : t('playground.inputPlaceholderNoKB')
             }
           />
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            AI 回答可能存在不准确之处，请注意甄别
+            {t('playground.disclaimer')}
           </p>
         </div>
       </div>

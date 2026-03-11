@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
 import { keywordApi } from '@/services/api';
@@ -13,6 +14,7 @@ const DATABASES = [
 ];
 
 export default function KeywordsPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const pid = Number(projectId!);
@@ -114,16 +116,16 @@ export default function KeywordsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Keywords</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('keywords.title')}</h1>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground">
-          Add Keyword
+          {t('keywords.addKeyword')}
         </h2>
         <form onSubmit={handleAddKeyword} className="flex flex-wrap gap-3">
           <input
             type="text"
-            placeholder="Term (required)"
+            placeholder={t('keywords.term')}
             value={formTerm}
             onChange={(e) => setFormTerm(e.target.value)}
             className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -131,7 +133,7 @@ export default function KeywordsPage() {
           />
           <input
             type="text"
-            placeholder="Term (EN)"
+            placeholder={t('keywords.termEn')}
             value={formTermEn}
             onChange={(e) => setFormTermEn(e.target.value)}
             className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -140,20 +142,20 @@ export default function KeywordsPage() {
             value={formLevel}
             onChange={(e) => setFormLevel(Number(e.target.value) as 1 | 2 | 3)}
             className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value={1}>Level 1</option>
-            <option value={2}>Level 2</option>
-            <option value={3}>Level 3</option>
+            <option value={1}>{t('keywords.level', { level: 1 })}</option>
+            <option value={2}>{t('keywords.level', { level: 2 })}</option>
+            <option value={3}>{t('keywords.level', { level: 3 })}</option>
           </select>
           <input
             type="text"
-            placeholder="Category"
+            placeholder={t('keywords.category')}
             value={formCategory}
             onChange={(e) => setFormCategory(e.target.value)}
             className="min-w-[100px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
           />
           <input
             type="text"
-            placeholder="Synonyms (comma-separated)"
+            placeholder={t('keywords.synonyms')}
             value={formSynonyms}
             onChange={(e) => setFormSynonyms(e.target.value)}
             className="min-w-[180px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -163,19 +165,19 @@ export default function KeywordsPage() {
             disabled={createMutation.isPending}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
             <Plus className="size-4" />
-            Add
+            {t('common.add')}
           </button>
         </form>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground">
-          AI Expand
+          {t('keywords.aiExpand')}
         </h2>
         <div className="flex flex-wrap gap-2">
           <input
             type="text"
-            placeholder="Seed terms (comma-separated)"
+            placeholder={t('keywords.seedTerms')}
             value={expandSeeds}
             onChange={(e) => setExpandSeeds(e.target.value)}
             className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -185,14 +187,14 @@ export default function KeywordsPage() {
             disabled={expandMutation.isPending || !expandSeeds.trim()}
             className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
             <Sparkles className="size-4" />
-            Expand
+            {t('keywords.expand')}
           </button>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground">
-          Search Formula
+          {t('keywords.searchFormula')}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -209,7 +211,7 @@ export default function KeywordsPage() {
             onClick={() => formulaQuery.refetch()}
             disabled={formulaQuery.isFetching}
             className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80 disabled:opacity-50">
-            Generate
+            {t('common.generate')}
           </button>
           {formula && (
             <button
@@ -220,12 +222,12 @@ export default function KeywordsPage() {
               ) : (
                 <Copy className="size-4" />
               )}{' '}
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? t('common.copied') : t('common.copy')}
             </button>
           )}
         </div>
         {formulaQuery.isFetching && (
-          <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('common.generating')}</p>
         )}
         {formula && (
           <pre className="mt-3 overflow-x-auto rounded-lg border border-border bg-background p-3 text-sm">
@@ -246,19 +248,19 @@ export default function KeywordsPage() {
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
               )}>
-              Level {level}
+              {t('keywords.level', { level })}
             </button>
           ))}
         </div>
 
         {isLoading ? (
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         ) : (
           <div className="space-y-4">
             {(activeLevel === 'all' ? [1, 2, 3] : [activeLevel]).map((level) => (
               <div key={level}>
                 <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-                  Level {level}
+                  {t('keywords.level', { level })}
                 </h3>
                 <ul className="flex flex-wrap gap-2">
                   {byLevel[level as 1 | 2 | 3].map((kw) => (
@@ -276,7 +278,7 @@ export default function KeywordsPage() {
                       </span>
                       <button
                         onClick={() => {
-                          if (confirm('Delete this keyword?')) {
+                          if (confirm(t('keywords.confirmDelete'))) {
                             deleteMutation.mutate(kw.id);
                           }
                         }}
@@ -287,7 +289,7 @@ export default function KeywordsPage() {
                   ))}
                   {byLevel[level as 1 | 2 | 3].length === 0 && (
                     <li className="text-sm text-muted-foreground">
-                      No keywords
+                      {t('keywords.noKeywords')}
                     </li>
                   )}
                 </ul>
