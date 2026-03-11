@@ -97,7 +97,7 @@ Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ 
 | 层级 | 技术 |
 |------|------|
 | **后端** | FastAPI、SQLAlchemy 2（异步）、Pydantic v2、Python 3.12 |
-| **前端** | React 18、Vite、TypeScript、TailwindCSS v4、shadcn/ui、Radix |
+| **前端** | React 18、Vite、TypeScript、TailwindCSS v4、shadcn/ui、Radix、TanStack Query |
 | **数据库** | SQLite + aiosqlite，Alembic 迁移 |
 | **向量库** | ChromaDB |
 | **RAG** | LlamaIndex，GPU 感知嵌入 |
@@ -194,7 +194,7 @@ omelette/
 │   │   └── main.py       # App entry, lifespan, CORS
 │   ├── mcp_server.py     # MCP (Model Context Protocol) server
 │   ├── alembic/          # Database migrations
-│   ├── tests/            # pytest-asyncio tests (178)
+│   ├── tests/            # pytest-asyncio 测试（178 个）
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
@@ -202,15 +202,19 @@ omelette/
 │       ├── components/   # Layout, shared UI
 │       │   └── ui/       # shadcn/ui components
 │       ├── services/     # Typed API client
-│       ├── stores/       # Zustand state
-│       ├── i18n/         # Internationalization (zh/en)
-│       └── lib/          # Axios client, utils
+│       ├── hooks/        # 自定义 hooks（useToastMutation 等）
+│       ├── stores/       # Zustand 状态管理
+│       ├── i18n/         # 国际化（zh/en）
+│       ├── test/         # Vitest 配置、MSW mock、测试 fixtures
+│       └── lib/          # Axios 客户端、工具函数
+├── e2e/                  # Playwright E2E 测试
 ├── docs/                 # VitePress documentation (EN/ZH)
 ├── assets/               # Banner, logo, mascot images
 ├── environment.yml       # Conda env (Python 3.12)
 ├── Makefile              # Dev workflow shortcuts
 ├── .env.example          # Configuration template
-└── .github/workflows/    # CI (ruff, pytest, tsc, build, docs)
+├── playwright.config.ts  # Playwright E2E 配置
+└── .github/workflows/    # CI（ruff、pytest、vitest、tsc、build、docs）
 ```
 
 ## 🛠️ 开发
@@ -226,11 +230,17 @@ make dev                  # Start both backend and frontend
 ### 运行测试
 
 ```bash
-# Backend (178 tests)
+# 后端（178 个测试）
 cd backend && pytest tests/ -v
 
-# Frontend type check and build
+# 前端单元测试（28 个测试 — Vitest + Testing Library + MSW）
+cd frontend && npm test
+
+# 前端类型检查与构建
 cd frontend && npx tsc --noEmit && npm run build
+
+# E2E 测试（可选 — 需要运行前端开发服务器）
+npx playwright test
 ```
 
 ## 📡 API 概览
