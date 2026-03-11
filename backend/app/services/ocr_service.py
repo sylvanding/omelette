@@ -57,6 +57,8 @@ class OCRService:
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
                 lang="en",
+                use_gpu=self.use_gpu,
+                gpu_id=self.gpu_id,
             )
             return self._paddle_ocr
         except ImportError:
