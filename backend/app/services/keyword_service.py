@@ -69,7 +69,7 @@ Return JSON only:
             )
             return result.get("expanded_terms", [])
         except Exception as e:
-            logger.error(f"Keyword expansion failed: {e}")
+            logger.error("Keyword expansion failed: %s", e)
             return []
 
     async def generate_search_formula(self, project_id: int, database: str = "wos") -> dict:

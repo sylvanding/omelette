@@ -123,6 +123,8 @@ async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession 
         setattr(project, key, value)
     await db.flush()
     await db.refresh(project)
+    paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))).scalar() or 0
+    kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == project_id))).scalar() or 0
     return ApiResponse(
         data=ProjectRead(
             id=project.id,
@@ -132,6 +134,8 @@ async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession 
             settings=project.settings,
             created_at=project.created_at,
             updated_at=project.updated_at,
+            paper_count=paper_count,
+            keyword_count=kw_count,
         )
     )
 

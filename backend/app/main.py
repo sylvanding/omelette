@@ -10,6 +10,7 @@ from app.api.v1 import api_router
 from app.config import settings
 from app.database import init_db
 from app.middleware.auth import ApiKeyMiddleware
+from app.schemas.common import ApiResponse
 
 logging.basicConfig(
     level=logging.DEBUG if settings.app_debug else logging.INFO,
@@ -62,12 +63,14 @@ except Exception as e:
 
 @app.get("/")
 async def root():
-    return {
-        "name": "Omelette",
-        "version": "0.1.0",
-        "description": "Scientific Literature Lifecycle Management System",
-        "docs": "/docs",
-    }
+    return ApiResponse(
+        data={
+            "name": "Omelette",
+            "version": "0.1.0",
+            "description": "Scientific Literature Lifecycle Management System",
+            "docs": "/docs",
+        }
+    )
 
 
 if __name__ == "__main__":

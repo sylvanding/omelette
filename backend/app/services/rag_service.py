@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
@@ -69,7 +69,7 @@ class RAGService:
         LlamaSettings.embed_model = self._embed_model
         return self._embed_model
 
-    def _get_vector_store(self, project_id: int) -> Any:
+    def _get_vector_store(self, project_id: int):
         from llama_index.vector_stores.chroma import ChromaVectorStore
 
         collection = self._get_collection(project_id)

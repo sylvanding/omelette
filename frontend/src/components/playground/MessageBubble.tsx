@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,7 +16,7 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
 }
 
-export default function MessageBubble({
+function MessageBubble({
   role,
   content,
   citations,
@@ -84,3 +85,5 @@ export default function MessageBubble({
     </div>
   );
 }
+
+export default memo(MessageBubble);

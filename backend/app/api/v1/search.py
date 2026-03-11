@@ -4,19 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.models import Keyword, Paper, Project
 from app.schemas.common import ApiResponse
 from app.services.search_service import SearchService
 
 router = APIRouter(prefix="/projects/{project_id}/search", tags=["search"])
-
-
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.post("/execute", response_model=ApiResponse[dict])
@@ -27,9 +20,9 @@ async def execute_search(
     max_results: int = 100,
     auto_import: bool = False,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Execute federated search. If auto_import=True, import results to project."""
-    await _ensure_project(project_id, db)
 
     # If no query, build from project keywords
     if not query:

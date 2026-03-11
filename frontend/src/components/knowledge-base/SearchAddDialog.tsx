@@ -259,7 +259,7 @@ export function SearchAddDialog({
                 <ul className="max-h-64 space-y-2 overflow-y-auto rounded-md border border-border p-2">
                   {results.map((paper, i) => (
                     <li
-                      key={i}
+                      key={paper.source_id ?? paper.doi ?? `paper-${i}`}
                       className="rounded-lg border border-border p-3 hover:bg-muted/30"
                     >
                       <div className="font-medium">{paper.title}</div>
@@ -297,7 +297,7 @@ export function SearchAddDialog({
             <ul className="max-h-64 space-y-2 overflow-y-auto rounded-md border border-border p-2">
               {results.map((paper, i) => (
                 <label
-                  key={i}
+                  key={paper.source_id ?? paper.doi ?? `paper-${i}`}
                   className={cn(
                     'flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
                     selected.has(i)

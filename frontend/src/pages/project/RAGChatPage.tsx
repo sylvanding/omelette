@@ -17,7 +17,7 @@ function MarkdownBlock({ content }: { content: string }) {
   return (
     <div className="prose prose-sm max-w-none dark:prose-invert">
       {content.split('\n').map((line, i) => (
-        <p key={i} className="mb-1">
+        <p key={`line-${i}`} className="mb-1">
           {line}
         </p>
       ))}
@@ -61,6 +61,8 @@ export default function RAGChatPage() {
   }>({ active: false, stage: '', percent: 0 });
 
   const abortRef = useRef<AbortController | null>(null);
+  const activeRef = useRef(indexProgress.active);
+  activeRef.current = indexProgress.active;
 
   const stageLabel = useCallback(
     (stage: string) => {
@@ -76,7 +78,7 @@ export default function RAGChatPage() {
   );
 
   const startRebuild = useCallback(async () => {
-    if (indexProgress.active) return;
+    if (activeRef.current) return;
     const ac = new AbortController();
     abortRef.current = ac;
     setIndexProgress({ active: true, stage: 'fetching', percent: 0 });
@@ -101,7 +103,7 @@ export default function RAGChatPage() {
         setIndexProgress({ active: false, stage: '', percent: 0, error: String(err) });
       }
     }
-  }, [pid, indexProgress.active, queryClient, t]);
+  }, [pid, queryClient]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -188,7 +190,7 @@ export default function RAGChatPage() {
           )}
           {messages.map((msg, i) => (
             <div
-              key={i}
+              key={`msg-${i}`}
               className={cn(
                 'rounded-lg p-3',
                 msg.role === 'user'
@@ -203,7 +205,9 @@ export default function RAGChatPage() {
                   </div>
                   <ul className="mt-1 space-y-1">
                     {msg.sources.map((s, j) => (
-                      <li key={j} className="flex items-start gap-1 text-xs">
+                      <li
+                        key={s.paper_title ?? s.content ?? `src-${j}`}
+                        className="flex items-start gap-1 text-xs">
                         <FileText className="mt-0.5 size-3 shrink-0" />
                         <span>{s.paper_title ?? s.content ?? '—'}</span>
                       </li>

@@ -36,7 +36,7 @@ class CrawlerService:
                     result["channel"] = channel_name
                     return result
             except Exception as e:
-                logger.warning(f"Channel {channel_name} failed for paper {paper.id}: {e}")
+                logger.warning("Channel %s failed for paper %d: %s", channel_name, paper.id, e)
                 continue
 
         return {"success": False, "error": "All download channels failed", "paper_id": paper.id}

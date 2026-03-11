@@ -4,19 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
 router = APIRouter(tags=["papers"])
-
-
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.get("", response_model=ApiResponse[PaginatedData[PaperRead]])
@@ -30,9 +23,8 @@ async def list_papers(
     sort_by: str = "created_at",
     order: str = "desc",
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
-    await _ensure_project(project_id, db)
-
     base = select(Paper).where(Paper.project_id == project_id)
     count_base = select(func.count(Paper.id)).where(Paper.project_id == project_id)
 
@@ -69,8 +61,12 @@ async def list_papers(
 
 
 @router.post("", response_model=ApiResponse[PaperRead], status_code=201)
-async def create_paper(project_id: int, body: PaperCreate, db: AsyncSession = Depends(get_db)):
-    await _ensure_project(project_id, db)
+async def create_paper(
+    project_id: int,
+    body: PaperCreate,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     paper = Paper(project_id=project_id, **body.model_dump())
     db.add(paper)
     await db.flush()
@@ -79,8 +75,12 @@ async def create_paper(project_id: int, body: PaperCreate, db: AsyncSession = De
 
 
 @router.post("/bulk", response_model=ApiResponse[dict])
-async def bulk_import_papers(project_id: int, body: PaperBulkImport, db: AsyncSession = Depends(get_db)):
-    await _ensure_project(project_id, db)
+async def bulk_import_papers(
+    project_id: int,
+    body: PaperBulkImport,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     created = 0
     skipped = 0
     for paper_data in body.papers:
@@ -99,8 +99,12 @@ async def bulk_import_papers(project_id: int, body: PaperBulkImport, db: AsyncSe
 
 
 @router.get("/{paper_id}", response_model=ApiResponse[PaperRead])
-async def get_paper(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
-    await _ensure_project(project_id, db)
+async def get_paper(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     paper = await db.get(Paper, paper_id)
     if not paper or paper.project_id != project_id:
         raise HTTPException(status_code=404, detail="Paper not found")
@@ -108,8 +112,13 @@ async def get_paper(project_id: int, paper_id: int, db: AsyncSession = Depends(g
 
 
 @router.put("/{paper_id}", response_model=ApiResponse[PaperRead])
-async def update_paper(project_id: int, paper_id: int, body: PaperUpdate, db: AsyncSession = Depends(get_db)):
-    await _ensure_project(project_id, db)
+async def update_paper(
+    project_id: int,
+    paper_id: int,
+    body: PaperUpdate,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     paper = await db.get(Paper, paper_id)
     if not paper or paper.project_id != project_id:
         raise HTTPException(status_code=404, detail="Paper not found")
@@ -121,8 +130,12 @@ async def update_paper(project_id: int, paper_id: int, body: PaperUpdate, db: As
 
 
 @router.delete("/{paper_id}", response_model=ApiResponse)
-async def delete_paper(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
-    await _ensure_project(project_id, db)
+async def delete_paper(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     paper = await db.get(Paper, paper_id)
     if not paper or paper.project_id != project_id:
         raise HTTPException(status_code=404, detail="Paper not found")
