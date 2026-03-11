@@ -123,7 +123,7 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
     invalidateKeys: [['subscriptions', projectId]],
   });
 
-  const subscriptions: Subscription[] = (data as Subscription[] | undefined) ?? [];
+  const subscriptions: Subscription[] = data ?? [];
 
   const resetForm = () => {
     setForm({
@@ -359,11 +359,11 @@ function SubscriptionCard({
   isTriggering,
   isUpdating,
 }: SubscriptionCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('subscriptions.neverRun');
-    return new Date(dateStr).toLocaleString();
+    return new Date(dateStr).toLocaleString(i18n.language === 'zh' ? 'zh-CN' : 'en-US');
   };
 
   return (
@@ -424,7 +424,7 @@ function SubscriptionCard({
           </span>
           <span className="flex items-center gap-1">
             <RefreshCw className="size-3" />
-            {(t as (key: string, opts?: Record<string, unknown>) => string)('subscriptions.totalFound', { count: sub.total_found })}
+            {t('subscriptions.totalFound', { count: sub.total_found })}
           </span>
         </div>
       </CardContent>

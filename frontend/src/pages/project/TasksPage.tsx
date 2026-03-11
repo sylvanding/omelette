@@ -16,7 +16,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function TasksPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = projectId ? Number(projectId) : undefined;
 
@@ -80,7 +80,7 @@ export default function TasksPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {task.created_at
-                        ? new Date(task.created_at).toLocaleString()
+                        ? new Date(task.created_at).toLocaleString(i18n.language === 'zh' ? 'zh-CN' : 'en-US')
                         : '—'}
                     </td>
                   </tr>

@@ -27,7 +27,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 
 export default function PapersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
 
   const STATUS_OPTIONS: { value: PaperStatus | ''; label: string }[] = [
@@ -128,7 +128,7 @@ export default function PapersPage() {
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
           <span className="text-xs">{t('project.domain')}: {projectData.domain || '—'}</span>
           <span className="text-xs">{t('project.keywords')}: {projectData.keyword_count ?? 0}</span>
-          <span className="text-xs">{t('project.created')}: {new Date(projectData.created_at).toLocaleDateString()}</span>
+          <span className="text-xs">{t('project.created')}: {new Date(projectData.created_at).toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US')}</span>
         </div>
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Save,
@@ -62,8 +62,9 @@ export default function SettingsPage() {
     invalidateKeys: [['settings']],
   });
 
-  const testMutation = useMutation({
+  const testMutation = useToastMutation({
     mutationFn: () => settingsApi.testConnection(),
+    errorMessage: t('settings.testFailed'),
     onSuccess: (res) => {
       setTestResult({
         success: !!res?.success,
