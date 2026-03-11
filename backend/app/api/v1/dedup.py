@@ -101,7 +101,7 @@ async def resolve_conflict(
         raise HTTPException(status_code=404, detail="Uploaded PDF file not found")
 
     if body.action in ("keep_new", "skip"):
-        metadata = extract_metadata(pdf_path, fallback_title="Untitled")
+        metadata = await extract_metadata(pdf_path, fallback_title="Untitled")
         paper = Paper(
             project_id=project_id,
             title=metadata.title,
@@ -183,7 +183,7 @@ async def auto_resolve_conflicts(
             resolutions.append({"conflict_id": conflict_id, "error": "PDF not found"})
             continue
 
-        new_metadata = extract_metadata(pdf_path, fallback_title="Untitled")
+        new_metadata = await extract_metadata(pdf_path, fallback_title="Untitled")
 
         if not llm:
             resolutions.append(

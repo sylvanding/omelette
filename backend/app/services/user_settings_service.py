@@ -114,9 +114,16 @@ class UserSettingsService:
         await self.db.flush()
 
     async def update(self, payload: SettingsUpdateSchema) -> None:
-        """Write all non-None fields from the payload into the DB."""
+        """Write all non-None fields from the payload into the DB.
+
+        Masked API keys (containing ``***``) are silently skipped so that
+        round-tripping settings through the UI never overwrites real secrets.
+        """
         for field_name, value in payload.model_dump(exclude_none=True).items():
-            await self.set_db_value(field_name, str(value), category="llm")
+            str_value = str(value)
+            if field_name in SENSITIVE_KEYS and "***" in str_value:
+                continue
+            await self.set_db_value(field_name, str_value, category="llm")
         await self.db.commit()
 
     async def get_merged_settings(self, *, mask_sensitive: bool = True) -> SettingsSchema:
@@ -125,7 +132,9 @@ class UserSettingsService:
 
         def _resolve(key: str, env_val: str | float | int) -> str:
             db_v = db_vals.get(key, "")
-            return db_v if db_v else str(env_val)
+            if db_v and not (key in SENSITIVE_KEYS and "***" in db_v):
+                return db_v
+            return str(env_val)
 
         schema = SettingsSchema(
             llm_provider=_resolve("llm_provider", env_settings.llm_provider),
