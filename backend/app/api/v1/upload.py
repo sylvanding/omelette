@@ -112,6 +112,24 @@ async def upload_pdfs(
                         break
 
             if not conflict_found:
+                paper = Paper(
+                    project_id=project_id,
+                    title=metadata.title,
+                    abstract=metadata.abstract or "",
+                    authors=[{"name": a.name} for a in metadata.authors] if metadata.authors else [],
+                    doi=metadata.doi or None,
+                    year=metadata.year,
+                    journal=metadata.journal or "",
+                    source=metadata.source or "upload",
+                    source_id="",
+                    pdf_path=str(saved_path),
+                    pdf_url="",
+                    status="pdf_downloaded",
+                    tags=[],
+                    notes="",
+                    citation_count=0,
+                )
+                db.add(paper)
                 papers.append(metadata)
 
         except HTTPException:
@@ -119,6 +137,8 @@ async def upload_pdfs(
         except Exception as e:
             logger.exception("Failed to process %s: %s", upload_file.filename, e)
             raise HTTPException(status_code=422, detail=f"Invalid or corrupted PDF: {upload_file.filename}") from e
+
+    await db.flush()
 
     return ApiResponse(
         data=UploadResult(

@@ -46,7 +46,11 @@ export default function IconSidebar() {
 
   return (
     <aside className="flex h-screen w-14 flex-col items-center border-r border-sidebar-border bg-sidebar py-3">
-      <Link to="/" className="mb-4 text-2xl" aria-label={t('nav.home')}>
+      <Link
+        to="/"
+        className="mb-4 flex size-9 items-center justify-center rounded-xl bg-primary/10 text-xl transition-transform hover:scale-110"
+        aria-label={t('nav.home')}
+      >
         🍳
       </Link>
 

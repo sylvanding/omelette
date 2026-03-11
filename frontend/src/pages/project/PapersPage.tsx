@@ -10,6 +10,7 @@ import {
   FileDown,
   Scan,
   Plus,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { paperApi, ocrApi } from '@/services/api';
@@ -182,6 +183,16 @@ export default function PapersPage() {
         <div className="flex justify-center py-12 text-muted-foreground">
           {t('common.loading')}
         </div>
+      ) : papers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-muted-foreground">
+          <FileText className="mb-4 size-12 opacity-30" />
+          <p className="mb-1 text-sm font-medium">{t('papers.empty')}</p>
+          <p className="mb-4 text-xs">{t('papers.emptyHint')}</p>
+          <Button variant="outline" size="sm" onClick={() => setShowAddPaper(true)} className="gap-1.5">
+            <Plus className="size-4" />
+            {t('papers.addPaper')}
+          </Button>
+        </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -246,15 +257,14 @@ export default function PapersPage() {
                         <span
                           className={cn(
                             'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                            paper.status === 'indexed' && 'bg-green-100 text-green-800',
-                            paper.status === 'ocr_complete' && 'bg-blue-100 text-blue-800',
-                            paper.status === 'error' && 'bg-red-100 text-red-800',
-                            paper.status === 'pending' && 'bg-yellow-100 text-yellow-800',
-                            !['indexed', 'ocr_complete', 'error', 'pending'].includes(
-                              paper.status
-                            ) && 'bg-gray-100 text-gray-800'
+                            paper.status === 'indexed' && 'bg-green-500/10 text-green-700 dark:text-green-400',
+                            paper.status === 'ocr_complete' && 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+                            paper.status === 'pdf_downloaded' && 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
+                            paper.status === 'error' && 'bg-red-500/10 text-red-700 dark:text-red-400',
+                            paper.status === 'pending' && 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+                            paper.status === 'metadata_only' && 'bg-slate-500/10 text-slate-700 dark:text-slate-400',
                           )}>
-                          {paper.status}
+                          {t(`papers.statuses.${paper.status}`, paper.status)}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-right">
