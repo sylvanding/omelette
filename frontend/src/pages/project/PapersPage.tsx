@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Search,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { paperApi, ocrApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
@@ -68,7 +70,13 @@ export default function PapersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (paperId: number) => paperApi.delete(pid, paperId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['papers', pid] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+      toast.success(t('common.deleteSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.deleteFailed'), { description: error.message });
+    },
   });
 
   const ocrMutation = useMutation({
@@ -287,17 +295,22 @@ export default function PapersPage() {
                             title={t('papers.runOcr')}>
                             <Scan className="size-4" />
                           </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(t('papers.confirmDelete'))) {
-                                deleteMutation.mutate(paper.id);
-                              }
-                            }}
-                            disabled={deleteMutation.isPending}
-                            className="rounded p-1.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
-                            title={t('common.delete')}>
-                            <Trash2 className="size-4" />
-                          </button>
+                          <ConfirmDialog
+                            trigger={
+                              <button
+                                disabled={deleteMutation.isPending}
+                                className="rounded p-1.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                                title={t('common.delete')}>
+                                <Trash2 className="size-4" />
+                              </button>
+                            }
+                            title={t('common.confirmDeleteTitle')}
+                            description={t('papers.confirmDelete')}
+                            confirmText={t('common.delete')}
+                            cancelText={t('common.cancel')}
+                            onConfirm={() => deleteMutation.mutate(paper.id)}
+                            destructive
+                          />
                         </div>
                       </td>
                     </tr>

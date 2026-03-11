@@ -22,14 +22,30 @@ async def list_projects(
     total_stmt = select(func.count(Project.id))
     total = (await db.execute(total_stmt)).scalar() or 0
 
-    stmt = select(Project).order_by(Project.updated_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    paper_count_sq = (
+        select(func.count(Paper.id))
+        .where(Paper.project_id == Project.id)
+        .correlate(Project)
+        .scalar_subquery()
+        .label("paper_count")
+    )
+    kw_count_sq = (
+        select(func.count(Keyword.id))
+        .where(Keyword.project_id == Project.id)
+        .correlate(Project)
+        .scalar_subquery()
+        .label("keyword_count")
+    )
+    stmt = (
+        select(Project, paper_count_sq, kw_count_sq)
+        .order_by(Project.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.execute(stmt)
-    projects = result.scalars().all()
 
     items = []
-    for p in projects:
-        paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == p.id))).scalar() or 0
-        kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == p.id))).scalar() or 0
+    for p, paper_count, kw_count in result.all():
         items.append(
             ProjectRead(
                 id=p.id,
@@ -39,8 +55,8 @@ async def list_projects(
                 settings=p.settings,
                 created_at=p.created_at,
                 updated_at=p.updated_at,
-                paper_count=paper_count,
-                keyword_count=kw_count,
+                paper_count=paper_count or 0,
+                keyword_count=kw_count or 0,
             )
         )
 

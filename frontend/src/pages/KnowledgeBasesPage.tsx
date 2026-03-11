@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Plus, Trash2, BookOpen, FileText, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { projectApi } from '@/services/api';
 import type { Project } from '@/types';
 
@@ -39,12 +41,22 @@ export default function KnowledgeBasesPage() {
       setShowCreate(false);
       setName('');
       setDesc('');
+      toast.success(t('common.createSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.createFailed'), { description: error.message });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => projectApi.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success(t('common.deleteSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.deleteFailed'), { description: error.message });
+    },
   });
 
   const projects: Project[] = data?.data?.items ?? [];
@@ -61,12 +73,8 @@ export default function KnowledgeBasesPage() {
     createMutation.mutate({ name: name.trim(), description: desc.trim() || undefined });
   };
 
-  const handleDelete = (e: React.MouseEvent, project: Project) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (confirm(t('kb.confirmDelete', { name: project.name }))) {
-      deleteMutation.mutate(project.id);
-    }
+  const handleDelete = (project: Project) => {
+    deleteMutation.mutate(project.id);
   };
 
   return (
@@ -130,13 +138,23 @@ export default function KnowledgeBasesPage() {
                   to={`/projects/${project.id}`}
                   className="group relative block rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md"
                 >
-                  <button
-                    onClick={(e) => handleDelete(e, project)}
-                    disabled={deleteMutation.isPending}
-                    className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        disabled={deleteMutation.isPending}
+                        className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    }
+                    title={t('common.confirmDeleteTitle')}
+                    description={t('kb.confirmDelete', { name: project.name })}
+                    confirmText={t('common.delete')}
+                    cancelText={t('common.cancel')}
+                    onConfirm={() => handleDelete(project)}
+                    destructive
+                  />
 
                   <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-primary/10">
                     <BookOpen className="size-5 text-primary" />

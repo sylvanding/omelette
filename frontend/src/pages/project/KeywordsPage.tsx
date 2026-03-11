@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Plus, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { keywordApi } from '@/services/api';
 import type { Keyword } from '@/types';
 import { cn } from '@/lib/utils';
@@ -45,6 +47,10 @@ export default function KeywordsPage() {
       setFormTermEn('');
       setFormCategory('');
       setFormSynonyms('');
+      toast.success(t('common.createSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.createFailed'), { description: error.message });
     },
   });
 
@@ -53,6 +59,10 @@ export default function KeywordsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['keywords', pid] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      toast.success(t('common.deleteSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.deleteFailed'), { description: error.message });
     },
   });
 
@@ -61,10 +71,10 @@ export default function KeywordsPage() {
     onSuccess: (res) => {
       const terms = res?.data?.expanded_terms ?? [];
       if (terms.length > 0) {
-        terms.forEach((t: { term: string; term_zh?: string }) => {
+        terms.forEach((term: string) => {
           createMutation.mutate({
-            term: t.term_zh || t.term,
-            term_en: t.term,
+            term,
+            term_en: term,
             level: 1,
           });
         });
@@ -276,15 +286,19 @@ export default function KeywordsPage() {
                           </span>
                         )}
                       </span>
-                      <button
-                        onClick={() => {
-                          if (confirm(t('keywords.confirmDelete'))) {
-                            deleteMutation.mutate(kw.id);
-                          }
-                        }}
-                        className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground">
-                        <Trash2 className="size-3" />
-                      </button>
+                      <ConfirmDialog
+                        trigger={
+                          <button className="ml-1 rounded p-0.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground">
+                            <Trash2 className="size-3" />
+                          </button>
+                        }
+                        title={t('common.confirmDeleteTitle')}
+                        description={t('keywords.confirmDelete')}
+                        confirmText={t('common.delete')}
+                        cancelText={t('common.cancel')}
+                        onConfirm={() => deleteMutation.mutate(kw.id)}
+                        destructive
+                      />
                     </li>
                   ))}
                   {byLevel[level as 1 | 2 | 3].length === 0 && (

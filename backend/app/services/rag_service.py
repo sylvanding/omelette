@@ -234,25 +234,21 @@ class RAGService:
             f"Context:\n{context}\n\n"
             "Provide a comprehensive answer with citations."
         )
-        try:
-            return await self.llm.chat(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a scientific research assistant. "
-                            "Answer questions based strictly on the provided context. "
-                            "Cite sources accurately."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                task_type="rag_answer",
-            )
-        except Exception as e:
-            logger.error("LLM answer generation failed: %s", e)
-            return f"Error generating answer: {e}"
+        return await self.llm.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a scientific research assistant. "
+                        "Answer questions based strictly on the provided context. "
+                        "Cite sources accurately."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            task_type="rag_answer",
+        )
 
     async def delete_index(self, project_id: int) -> dict:
         """Delete the entire vector index for a project."""
@@ -261,7 +257,7 @@ class RAGService:
         try:
             client.delete_collection(name)
             return {"deleted": True, "collection": name}
-        except Exception:
+        except ValueError:
             return {"deleted": False, "message": "Collection not found"}
 
     async def delete_paper(self, project_id: int, paper_id: int) -> dict:

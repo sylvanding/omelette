@@ -37,24 +37,40 @@ async def list_conversations(
     count_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(count_stmt)).scalar_one()
 
-    stmt = stmt.offset((page - 1) * page_size).limit(page_size)
-    result = await db.execute(stmt)
-    conversations = result.scalars().all()
+    msg_count_sq = (
+        select(func.count(Message.id))
+        .where(Message.conversation_id == Conversation.id)
+        .correlate(Conversation)
+        .scalar_subquery()
+        .label("message_count")
+    )
+    last_msg_sq = (
+        select(Message.content)
+        .where(Message.conversation_id == Conversation.id)
+        .order_by(Message.created_at.desc())
+        .limit(1)
+        .correlate(Conversation)
+        .scalar_subquery()
+        .label("last_message")
+    )
+
+    detail_stmt = (
+        select(Conversation, msg_count_sq, last_msg_sq)
+        .order_by(Conversation.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    if knowledge_base_id is not None:
+        detail_stmt = detail_stmt.where(Conversation.knowledge_base_ids.isnot(None))
+
+    detail_result = await db.execute(detail_stmt)
 
     items = []
-    for conv in conversations:
+    for conv, msg_count, last_msg_content in detail_result.all():
         if knowledge_base_id is not None:
             kb_ids = conv.knowledge_base_ids or []
             if knowledge_base_id not in kb_ids:
                 continue
-
-        msg_count_result = await db.execute(select(func.count()).where(Message.conversation_id == conv.id))
-        msg_count = msg_count_result.scalar_one()
-
-        last_msg_result = await db.execute(
-            select(Message).where(Message.conversation_id == conv.id).order_by(Message.created_at.desc()).limit(1)
-        )
-        last_msg = last_msg_result.scalar_one_or_none()
 
         items.append(
             ConversationListSchema(
@@ -65,8 +81,8 @@ async def list_conversations(
                 tool_mode=conv.tool_mode,
                 created_at=conv.created_at,
                 updated_at=conv.updated_at,
-                message_count=msg_count,
-                last_message_preview=(last_msg.content[:100] if last_msg else ""),
+                message_count=msg_count or 0,
+                last_message_preview=(last_msg_content[:100] if last_msg_content else ""),
             )
         )
 

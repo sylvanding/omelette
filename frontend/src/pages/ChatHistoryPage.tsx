@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { conversationApi } from '@/services/chat-api';
 import type { Conversation } from '@/types/chat';
 
@@ -21,8 +23,13 @@ export default function ChatHistoryPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => conversationApi.delete(id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast.success(t('common.deleteSuccess'));
+    },
+    onError: (error: Error) => {
+      toast.error(t('common.deleteFailed'), { description: error.message });
+    },
   });
 
   const conversations: Conversation[] = data?.data?.items ?? [];
@@ -111,16 +118,22 @@ export default function ChatHistoryPage() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (confirm(t('history.confirmDelete')))
-                        deleteMutation.mutate(conv.id);
-                    }}
-                    disabled={deleteMutation.isPending}
-                    className="ml-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        disabled={deleteMutation.isPending}
+                        className="ml-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    }
+                    title={t('common.confirmDeleteTitle')}
+                    description={t('history.confirmDelete')}
+                    confirmText={t('common.delete')}
+                    cancelText={t('common.cancel')}
+                    onConfirm={() => deleteMutation.mutate(conv.id)}
+                    destructive
+                  />
                 </motion.div>
               ))}
             </div>

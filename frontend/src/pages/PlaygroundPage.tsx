@@ -32,7 +32,7 @@ export default function PlaygroundPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const { data: projectsData } = useQuery({
+  const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: () => projectApi.list(1, 100),
   });
@@ -163,7 +163,11 @@ export default function PlaygroundPage() {
             </Button>
             {showKBPicker && (
               <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-popover p-2 shadow-lg">
-                {projects.length === 0 ? (
+                {isLoadingProjects ? (
+                  <p className="p-2 text-xs text-muted-foreground">
+                    {t('common.loading')}
+                  </p>
+                ) : projects.length === 0 ? (
                   <p className="p-2 text-xs text-muted-foreground">
                     {t('playground.noKB')}
                   </p>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AppShell from '@/components/layout/AppShell';
 import PlaygroundPage from '@/pages/PlaygroundPage';
@@ -50,6 +51,7 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        <Toaster richColors position="top-right" />
       </QueryClientProvider>
     </ErrorBoundary>
   );
