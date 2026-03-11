@@ -258,7 +258,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
             if state.get("cancelled"):
                 break
             try:
-                result = ocr.process_pdf(paper.pdf_path)
+                import asyncio
+
+                result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
                 if result.get("error"):
                     paper.status = PaperStatus.ERROR
                     continue

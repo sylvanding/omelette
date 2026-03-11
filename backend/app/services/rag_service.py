@@ -115,7 +115,9 @@ class RAGService:
             node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=ref_doc_id)
             nodes.append(node)
 
-        index.insert_nodes(nodes)
+        import asyncio
+
+        await asyncio.to_thread(index.insert_nodes, nodes)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
     async def index_documents(
@@ -133,8 +135,10 @@ class RAGService:
         splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         nodes = splitter.get_nodes_from_documents(documents)
 
+        import asyncio
+
         index = self._get_index(project_id)
-        index.insert_nodes(nodes)
+        await asyncio.to_thread(index.insert_nodes, nodes)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
     async def query(
@@ -154,9 +158,11 @@ class RAGService:
                 "confidence": 0.0,
             }
 
+        import asyncio
+
         index = self._get_index(project_id)
         retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
-        retrieved_nodes = retriever.retrieve(question)
+        retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
 
         if not retrieved_nodes:
             return {"answer": "No relevant documents found.", "sources": [], "confidence": 0.0}

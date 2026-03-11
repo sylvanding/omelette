@@ -68,7 +68,8 @@ async def upload_pdfs(
                     detail=f"File {upload_file.filename} exceeds {MAX_FILE_SIZE_MB}MB limit",
                 )
 
-            saved_name = f"{uuid.uuid4().hex}_{upload_file.filename}"
+            safe_filename = Path(upload_file.filename or "upload.pdf").name.replace("..", "")
+            saved_name = f"{uuid.uuid4().hex}_{safe_filename}"
             saved_path = project_pdf_dir / saved_name
             saved_path.write_bytes(content)
             total_uploaded += 1

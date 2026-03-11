@@ -5,7 +5,7 @@ hero:
   text: "Scientific Literature Lifecycle Management"
   tagline: "From keyword search to RAG-powered writing assistance — manage your entire research workflow."
   image:
-    src: /omelette/logo-mascot.png
+    src: /logo-mascot.png
     alt: Omelette Mascot
   actions:
     - theme: brand
