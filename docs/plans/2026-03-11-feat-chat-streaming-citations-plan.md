@@ -1,7 +1,7 @@
 ---
 title: "feat: 聊天系统、流式输出与引用追踪"
 type: feat
-status: active
+status: completed
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---

@@ -1,7 +1,7 @@
 ---
 title: "feat: 前端 UI 重构与 shadcn/ui 集成"
 type: feat
-status: active
+status: completed
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---
