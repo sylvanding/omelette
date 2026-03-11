@@ -45,6 +45,16 @@ app.add_middleware(
 
 app.include_router(api_router)
 
+# MCP Server — expose tools and resources to AI IDEs
+try:
+    from app.mcp_server import mcp as mcp_server
+
+    mcp_app = mcp_server.streamable_http_app()
+    app.mount("/mcp", mcp_app)
+    logger.info("MCP server mounted at /mcp")
+except Exception as e:
+    logger.warning("MCP server mount failed: %s", e)
+
 
 @app.get("/")
 async def root():

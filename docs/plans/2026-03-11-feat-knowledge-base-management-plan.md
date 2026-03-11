@@ -1,7 +1,7 @@
 ---
 title: "feat: 知识库管理与去重冲突处理"
 type: feat
-status: active
+status: in_progress
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---
