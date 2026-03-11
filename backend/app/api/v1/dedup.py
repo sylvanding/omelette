@@ -85,6 +85,8 @@ async def resolve_conflict(
     if len(parts) != 2:
         raise HTTPException(status_code=400, detail="Invalid conflict_id format")
     old_paper_id_str, saved_filename = parts
+    if saved_filename != Path(saved_filename).name or ".." in saved_filename:
+        raise HTTPException(status_code=400, detail="Invalid filename in conflict_id")
     try:
         old_paper_id = int(old_paper_id_str)
     except ValueError as err:
@@ -166,6 +168,9 @@ async def auto_resolve_conflicts(
             continue
 
         old_paper_id_str, saved_filename = parts
+        if saved_filename != Path(saved_filename).name or ".." in saved_filename:
+            resolutions.append({"conflict_id": conflict_id, "error": "Invalid filename"})
+            continue
         try:
             old_paper_id = int(old_paper_id_str)
         except ValueError:

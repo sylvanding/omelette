@@ -289,20 +289,23 @@ async def get_paper_summary(paper_id: int, summary_type: str = "abstract") -> st
         if not paper:
             return f"Error: Paper {paper_id} not found."
 
-        if summary_type == "abstract" or summary_type != "llm":
+        if summary_type == "abstract":
             return f"""## Paper Summary
 
 **{paper.title}**
 
 {paper.abstract or "No abstract available."}"""
 
-        return f"""## Paper Summary
+        if summary_type == "llm":
+            return f"""## Paper Summary
 
 **{paper.title}**
 
 {paper.abstract or "No abstract available."}
 
 (LLM summary requires an active LLM connection. Use the abstract above.)"""
+
+        return f"Error: Unknown summary type '{summary_type}'. Use 'abstract' or 'llm'."
 
 
 @mcp.tool()
@@ -389,8 +392,12 @@ async def get_kb_detail(kb_id: str) -> str:
     """Get knowledge base details."""
     from sqlalchemy import func, select
 
-    async with get_session() as db:
+    try:
         kid = int(kb_id)
+    except (ValueError, TypeError):
+        return json.dumps({"error": f"Invalid knowledge base ID: {kb_id}"})
+
+    async with get_session() as db:
         project = await db.get(Project, kid)
         if not project:
             return json.dumps({"error": f"Knowledge base {kb_id} not found"})
@@ -422,8 +429,12 @@ async def get_kb_detail(kb_id: str) -> str:
 @mcp.resource("omelette://papers/{paper_id}")
 async def get_paper_resource(paper_id: str) -> str:
     """Get paper details as JSON."""
-    async with get_session() as db:
+    try:
         pid = int(paper_id)
+    except (ValueError, TypeError):
+        return json.dumps({"error": f"Invalid paper ID: {paper_id}"})
+
+    async with get_session() as db:
         paper = await db.get(Paper, pid)
         if not paper:
             return json.dumps({"error": f"Paper {paper_id} not found"})
@@ -454,8 +465,12 @@ async def get_paper_chunks(paper_id: str) -> str:
     """Get paper text chunks (for RAG inspection)."""
     from sqlalchemy import select
 
-    async with get_session() as db:
+    try:
         pid = int(paper_id)
+    except (ValueError, TypeError):
+        return json.dumps({"error": f"Invalid paper ID: {paper_id}"})
+
+    async with get_session() as db:
         result = await db.execute(select(PaperChunk).where(PaperChunk.paper_id == pid).order_by(PaperChunk.chunk_index))
         chunks = result.scalars().all()
 

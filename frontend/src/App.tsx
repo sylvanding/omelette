@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import AppShell from '@/components/layout/AppShell';
 import PlaygroundPage from '@/pages/PlaygroundPage';
 import KnowledgeBasesPage from '@/pages/KnowledgeBasesPage';
@@ -26,29 +27,31 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppShell />}>
-            <Route index element={<PlaygroundPage />} />
-            <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
-            <Route path="history" element={<ChatHistoryPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="projects/:projectId" element={<ProjectDetail />}>
-              <Route index element={<ProjectOverview />} />
-              <Route path="papers" element={<PapersPage />} />
-              <Route path="keywords" element={<KeywordsPage />} />
-              <Route path="search" element={<SearchPage />} />
-              <Route path="rag" element={<RAGChatPage />} />
-              <Route path="writing" element={<WritingPage />} />
-              <Route path="tasks" element={<TasksPage />} />
-              <Route path="subscriptions" element={<SubscriptionsPage />} />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<AppShell />}>
+              <Route index element={<PlaygroundPage />} />
+              <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
+              <Route path="history" element={<ChatHistoryPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="projects/:projectId" element={<ProjectDetail />}>
+                <Route index element={<ProjectOverview />} />
+                <Route path="papers" element={<PapersPage />} />
+                <Route path="keywords" element={<KeywordsPage />} />
+                <Route path="search" element={<SearchPage />} />
+                <Route path="rag" element={<RAGChatPage />} />
+                <Route path="writing" element={<WritingPage />} />
+                <Route path="tasks" element={<TasksPage />} />
+                <Route path="subscriptions" element={<SubscriptionsPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

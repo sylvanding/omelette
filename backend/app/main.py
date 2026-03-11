@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import api_router
 from app.config import settings
 from app.database import init_db
+from app.middleware.auth import ApiKeyMiddleware
 
 logging.basicConfig(
     level=logging.DEBUG if settings.app_debug else logging.INFO,
@@ -20,6 +21,8 @@ logger = logging.getLogger("omelette")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Omelette v0.1.0 ...")
+    if settings.app_env == "production" and settings.app_secret_key == "change-me-to-a-random-secret-key":
+        logger.warning("SECURITY: Using default secret key in production! Set APP_SECRET_KEY in .env")
     await init_db()
     logger.info("Database initialized")
     yield
@@ -35,6 +38,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(ApiKeyMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

@@ -146,6 +146,9 @@ async def run_paper_pipeline(project_id: int, paper_id: int, db: AsyncSession = 
     project = await db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    paper = await db.get(Paper, paper_id)
+    if not paper or paper.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Paper not found in this project")
     svc = PipelineService(db)
     result = await svc.process_paper(paper_id)
     return ApiResponse(data=result)

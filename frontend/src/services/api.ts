@@ -78,7 +78,8 @@ export const ragApi = {
       signal,
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const reader = response.body!.getReader();
+    if (!response.body) throw new Error('Response body is null — streaming not supported');
+    const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';
     let currentEvent = '';
