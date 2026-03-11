@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,12 @@ export default function ChatInput({
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!isLoading) textareaRef.current?.focus();
-  }, [isLoading]);
-
   const handleSubmit = () => {
     const trimmed = value.trim();
     if (!trimmed || isLoading || disabled) return;
     onSend(trimmed);
     setValue('');
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

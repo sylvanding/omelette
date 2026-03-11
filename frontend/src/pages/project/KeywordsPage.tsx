@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Plus, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LoadingState } from '@/components/ui/loading-state';
 import { keywordApi } from '@/services/api';
 import type { Keyword } from '@/types';
 import { cn } from '@/lib/utils';
@@ -18,7 +21,6 @@ const DATABASES = [
 export default function KeywordsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
-  const queryClient = useQueryClient();
   const pid = Number(projectId!);
 
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3 | 'all'>(1);
@@ -38,38 +40,33 @@ export default function KeywordsPage() {
     enabled: !!pid,
   });
 
-  const createMutation = useMutation({
+  const createMutation = useToastMutation({
     mutationFn: (data: Partial<Keyword>) => keywordApi.create(pid, data),
+    successMessage: t('common.createSuccess'),
+    errorMessage: t('common.createFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keywords', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       setFormTerm('');
       setFormTermEn('');
       setFormCategory('');
       setFormSynonyms('');
-      toast.success(t('common.createSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.createFailed'), { description: error.message });
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (keywordId: number) => keywordApi.delete(pid, keywordId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keywords', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
   });
 
-  const expandMutation = useMutation({
+  const expandMutation = useToastMutation({
     mutationFn: (seedTerms: string[]) => keywordApi.expand(pid, seedTerms),
+    successMessage: t('keywords.expandSuccess'),
+    errorMessage: t('keywords.expandFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
     onSuccess: (res) => {
-      const terms = res?.data?.expanded_terms ?? [];
+      const terms = res?.expanded_terms ?? [];
       if (terms.length > 0) {
         terms.forEach((term: string) => {
           createMutation.mutate({
@@ -89,8 +86,8 @@ export default function KeywordsPage() {
     enabled: !!pid,
   });
 
-  const keywords: Keyword[] = keywordsData?.data ?? [];
-  const formula = formulaQuery.data?.data?.formula ?? '';
+  const keywords: Keyword[] = keywordsData ?? [];
+  const formula = formulaQuery.data?.formula ?? '';
 
   const handleAddKeyword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,57 +123,49 @@ export default function KeywordsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">{t('keywords.title')}</h1>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground">
           {t('keywords.addKeyword')}
         </h2>
         <form onSubmit={handleAddKeyword} className="flex flex-wrap gap-3">
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.term')}
             value={formTerm}
             onChange={(e) => setFormTerm(e.target.value)}
-            className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[120px] w-auto"
             required
           />
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.termEn')}
             value={formTermEn}
             onChange={(e) => setFormTermEn(e.target.value)}
-            className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[120px] w-auto"
           />
           <select
             value={formLevel}
             onChange={(e) => setFormLevel(Number(e.target.value) as 1 | 2 | 3)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
             <option value={1}>{t('keywords.level', { level: 1 })}</option>
             <option value={2}>{t('keywords.level', { level: 2 })}</option>
             <option value={3}>{t('keywords.level', { level: 3 })}</option>
           </select>
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.category')}
             value={formCategory}
             onChange={(e) => setFormCategory(e.target.value)}
-            className="min-w-[100px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[100px] w-auto"
           />
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.synonyms')}
             value={formSynonyms}
             onChange={(e) => setFormSynonyms(e.target.value)}
-            className="min-w-[180px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[180px] flex-1"
           />
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          <Button type="submit" disabled={createMutation.isPending} className="gap-1.5">
             <Plus className="size-4" />
             {t('common.add')}
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -185,20 +174,21 @@ export default function KeywordsPage() {
           {t('keywords.aiExpand')}
         </h2>
         <div className="flex flex-wrap gap-2">
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.seedTerms')}
             value={expandSeeds}
             onChange={(e) => setExpandSeeds(e.target.value)}
-            className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[200px] flex-1"
           />
-          <button
+          <Button
+            variant="secondary"
             onClick={handleExpand}
             disabled={expandMutation.isPending || !expandSeeds.trim()}
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
+            className="gap-1.5"
+          >
             <Sparkles className="size-4" />
             {t('keywords.expand')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -210,30 +200,25 @@ export default function KeywordsPage() {
           <select
             value={selectedDb}
             onChange={(e) => setSelectedDb(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
             {DATABASES.map((db) => (
               <option key={db.id} value={db.id}>
                 {db.name}
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="outline"
             onClick={() => formulaQuery.refetch()}
             disabled={formulaQuery.isFetching}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80 disabled:opacity-50">
+          >
             {t('common.generate')}
-          </button>
+          </Button>
           {formula && (
-            <button
-              onClick={copyFormula}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-              {copied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}{' '}
+            <Button onClick={copyFormula} className="gap-1.5">
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copied ? t('common.copied') : t('common.copy')}
-            </button>
+            </Button>
           )}
         </div>
         {formulaQuery.isFetching && (
@@ -264,7 +249,7 @@ export default function KeywordsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-muted-foreground">{t('common.loading')}</p>
+          <LoadingState message={t('common.loading')} />
         ) : (
           <div className="space-y-4">
             {(activeLevel === 'all' ? [1, 2, 3] : [activeLevel]).map((level) => (

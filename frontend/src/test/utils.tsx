@@ -2,6 +2,7 @@ import { render, type RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
+import { Toaster } from 'sonner';
 import i18n from '@/i18n';
 
 function createTestQueryClient() {
@@ -22,7 +23,10 @@ export function renderWithProviders(
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>
         <I18nextProvider i18n={i18n}>
-          <BrowserRouter>{children}</BrowserRouter>
+          <BrowserRouter>
+            {children}
+            <Toaster />
+          </BrowserRouter>
         </I18nextProvider>
       </QueryClientProvider>
     ),

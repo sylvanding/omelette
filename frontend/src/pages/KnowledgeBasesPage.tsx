@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Plus, Trash2, BookOpen, FileText, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -17,12 +17,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LoadingState } from '@/components/ui/loading-state';
 import { projectApi } from '@/services/api';
 import type { Project } from '@/types';
 
 export default function KnowledgeBasesPage() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
@@ -33,33 +33,27 @@ export default function KnowledgeBasesPage() {
     queryFn: () => projectApi.list(1, 100),
   });
 
-  const createMutation = useMutation({
+  const createMutation = useToastMutation({
     mutationFn: (body: { name: string; description?: string }) =>
       projectApi.create(body),
+    successMessage: t('common.createSuccess'),
+    errorMessage: t('common.createFailed'),
+    invalidateKeys: [['projects']],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowCreate(false);
       setName('');
       setDesc('');
-      toast.success(t('common.createSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.createFailed'), { description: error.message });
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (id: number) => projectApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['projects']],
   });
 
-  const projects: Project[] = data?.data?.items ?? [];
+  const projects: Project[] = data?.items ?? [];
   const filtered = search
     ? projects.filter(
         (p) =>
@@ -106,9 +100,7 @@ export default function KnowledgeBasesPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground">
-            {t('common.loading')}
-          </div>
+          <LoadingState message={t('common.loading')} />
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-12 text-center">
             <BookOpen className="mx-auto mb-3 size-12 text-muted-foreground" />

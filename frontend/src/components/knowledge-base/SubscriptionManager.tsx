@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Plus,
   Play,
@@ -40,6 +41,8 @@ import {
   type SubscriptionCreate,
 } from '@/services/subscription-api';
 import { cn } from '@/lib/utils';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const SOURCE_OPTIONS = [
   { id: 'semantic_scholar', labelKey: 'subscriptions.sources.semanticScholar' },
@@ -60,7 +63,6 @@ interface SubscriptionManagerProps {
 
 export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   const [form, setForm] = useState<SubscriptionCreate>({
@@ -77,17 +79,19 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
     enabled: !!projectId,
   });
 
-  const createMutation = useMutation({
+  const createMutation = useToastMutation({
     mutationFn: (payload: SubscriptionCreate) =>
       subscriptionApi.create(projectId, payload),
+    successMessage: t('common.createSuccess'),
+    errorMessage: t('common.createFailed'),
+    invalidateKeys: [['subscriptions', projectId]],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions', projectId] });
       setDialogOpen(false);
       resetForm();
     },
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useToastMutation({
     mutationFn: ({
       subId,
       payload,
@@ -95,29 +99,31 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
       subId: number;
       payload: Partial<SubscriptionCreate & { is_active: boolean }>;
     }) => subscriptionApi.update(projectId, subId, payload),
+    successMessage: t('common.updateSuccess'),
+    errorMessage: t('common.updateFailed'),
+    invalidateKeys: [['subscriptions', projectId]],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions', projectId] });
       setDialogOpen(false);
       setEditingSub(null);
       resetForm();
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (subId: number) => subscriptionApi.delete(projectId, subId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions', projectId] });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['subscriptions', projectId]],
   });
 
-  const triggerMutation = useMutation({
+  const triggerMutation = useToastMutation({
     mutationFn: (subId: number) => subscriptionApi.trigger(projectId, subId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscriptions', projectId] });
-    },
+    successMessage: t('subscriptions.triggerSuccess'),
+    errorMessage: t('subscriptions.triggerFailed'),
+    invalidateKeys: [['subscriptions', projectId]],
   });
 
-  const subscriptions: Subscription[] = (data?.data as Subscription[]) ?? [];
+  const subscriptions: Subscription[] = data ?? [];
 
   const resetForm = () => {
     setForm({
@@ -176,11 +182,7 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-20 text-muted-foreground">
-        {t('common.loading')}
-      </div>
-    );
+    return <LoadingState message={t('common.loading')} />;
   }
 
   return (
@@ -194,18 +196,11 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
       </div>
 
       {subscriptions.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Rss className="mb-4 size-12 text-muted-foreground" />
-            <p className="mb-4 text-center text-muted-foreground">
-              {t('subscriptions.empty')}
-            </p>
-            <Button variant="outline" onClick={openCreateDialog}>
-              <Plus className="size-4" />
-              {t('subscriptions.newSubscription')}
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Rss}
+          title={t('subscriptions.empty')}
+          action={{ label: t('subscriptions.newSubscription'), onClick: openCreateDialog }}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {subscriptions.map((sub) => (
@@ -218,7 +213,6 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
               onToggleActive={() => handleToggleActive(sub)}
               isTriggering={triggerMutation.isPending}
               isUpdating={updateMutation.isPending}
-              t={t}
             />
           ))}
         </div>
@@ -354,7 +348,6 @@ interface SubscriptionCardProps {
   onToggleActive: () => void;
   isTriggering: boolean;
   isUpdating: boolean;
-  t: (key: string) => string;
 }
 
 function SubscriptionCard({
@@ -365,11 +358,12 @@ function SubscriptionCard({
   onToggleActive,
   isTriggering,
   isUpdating,
-  t,
 }: SubscriptionCardProps) {
+  const { t, i18n } = useTranslation();
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('subscriptions.neverRun');
-    return new Date(dateStr).toLocaleString();
+    return new Date(dateStr).toLocaleString(i18n.language === 'zh' ? 'zh-CN' : 'en-US');
   };
 
   return (
@@ -430,7 +424,7 @@ function SubscriptionCard({
           </span>
           <span className="flex items-center gap-1">
             <RefreshCw className="size-3" />
-            {(t as (key: string, opts?: Record<string, unknown>) => string)('subscriptions.totalFound', { count: sub.total_found })}
+            {t('subscriptions.totalFound', { count: sub.total_found })}
           </span>
         </div>
       </CardContent>

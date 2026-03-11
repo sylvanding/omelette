@@ -33,14 +33,27 @@
     "updateFailed": "Update failed",
     "operationFailed": "Operation failed",
     "confirmDeleteTitle": "Confirm Delete",
-    "confirmDeleteDesc": "This action cannot be undone."
+    "confirmDeleteDesc": "This action cannot be undone.",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Save failed"
+  },
+  "error": {
+    "boundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred.",
+      "reload": "Reload Page"
+    }
   },
   "nav": {
     "chat": "Chat",
     "knowledgeBases": "Knowledge Bases",
     "history": "History",
+    "tasks": "Tasks",
     "settings": "Settings",
     "home": "Omelette Home"
+  },
+  "discovery": {
+    "title": "Discovery"
   },
   "theme": {
     "light": "Light",
@@ -62,6 +75,7 @@
     "noKB": "No knowledge bases yet, create a project first",
     "disclaimer": "AI responses may contain inaccuracies. Please verify.",
     "streamError": "Sorry, an error occurred. Please try again.",
+    "stop": "Stop generating",
     "suggestions": {
       "summarize": "Summarize the current research in this field",
       "citation": "Find citations supporting this viewpoint",
@@ -180,6 +194,8 @@
     "noMatchDesc": "Try different search terms",
     "messageCount": "{{count}} messages",
     "confirmDelete": "Are you sure you want to delete this conversation?",
+    "conversationNotFound": "Conversation not found",
+    "conversationNotFoundDesc": "This conversation may have been deleted.",
     "timeJustNow": "Just now",
     "timeMinutes": "{{count}} min ago",
     "timeHours": "{{count}} hours ago",
@@ -229,7 +245,7 @@
     "domain": "Domain",
     "created": "Created",
     "subscriptions": "Subscriptions",
-    "navHint": "Use the sidebar to navigate to Papers, Keywords, Search, RAG Chat, Writing, or Tasks."
+    "navHint": "Use the sidebar to navigate to Papers, Keywords, Search, Writing, or Tasks."
   },
   "papers": {
     "title": "Papers",
@@ -243,6 +259,8 @@
     "authors": "Authors:",
     "downloadPdf": "Download PDF",
     "runOcr": "Run OCR",
+    "ocrSuccess": "OCR started",
+    "ocrFailed": "OCR failed",
     "confirmDelete": "Delete this paper?",
     "total": "{{count}} paper(s)",
     "statuses": {
@@ -271,6 +289,8 @@
     "aiExpand": "AI Expand",
     "seedTerms": "Seed terms (comma-separated)",
     "expand": "Expand",
+    "expandSuccess": "Expanded successfully",
+    "expandFailed": "Expand failed",
     "searchFormula": "Search Formula",
     "level": "Level {{level}}",
     "noKeywords": "No keywords",
@@ -286,7 +306,11 @@
     "available": "available",
     "results": "Results ({{count}})",
     "importAll": "Import All to Project",
-    "imported": "{{count}} paper(s) imported"
+    "imported": "{{count}} paper(s) imported",
+    "searchSuccess": "Search completed",
+    "searchFailed": "Search failed",
+    "importSuccess": "Import successful",
+    "importFailed": "Import failed"
   },
   "rag": {
     "title": "RAG Chat",
@@ -355,6 +379,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "trigger": "Trigger",
+    "triggerSuccess": "Triggered successfully",
+    "triggerFailed": "Trigger failed",
     "neverRun": "Never run",
     "totalFound": "{{count}} found",
     "active": "Active",

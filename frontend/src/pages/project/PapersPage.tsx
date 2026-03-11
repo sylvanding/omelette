@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Search,
   ChevronDown,
@@ -14,17 +14,20 @@ import {
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { paperApi, ocrApi } from '@/services/api';
+import { paperApi, ocrApi, projectApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
 import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 
 export default function PapersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
 
   const STATUS_OPTIONS: { value: PaperStatus | ''; label: string }[] = [
@@ -55,6 +58,12 @@ export default function PapersPage() {
   const [showAddPaper, setShowAddPaper] = useState(false);
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
 
+  const { data: projectData } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => projectApi.get(pid),
+    enabled: !!pid,
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['papers', pid, search, status, year, sortBy, order],
     queryFn: () =>
@@ -68,27 +77,22 @@ export default function PapersPage() {
     enabled: !!pid,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (paperId: number) => paperApi.delete(pid, paperId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
-  const ocrMutation = useMutation({
+  const ocrMutation = useToastMutation({
     mutationFn: (paperIds: number[]) => ocrApi.process(pid, paperIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-    },
+    successMessage: t('papers.ocrSuccess'),
+    errorMessage: t('papers.ocrFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
-  const papers: Paper[] = data?.data?.items ?? [];
-  const total = data?.data?.total ?? 0;
+  const papers: Paper[] = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   const handleAddComplete = (uploadResult?: UploadResult) => {
     queryClient.invalidateQueries({ queryKey: ['papers', pid] });
@@ -120,6 +124,13 @@ export default function PapersPage() {
 
   return (
     <div className="space-y-4">
+      {projectData && (
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <span className="text-xs">{t('project.domain')}: {projectData.domain || '—'}</span>
+          <span className="text-xs">{t('project.keywords')}: {projectData.keyword_count ?? 0}</span>
+          <span className="text-xs">{t('project.created')}: {new Date(projectData.created_at).toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US')}</span>
+        </div>
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('papers.title')}</h1>
         <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">
@@ -141,18 +152,17 @@ export default function PapersPage() {
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
+            <Input
               placeholder={t('papers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
+              className="pl-9"
             />
           </div>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as PaperStatus | '')}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value || 'all'} value={o.value}>
@@ -160,17 +170,17 @@ export default function PapersPage() {
               </option>
             ))}
           </select>
-          <input
+          <Input
             type="number"
             placeholder={t('common.year')}
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="w-24 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-24"
           />
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -178,29 +188,25 @@ export default function PapersPage() {
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
           >
             {order === 'asc' ? t('common.asc') : t('common.desc')}
-          </button>
+          </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12 text-muted-foreground">
-          {t('common.loading')}
-        </div>
+        <LoadingState message={t('common.loading')} />
       ) : papers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-muted-foreground">
-          <FileText className="mb-4 size-12 opacity-30" />
-          <p className="mb-1 text-sm font-medium">{t('papers.empty')}</p>
-          <p className="mb-4 text-xs">{t('papers.emptyHint')}</p>
-          <Button variant="outline" size="sm" onClick={() => setShowAddPaper(true)} className="gap-1.5">
-            <Plus className="size-4" />
-            {t('papers.addPaper')}
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={t('papers.empty')}
+          description={t('papers.emptyHint')}
+          action={{ label: t('papers.addPaper'), onClick: () => setShowAddPaper(true) }}
+        />
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">

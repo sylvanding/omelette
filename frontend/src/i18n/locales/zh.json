@@ -33,14 +33,27 @@
     "updateFailed": "更新失败",
     "operationFailed": "操作失败",
     "confirmDeleteTitle": "确认删除",
-    "confirmDeleteDesc": "此操作无法撤销。"
+    "confirmDeleteDesc": "此操作无法撤销。",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败"
+  },
+  "error": {
+    "boundary": {
+      "title": "出错了",
+      "description": "发生了意外错误。",
+      "reload": "重新加载页面"
+    }
   },
   "nav": {
     "chat": "对话",
     "knowledgeBases": "知识库",
     "history": "历史记录",
+    "tasks": "任务",
     "settings": "设置",
     "home": "Omelette 首页"
+  },
+  "discovery": {
+    "title": "发现"
   },
   "theme": {
     "light": "浅色",
@@ -62,6 +75,7 @@
     "noKB": "暂无知识库，请先创建项目",
     "disclaimer": "AI 回答可能存在不准确之处，请注意甄别",
     "streamError": "抱歉，发生了错误，请重试。",
+    "stop": "停止生成",
     "suggestions": {
       "summarize": "帮我总结这个领域的研究现状",
       "citation": "找出支持这一观点的引用",
@@ -180,6 +194,8 @@
     "noMatchDesc": "试试其他搜索词",
     "messageCount": "{{count}} 条消息",
     "confirmDelete": "确定删除这条对话？",
+    "conversationNotFound": "对话未找到",
+    "conversationNotFoundDesc": "该对话可能已被删除。",
     "timeJustNow": "刚刚",
     "timeMinutes": "{{count}} 分钟前",
     "timeHours": "{{count}} 小时前",
@@ -229,7 +245,7 @@
     "domain": "领域",
     "created": "创建时间",
     "subscriptions": "订阅",
-    "navHint": "使用侧边栏导航到论文、关键词、检索、RAG 问答、写作或任务。"
+    "navHint": "使用侧边栏导航到论文、关键词、检索、写作或任务。"
   },
   "papers": {
     "title": "论文",
@@ -243,6 +259,8 @@
     "authors": "作者：",
     "downloadPdf": "下载 PDF",
     "runOcr": "运行 OCR",
+    "ocrSuccess": "OCR 已启动",
+    "ocrFailed": "OCR 失败",
     "confirmDelete": "确定删除这篇论文？",
     "total": "{{count}} 篇论文",
     "statuses": {
@@ -271,6 +289,8 @@
     "aiExpand": "AI 扩展",
     "seedTerms": "种子词（逗号分隔）",
     "expand": "扩展",
+    "expandSuccess": "扩展成功",
+    "expandFailed": "扩展失败",
     "searchFormula": "检索式",
     "level": "级别 {{level}}",
     "noKeywords": "暂无关键词",
@@ -286,7 +306,11 @@
     "available": "可用",
     "results": "结果（{{count}}）",
     "importAll": "全部导入项目",
-    "imported": "已导入 {{count}} 篇论文"
+    "imported": "已导入 {{count}} 篇论文",
+    "searchSuccess": "检索完成",
+    "searchFailed": "检索失败",
+    "importSuccess": "导入成功",
+    "importFailed": "导入失败"
   },
   "rag": {
     "title": "RAG 问答",
@@ -355,6 +379,8 @@
     "edit": "编辑",
     "delete": "删除",
     "trigger": "手动触发",
+    "triggerSuccess": "触发成功",
+    "triggerFailed": "触发失败",
     "neverRun": "从未运行",
     "totalFound": "已找到 {{count}} 篇",
     "active": "启用",

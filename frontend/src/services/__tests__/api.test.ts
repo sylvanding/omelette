@@ -7,15 +7,12 @@ describe('projectApi', () => {
   it('should fetch project list and return typed data', async () => {
     const result = await projectApi.list(1, 20);
 
-    expect(result).toHaveProperty('code', 200);
-    expect(result).toHaveProperty('message', 'ok');
-    expect(result).toHaveProperty('data');
-    expect(result.data).toHaveProperty('items');
-    expect(result.data).toHaveProperty('total', 2);
-    expect(result.data).toHaveProperty('page', 1);
-    expect(result.data).toHaveProperty('page_size', 100);
-    expect(result.data.items).toHaveLength(2);
-    expect(result.data.items[0]).toMatchObject({
+    expect(result).toHaveProperty('items');
+    expect(result).toHaveProperty('total', 2);
+    expect(result).toHaveProperty('page', 1);
+    expect(result).toHaveProperty('page_size', 100);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
       id: 1,
       name: 'Test KB',
       description: 'A test knowledge base',

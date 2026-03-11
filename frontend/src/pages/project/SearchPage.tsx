@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Search, Download, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { searchApi, paperApi, type SearchSource } from '@/services/api';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +32,6 @@ interface SearchPaper {
 export default function SearchPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
-  const queryClient = useQueryClient();
   const pid = Number(projectId!);
 
   const [query, setQuery] = useState('');
@@ -44,20 +46,22 @@ export default function SearchPage() {
     enabled: !!pid,
   });
 
-  const searchMutation = useMutation({
+  const searchMutation = useToastMutation({
     mutationFn: (params: { query?: string; sources?: string[]; max_results?: number }) =>
       searchApi.execute(pid, {
         query: params.query || query,
         sources: params.sources || sources,
         max_results: params.max_results ?? maxResults,
       }),
+    successMessage: t('searchPage.searchSuccess'),
+    errorMessage: t('searchPage.searchFailed'),
     onSuccess: (res) => {
-      setResults((res?.data?.papers as unknown as SearchPaper[]) ?? []);
-      setImported(res?.data?.imported ?? 0);
+      setResults((res?.papers as unknown as SearchPaper[]) ?? []);
+      setImported(res?.imported ?? 0);
     },
   });
 
-  const importMutation = useMutation({
+  const importMutation = useToastMutation({
     mutationFn: (papers: SearchPaper[]) =>
       paperApi.bulkImport(
         pid,
@@ -76,14 +80,15 @@ export default function SearchPage() {
           pdf_url: p.pdf_url ?? '',
         }))
       ),
+    successMessage: t('searchPage.importSuccess'),
+    errorMessage: t('searchPage.importFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      setImported(res?.data?.imported ?? 0);
+      setImported(res?.imported ?? 0);
     },
   });
 
-  const sourceList: SearchSource[] = sourcesData?.data ?? SOURCE_OPTIONS;
+  const sourceList: SearchSource[] = sourcesData ?? SOURCE_OPTIONS;
 
   const toggleSource = (id: string) => {
     setSources((prev) =>
@@ -102,7 +107,6 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">{t('searchPage.title')}</h1>
 
       <form
         onSubmit={handleSearch}
@@ -112,24 +116,20 @@ export default function SearchPage() {
             {t('searchPage.query')}
           </label>
           <div className="flex gap-2">
-            <input
-              type="text"
+            <Input
               placeholder={t('searchPage.queryPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="flex-1"
             />
-            <button
-              type="submit"
-              disabled={searchMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <Button type="submit" disabled={searchMutation.isPending} className="gap-1.5">
               {searchMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Search className="size-4" />
-              )}{' '}
+              )}
               {t('common.search')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -198,17 +198,14 @@ export default function SearchPage() {
             <h2 className="text-sm font-semibold text-foreground">
               {t('searchPage.results', { count: results.length })}
             </h2>
-            <button
-              onClick={handleImportAll}
-              disabled={importMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <Button onClick={handleImportAll} disabled={importMutation.isPending} className="gap-1.5">
               {importMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Download className="size-4" />
-              )}{' '}
+              )}
               {t('searchPage.importAll')}
-            </button>
+            </Button>
           </div>
           <ul className="divide-y divide-border max-h-[500px] overflow-y-auto">
             {results.map((paper, i) => (
