@@ -1,6 +1,11 @@
 """RAG knowledge base query API endpoints."""
 
+import asyncio
+import json
+import logging
+
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +16,8 @@ from app.models import Paper, PaperStatus
 from app.schemas.common import ApiResponse
 from app.services.llm_client import LLMClient
 from app.services.rag_service import RAGService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/projects/{project_id}/rag", tags=["rag"])
 
@@ -100,6 +107,100 @@ async def build_index(
             "collection": index_result["collection"],
             "papers_updated": len(papers),
         }
+    )
+
+
+@router.post("/index/stream")
+async def build_index_stream(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    rag: RAGService = Depends(get_rag_service),
+):
+    """SSE streaming rebuild — sends progress events so the UI stays responsive."""
+
+    async def _generate():
+        def _sse(event: str, data: dict) -> str:
+            return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+        try:
+            yield _sse("progress", {"stage": "fetching", "percent": 0, "message": "Fetching papers…"})
+
+            stmt = (
+                select(Paper)
+                .where(Paper.project_id == project_id)
+                .where(Paper.status.in_([PaperStatus.OCR_COMPLETE, PaperStatus.INDEXED]))
+                .options(selectinload(Paper.chunks))
+            )
+            result = await db.execute(stmt)
+            papers = result.scalars().all()
+
+            chunks_to_index: list[dict] = []
+            for paper in papers:
+                for chunk in paper.chunks:
+                    chunks_to_index.append(
+                        {
+                            "paper_id": chunk.paper_id,
+                            "paper_title": paper.title,
+                            "chunk_type": chunk.chunk_type or "text",
+                            "page_number": chunk.page_number or 0,
+                            "chunk_index": chunk.chunk_index or 0,
+                            "content": chunk.content,
+                        }
+                    )
+
+            if not chunks_to_index:
+                yield _sse(
+                    "complete",
+                    {"indexed": 0, "message": "No paper chunks found."},
+                )
+                return
+
+            progress_queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
+
+            def on_progress(stage: str, percent: int) -> None:
+                progress_queue.put_nowait((stage, percent))
+
+            index_task = asyncio.create_task(
+                rag.index_chunks(project_id=project_id, chunks=chunks_to_index, on_progress=on_progress)
+            )
+
+            while not index_task.done():
+                try:
+                    stage, pct = await asyncio.wait_for(progress_queue.get(), timeout=0.5)
+                    yield _sse("progress", {"stage": stage, "percent": pct})
+                except TimeoutError:
+                    pass
+
+            while not progress_queue.empty():
+                stage, pct = progress_queue.get_nowait()
+                yield _sse("progress", {"stage": stage, "percent": pct})
+
+            index_result = await index_task
+
+            for paper in papers:
+                paper.status = PaperStatus.INDEXED
+            await db.commit()
+
+            yield _sse(
+                "complete",
+                {
+                    "indexed": index_result["indexed"],
+                    "collection": index_result["collection"],
+                    "papers_updated": len(papers),
+                },
+            )
+        except Exception as exc:
+            logger.exception("SSE index build failed")
+            yield _sse("error", {"message": str(exc)})
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

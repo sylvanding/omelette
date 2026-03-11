@@ -285,7 +285,13 @@
     "emptyHintIndexed": "RAG 系统将搜索你已索引的论文。",
     "emptyHintNoIndex": "请先构建索引以启用 RAG 查询。",
     "sources": "来源",
-    "thinking": "思考中..."
+    "thinking": "思考中...",
+    "rebuild": {
+      "fetching": "获取论文",
+      "loadingModel": "加载模型",
+      "preparing": "准备数据",
+      "indexing": "构建索引"
+    }
   },
   "writing": {
     "title": "写作",

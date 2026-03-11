@@ -285,7 +285,13 @@
     "emptyHintIndexed": "The RAG system will search through your indexed papers.",
     "emptyHintNoIndex": "Build the index first to enable RAG queries.",
     "sources": "Sources",
-    "thinking": "Thinking..."
+    "thinking": "Thinking...",
+    "rebuild": {
+      "fetching": "Fetching papers",
+      "loadingModel": "Loading model",
+      "preparing": "Preparing chunks",
+      "indexing": "Indexing"
+    }
   },
   "writing": {
     "title": "Writing",
