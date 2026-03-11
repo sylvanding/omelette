@@ -18,6 +18,7 @@ import { projectApi } from '@/services/api';
 import type { Project } from '@/types';
 
 export default function KnowledgeBasesPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
@@ -62,7 +63,7 @@ export default function KnowledgeBasesPage() {
   const handleDelete = (e: React.MouseEvent, project: Project) => {
     e.preventDefault();
     e.stopPropagation();
-    if (confirm(`确定删除知识库「${project.name}」吗？`)) {
+    if (confirm(t('kb.confirmDelete', { name: project.name }))) {
       deleteMutation.mutate(project.id);
     }
   };
@@ -72,14 +73,14 @@ export default function KnowledgeBasesPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">知识库</h1>
+            <h1 className="text-2xl font-bold">{t('kb.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              管理你的文献知识库
+              {t('kb.subtitle')}
             </p>
           </div>
           <Button onClick={() => setShowCreate(true)} className="gap-1.5">
             <Plus className="size-4" />
-            新建知识库
+            {t('kb.new')}
           </Button>
         </div>
 
@@ -89,7 +90,7 @@ export default function KnowledgeBasesPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索知识库..."
+              placeholder={t('kb.searchPlaceholder')}
               className="pl-9"
             />
           </div>
@@ -97,21 +98,21 @@ export default function KnowledgeBasesPage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground">
-            加载中...
+            {t('common.loading')}
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-12 text-center">
             <BookOpen className="mx-auto mb-3 size-12 text-muted-foreground" />
             <h2 className="text-lg font-semibold">
-              {search ? '没有找到匹配的知识库' : '还没有知识库'}
+              {search ? t('kb.noMatch') : t('kb.empty')}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {search ? '试试其他搜索词' : '创建你的第一个知识库来管理文献'}
+              {search ? t('kb.noMatchDesc') : t('kb.emptyDesc')}
             </p>
             {!search && (
               <Button onClick={() => setShowCreate(true)} className="mt-4 gap-1.5">
                 <Plus className="size-4" />
-                新建知识库
+                {t('kb.new')}
               </Button>
             )}
           </div>
@@ -142,13 +143,13 @@ export default function KnowledgeBasesPage() {
 
                   <h3 className="font-semibold">{project.name}</h3>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                    {project.description || '暂无描述'}
+                    {project.description || t('kb.noDesc')}
                   </p>
 
                   <div className="mt-4 flex gap-2">
                     <Badge variant="secondary" className="gap-1">
                       <FileText className="size-3" />
-                      {project.paper_count} 篇
+                      {t('kb.paperCount', { count: project.paper_count })}
                     </Badge>
                   </div>
                 </Link>
@@ -161,37 +162,37 @@ export default function KnowledgeBasesPage() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新建知识库</DialogTitle>
+            <DialogTitle>{t('kb.createTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">名称</label>
+              <label className="mb-1.5 block text-sm font-medium">{t('kb.name')}</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="例如：深度学习综述"
+                placeholder={t('kb.namePlaceholder')}
                 autoFocus
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">描述</label>
+              <label className="mb-1.5 block text-sm font-medium">{t('kb.description')}</label>
               <Textarea
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                placeholder="简要描述这个知识库的主题（可选）"
+                placeholder={t('kb.descPlaceholder')}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleCreate}
               disabled={!name.trim() || createMutation.isPending}
             >
-              创建
+              {t('common.create')}
             </Button>
           </DialogFooter>
         </DialogContent>

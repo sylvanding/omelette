@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search,
@@ -13,25 +14,26 @@ import { paperApi, ocrApi } from '@/services/api';
 import type { Paper, PaperStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
-const STATUS_OPTIONS: { value: PaperStatus | ''; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'metadata_only', label: 'Metadata Only' },
-  { value: 'pdf_downloaded', label: 'PDF Downloaded' },
-  { value: 'ocr_complete', label: 'OCR Complete' },
-  { value: 'indexed', label: 'Indexed' },
-  { value: 'error', label: 'Error' },
-];
-
-const SORT_OPTIONS = [
-  { value: 'created_at', label: 'Created' },
-  { value: 'year', label: 'Year' },
-  { value: 'citation_count', label: 'Citations' },
-  { value: 'title', label: 'Title' },
-];
-
 export default function PapersPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
+
+  const STATUS_OPTIONS: { value: PaperStatus | ''; label: string }[] = [
+    { value: '', label: t('papers.statuses.all') },
+    { value: 'pending', label: t('papers.statuses.pending') },
+    { value: 'metadata_only', label: t('papers.statuses.metadata_only') },
+    { value: 'pdf_downloaded', label: t('papers.statuses.pdf_downloaded') },
+    { value: 'ocr_complete', label: t('papers.statuses.ocr_complete') },
+    { value: 'indexed', label: t('papers.statuses.indexed') },
+    { value: 'error', label: t('papers.statuses.error') },
+  ];
+
+  const SORT_OPTIONS = [
+    { value: 'created_at', label: t('papers.sortBy.created_at') },
+    { value: 'year', label: t('papers.sortBy.year') },
+    { value: 'citation_count', label: t('papers.sortBy.citation_count') },
+    { value: 'title', label: t('papers.sortBy.title') },
+  ];
   const queryClient = useQueryClient();
   const pid = Number(projectId!);
 
@@ -74,7 +76,7 @@ export default function PapersPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Papers</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('papers.title')}</h1>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
@@ -83,7 +85,7 @@ export default function PapersPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search title or abstract..."
+              placeholder={t('papers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
@@ -102,7 +104,7 @@ export default function PapersPage() {
           </select>
           <input
             type="number"
-            placeholder="Year"
+            placeholder={t('common.year')}
             value={year}
             onChange={(e) => setYear(e.target.value)}
             className="w-24 rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -122,14 +124,14 @@ export default function PapersPage() {
             onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
             className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
           >
-            {order === 'asc' ? '↑ Asc' : '↓ Desc'}
+            {order === 'asc' ? t('common.asc') : t('common.desc')}
           </button>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12 text-muted-foreground">
-          Loading...
+          {t('common.loading')}
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -139,22 +141,22 @@ export default function PapersPage() {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="w-8 px-4 py-3 text-left text-xs font-medium text-muted-foreground" />
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Title
+                    {t('common.title')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Journal
+                    {t('papers.journal')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Year
+                    {t('common.year')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Citations
+                    {t('papers.citations')}
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                    Status
+                    {t('common.status')}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -214,7 +216,7 @@ export default function PapersPage() {
                               target="_blank"
                               rel="noreferrer"
                               className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                              title="Download PDF">
+                              title={t('papers.downloadPdf')}>
                               <FileDown className="size-4" />
                             </a>
                           )}
@@ -223,18 +225,18 @@ export default function PapersPage() {
                               ocrMutation.mutate([paper.id])}
                             disabled={ocrMutation.isPending || paper.status === 'ocr_complete'}
                             className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50"
-                            title="Run OCR">
+                            title={t('papers.runOcr')}>
                             <Scan className="size-4" />
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm('Delete this paper?')) {
+                              if (confirm(t('papers.confirmDelete'))) {
                                 deleteMutation.mutate(paper.id);
                               }
                             }}
                             disabled={deleteMutation.isPending}
                             className="rounded p-1.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
-                            title="Delete">
+                            title={t('common.delete')}>
                             <Trash2 className="size-4" />
                           </button>
                         </div>
@@ -247,7 +249,7 @@ export default function PapersPage() {
                             {paper.abstract && (
                               <div>
                                 <span className="font-medium text-muted-foreground">
-                                  Abstract:
+                                  {t('papers.abstract')}
                                 </span>{' '}
                                 <span className="text-foreground">{paper.abstract}</span>
                               </div>
@@ -255,7 +257,7 @@ export default function PapersPage() {
                             {paper.authors && paper.authors.length > 0 && (
                               <div>
                                 <span className="font-medium text-muted-foreground">
-                                  Authors:
+                                  {t('papers.authors')}
                                 </span>{' '}
                                 <span className="text-foreground">
                                   {paper.authors
@@ -274,7 +276,7 @@ export default function PapersPage() {
             </table>
           </div>
           <div className="border-t border-border px-4 py-2 text-sm text-muted-foreground">
-            {total} paper{total !== 1 ? 's' : ''}
+            {t('papers.total', { count: total })}
           </div>
         </div>
       )}

@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { FileText, Quote, List, BarChart3, Loader2 } from 'lucide-react';
 import { paperApi, writingApi } from '@/services/api';
 import type { Paper } from '@/types';
 import { cn } from '@/lib/utils';
-
-const TABS = [
-  { id: 'summarize', label: 'Summarize', icon: FileText },
-  { id: 'cite', label: 'Cite', icon: Quote },
-  { id: 'outline', label: 'Review Outline', icon: List },
-  { id: 'gap', label: 'Gap Analysis', icon: BarChart3 },
-];
 
 const CITE_STYLES = [
   { id: 'gb_t_7714', label: 'GB/T 7714' },
@@ -21,8 +15,16 @@ const CITE_STYLES = [
 ];
 
 export default function WritingPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
+
+  const TABS = [
+    { id: 'summarize', label: t('writing.tabs.summarize'), icon: FileText },
+    { id: 'cite', label: t('writing.tabs.cite'), icon: Quote },
+    { id: 'outline', label: t('writing.tabs.outline'), icon: List },
+    { id: 'gap', label: t('writing.tabs.gap'), icon: BarChart3 },
+  ];
 
   const [activeTab, setActiveTab] = useState('summarize');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -113,7 +115,7 @@ export default function WritingPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Writing</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('writing.title')}</h1>
 
       <div className="flex gap-2">
         {TABS.map((tab) => (
@@ -136,10 +138,10 @@ export default function WritingPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-3 text-sm font-semibold text-foreground">
             {activeTab === 'summarize' || activeTab === 'cite'
-              ? 'Select Papers'
+              ? t('writing.selectPapers')
               : activeTab === 'outline'
-                ? 'Topic'
-                : 'Research Topic'}
+                ? t('writing.topic')
+                : t('writing.researchTopic')}
           </h2>
 
           {(activeTab === 'summarize' || activeTab === 'cite') && (
@@ -158,7 +160,7 @@ export default function WritingPage() {
                 </label>
               ))}
               {papers.length === 0 && (
-                <p className="text-sm text-muted-foreground">No papers in project</p>
+                <p className="text-sm text-muted-foreground">{t('writing.noPapers')}</p>
               )}
             </div>
           )}
@@ -166,7 +168,7 @@ export default function WritingPage() {
           {activeTab === 'outline' && (
             <input
               type="text"
-              placeholder="Enter topic for literature review outline"
+              placeholder={t('writing.topicPlaceholder')}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -176,7 +178,7 @@ export default function WritingPage() {
           {activeTab === 'gap' && (
             <input
               type="text"
-              placeholder="Enter research topic for gap analysis"
+              placeholder={t('writing.researchTopicPlaceholder')}
               value={researchTopic}
               onChange={(e) => setResearchTopic(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -186,7 +188,7 @@ export default function WritingPage() {
           {activeTab === 'cite' && (
             <div className="mt-3">
               <label className="mb-1 block text-xs text-muted-foreground">
-                Citation style
+                {t('writing.citeStyle')}
               </label>
               <select
                 value={citeStyle}
@@ -204,14 +206,14 @@ export default function WritingPage() {
           {(activeTab === 'summarize' || activeTab === 'outline') && (
             <div className="mt-3">
               <label className="mb-1 block text-xs text-muted-foreground">
-                Language
+                {t('writing.language')}
               </label>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                <option value="en">English</option>
-                <option value="zh">中文</option>
+                <option value="en">{t('writing.langEn')}</option>
+                <option value="zh">{t('writing.langZh')}</option>
               </select>
             </div>
           )}
@@ -223,14 +225,14 @@ export default function WritingPage() {
             {isPending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : null}{' '}
-            Generate
+            {t('common.generate')}
           </button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Output</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">{t('common.output')}</h2>
           <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm">
-            {output || (isPending ? 'Generating...' : '—')}
+            {output || (isPending ? t('common.generating') : '—')}
           </pre>
         </div>
       </div>

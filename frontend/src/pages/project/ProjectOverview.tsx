@@ -1,9 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Tags, FlaskConical, Calendar } from 'lucide-react';
 import { projectApi } from '@/services/api';
 
 export default function ProjectOverview() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
 
   const { data, isLoading } = useQuery({
@@ -17,7 +19,7 @@ export default function ProjectOverview() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20 text-muted-foreground">
-        Loading...
+        {t('common.loading')}
       </div>
     );
   }
@@ -25,31 +27,31 @@ export default function ProjectOverview() {
   if (!project) {
     return (
       <div className="py-20 text-center text-muted-foreground">
-        Project not found
+        {t('project.notFound')}
       </div>
     );
   }
 
   const stats = [
     {
-      label: 'Papers',
+      label: t('project.papers'),
       value: project.paper_count,
       icon: FileText,
       path: 'papers',
     },
     {
-      label: 'Keywords',
+      label: t('project.keywords'),
       value: project.keyword_count,
       icon: Tags,
       path: 'keywords',
     },
     {
-      label: 'Domain',
+      label: t('project.domain'),
       value: project.domain || '-',
       icon: FlaskConical,
     },
     {
-      label: 'Created',
+      label: t('project.created'),
       value: new Date(project.created_at).toLocaleDateString(),
       icon: Calendar,
     },
@@ -60,7 +62,7 @@ export default function ProjectOverview() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {project.description || 'No description'}
+          {project.description || t('project.noDesc')}
         </p>
       </div>
 
@@ -102,10 +104,7 @@ export default function ProjectOverview() {
       </div>
 
       <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
-        <p>
-          Use the sidebar to navigate to Papers, Keywords, Search, RAG Chat,
-          Writing, or Tasks.
-        </p>
+        <p>{t('project.navHint')}</p>
       </div>
     </div>
   );

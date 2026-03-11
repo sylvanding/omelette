@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,8 +15,9 @@ export default function ChatInput({
   onSend,
   isLoading,
   disabled,
-  placeholder = '输入你的问题...',
+  placeholder,
 }: ChatInputProps) {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,7 +46,7 @@ export default function ChatInput({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('playground.inputPlaceholder')}
         disabled={isLoading || disabled}
         rows={1}
         className="min-h-[52px] max-h-[200px] resize-none pr-14 text-base"

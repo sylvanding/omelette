@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Download, Loader2 } from 'lucide-react';
 import { searchApi, paperApi } from '@/services/api';
@@ -26,6 +27,7 @@ interface SearchPaper {
 }
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const pid = Number(projectId!);
@@ -101,19 +103,19 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Search</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t('searchPage.title')}</h1>
 
       <form
         onSubmit={handleSearch}
         className="rounded-xl border border-border bg-card p-4 space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Query
+            {t('searchPage.query')}
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Search terms or leave empty to use project keywords"
+              placeholder={t('searchPage.queryPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -127,14 +129,14 @@ export default function SearchPage() {
               ) : (
                 <Search className="size-4" />
               )}{' '}
-              Search
+              {t('common.search')}
             </button>
           </div>
         </div>
 
         <div>
           <label className="mb-2 block text-sm font-medium text-foreground">
-            Sources
+            {t('searchPage.sources')}
           </label>
           <div className="flex flex-wrap gap-2">
             {sourceList.map((s: { id: string; name: string; status?: string }) => (
@@ -160,7 +162,7 @@ export default function SearchPage() {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground">
-            Max results: {maxResults}
+            {t('searchPage.maxResults', { count: maxResults })}
           </label>
           <input
             type="range"
@@ -177,14 +179,14 @@ export default function SearchPage() {
       {sourceList.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-2 text-sm font-semibold text-foreground">
-            Source Statistics
+            {t('searchPage.sourceStats')}
           </h2>
           <div className="flex flex-wrap gap-2">
             {sourceList.map((s: { id: string; name: string; status?: string }) => (
               <span
                 key={s.id}
                 className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">
-                {s.name}: {s.status ?? 'available'}
+                {s.name}: {s.status ?? t('searchPage.available')}
               </span>
             ))}
           </div>
@@ -195,7 +197,7 @@ export default function SearchPage() {
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
             <h2 className="text-sm font-semibold text-foreground">
-              Results ({results.length})
+              {t('searchPage.results', { count: results.length })}
             </h2>
             <button
               onClick={handleImportAll}
@@ -206,7 +208,7 @@ export default function SearchPage() {
               ) : (
                 <Download className="size-4" />
               )}{' '}
-              Import All to Project
+              {t('searchPage.importAll')}
             </button>
           </div>
           <ul className="divide-y divide-border max-h-[500px] overflow-y-auto">
@@ -237,7 +239,7 @@ export default function SearchPage() {
           </ul>
           {imported > 0 && (
             <div className="border-t border-border px-4 py-2 text-sm text-muted-foreground">
-              {imported} paper(s) imported
+              {t('searchPage.imported', { count: imported })}
             </div>
           )}
         </div>

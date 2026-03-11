@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Save,
@@ -24,23 +25,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { settingsApi } from '@/services/chat-api';
 
-const providers = [
-  { value: 'mock', label: 'Mock (测试)' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'aliyun', label: '阿里云百炼' },
-  { value: 'volcengine', label: '火山引擎' },
-  { value: 'ollama', label: 'Ollama (本地)' },
-];
-
-const embeddingProviders = [
-  { value: 'mock', label: 'Mock (测试)' },
-  { value: 'local', label: '本地 GPU/CPU' },
-  { value: 'api', label: 'API' },
-];
-
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+
+  const providers = [
+    { value: 'mock', label: t('settings.providers.mock') },
+    { value: 'openai', label: t('settings.providers.openai') },
+    { value: 'anthropic', label: t('settings.providers.anthropic') },
+    { value: 'aliyun', label: t('settings.providers.aliyun') },
+    { value: 'volcengine', label: t('settings.providers.volcengine') },
+    { value: 'ollama', label: t('settings.providers.ollama') },
+  ];
+
+  const embeddingProviders = [
+    { value: 'mock', label: t('settings.embeddingProviders.mock') },
+    { value: 'local', label: t('settings.embeddingProviders.local') },
+    { value: 'api', label: t('settings.embeddingProviders.api') },
+  ];
   const [form, setForm] = useState<Record<string, string>>({});
   const [testResult, setTestResult] = useState<{
     success: boolean;
@@ -65,7 +67,9 @@ export default function SettingsPage() {
       const d = res?.data;
       setTestResult({
         success: !!d?.success,
-        message: d?.success ? `连接成功：${d.response}` : `连接失败：${d?.error}`,
+        message: d?.success
+          ? `${t('settings.testSuccess')}：${d.response}`
+          : `${t('settings.testFailed')}：${d?.error}`,
       });
     },
     onError: (err) => {
@@ -113,7 +117,7 @@ export default function SettingsPage() {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 size-5 animate-spin" />
-        加载设置...
+        {t('common.loading')}
       </div>
     );
   }
@@ -123,9 +127,9 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">设置</h1>
+            <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              配置 LLM 模型、Embedding 和系统参数
+              {t('settings.subtitle')}
             </p>
           </div>
           <Button
@@ -140,7 +144,7 @@ export default function SettingsPage() {
             ) : (
               <Save className="size-4" />
             )}
-            保存
+            {t('common.save')}
           </Button>
         </div>
 
@@ -149,13 +153,13 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Brain className="size-5" />
-              LLM 模型配置
+              {t('settings.llmConfig')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">模型提供商</label>
+                <label className="mb-1.5 block text-sm font-medium">{t('settings.provider')}</label>
                 <Select
                   value={currentProvider}
                   onValueChange={(v) => updateField('llm_provider', v)}
@@ -173,7 +177,7 @@ export default function SettingsPage() {
                 </Select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">温度</label>
+                <label className="mb-1.5 block text-sm font-medium">{t('settings.temperature')}</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -221,11 +225,11 @@ export default function SettingsPage() {
             )}
             {currentProvider === 'ollama' && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium">
-                    <Server className="mr-1 inline size-3.5" />
-                    服务地址
-                  </label>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  <Server className="mr-1 inline size-3.5" />
+                  {t('settings.serverUrl')}
+                </label>
                   <Input
                     value={form.ollama_base_url ?? ''}
                     onChange={(e) => updateField('ollama_base_url', e.target.value)}
@@ -233,7 +237,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium">模型名称</label>
+                  <label className="mb-1.5 block text-sm font-medium">{t('settings.modelName')}</label>
                   <Input
                     value={form.ollama_model ?? ''}
                     onChange={(e) => updateField('ollama_model', e.target.value)}
@@ -244,7 +248,7 @@ export default function SettingsPage() {
             )}
             {currentProvider === 'mock' && (
               <p className="text-sm text-muted-foreground">
-                Mock 模式将返回预设测试数据，无需配置。
+                {t('settings.mockDesc')}
               </p>
             )}
 
@@ -265,7 +269,7 @@ export default function SettingsPage() {
                 ) : (
                   <Zap className="size-4" />
                 )}
-                测试连接
+                {t('settings.testConnection')}
               </Button>
               {testResult && (
                 <Badge variant={testResult.success ? 'default' : 'destructive'} className="gap-1">
@@ -286,14 +290,14 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Server className="size-5" />
-              Embedding 配置
+              {t('settings.embeddingConfig')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">
-                  Embedding 提供商
+                  {t('settings.embeddingProvider')}
                 </label>
                 <Select
                   value={form.embedding_provider ?? 'local'}
@@ -312,7 +316,7 @@ export default function SettingsPage() {
                 </Select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">模型名称</label>
+                <label className="mb-1.5 block text-sm font-medium">{t('settings.modelName')}</label>
                 <Input
                   value={form.embedding_model ?? ''}
                   onChange={(e) => updateField('embedding_model', e.target.value)}
@@ -324,8 +328,7 @@ export default function SettingsPage() {
         </Card>
 
         <p className="text-xs text-muted-foreground">
-          也可以通过编辑 <code className="rounded bg-muted px-1">.env</code>{' '}
-          文件来配置，前端设置优先级更高。
+          {t('settings.envHint')}
         </p>
       </div>
     </div>
@@ -343,12 +346,13 @@ function ProviderFields({
   onChange: (key: string, value: string) => void;
   modelPlaceholder: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
         <label className="mb-1.5 block text-sm font-medium">
           <Key className="mr-1 inline size-3.5" />
-          API Key
+          {t('settings.apiKey')}
         </label>
         <Input
           type="password"
@@ -358,7 +362,7 @@ function ProviderFields({
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-sm font-medium">模型名称</label>
+        <label className="mb-1.5 block text-sm font-medium">{t('settings.modelName')}</label>
         <Input
           value={form[`${prefix}_model`] ?? ''}
           onChange={(e) => onChange(`${prefix}_model`, e.target.value)}

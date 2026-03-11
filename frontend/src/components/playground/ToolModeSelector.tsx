@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { MessageSquare, BookOpen, FileSearch, GitCompare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ToolMode } from '@/types/chat';
@@ -7,21 +8,22 @@ interface ToolModeSelectorProps {
   onChange: (mode: ToolMode) => void;
 }
 
-const modes: { value: ToolMode; label: string; icon: typeof MessageSquare; desc: string }[] = [
-  { value: 'qa', label: '问答', icon: MessageSquare, desc: '基于知识库的智能问答' },
-  { value: 'citation_lookup', label: '引用查找', icon: BookOpen, desc: '为文本寻找引用来源' },
-  { value: 'review_outline', label: '综述大纲', icon: FileSearch, desc: '生成文献综述提纲' },
-  { value: 'gap_analysis', label: '研究空白', icon: GitCompare, desc: '分析研究领域空白' },
+const modes: { value: ToolMode; labelKey: string; descKey: string; icon: typeof MessageSquare }[] = [
+  { value: 'qa', labelKey: 'playground.toolMode.qa', descKey: 'playground.toolMode.qaDesc', icon: MessageSquare },
+  { value: 'citation_lookup', labelKey: 'playground.toolMode.citation_lookup', descKey: 'playground.toolMode.citation_lookupDesc', icon: BookOpen },
+  { value: 'review_outline', labelKey: 'playground.toolMode.review_outline', descKey: 'playground.toolMode.review_outlineDesc', icon: FileSearch },
+  { value: 'gap_analysis', labelKey: 'playground.toolMode.gap_analysis', descKey: 'playground.toolMode.gap_analysisDesc', icon: GitCompare },
 ];
 
 export default function ToolModeSelector({ value, onChange }: ToolModeSelectorProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex gap-1">
       {modes.map((mode) => (
         <button
           key={mode.value}
           onClick={() => onChange(mode.value)}
-          title={mode.desc}
+          title={t(mode.descKey)}
           className={cn(
             'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
             value === mode.value
@@ -30,7 +32,7 @@ export default function ToolModeSelector({ value, onChange }: ToolModeSelectorPr
           )}
         >
           <mode.icon className="size-3.5" />
-          {mode.label}
+          {t(mode.labelKey)}
         </button>
       ))}
     </div>

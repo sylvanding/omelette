@@ -1,4 +1,5 @@
 import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
   LayoutDashboard,
@@ -14,19 +15,20 @@ import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 
-const navItems = [
-  { path: '', label: '概览', icon: LayoutDashboard },
-  { path: 'papers', label: '论文', icon: FileText },
-  { path: 'keywords', label: '关键词', icon: Tags },
-  { path: 'search', label: '检索', icon: Search },
-  { path: 'rag', label: 'RAG 问答', icon: MessageSquare },
-  { path: 'writing', label: '写作', icon: PenLine },
-  { path: 'tasks', label: '任务', icon: ListTodo },
-];
-
 export default function ProjectDetail() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const location = useLocation();
+
+  const navItems = [
+    { path: '', label: t('project.overview'), icon: LayoutDashboard },
+    { path: 'papers', label: t('project.papers'), icon: FileText },
+    { path: 'keywords', label: t('project.keywords'), icon: Tags },
+    { path: 'search', label: t('project.search'), icon: Search },
+    { path: 'rag', label: t('project.ragChat'), icon: MessageSquare },
+    { path: 'writing', label: t('project.writing'), icon: PenLine },
+    { path: 'tasks', label: t('project.tasks'), icon: ListTodo },
+  ];
 
   const { data } = useQuery({
     queryKey: ['project', projectId],
@@ -44,7 +46,7 @@ export default function ProjectDetail() {
           <Link to="/knowledge-bases">
             <Button variant="ghost" size="sm" className="mb-2 w-full justify-start gap-1.5">
               <ArrowLeft className="size-3.5" />
-              返回知识库
+              {t('project.backToKB')}
             </Button>
           </Link>
 

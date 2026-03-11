@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,14 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { conversationApi } from '@/services/chat-api';
 import type { Conversation } from '@/types/chat';
 
-const toolModeLabels: Record<string, string> = {
-  qa: '问答',
-  citation_lookup: '引用查找',
-  review_outline: '综述大纲',
-  gap_analysis: '研究空白',
-};
-
 export default function ChatHistoryPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
 
@@ -42,12 +37,12 @@ export default function ChatHistoryPage() {
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return '刚刚';
-    if (mins < 60) return `${mins} 分钟前`;
+    if (mins < 1) return t('history.timeJustNow');
+    if (mins < 60) return t('history.timeMinutes', { count: mins });
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} 小时前`;
+    if (hours < 24) return t('history.timeHours', { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} 天前`;
+    if (days < 7) return t('history.timeDays', { count: days });
     return d.toLocaleDateString('zh-CN');
   };
 
@@ -55,8 +50,8 @@ export default function ChatHistoryPage() {
     <div className="h-full p-6">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">对话历史</h1>
-          <p className="text-sm text-muted-foreground">查看和管理你的历史对话</p>
+          <h1 className="text-2xl font-bold">{t('history.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('history.subtitle')}</p>
         </div>
 
         <div className="mb-4">
@@ -65,7 +60,7 @@ export default function ChatHistoryPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索对话..."
+              placeholder={t('history.searchPlaceholder')}
               className="pl-9"
             />
           </div>
@@ -74,16 +69,16 @@ export default function ChatHistoryPage() {
         <ScrollArea className="h-[calc(100vh-14rem)]">
           {isLoading ? (
             <div className="flex items-center justify-center py-20 text-muted-foreground">
-              加载中...
+              {t('common.loading')}
             </div>
           ) : filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-12 text-center">
               <MessageSquare className="mx-auto mb-3 size-12 text-muted-foreground" />
               <h2 className="text-lg font-semibold">
-                {search ? '没有找到匹配的对话' : '还没有对话记录'}
+                {search ? t('history.noMatch') : t('history.empty')}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {search ? '试试其他搜索词' : '去 Playground 开始你的第一次对话'}
+                {search ? t('history.noMatchDesc') : t('history.emptyDesc')}
               </p>
             </div>
           ) : (
@@ -100,7 +95,7 @@ export default function ChatHistoryPage() {
                     <h3 className="truncate font-medium">{conv.title}</h3>
                     <div className="mt-1.5 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
-                        {toolModeLabels[conv.tool_mode] ?? conv.tool_mode}
+                        {t(`playground.toolMode.${conv.tool_mode}`, { defaultValue: conv.tool_mode })}
                       </Badge>
                       {conv.model && (
                         <Badge variant="outline" className="text-xs">
@@ -112,13 +107,13 @@ export default function ChatHistoryPage() {
                         {formatDate(conv.updated_at)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {conv.messages?.length ?? 0} 条消息
+                        {t('history.messageCount', { count: conv.messages?.length ?? 0 })}
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={() => {
-                      if (confirm('确定删除这条对话？'))
+                      if (confirm(t('history.confirmDelete')))
                         deleteMutation.mutate(conv.id);
                     }}
                     disabled={deleteMutation.isPending}
