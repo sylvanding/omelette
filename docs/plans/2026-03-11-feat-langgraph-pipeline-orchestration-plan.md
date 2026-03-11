@@ -1,7 +1,7 @@
 ---
 title: "feat: LangGraph 流水线编排引擎"
 type: feat
-status: active
+status: completed
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---
