@@ -1,70 +1,141 @@
-"""RAG knowledge base service — index, retrieve, and answer questions with citations."""
+"""RAG knowledge base service — LlamaIndex-powered index, retrieval, and answer generation.
+
+This replaces the original direct-ChromaDB implementation with LlamaIndex's
+ChromaVectorStore, SentenceSplitter, and query engine for:
+  - Proper embedding via GPU-aware local model or cloud API
+  - SentenceSplitter chunking with metadata
+  - Incremental insert/delete (no full rebuild needed)
+  - Source-node-based citation tracking
+"""
+
+from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
+from llama_index.core import Settings as LlamaSettings
+from llama_index.core import StorageContext, VectorStoreIndex
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.schema import Document, NodeRelationship, RelatedNodeInfo, TextNode
 
 from app.config import settings
 from app.services.llm_client import LLMClient
+
+if TYPE_CHECKING:
+    from llama_index.core.embeddings import BaseEmbedding
 
 logger = logging.getLogger(__name__)
 
 
 class RAGService:
-    """Manages ChromaDB vector index and retrieval-augmented generation."""
+    """LlamaIndex-powered RAG service with ChromaDB vector store."""
 
-    def __init__(self, llm: LLMClient | None = None):
+    def __init__(
+        self,
+        llm: LLMClient | None = None,
+        *,
+        chroma_client: chromadb.ClientAPI | None = None,
+        embed_model: BaseEmbedding | None = None,
+    ):
         self.llm = llm
-        self._client: chromadb.ClientAPI | None = None
+        self._chroma_client = chroma_client
+        self._embed_model = embed_model
 
-    def _get_client(self) -> chromadb.ClientAPI:
-        if self._client is None:
+    def _get_chroma_client(self) -> chromadb.ClientAPI:
+        if self._chroma_client is None:
             persist_dir = Path(settings.chroma_db_dir)
             persist_dir.mkdir(parents=True, exist_ok=True)
-            self._client = chromadb.PersistentClient(
+            self._chroma_client = chromadb.PersistentClient(
                 path=str(persist_dir),
                 settings=ChromaSettings(anonymized_telemetry=False),
             )
-        return self._client
+        return self._chroma_client
 
     def _get_collection(self, project_id: int) -> chromadb.Collection:
-        client = self._get_client()
-        return client.get_or_create_collection(
+        return self._get_chroma_client().get_or_create_collection(
             name=f"project_{project_id}",
             metadata={"hnsw:space": "cosine"},
         )
 
+    def _ensure_embed_model(self) -> BaseEmbedding:
+        if self._embed_model is None:
+            from app.services.embedding_service import get_embedding_model
+
+            self._embed_model = get_embedding_model()
+        LlamaSettings.embed_model = self._embed_model
+        return self._embed_model
+
+    def _get_vector_store(self, project_id: int) -> Any:
+        from llama_index.vector_stores.chroma import ChromaVectorStore
+
+        collection = self._get_collection(project_id)
+        return ChromaVectorStore(chroma_collection=collection)
+
+    def _get_index(self, project_id: int) -> VectorStoreIndex:
+        self._ensure_embed_model()
+        vector_store = self._get_vector_store(project_id)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        return VectorStoreIndex.from_vector_store(
+            vector_store,
+            storage_context=storage_context,
+            embed_model=self._embed_model,
+        )
+
     async def index_chunks(self, project_id: int, chunks: list[dict]) -> dict:
-        """Index paper chunks into ChromaDB."""
+        """Index paper chunks into ChromaDB via LlamaIndex.
+
+        Converts raw chunk dicts to LlamaIndex TextNodes with metadata,
+        then inserts them into the vector store.
+        """
         if not chunks:
             return {"indexed": 0}
 
-        collection = self._get_collection(project_id)
+        index = self._get_index(project_id)
 
-        ids = []
-        documents = []
-        metadatas = []
-
+        nodes: list[TextNode] = []
         for chunk in chunks:
-            chunk_id = f"paper_{chunk['paper_id']}_chunk_{chunk['chunk_index']}"
-            ids.append(chunk_id)
-            documents.append(chunk["content"])
-            metadatas.append(
-                {
+            node_id = f"paper_{chunk['paper_id']}_chunk_{chunk['chunk_index']}"
+            ref_doc_id = f"paper_{chunk['paper_id']}"
+            node = TextNode(
+                id_=node_id,
+                text=chunk["content"],
+                metadata={
                     "paper_id": chunk["paper_id"],
                     "paper_title": chunk.get("paper_title", ""),
                     "chunk_type": chunk.get("chunk_type", "text"),
                     "page_number": chunk.get("page_number", 0),
                     "chunk_index": chunk.get("chunk_index", 0),
-                }
+                },
+                excluded_embed_metadata_keys=["paper_id", "chunk_index"],
+                excluded_llm_metadata_keys=["paper_id", "chunk_index"],
             )
+            node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=ref_doc_id)
+            nodes.append(node)
 
-        # ChromaDB handles embedding internally with its default model
-        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        index.insert_nodes(nodes)
+        return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
-        return {"indexed": len(ids), "collection": f"project_{project_id}"}
+    async def index_documents(
+        self,
+        project_id: int,
+        documents: list[Document],
+        *,
+        chunk_size: int = 512,
+        chunk_overlap: int = 50,
+    ) -> dict:
+        """Split documents with SentenceSplitter, then index the resulting nodes."""
+        if not documents:
+            return {"indexed": 0}
+
+        splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        nodes = splitter.get_nodes_from_documents(documents)
+
+        index = self._get_index(project_id)
+        index.insert_nodes(nodes)
+        return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
     async def query(
         self,
@@ -76,8 +147,6 @@ class RAGService:
     ) -> dict:
         """Query the knowledge base and generate an answer with citations."""
         collection = self._get_collection(project_id)
-
-        # Check if collection has data
         if collection.count() == 0:
             return {
                 "answer": "No documents have been indexed yet. Please process and index papers first.",
@@ -85,41 +154,37 @@ class RAGService:
                 "confidence": 0.0,
             }
 
-        # Retrieve relevant chunks
-        results = collection.query(
-            query_texts=[question],
-            n_results=min(top_k, collection.count()),
-            include=["documents", "metadatas", "distances"],
-        )
+        index = self._get_index(project_id)
+        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+        retrieved_nodes = retriever.retrieve(question)
 
-        if not results["documents"] or not results["documents"][0]:
+        if not retrieved_nodes:
             return {"answer": "No relevant documents found.", "sources": [], "confidence": 0.0}
 
-        # Build context from retrieved chunks
         contexts = []
         sources = []
-        for doc, meta, dist in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
-        ):
-            contexts.append(f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{doc}")
+        for node_with_score in retrieved_nodes:
+            node = node_with_score.node
+            meta = node.metadata or {}
+            score = node_with_score.score or 0.0
+            text = node.get_content()
+
+            contexts.append(f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{text}")
             sources.append(
                 {
                     "paper_id": meta.get("paper_id"),
                     "paper_title": meta.get("paper_title", ""),
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
-                    "relevance_score": round(1 - dist, 3),  # cosine similarity
-                    "excerpt": doc[:200] + "..." if len(doc) > 200 else doc,
+                    "relevance_score": round(float(score), 3),
+                    "excerpt": text[:200] + "..." if len(text) > 200 else text,
                 }
             )
 
         context_text = "\n\n---\n\n".join(contexts)
 
-        # Generate answer with LLM
         if self.llm:
-            answer = await self._generate_answer(question, context_text, sources)
+            answer = await self._generate_answer(question, context_text)
         else:
             answer = f"Retrieved {len(sources)} relevant passages. LLM not available for answer generation."
 
@@ -131,45 +196,54 @@ class RAGService:
             "confidence": round(avg_score, 3),
         }
 
-    async def _generate_answer(self, question: str, context: str, sources: list[dict]) -> str:
-        """Use LLM to generate an answer based on retrieved context."""
-        prompt = f"""Based on the following scientific literature excerpts, answer the question.
-Include in-text citations referencing the source papers.
-If the context doesn't contain enough information, say so honestly.
-
-Question: {question}
-
-Context:
-{context}
-
-Provide a comprehensive answer with citations."""
-
+    async def _generate_answer(self, question: str, context: str) -> str:
+        prompt = (
+            "Based on the following scientific literature excerpts, answer the question.\n"
+            "Include in-text citations referencing the source papers.\n"
+            "If the context doesn't contain enough information, say so honestly.\n\n"
+            f"Question: {question}\n\n"
+            f"Context:\n{context}\n\n"
+            "Provide a comprehensive answer with citations."
+        )
         try:
-            answer = await self.llm.chat(
+            return await self.llm.chat(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a scientific research assistant. Answer questions based strictly on the provided context. Cite sources accurately.",
+                        "content": (
+                            "You are a scientific research assistant. "
+                            "Answer questions based strictly on the provided context. "
+                            "Cite sources accurately."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
                 task_type="rag_answer",
             )
-            return answer
         except Exception as e:
-            logger.error(f"LLM answer generation failed: {e}")
+            logger.error("LLM answer generation failed: %s", e)
             return f"Error generating answer: {e}"
 
     async def delete_index(self, project_id: int) -> dict:
-        """Delete the vector index for a project."""
-        client = self._get_client()
-        collection_name = f"project_{project_id}"
+        """Delete the entire vector index for a project."""
+        client = self._get_chroma_client()
+        name = f"project_{project_id}"
         try:
-            client.delete_collection(collection_name)
-            return {"deleted": True, "collection": collection_name}
+            client.delete_collection(name)
+            return {"deleted": True, "collection": name}
         except Exception:
             return {"deleted": False, "message": "Collection not found"}
+
+    async def delete_paper(self, project_id: int, paper_id: int) -> dict:
+        """Delete all chunks for a single paper from the index."""
+        collection = self._get_collection(project_id)
+        try:
+            collection.delete(where={"paper_id": paper_id})
+            return {"deleted": True, "paper_id": paper_id}
+        except Exception as e:
+            logger.warning("Failed to delete paper %d from index: %s", paper_id, e)
+            return {"deleted": False, "paper_id": paper_id, "error": str(e)}
 
     async def get_stats(self, project_id: int) -> dict:
         """Get index statistics for a project."""

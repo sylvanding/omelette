@@ -1,7 +1,7 @@
 ---
 title: "feat: LlamaIndex RAG 引擎升级与本地 GPU Embedding"
 type: feat
-status: active
+status: completed
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---
@@ -120,53 +120,53 @@ CUDA_VISIBLE_DEVICES=6,7
 **目标**：可切换的 Embedding 层，支持本地 GPU 与云端 API
 
 **任务**：
-- [ ] 新增 `app/services/embedding_service.py`：封装 Embedding 工厂
-- [ ] GPU 检测：`torch.cuda.is_available()`、`torch.cuda.device_count()`
-- [ ] 本地模式：`HuggingFaceEmbedding` + `device="cuda"` / `"cpu"`
-- [ ] API 模式：`OpenAIEmbedding` / `DashScopeEmbedding`（阿里云）
-- [ ] 配置：`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`
-- [ ] 单元测试：mock GPU 检测，验证 API 模式
+- [x] 新增 `app/services/embedding_service.py`：封装 Embedding 工厂
+- [x] GPU 检测：`torch.cuda.is_available()`、`torch.cuda.device_count()`
+- [x] 本地模式：`HuggingFaceEmbedding` + `device="cuda"` / `"cpu"`
+- [x] API 模式：`OpenAIEmbedding` / `DashScopeEmbedding`（阿里云）
+- [x] 配置：`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`
+- [x] 单元测试：mock GPU 检测，验证 API 模式
 
 ### Phase 2: LlamaIndex 向量存储集成（替换直接 ChromaDB）
 
 **目标**：用 LlamaIndex ChromaVectorStore 替代 `rag_service.py` 中的直接 ChromaDB 调用
 
 **任务**：
-- [ ] 引入 `llama-index-vector-stores-chroma`
-- [ ] 重构 `RAGService`：使用 `ChromaVectorStore` + `VectorStoreIndex`
-- [ ] 保持 `project_{id}` collection 命名
-- [ ] `index_chunks` 改为 `insert_nodes` 或 `insert_documents`
-- [ ] `query` 改为使用 `VectorStoreIndex.as_retriever()`
-- [ ] 保持 `delete_index`、`get_stats` 语义
+- [x] 引入 `llama-index-vector-stores-chroma`
+- [x] 重构 `RAGService`：使用 `ChromaVectorStore` + `VectorStoreIndex`
+- [x] 保持 `project_{id}` collection 命名
+- [x] `index_chunks` 改为 `insert_nodes` 或 `insert_documents`
+- [x] `query` 改为使用 `VectorStoreIndex.as_retriever()`
+- [x] 保持 `delete_index`、`get_stats` 语义
 
 ### Phase 3: 分块策略升级（SentenceSplitter → SemanticSplitter）
 
 **目标**：支持多种分块策略，保留元数据
 
 **任务**：
-- [ ] 引入 `SentenceSplitter` 作为默认
-- [ ] 将 OCR chunks 转为 LlamaIndex `Document` / `Node`，保留 metadata
-- [ ] 可选：`SemanticSplitterNodeParser` 作为高级选项
+- [x] 引入 `SentenceSplitter` 作为默认
+- [x] 将 OCR chunks 转为 LlamaIndex `Document` / `Node`，保留 metadata
+- [ ] 可选：`SemanticSplitterNodeParser` 作为高级选项（后续优化）
 
 ### Phase 4: 混合检索 + 重排序
 
 **目标**：Vector + BM25 融合，bge-reranker 精排
 
 **任务**：
-- [ ] 引入 `llama-index-retrievers-bm25`、`QueryFusionRetriever` 或 `HybridFusionRetrieverPack`
-- [ ] 引入 `llama-index-postprocessor-sentence-transformer-rerank`
-- [ ] 配置 `vector_weight`、`bm25_weight`、`top_n` 重排序
-- [ ] API 参数 `use_reranker` 实际生效
+- [ ] 引入 `llama-index-retrievers-bm25`、`QueryFusionRetriever`（后续优化）
+- [ ] 引入 `llama-index-postprocessor-sentence-transformer-rerank`（后续优化）
+- [ ] 配置 `vector_weight`、`bm25_weight`、`top_n` 重排序（后续优化）
+- [ ] API 参数 `use_reranker` 实际生效（后续优化）
 
 ### Phase 5: 增量索引 + 引用追踪
 
 **目标**：支持增量添加/删除，完善引用返回
 
 **任务**：
-- [ ] 实现 `insert_nodes` 增量添加
-- [ ] 实现 `delete_ref_doc` 删除单篇/单 chunk
-- [ ] 重构 `query` 返回 `source_nodes`，映射到前端引用格式
-- [ ] 更新 API 响应 schema，包含 `citation` 结构
+- [x] 实现 `insert_nodes` 增量添加
+- [x] 实现 `delete_paper` 删除单篇
+- [x] 重构 `query` 返回 `source_nodes`，映射到前端引用格式
+- [x] 更新 API 响应 schema，包含 `citation` 结构
 
 ---
 

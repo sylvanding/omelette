@@ -3,12 +3,15 @@
 import chromadb
 import pytest
 from httpx import ASGITransport, AsyncClient
+from llama_index.core.embeddings import MockEmbedding
 
 from app.api.v1.rag import get_rag_service
 from app.database import Base, async_session_factory, engine
 from app.main import app
 from app.models import Paper, PaperChunk, PaperStatus, Project
 from app.services.rag_service import RAGService
+
+MOCK_EMBED = MockEmbedding(embed_dim=128)
 
 
 @pytest.fixture(autouse=True)
@@ -29,10 +32,11 @@ async def client():
 
 @pytest.fixture
 def rag_service():
-    """RAGService with ephemeral ChromaDB for isolated tests."""
-    service = RAGService()
-    service._client = chromadb.EphemeralClient()
-    return service
+    """RAGService with ephemeral ChromaDB and mock embedding for fast tests."""
+    return RAGService(
+        chroma_client=chromadb.EphemeralClient(),
+        embed_model=MOCK_EMBED,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -138,7 +142,6 @@ async def test_query_with_indexed_data(rag_service, project_with_chunks):
     )
     assert "answer" in result
     assert len(result["sources"]) > 0 or "No relevant" in result["answer"]
-    # With mock LLM, we get an answer; with real data we may get sources
     assert "answer" in result
 
 
@@ -186,6 +189,21 @@ async def test_get_stats_after_index(rag_service, project_with_chunks):
     assert result["total_chunks"] == 2
 
 
+@pytest.mark.asyncio
+async def test_delete_paper(rag_service, project_with_chunks):
+    chunks = [
+        {"paper_id": 1, "paper_title": "A", "chunk_type": "text", "page_number": 1, "chunk_index": 0, "content": "X"},
+        {"paper_id": 2, "paper_title": "B", "chunk_type": "text", "page_number": 1, "chunk_index": 0, "content": "Y"},
+    ]
+    await rag_service.index_chunks(project_id=project_with_chunks, chunks=chunks)
+
+    result = await rag_service.delete_paper(project_id=project_with_chunks, paper_id=1)
+    assert result["deleted"] is True
+
+    stats = await rag_service.get_stats(project_id=project_with_chunks)
+    assert stats["total_chunks"] == 1
+
+
 # --- API endpoint tests ---
 
 
@@ -231,7 +249,6 @@ async def test_rag_delete_index_api(client: AsyncClient, project_with_chunks: in
 
 @pytest.mark.asyncio
 async def test_rag_query_after_index(client: AsyncClient, project_with_chunks: int):
-    # Index first
     await client.post(f"/api/v1/projects/{project_with_chunks}/rag/index")
 
     resp = await client.post(
@@ -242,7 +259,6 @@ async def test_rag_query_after_index(client: AsyncClient, project_with_chunks: i
     body = resp.json()
     assert body["code"] == 200
     assert "answer" in body["data"]
-    # With indexed data, we should get either sources or a meaningful answer
     assert "sources" in body["data"]
     assert "confidence" in body["data"]
 
@@ -253,5 +269,4 @@ async def test_rag_nonexistent_project(client: AsyncClient):
         "/api/v1/projects/99999/rag/query",
         json={"question": "test"},
     )
-    # May return 200 with empty answer or 404 depending on implementation
     assert resp.status_code in (200, 404)
