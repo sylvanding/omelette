@@ -211,6 +211,7 @@
     "noDesc": "暂无描述",
     "domain": "领域",
     "created": "创建时间",
+    "subscriptions": "订阅",
     "navHint": "使用侧边栏导航到论文、关键词、检索、RAG 问答、写作或任务。"
   },
   "papers": {
@@ -303,5 +304,35 @@
   "tasks": {
     "title": "任务",
     "noTasks": "暂无任务"
+  },
+  "subscriptions": {
+    "title": "订阅",
+    "newSubscription": "新建订阅",
+    "empty": "暂无订阅。创建一个以获取增量文献更新。",
+    "createTitle": "创建订阅",
+    "editTitle": "编辑订阅",
+    "name": "名称",
+    "namePlaceholder": "订阅名称",
+    "query": "查询关键词",
+    "queryPlaceholder": "检索关键词",
+    "sources": "数据源",
+    "sources.semanticScholar": "Semantic Scholar",
+    "sources.openalex": "OpenAlex",
+    "sources.arxiv": "arXiv",
+    "sources.crossref": "Crossref",
+    "frequencyLabel": "频率",
+    "frequency.daily": "每日",
+    "frequency.weekly": "每周",
+    "frequency.monthly": "每月",
+    "maxResults": "最大结果数",
+    "create": "创建",
+    "save": "保存",
+    "edit": "编辑",
+    "delete": "删除",
+    "trigger": "手动触发",
+    "neverRun": "从未运行",
+    "totalFound": "已找到 {{count}} 篇",
+    "active": "启用",
+    "inactive": "停用"
   }
 }

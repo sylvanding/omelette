@@ -13,6 +13,7 @@ import SearchPage from '@/pages/project/SearchPage';
 import RAGChatPage from '@/pages/project/RAGChatPage';
 import WritingPage from '@/pages/project/WritingPage';
 import TasksPage from '@/pages/project/TasksPage';
+import SubscriptionsPage from '@/pages/project/SubscriptionsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +42,7 @@ function App() {
               <Route path="rag" element={<RAGChatPage />} />
               <Route path="writing" element={<WritingPage />} />
               <Route path="tasks" element={<TasksPage />} />
+              <Route path="subscriptions" element={<SubscriptionsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

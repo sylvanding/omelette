@@ -24,6 +24,7 @@ class Project(Base):
     papers = relationship("Paper", back_populates="project", cascade="all, delete-orphan")
     keywords = relationship("Keyword", back_populates="project", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    subscriptions = relationship("Subscription", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Project id={self.id} name={self.name!r}>"

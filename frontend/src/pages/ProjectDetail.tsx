@@ -10,6 +10,7 @@ import {
   PenLine,
   ListTodo,
   ArrowLeft,
+  Rss,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -28,6 +29,7 @@ export default function ProjectDetail() {
     { path: 'rag', label: t('project.ragChat'), icon: MessageSquare },
     { path: 'writing', label: t('project.writing'), icon: PenLine },
     { path: 'tasks', label: t('project.tasks'), icon: ListTodo },
+    { path: 'subscriptions', label: t('subscriptions.title'), icon: Rss },
   ];
 
   const { data } = useQuery({
