@@ -211,6 +211,7 @@
     "noDesc": "No description",
     "domain": "Domain",
     "created": "Created",
+    "subscriptions": "Subscriptions",
     "navHint": "Use the sidebar to navigate to Papers, Keywords, Search, RAG Chat, Writing, or Tasks."
   },
   "papers": {
@@ -303,5 +304,35 @@
   "tasks": {
     "title": "Tasks",
     "noTasks": "No tasks"
+  },
+  "subscriptions": {
+    "title": "Subscriptions",
+    "newSubscription": "New Subscription",
+    "empty": "No subscriptions yet. Create one to get incremental literature updates.",
+    "createTitle": "Create Subscription",
+    "editTitle": "Edit Subscription",
+    "name": "Name",
+    "namePlaceholder": "Subscription name",
+    "query": "Query",
+    "queryPlaceholder": "Search keywords",
+    "sources": "Sources",
+    "sources.semanticScholar": "Semantic Scholar",
+    "sources.openalex": "OpenAlex",
+    "sources.arxiv": "arXiv",
+    "sources.crossref": "Crossref",
+    "frequencyLabel": "Frequency",
+    "frequency.daily": "Daily",
+    "frequency.weekly": "Weekly",
+    "frequency.monthly": "Monthly",
+    "maxResults": "Max Results",
+    "create": "Create",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "trigger": "Trigger",
+    "neverRun": "Never run",
+    "totalFound": "{{count}} found",
+    "active": "Active",
+    "inactive": "Inactive"
   }
 }
