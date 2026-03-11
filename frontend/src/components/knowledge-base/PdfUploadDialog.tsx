@@ -16,7 +16,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { kbApi, type UploadResult } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
 

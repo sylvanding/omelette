@@ -26,42 +26,35 @@ export function AddPaperDialog({
   onComplete,
 }: AddPaperDialogProps) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<'search' | 'upload' | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
   const handleSelectSearch = () => {
-    setMode('search');
     setShowSearch(true);
   };
 
   const handleSelectUpload = () => {
-    setMode('upload');
     setShowUpload(true);
   };
 
   const handleSearchComplete = () => {
     setShowSearch(false);
-    setMode(null);
     onComplete();
     onOpenChange(false);
   };
 
   const handleUploadComplete = (result: UploadResult) => {
     setShowUpload(false);
-    setMode(null);
     onComplete(result);
     onOpenChange(false);
   };
 
   const handleSearchOpenChange = (next: boolean) => {
     setShowSearch(next);
-    if (!next) setMode(null);
   };
 
   const handleUploadOpenChange = (next: boolean) => {
     setShowUpload(next);
-    if (!next) setMode(null);
   };
 
   return (
