@@ -41,6 +41,8 @@ dependencies = [
     "llama-index-embeddings-huggingface>=0.5",
     "llama-index-embeddings-openai>=0.4",
     "mcp>=1.26",
+    "langgraph>=0.4.0",
+    "langgraph-checkpoint-sqlite>=2.0.0",
 ]
 
 [project.optional-dependencies]

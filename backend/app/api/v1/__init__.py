@@ -10,6 +10,7 @@ from app.api.v1 import (
     keywords,
     ocr,
     papers,
+    pipelines,
     projects,
     rag,
     search,
@@ -40,3 +41,4 @@ api_router.include_router(tasks.router)
 api_router.include_router(settings_api.router)
 api_router.include_router(conversations.router)
 api_router.include_router(chat.router)
+api_router.include_router(pipelines.router)
