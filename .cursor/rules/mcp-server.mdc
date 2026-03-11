@@ -1,0 +1,25 @@
+---
+description: MCP protocol server development standards
+globs: backend/app/mcp_server.py
+alwaysApply: false
+---
+
+# MCP Server Standards
+
+## Overview
+- MCP server at `app/mcp_server.py`, mounted at `/mcp` on FastAPI app
+- Uses `FastMCP` from the `mcp` package
+- Provides tools, resources, and prompts for AI IDE clients
+
+## Tools
+- Annotate with `@mcp.tool()`, return structured dicts
+- Validate inputs (int conversion, path safety)
+- Use `async_session_factory()` for DB access (not `Depends`)
+
+## Resources
+- Annotate with `@mcp.resource("omelette://...")`
+- Read-only data access, return JSON-serializable dicts
+
+## Session Management
+- MCP server has its own `get_session()` context manager
+- Does not share request context with FastAPI endpoints

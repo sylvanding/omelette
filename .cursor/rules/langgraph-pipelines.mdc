@@ -1,0 +1,29 @@
+---
+description: LangGraph pipeline development patterns for Omelette
+globs: backend/app/pipelines/**/*.py
+alwaysApply: false
+---
+
+# LangGraph Pipeline Patterns
+
+## State
+- Pipeline state is `PipelineState(TypedDict)` in `state.py`
+- All nodes receive and return the full state dict
+- Use `total=False` so all fields are optional
+
+## Nodes
+- Each node is an `async def` accepting `PipelineState` and returning a partial state update
+- Wrap sync calls (OCR, LlamaIndex) with `asyncio.to_thread()`
+- Use lazy imports to avoid circular dependencies
+- Check `state.get("cancelled")` before heavy operations
+
+## HITL (Human-in-the-Loop)
+- Use `interrupt(value)` to pause — does NOT raise an exception
+- After `ainvoke()`, check `pipeline.get_state(config).next` to detect interrupts
+- Resume with `Command(resume=resolved_data)`
+- See `docs/solutions/integration-issues/langgraph-hitl-interrupt-api-snapshot-next.md`
+
+## Graphs
+- Define graphs in `graphs.py` using `StateGraph(PipelineState)`
+- Use `add_conditional_edges` for branching (e.g. has_conflicts → hitl_dedup)
+- Compile with `MemorySaver()` checkpointer

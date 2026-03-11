@@ -8,6 +8,9 @@ alwaysApply: false
 
 ## Stack
 - React 18 + TypeScript strict + Vite + TailwindCSS v4
+- shadcn/ui + Radix primitives for components
+- Framer Motion for animations
+- react-i18next for i18n (zh/en)
 - TanStack Query for data fetching, Zustand for client state
 - lucide-react for icons, axios for HTTP
 
@@ -18,8 +21,10 @@ alwaysApply: false
 - Use `cn()` from `@/lib/utils` for conditional class merging
 - Functional components only, no class components
 - Colocate hooks in `@/hooks/`, stores in `@/stores/`
+- i18n keys in `@/i18n/locales/{en,zh}.json`
+- UI components from shadcn/ui at `@/components/ui/`
 
-## Dev Server
-- Port 3000 on `0.0.0.0`, proxies `/api` → backend `:8000`
+## CI Build
+- Type check: `npx tsc -b` (stricter than `--noEmit`, matches CI)
 - Build: `cd frontend && npm run build`
-- Type check: `npx tsc --noEmit`
+- Dev server: port 3000 on `0.0.0.0`, proxies `/api` → backend `:8000`

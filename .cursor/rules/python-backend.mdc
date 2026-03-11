@@ -19,13 +19,23 @@ alwaysApply: false
 
 ## Architecture
 - All endpoints return `ApiResponse[T]` from `app/schemas/common.py`
-- LLM calls through `app/services/llm_client.py`, never import openai directly
-- Background tasks tracked via `Task` ORM model
+- LLM calls through `app/services/llm/client.py` (LangChain `BaseChatModel`), never import provider SDKs directly
+- Pipeline orchestration via `app/pipelines/` (LangGraph `StateGraph`)
+- RAG via `app/services/rag_service.py` (LlamaIndex `VectorStoreIndex`)
+- MCP server at `app/mcp_server.py`, mounted at `/mcp`
+- DB migrations via Alembic (`alembic/`), auto-upgrade on startup
 - Async SQLAlchemy + `AsyncSession` for all DB operations
 - Business logic in `app/services/`, thin controllers in `app/api/v1/`
 - Pydantic v2 schemas in `app/schemas/` mirror every API request/response
 
+## Async Rules
+- Never call sync I/O or CPU-heavy functions directly in async code
+- Wrap blocking calls with `asyncio.to_thread()` (LlamaIndex, PaddleOCR, etc.)
+- See `docs/solutions/performance-issues/blocking-sync-calls-asyncio-to-thread.md`
+
 ## Testing
 - pytest-asyncio with `ASGITransport` + `AsyncClient`
 - Mock LLM via `LLM_PROVIDER=mock` env var
+- Test DB uses `tempfile.mkdtemp()` — never relative paths
 - Every service has a corresponding `tests/test_<module>.py`
+- 178 tests and growing

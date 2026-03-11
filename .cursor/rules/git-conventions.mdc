@@ -13,7 +13,7 @@ alwaysApply: true
 ```
 
 - Types: feat, fix, docs, style, refactor, test, chore, ci, perf, build, revert
-- Scopes: backend, frontend, docs, ci, config, keywords, search, dedup, crawler, ocr, rag, writing
+- Scopes: backend, frontend, docs, ci, config, keywords, search, dedup, crawler, ocr, rag, writing, chat, pipelines, mcp, i18n
 - Description in English, imperative mood, lowercase, no period
 - Body explains *why* not *what*
 
@@ -21,7 +21,10 @@ alwaysApply: true
 - Never commit `.env`, `*.db`, `node_modules/`, `__pycache__/`
 - Run `make lint` before committing (pre-commit hook handles this)
 - No force push to main
+- Use feature branches: `feat/*`, `fix/*`, `chore/*`, `docs/*`
+- Merge to main via `--no-ff` after CI passes
 
 ## Pre-commit
 - Install: `make pre-commit-install`
 - Hooks: trailing whitespace, ruff lint+format, conventional commit msg
+- Branch protection: `no-commit-to-branch` prevents direct main commits
