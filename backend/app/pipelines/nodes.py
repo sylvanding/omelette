@@ -45,7 +45,7 @@ async def extract_metadata_node(state: PipelineState) -> dict[str, Any]:
         if not path.exists():
             logger.warning("PDF not found: %s", path_str)
             continue
-        meta = extract_metadata(path, fallback_title=path.stem)
+        meta = await extract_metadata(path, fallback_title=path.stem)
         papers.append(meta.model_dump())
 
     return {

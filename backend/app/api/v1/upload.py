@@ -72,7 +72,7 @@ async def upload_pdfs(
             saved_path.write_bytes(content)
             total_uploaded += 1
 
-            metadata = extract_metadata(saved_path, fallback_title=upload_file.filename)
+            metadata = await extract_metadata(saved_path, fallback_title=upload_file.filename)
 
             conflict_found = False
 
