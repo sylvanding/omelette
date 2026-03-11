@@ -123,7 +123,6 @@ export default function KeywordsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">{t('keywords.title')}</h1>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground">

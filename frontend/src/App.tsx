@@ -13,11 +13,9 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'));
 const ProjectOverview = lazy(() => import('@/pages/project/ProjectOverview'));
 const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
-const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
-const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
-const SubscriptionsPage = lazy(() => import('@/pages/project/SubscriptionsPage'));
+const DiscoveryPage = lazy(() => import('@/pages/project/DiscoveryPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,15 +39,17 @@ function App() {
                 <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
                 <Route path="history" element={<ChatHistoryPage />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="tasks" element={<TasksPage />} />
                 <Route path="projects/:projectId" element={<ProjectDetail />}>
-                  <Route index element={<ProjectOverview />} />
+                  <Route index element={<PapersPage />} />
                   <Route path="papers" element={<PapersPage />} />
-                  <Route path="keywords" element={<KeywordsPage />} />
-                  <Route path="search" element={<SearchPage />} />
-                  <Route path="rag" element={<Navigate to="/" replace />} />
+                  <Route path="discovery" element={<DiscoveryPage />} />
                   <Route path="writing" element={<WritingPage />} />
-                  <Route path="tasks" element={<TasksPage />} />
-                  <Route path="subscriptions" element={<SubscriptionsPage />} />
+                  <Route path="keywords" element={<Navigate to="../discovery" replace />} />
+                  <Route path="search" element={<Navigate to="../discovery" replace />} />
+                  <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
+                  <Route path="rag" element={<Navigate to="/" replace />} />
+                  <Route path="tasks" element={<Navigate to="/tasks" replace />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { paperApi, ocrApi } from '@/services/api';
+import { paperApi, ocrApi, projectApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
@@ -57,6 +57,12 @@ export default function PapersPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showAddPaper, setShowAddPaper] = useState(false);
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
+
+  const { data: projectData } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => projectApi.get(pid),
+    enabled: !!pid,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['papers', pid, search, status, year, sortBy, order],
@@ -118,6 +124,13 @@ export default function PapersPage() {
 
   return (
     <div className="space-y-4">
+      {projectData && (
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <span className="text-xs">{t('project.domain')}: {projectData.domain || '—'}</span>
+          <span className="text-xs">{t('project.keywords')}: {projectData.keyword_count ?? 0}</span>
+          <span className="text-xs">{t('project.created')}: {new Date(projectData.created_at).toLocaleDateString()}</span>
+        </div>
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('papers.title')}</h1>
         <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">

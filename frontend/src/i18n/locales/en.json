@@ -48,8 +48,12 @@
     "chat": "Chat",
     "knowledgeBases": "Knowledge Bases",
     "history": "History",
+    "tasks": "Tasks",
     "settings": "Settings",
     "home": "Omelette Home"
+  },
+  "discovery": {
+    "title": "Discovery"
   },
   "theme": {
     "light": "Light",

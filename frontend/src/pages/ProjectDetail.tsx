@@ -2,14 +2,10 @@ import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
-  LayoutDashboard,
   FileText,
-  Tags,
-  Search,
+  Compass,
   PenLine,
-  ListTodo,
   ArrowLeft,
-  Rss,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -21,13 +17,9 @@ export default function ProjectDetail() {
   const location = useLocation();
 
   const navItems = [
-    { path: '', label: t('project.overview'), icon: LayoutDashboard },
-    { path: 'papers', label: t('project.papers'), icon: FileText },
-    { path: 'keywords', label: t('project.keywords'), icon: Tags },
-    { path: 'search', label: t('project.search'), icon: Search },
+    { path: '', label: t('project.papers'), icon: FileText },
+    { path: 'discovery', label: t('discovery.title'), icon: Compass },
     { path: 'writing', label: t('project.writing'), icon: PenLine },
-    { path: 'tasks', label: t('project.tasks'), icon: ListTodo },
-    { path: 'subscriptions', label: t('subscriptions.title'), icon: Rss },
   ];
 
   const { data } = useQuery({

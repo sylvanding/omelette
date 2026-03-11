@@ -4,6 +4,7 @@ import {
   MessageSquare,
   Library,
   History,
+  ListTodo,
   Settings,
   Sun,
   Moon,
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/', labelKey: 'nav.chat', icon: MessageSquare },
   { path: '/knowledge-bases', labelKey: 'nav.knowledgeBases', icon: Library },
   { path: '/history', labelKey: 'nav.history', icon: History },
+  { path: '/tasks', labelKey: 'nav.tasks', icon: ListTodo },
 ] as const;
 
 const themeIcons = { light: Sun, dark: Moon, system: Monitor } as const;
@@ -58,7 +60,7 @@ export default function IconSidebar() {
         {navItems.map((item) => {
           const isActive =
             item.path === '/'
-              ? location.pathname === '/'
+              ? location.pathname === '/' || location.pathname.startsWith('/chat/')
               : location.pathname.startsWith(item.path);
           return (
             <Tooltip key={item.path} delayDuration={200}>

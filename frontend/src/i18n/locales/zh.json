@@ -48,8 +48,12 @@
     "chat": "对话",
     "knowledgeBases": "知识库",
     "history": "历史记录",
+    "tasks": "任务",
     "settings": "设置",
     "home": "Omelette 首页"
+  },
+  "discovery": {
+    "title": "发现"
   },
   "theme": {
     "light": "浅色",
