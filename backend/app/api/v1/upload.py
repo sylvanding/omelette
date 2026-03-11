@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.config import settings
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse
@@ -26,21 +26,14 @@ MAX_FILE_SIZE_MB = 50
 TITLE_SIMILARITY_THRESHOLD = 0.85
 
 
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
 @router.post("/upload", response_model=ApiResponse[UploadResult])
 async def upload_pdfs(
     project_id: int,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Upload PDF files, extract metadata, and run dedup check against existing papers."""
-    await _ensure_project(project_id, db)
 
     pdf_dir = Path(settings.pdf_dir)
     project_pdf_dir = pdf_dir / str(project_id)

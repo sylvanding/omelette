@@ -6,6 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubble from '@/components/playground/MessageBubble';
 import ToolModeSelector from '@/components/playground/ToolModeSelector';
@@ -28,11 +33,10 @@ export default function PlaygroundPage() {
   const [toolMode, setToolMode] = useState<ToolMode>('qa');
   const [selectedKBs, setSelectedKBs] = useState<number[]>([]);
   const [conversationId, setConversationId] = useState<number | undefined>();
-  const [showKBPicker, setShowKBPicker] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const { data: projectsData } = useQuery({
+  const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: () => projectApi.list(1, 100),
   });
@@ -146,50 +150,49 @@ export default function PlaygroundPage() {
           <ToolModeSelector value={toolMode} onChange={setToolMode} />
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowKBPicker(!showKBPicker)}
-              className="gap-1.5"
-            >
-              {t('playground.knowledgeBase')}
-              {selectedKBs.length > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1.5">
-                  {selectedKBs.length}
-                </Badge>
-              )}
-              <ChevronDown className="size-3.5" />
-            </Button>
-            {showKBPicker && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-popover p-2 shadow-lg">
-                {projects.length === 0 ? (
-                  <p className="p-2 text-xs text-muted-foreground">
-                    {t('playground.noKB')}
-                  </p>
-                ) : (
-                  <div className="max-h-48 space-y-1 overflow-y-auto">
-                    {projects.map((p: { id: number; name: string }) => (
-                      <button
-                        key={p.id}
-                        onClick={() => toggleKB(p.id)}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-                      >
-                        <div
-                          className={`size-4 rounded border ${
-                            selectedKBs.includes(p.id)
-                              ? 'border-primary bg-primary'
-                              : 'border-border'
-                          }`}
-                        />
-                        <span className="truncate">{p.name}</span>
-                      </button>
-                    ))}
-                  </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                {t('playground.knowledgeBase')}
+                {selectedKBs.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5">
+                    {selectedKBs.length}
+                  </Badge>
                 )}
-              </div>
-            )}
-          </div>
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" align="end">
+              {isLoadingProjects ? (
+                <p className="p-2 text-xs text-muted-foreground">
+                  {t('common.loading')}
+                </p>
+              ) : projects.length === 0 ? (
+                <p className="p-2 text-xs text-muted-foreground">
+                  {t('playground.noKB')}
+                </p>
+              ) : (
+                <div className="max-h-48 space-y-1 overflow-y-auto">
+                  {projects.map((p: { id: number; name: string }) => (
+                    <button
+                      key={p.id}
+                      onClick={() => toggleKB(p.id)}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                    >
+                      <div
+                        className={`size-4 rounded border ${
+                          selectedKBs.includes(p.id)
+                            ? 'border-primary bg-primary'
+                            : 'border-border'
+                        }`}
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5">
             <Plus className="size-3.5" />
             {t('playground.newChat')}

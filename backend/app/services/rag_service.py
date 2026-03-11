@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
@@ -69,7 +69,7 @@ class RAGService:
         LlamaSettings.embed_model = self._embed_model
         return self._embed_model
 
-    def _get_vector_store(self, project_id: int) -> Any:
+    def _get_vector_store(self, project_id: int):
         from llama_index.vector_stores.chroma import ChromaVectorStore
 
         collection = self._get_collection(project_id)
@@ -234,25 +234,21 @@ class RAGService:
             f"Context:\n{context}\n\n"
             "Provide a comprehensive answer with citations."
         )
-        try:
-            return await self.llm.chat(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a scientific research assistant. "
-                            "Answer questions based strictly on the provided context. "
-                            "Cite sources accurately."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                task_type="rag_answer",
-            )
-        except Exception as e:
-            logger.error("LLM answer generation failed: %s", e)
-            return f"Error generating answer: {e}"
+        return await self.llm.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a scientific research assistant. "
+                        "Answer questions based strictly on the provided context. "
+                        "Cite sources accurately."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            task_type="rag_answer",
+        )
 
     async def delete_index(self, project_id: int) -> dict:
         """Delete the entire vector index for a project."""
@@ -261,7 +257,7 @@ class RAGService:
         try:
             client.delete_collection(name)
             return {"deleted": True, "collection": name}
-        except Exception:
+        except ValueError:
             return {"deleted": False, "message": "Collection not found"}
 
     async def delete_paper(self, project_id: int, paper_id: int) -> dict:

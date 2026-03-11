@@ -8,8 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
-from app.models import Project
+from app.api.deps import get_db, get_project_or_404
 from app.schemas.common import ApiResponse
 
 logger = logging.getLogger(__name__)
@@ -35,17 +34,10 @@ class ResumeRequest(BaseModel):
     resolved_conflicts: list[dict] = []
 
 
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
 @router.post("/search", response_model=ApiResponse[dict])
 async def start_search_pipeline(body: SearchPipelineRequest, db: AsyncSession = Depends(get_db)):
     """Start a keyword-search pipeline: search → dedup → crawl → OCR → index."""
-    await _ensure_project(body.project_id, db)
+    await get_project_or_404(body.project_id, db)
 
     from app.pipelines.graphs import create_search_pipeline
 
@@ -109,7 +101,7 @@ async def start_upload_pipeline(body: UploadPipelineRequest, db: AsyncSession = 
 
     from app.config import settings
 
-    await _ensure_project(body.project_id, db)
+    await get_project_or_404(body.project_id, db)
 
     allowed_root = _Path(settings.pdf_dir).resolve()
     safe_paths: list[str] = []
@@ -194,7 +186,7 @@ async def get_pipeline_status(thread_id: str):
                 data["stage"] = state.get("stage", "")
                 data["progress"] = state.get("progress", 0)
             except Exception:
-                pass
+                logger.warning("Failed to read pipeline state for task %s", thread_id, exc_info=True)
 
     if task["status"] == "completed":
         result = task.get("result", {})

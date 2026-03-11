@@ -48,9 +48,7 @@ export default function WritingPage() {
     onSuccess: (res) => {
       const summaries = res?.data?.summaries ?? [];
       setOutput(
-        summaries
-          .map((s: { title?: string; summary?: string }) => `## ${s.title}\n${s.summary}`)
-          .join('\n\n')
+        summaries.map((s) => `## ${s.title}\n${s.summary}`).join('\n\n')
       );
     },
   });
@@ -60,9 +58,7 @@ export default function WritingPage() {
       writingApi.citations(pid, selectedIds, citeStyle),
     onSuccess: (res) => {
       const citations = res?.data?.citations ?? [];
-      setOutput(
-        citations.map((c: { citation?: string }) => c.citation).join('\n')
-      );
+      setOutput(citations.map((c) => c.citation ?? '').join('\n'));
     },
   });
 
@@ -72,6 +68,7 @@ export default function WritingPage() {
     onSuccess: (res) => {
       setOutput(res?.data?.outline ?? '');
     },
+    onError: () => setOutput(''),
   });
 
   const gapMutation = useMutation({
@@ -80,6 +77,7 @@ export default function WritingPage() {
     onSuccess: (res) => {
       setOutput(res?.data?.analysis ?? '');
     },
+    onError: () => setOutput(''),
   });
 
   const togglePaper = (id: number) => {

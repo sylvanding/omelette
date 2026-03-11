@@ -53,14 +53,7 @@ export default function TasksPage() {
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task: {
-                  id: number;
-                  task_type: string;
-                  status: string;
-                  progress: number;
-                  total: number;
-                  created_at: string | null;
-                }) => (
+                {tasks.map((task) => (
                   <tr
                     key={task.id}
                     className="border-b border-border hover:bg-muted/30">

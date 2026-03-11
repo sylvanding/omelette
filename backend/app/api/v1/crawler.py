@@ -1,22 +1,15 @@
 """PDF crawler API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.services.crawler_service import CrawlerService
 
 router = APIRouter(prefix="/projects/{project_id}/crawl", tags=["crawler"])
-
-
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.post("/start", response_model=ApiResponse[dict])
@@ -25,9 +18,9 @@ async def start_crawl(
     priority: str = "high",
     max_papers: int = 50,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Start PDF download for papers that need PDFs."""
-    await _ensure_project(project_id, db)
 
     stmt = (
         select(Paper)
@@ -60,9 +53,12 @@ async def start_crawl(
 
 
 @router.get("/stats", response_model=ApiResponse[dict])
-async def crawl_stats(project_id: int, db: AsyncSession = Depends(get_db)):
+async def crawl_stats(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     """Return download statistics for the project."""
-    await _ensure_project(project_id, db)
 
     stats = {}
     for status in PaperStatus:

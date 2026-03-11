@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Download, Loader2 } from 'lucide-react';
-import { searchApi, paperApi } from '@/services/api';
+import { searchApi, paperApi, type SearchSource } from '@/services/api';
 import { cn } from '@/lib/utils';
 
 const SOURCE_OPTIONS = [
@@ -52,8 +52,7 @@ export default function SearchPage() {
         max_results: params.max_results ?? maxResults,
       }),
     onSuccess: (res) => {
-      const papers = res?.data?.papers ?? [];
-      setResults(papers);
+      setResults((res?.data?.papers as unknown as SearchPaper[]) ?? []);
       setImported(res?.data?.imported ?? 0);
     },
   });
@@ -80,11 +79,11 @@ export default function SearchPage() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['papers', pid] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      setImported(res?.data?.created ?? 0);
+      setImported(res?.data?.imported ?? 0);
     },
   });
 
-  const sourceList = sourcesData?.data ?? SOURCE_OPTIONS;
+  const sourceList: SearchSource[] = sourcesData?.data ?? SOURCE_OPTIONS;
 
   const toggleSource = (id: string) => {
     setSources((prev) =>
@@ -139,7 +138,7 @@ export default function SearchPage() {
             {t('searchPage.sources')}
           </label>
           <div className="flex flex-wrap gap-2">
-            {sourceList.map((s: { id: string; name: string; status?: string }) => (
+            {sourceList.map((s) => (
               <label
                 key={s.id}
                 className={cn(
@@ -182,7 +181,7 @@ export default function SearchPage() {
             {t('searchPage.sourceStats')}
           </h2>
           <div className="flex flex-wrap gap-2">
-            {sourceList.map((s: { id: string; name: string; status?: string }) => (
+            {sourceList.map((s) => (
               <span
                 key={s.id}
                 className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground">

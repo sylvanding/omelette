@@ -2,11 +2,11 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.models import Paper, PaperChunk, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.services.ocr_service import OCRService
@@ -16,13 +16,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/ocr", tags=["ocr"])
 
 
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
 @router.post("/process", response_model=ApiResponse[dict])
 async def process_ocr(
     project_id: int,
@@ -30,9 +23,9 @@ async def process_ocr(
     force_ocr: bool = False,
     use_gpu: bool = True,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Run OCR/text extraction on downloaded PDFs."""
-    await _ensure_project(project_id, db)
 
     if paper_ids:
         stmt = select(Paper).where(Paper.id.in_(paper_ids), Paper.project_id == project_id)
@@ -91,9 +84,12 @@ async def process_ocr(
 
 
 @router.get("/stats", response_model=ApiResponse[dict])
-async def ocr_stats(project_id: int, db: AsyncSession = Depends(get_db)):
+async def ocr_stats(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
     """Return OCR processing statistics."""
-    await _ensure_project(project_id, db)
     stats = {}
     for status in PaperStatus:
         count = (

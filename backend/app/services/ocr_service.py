@@ -38,8 +38,8 @@ class OCRService:
                         "char_count": len(text),
                     }
                     pages.append(page_data)
-        except Exception as e:
-            logger.error("Failed to extract text from %s: %s", pdf_path, e)
+        except (OSError, TypeError, ValueError) as e:
+            logger.error("Failed to extract text from %s: %s", pdf_path, e, exc_info=True)
             return []
 
         return pages
@@ -98,7 +98,7 @@ class OCRService:
                     text_lines = page_result["rec_texts"]
                 elif isinstance(page_result, list):
                     text_lines = [
-                        item[-1][0] if isinstance(item[-1], (list, tuple)) else str(item) for item in page_result
+                        item[-1][0] if isinstance(item[-1], list | tuple) else str(item) for item in page_result
                     ]
 
                 pages.append(
@@ -110,8 +110,8 @@ class OCRService:
                         "method": "paddleocr",
                     }
                 )
-        except Exception as e:
-            logger.error("PaddleOCR failed for %s: %s", pdf_path, e)
+        except (OSError, TypeError, ValueError) as e:
+            logger.error("PaddleOCR failed for %s: %s", pdf_path, e, exc_info=True)
 
         return pages
 

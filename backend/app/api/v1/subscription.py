@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_project
 from app.models import Project, Subscription
 from app.schemas.common import ApiResponse
 from app.schemas.subscription import (
@@ -18,13 +18,6 @@ from app.schemas.subscription import (
 from app.services.subscription_service import SubscriptionService
 
 router = APIRouter(prefix="/projects/{project_id}/subscriptions", tags=["subscriptions"])
-
-
-async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
 
 
 @router.get("/feeds", response_model=ApiResponse[list[dict]])
@@ -65,9 +58,9 @@ async def check_updates(
 async def list_subscriptions(
     project_id: int,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """List all subscriptions for a project."""
-    await _ensure_project(project_id, db)
     result = await db.execute(select(Subscription).where(Subscription.project_id == project_id))
     subs = result.scalars().all()
     return ApiResponse(data=[SubscriptionRead.model_validate(s) for s in subs])
@@ -78,9 +71,9 @@ async def create_subscription(
     project_id: int,
     body: SubscriptionCreate,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Create a new subscription."""
-    await _ensure_project(project_id, db)
     sub = Subscription(project_id=project_id, **body.model_dump())
     db.add(sub)
     await db.flush()
@@ -93,9 +86,9 @@ async def get_subscription(
     project_id: int,
     sub_id: int,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Get a subscription by ID."""
-    await _ensure_project(project_id, db)
     sub = (
         await db.execute(select(Subscription).where(Subscription.id == sub_id, Subscription.project_id == project_id))
     ).scalar_one_or_none()
@@ -110,9 +103,9 @@ async def update_subscription(
     sub_id: int,
     body: SubscriptionUpdate,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Update a subscription."""
-    await _ensure_project(project_id, db)
     sub = (
         await db.execute(select(Subscription).where(Subscription.id == sub_id, Subscription.project_id == project_id))
     ).scalar_one_or_none()
@@ -131,9 +124,9 @@ async def delete_subscription(
     project_id: int,
     sub_id: int,
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Delete a subscription."""
-    await _ensure_project(project_id, db)
     sub = (
         await db.execute(select(Subscription).where(Subscription.id == sub_id, Subscription.project_id == project_id))
     ).scalar_one_or_none()
@@ -149,9 +142,9 @@ async def trigger_subscription(
     sub_id: int,
     since_days: int = Query(7, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Manually trigger a subscription update (check API for new papers)."""
-    await _ensure_project(project_id, db)
     sub = (
         await db.execute(select(Subscription).where(Subscription.id == sub_id, Subscription.project_id == project_id))
     ).scalar_one_or_none()

@@ -26,8 +26,11 @@ class Settings(BaseSettings):
     # Database
     database_url: str = Field(default="sqlite:///./data/omelette.db")
 
+    # API Authentication (empty = no auth, suitable for local dev)
+    api_secret_key: str = ""
+
     # Data Storage
-    data_dir: str = "/data0/djx/omelette"
+    data_dir: str = "./data"
     pdf_dir: str = ""
     ocr_output_dir: str = ""
     chroma_db_dir: str = ""

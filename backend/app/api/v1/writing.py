@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_llm
+from app.api.deps import get_db, get_llm, get_project
+from app.models import Project
 from app.schemas.common import ApiResponse
 from app.services.llm_client import LLMClient
 from app.services.rag_service import RAGService
@@ -59,7 +60,9 @@ def get_writing_service(
 async def writing_assist(
     project_id: int,
     body: WritingAssistRequest,
+    db: AsyncSession = Depends(get_db),
     svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
 ):
     """AI-powered writing assistance: summarize, cite, outline, gap analysis."""
     paper_ids = body.paper_ids or []
@@ -101,7 +104,9 @@ async def writing_assist(
 async def summarize_papers(
     project_id: int,
     body: SummarizeRequest,
+    db: AsyncSession = Depends(get_db),
     svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
 ):
     """Generate summaries for selected papers."""
     summaries = await svc.summarize_papers(
@@ -115,7 +120,9 @@ async def summarize_papers(
 async def generate_citations(
     project_id: int,
     body: CitationsRequest,
+    db: AsyncSession = Depends(get_db),
     svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
 ):
     """Generate formatted citations for selected papers."""
     citations = await svc.generate_citations(
@@ -129,7 +136,9 @@ async def generate_citations(
 async def generate_review_outline(
     project_id: int,
     body: ReviewOutlineRequest,
+    db: AsyncSession = Depends(get_db),
     svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
 ):
     """Generate a literature review outline based on project papers."""
     result = await svc.generate_review_outline(
@@ -144,7 +153,9 @@ async def generate_review_outline(
 async def analyze_gaps(
     project_id: int,
     body: GapAnalysisRequest,
+    db: AsyncSession = Depends(get_db),
     svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
 ):
     """Analyze research gaps in the project's literature."""
     result = await svc.analyze_gaps(
