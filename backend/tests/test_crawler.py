@@ -123,11 +123,14 @@ def test_build_unpaywall_url(monkeypatch):
     assert url == "https://api.unpaywall.org/v2/10.1234/test?email=user@example.com"
 
 
-def test_build_unpaywall_url_default_email(monkeypatch):
+def test_get_channels_skips_unpaywall_when_email_empty(monkeypatch):
+    """When unpaywall_email is empty, unpaywall channel is not added."""
     monkeypatch.setattr(settings, "unpaywall_email", "")
     service = CrawlerService()
-    url = service._build_unpaywall_url("10.5678/doi")
-    assert "email=test@example.com" in url
+    paper = _make_paper(id=1, doi="10.5678/doi", year=2024)
+    channels = service._get_channels(paper)
+    channel_names = [c[0] for c in channels]
+    assert "unpaywall" not in channel_names
 
 
 # --- Unit tests: _download_pdf (mocked) ---

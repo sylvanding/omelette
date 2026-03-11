@@ -115,7 +115,7 @@ Return JSON only:
             "expanded_terms": expanded_terms,
         }
 
-    def _build_wos_formula(self, core: list, sub: list, expanded: list) -> str:
+    def _build_wos_formula(self, core: list[str], sub: list[str], expanded: list[str]) -> str:
         parts = []
         if core:
             parts.append("TS=(" + " OR ".join(f'"{t}"' for t in core) + ")")
@@ -125,7 +125,7 @@ Return JSON only:
             parts.append("TS=(" + " OR ".join(f'"{t}"' for t in expanded) + ")")
         return " AND ".join(parts) if parts else ""
 
-    def _build_scopus_formula(self, core: list, sub: list, expanded: list) -> str:
+    def _build_scopus_formula(self, core: list[str], sub: list[str], expanded: list[str]) -> str:
         parts = []
         if core:
             parts.append("TITLE-ABS-KEY(" + " OR ".join(f'"{t}"' for t in core) + ")")
@@ -133,10 +133,10 @@ Return JSON only:
             parts.append("TITLE-ABS-KEY(" + " OR ".join(f'"{t}"' for t in sub) + ")")
         return " AND ".join(parts) if parts else ""
 
-    def _build_pubmed_formula(self, core: list, sub: list, expanded: list) -> str:
+    def _build_pubmed_formula(self, core: list[str], sub: list[str], expanded: list[str]) -> str:
         all_terms = core + sub + expanded
         return " OR ".join(f'"{t}"[Title/Abstract]' for t in all_terms)
 
-    def _build_generic_formula(self, core: list, sub: list, expanded: list) -> str:
+    def _build_generic_formula(self, core: list[str], sub: list[str], expanded: list[str]) -> str:
         all_terms = core + sub + expanded
         return " OR ".join(f'"{t}"' for t in all_terms)

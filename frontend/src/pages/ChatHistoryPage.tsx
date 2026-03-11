@@ -12,7 +12,7 @@ import { conversationApi } from '@/services/chat-api';
 import type { Conversation } from '@/types/chat';
 
 export default function ChatHistoryPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
 
@@ -50,7 +50,7 @@ export default function ChatHistoryPage() {
     if (hours < 24) return t('history.timeHours', { count: hours });
     const days = Math.floor(hours / 24);
     if (days < 7) return t('history.timeDays', { count: days });
-    return d.toLocaleDateString('zh-CN');
+    return d.toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US');
   };
 
   return (

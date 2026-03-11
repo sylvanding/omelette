@@ -51,7 +51,7 @@ def extract_metadata(pdf_path: Path, fallback_title: str = "Untitled") -> NewPap
             if year_match:
                 year = int(year_match.group(0))
 
-    except Exception as e:
+    except (ValueError, KeyError, OSError) as e:
         logger.warning("Failed to extract metadata from %s: %s", pdf_path, e)
 
     return NewPaperData(

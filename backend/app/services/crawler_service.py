@@ -10,6 +10,7 @@ from app.config import settings
 from app.models import Paper, PaperStatus
 
 logger = logging.getLogger(__name__)
+_unpaywall_warning_logged = False
 
 
 def _get_proxy() -> str | None:
@@ -49,10 +50,15 @@ class CrawlerService:
         if paper.pdf_url:
             channels.append(("direct", paper.pdf_url))
 
-        # 2. Unpaywall (requires DOI)
-        if paper.doi:
+        # 2. Unpaywall (requires DOI and configured email)
+        if paper.doi and settings.unpaywall_email:
             unpaywall_url = self._build_unpaywall_url(paper.doi)
             channels.append(("unpaywall", unpaywall_url))
+        elif paper.doi and not settings.unpaywall_email:
+            global _unpaywall_warning_logged
+            if not _unpaywall_warning_logged:
+                logger.warning("Unpaywall email not configured; skipping Unpaywall channel")
+                _unpaywall_warning_logged = True
 
         # 3. arXiv (if source is arXiv)
         if paper.source == "arxiv" and paper.source_id:
@@ -69,9 +75,8 @@ class CrawlerService:
         return channels
 
     def _build_unpaywall_url(self, doi: str) -> str:
-        """Build Unpaywall API URL for a DOI."""
-        email = settings.unpaywall_email or "test@example.com"
-        return f"https://api.unpaywall.org/v2/{doi}?email={email}"
+        """Build Unpaywall API URL for a DOI. Caller must ensure unpaywall_email is set."""
+        return f"https://api.unpaywall.org/v2/{doi}?email={settings.unpaywall_email}"
 
     async def _download_pdf(self, url: str, paper: Paper) -> dict:
         """Download a PDF from a URL and save to disk."""
