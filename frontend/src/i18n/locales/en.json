@@ -71,6 +71,7 @@
     "noKB": "No knowledge bases yet, create a project first",
     "disclaimer": "AI responses may contain inaccuracies. Please verify.",
     "streamError": "Sorry, an error occurred. Please try again.",
+    "stop": "Stop generating",
     "suggestions": {
       "summarize": "Summarize the current research in this field",
       "citation": "Find citations supporting this viewpoint",
@@ -189,6 +190,8 @@
     "noMatchDesc": "Try different search terms",
     "messageCount": "{{count}} messages",
     "confirmDelete": "Are you sure you want to delete this conversation?",
+    "conversationNotFound": "Conversation not found",
+    "conversationNotFoundDesc": "This conversation may have been deleted.",
     "timeJustNow": "Just now",
     "timeMinutes": "{{count}} min ago",
     "timeHours": "{{count}} hours ago",
@@ -238,7 +241,7 @@
     "domain": "Domain",
     "created": "Created",
     "subscriptions": "Subscriptions",
-    "navHint": "Use the sidebar to navigate to Papers, Keywords, Search, RAG Chat, Writing, or Tasks."
+    "navHint": "Use the sidebar to navigate to Papers, Keywords, Search, Writing, or Tasks."
   },
   "papers": {
     "title": "Papers",

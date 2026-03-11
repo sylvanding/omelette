@@ -15,7 +15,6 @@ const ProjectOverview = lazy(() => import('@/pages/project/ProjectOverview'));
 const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
 const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
 const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
-const RAGChatPage = lazy(() => import('@/pages/project/RAGChatPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
 const SubscriptionsPage = lazy(() => import('@/pages/project/SubscriptionsPage'));
@@ -38,6 +37,7 @@ function App() {
             <Routes>
               <Route path="/" element={<AppShell />}>
                 <Route index element={<PlaygroundPage />} />
+                <Route path="chat/:conversationId" element={<PlaygroundPage />} />
                 <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
                 <Route path="history" element={<ChatHistoryPage />} />
                 <Route path="settings" element={<SettingsPage />} />
@@ -46,7 +46,7 @@ function App() {
                   <Route path="papers" element={<PapersPage />} />
                   <Route path="keywords" element={<KeywordsPage />} />
                   <Route path="search" element={<SearchPage />} />
-                  <Route path="rag" element={<RAGChatPage />} />
+                  <Route path="rag" element={<Navigate to="/" replace />} />
                   <Route path="writing" element={<WritingPage />} />
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="subscriptions" element={<SubscriptionsPage />} />

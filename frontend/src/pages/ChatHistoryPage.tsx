@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
@@ -87,44 +88,49 @@ export default function ChatHistoryPage() {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="group flex items-start justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50"
                 >
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-medium">{conv.title}</h3>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {t(`playground.toolMode.${conv.tool_mode}`, { defaultValue: conv.tool_mode })}
-                      </Badge>
-                      {conv.model && (
-                        <Badge variant="outline" className="text-xs">
-                          {conv.model}
+                  <Link
+                    to={`/chat/${conv.id}`}
+                    className="group flex items-start justify-between rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-accent/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-medium">{conv.title}</h3>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {t(`playground.toolMode.${conv.tool_mode}`, { defaultValue: conv.tool_mode })}
                         </Badge>
-                      )}
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="size-3" />
-                        {formatDate(conv.updated_at)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {t('history.messageCount', { count: conv.messages?.length ?? 0 })}
-                      </span>
+                        {conv.model && (
+                          <Badge variant="outline" className="text-xs">
+                            {conv.model}
+                          </Badge>
+                        )}
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="size-3" />
+                          {formatDate(conv.updated_at)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {t('history.messageCount', { count: conv.messages?.length ?? 0 })}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <ConfirmDialog
-                    trigger={
-                      <button
-                        disabled={deleteMutation.isPending}
-                        className="ml-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    }
-                    title={t('common.confirmDeleteTitle')}
-                    description={t('history.confirmDelete')}
-                    confirmText={t('common.delete')}
-                    cancelText={t('common.cancel')}
-                    onConfirm={() => deleteMutation.mutate(conv.id)}
-                    destructive
-                  />
+                    <ConfirmDialog
+                      trigger={
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          disabled={deleteMutation.isPending}
+                          className="ml-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      }
+                      title={t('common.confirmDeleteTitle')}
+                      description={t('history.confirmDelete')}
+                      confirmText={t('common.delete')}
+                      cancelText={t('common.cancel')}
+                      onConfirm={() => deleteMutation.mutate(conv.id)}
+                      destructive
+                    />
+                  </Link>
                 </motion.div>
               ))}
             </div>

@@ -1,11 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, ChevronDown, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { Plus, ChevronDown, Sparkles, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Popover,
   PopoverContent,
@@ -14,7 +18,7 @@ import {
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubble from '@/components/playground/MessageBubble';
 import ToolModeSelector from '@/components/playground/ToolModeSelector';
-import { streamChat } from '@/services/chat-api';
+import { streamChat, conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import type { ToolMode, Citation } from '@/types/chat';
 
@@ -28,19 +32,53 @@ interface LocalMessage {
 
 export default function PlaygroundPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { conversationId: routeConvId } = useParams<{ conversationId: string }>();
+
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>('qa');
   const [selectedKBs, setSelectedKBs] = useState<number[]>([]);
   const [conversationId, setConversationId] = useState<number | undefined>();
+  const [isRestoringConversation, setIsRestoringConversation] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const hasRestoredRef = useRef<string | undefined>(undefined);
 
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: () => projectApi.list(1, 100),
   });
   const projects = projectsData?.items ?? [];
+
+  useEffect(() => {
+    if (!routeConvId || hasRestoredRef.current === routeConvId) return;
+    hasRestoredRef.current = routeConvId;
+    const convIdNum = Number(routeConvId);
+    if (Number.isNaN(convIdNum)) return;
+
+    setIsRestoringConversation(true);
+    conversationApi.get(convIdNum)
+      .then((conv) => {
+        setConversationId(conv.id);
+        setToolMode((conv.tool_mode as ToolMode) || 'qa');
+        if (conv.knowledge_base_ids?.length) {
+          setSelectedKBs(conv.knowledge_base_ids);
+        }
+        const restored: LocalMessage[] = (conv.messages ?? []).map((m) => ({
+          id: `restored-${m.id}`,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          citations: (m.metadata?.citations as Citation[]) ?? [],
+        }));
+        setMessages(restored);
+      })
+      .catch(() => {
+        setMessages([]);
+        setConversationId(undefined);
+      })
+      .finally(() => setIsRestoringConversation(false));
+  }, [routeConvId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,11 +138,17 @@ export default function PlaygroundPage() {
           } else if (event.event === 'message_end') {
             const cid = (event.data as { conversation_id?: number })
               .conversation_id;
-            if (cid) setConversationId(cid);
+            if (cid) {
+              setConversationId(cid);
+              if (!routeConvId) {
+                navigate(`/chat/${cid}`, { replace: true });
+              }
+            }
           }
         }
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
+          toast.error(t('playground.streamError'));
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
@@ -123,14 +167,20 @@ export default function PlaygroundPage() {
         abortRef.current = null;
       }
     },
-    [conversationId, selectedKBs, toolMode, t],
+    [conversationId, selectedKBs, toolMode, t, routeConvId, navigate],
   );
+
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const handleNewChat = () => {
     abortRef.current?.abort();
     setMessages([]);
     setConversationId(undefined);
     setIsStreaming(false);
+    hasRestoredRef.current = undefined;
+    navigate('/', { replace: true });
   };
 
   const toggleKB = (id: number) => {
@@ -140,6 +190,22 @@ export default function PlaygroundPage() {
   };
 
   const isEmpty = messages.length === 0;
+
+  if (isRestoringConversation) {
+    return <LoadingState className="h-full" message={t('common.loading')} />;
+  }
+
+  if (routeConvId && !conversationId && !isRestoringConversation && hasRestoredRef.current === routeConvId) {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title={t('history.conversationNotFound', { defaultValue: '对话未找到' })}
+        description={t('history.conversationNotFoundDesc', { defaultValue: '该对话可能已被删除。' })}
+        action={{ label: t('playground.newChat'), onClick: handleNewChat }}
+        className="h-full"
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -164,9 +230,7 @@ export default function PlaygroundPage() {
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2" align="end">
               {isLoadingProjects ? (
-                <p className="p-2 text-xs text-muted-foreground">
-                  {t('common.loading')}
-                </p>
+                <LoadingState className="py-4" />
               ) : projects.length === 0 ? (
                 <p className="p-2 text-xs text-muted-foreground">
                   {t('playground.noKB')}
@@ -266,6 +330,14 @@ export default function PlaygroundPage() {
       {/* Input area */}
       <div className="border-t border-border bg-background p-4">
         <div className="mx-auto max-w-3xl">
+          {isStreaming ? (
+            <div className="flex justify-center mb-2">
+              <Button variant="outline" size="sm" onClick={handleStop} className="gap-1.5">
+                <Square className="size-3" />
+                {t('playground.stop', { defaultValue: '停止生成' })}
+              </Button>
+            </div>
+          ) : null}
           <ChatInput
             onSend={handleSend}
             isLoading={isStreaming}
