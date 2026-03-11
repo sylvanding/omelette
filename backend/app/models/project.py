@@ -16,6 +16,8 @@ class Project(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     domain: Mapped[str] = mapped_column(String(255), default="")
     settings: Mapped[dict | None] = mapped_column(JSON, default=None)
+    icon: Mapped[str] = mapped_column(String(50), default="")
+    color: Mapped[str] = mapped_column(String(20), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
