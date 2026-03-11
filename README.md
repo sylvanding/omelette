@@ -97,7 +97,7 @@ Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ 
 | Layer | Technology |
 |-------|------------|
 | **Backend** | FastAPI, SQLAlchemy 2 (async), Pydantic v2, Python 3.12 |
-| **Frontend** | React 18, Vite, TypeScript, TailwindCSS v4, shadcn/ui, Radix |
+| **Frontend** | React 18, Vite, TypeScript, TailwindCSS v4, shadcn/ui, Radix, TanStack Query |
 | **Database** | SQLite + aiosqlite, Alembic migrations |
 | **Vector Store** | ChromaDB |
 | **RAG** | LlamaIndex with GPU-aware embeddings |
@@ -194,7 +194,7 @@ omelette/
 │   │   └── main.py       # App entry, lifespan, CORS
 │   ├── mcp_server.py     # MCP (Model Context Protocol) server
 │   ├── alembic/          # Database migrations
-│   ├── tests/            # pytest-asyncio tests (178)
+│   ├── tests/            # pytest-asyncio tests (178 tests)
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
@@ -202,15 +202,19 @@ omelette/
 │       ├── components/   # Layout, shared UI
 │       │   └── ui/       # shadcn/ui components
 │       ├── services/     # Typed API client
+│       ├── hooks/        # Custom hooks (useToastMutation, etc.)
 │       ├── stores/       # Zustand state
 │       ├── i18n/         # Internationalization (zh/en)
+│       ├── test/         # Vitest setup, MSW mocks, fixtures
 │       └── lib/          # Axios client, utils
+├── e2e/                  # Playwright E2E tests
 ├── docs/                 # VitePress documentation (EN/ZH)
 ├── assets/               # Banner, logo, mascot images
 ├── environment.yml       # Conda env (Python 3.12)
 ├── Makefile              # Dev workflow shortcuts
 ├── .env.example          # Configuration template
-└── .github/workflows/    # CI (ruff, pytest, tsc, build, docs)
+├── playwright.config.ts  # Playwright E2E configuration
+└── .github/workflows/    # CI (ruff, pytest, vitest, tsc, build, docs)
 ```
 
 ## 🛠️ Development
@@ -229,8 +233,14 @@ make dev                  # Start both backend and frontend
 # Backend (178 tests)
 cd backend && pytest tests/ -v
 
+# Frontend unit tests (28 tests — Vitest + Testing Library + MSW)
+cd frontend && npm test
+
 # Frontend type check and build
 cd frontend && npx tsc --noEmit && npm run build
+
+# E2E tests (optional — requires running frontend dev server)
+npx playwright test
 ```
 
 ## 📡 API Overview
