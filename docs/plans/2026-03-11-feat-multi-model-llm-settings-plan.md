@@ -1,7 +1,7 @@
 ---
 title: "feat: 多模型 LLM 支持与前端设置配置系统"
 type: feat
-status: active
+status: completed
 date: 2026-03-11
 origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 ---
@@ -259,16 +259,16 @@ def merge_llm_config() -> LLMConfig:
 
 ### 6.1 后端
 
-- [ ] 支持 6 种 provider：openai、anthropic、aliyun、volcengine、ollama、mock
-- [ ] `get_llm_client(provider=...)` 可指定 provider，不指定时使用合并后的默认配置
-- [ ] UserSettings 表存在，可存储 key-value 配置
-- [ ] `GET /api/v1/settings` 返回合并后配置，API Key 脱敏
-- [ ] `PUT /api/v1/settings` 可更新配置并持久化
+- [x] 支持 6 种 provider：openai、anthropic、aliyun、volcengine、ollama、mock
+- [x] `get_llm_client(provider=...)` 可指定 provider，不指定时使用合并后的默认配置
+- [x] UserSettings 表存在，可存储 key-value 配置
+- [x] `GET /api/v1/settings` 返回合并后配置，API Key 脱敏
+- [x] `PUT /api/v1/settings` 可更新配置并持久化
 
-- [ ] `GET /api/v1/settings/models` 返回各 provider 的可用模型列表
-- [ ] `POST /api/v1/settings/test-connection` 可测试当前 LLM 连接，返回成功/失败
-- [ ] 配置合并逻辑正确：DB 覆盖 .env
-- [ ] 现有 `LLM_PROVIDER=mock` 的测试用例全部通过
+- [x] `GET /api/v1/settings/models` 返回各 provider 的可用模型列表
+- [x] `POST /api/v1/settings/test-connection` 可测试当前 LLM 连接，返回成功/失败
+- [x] 配置合并逻辑正确：DB 覆盖 .env
+- [x] 现有 `LLM_PROVIDER=mock` 的测试用例全部通过
 
 ### 6.2 前端
 
