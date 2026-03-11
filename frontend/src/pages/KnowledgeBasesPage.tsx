@@ -17,7 +17,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CardSkeleton } from '@/components/ui/skeletons';
+import PageHeader from '@/components/layout/PageHeader';
 import { projectApi } from '@/services/api';
 import type { Project } from '@/types';
 
@@ -74,18 +76,17 @@ export default function KnowledgeBasesPage() {
   return (
     <div className="h-full p-6">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t('kb.title')}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t('kb.subtitle')}
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)} className="gap-1.5">
-            <Plus className="size-4" />
-            {t('kb.new')}
-          </Button>
-        </div>
+        <PageHeader
+          title={t('kb.title')}
+          subtitle={t('kb.subtitle')}
+          action={
+            <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+              <Plus className="size-4" />
+              {t('kb.new')}
+            </Button>
+          }
+          className="mb-6"
+        />
 
         <div className="mb-4">
           <div className="relative">
@@ -100,23 +101,14 @@ export default function KnowledgeBasesPage() {
         </div>
 
         {isLoading ? (
-          <LoadingState message={t('common.loading')} />
+          <CardSkeleton count={6} />
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-12 text-center">
-            <BookOpen className="mx-auto mb-3 size-12 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">
-              {search ? t('kb.noMatch') : t('kb.empty')}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {search ? t('kb.noMatchDesc') : t('kb.emptyDesc')}
-            </p>
-            {!search && (
-              <Button onClick={() => setShowCreate(true)} className="mt-4 gap-1.5">
-                <Plus className="size-4" />
-                {t('kb.new')}
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title={search ? t('kb.noMatch') : t('kb.empty')}
+            description={search ? t('kb.noMatchDesc') : t('kb.emptyDesc')}
+            action={!search ? { label: t('kb.new'), onClick: () => setShowCreate(true) } : undefined}
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((project, i) => (

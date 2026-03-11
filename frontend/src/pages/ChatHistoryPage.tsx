@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ListItemSkeleton } from '@/components/ui/skeletons';
+import PageHeader from '@/components/layout/PageHeader';
 import { conversationApi } from '@/services/chat-api';
 import type { Conversation } from '@/types/chat';
 
@@ -55,10 +56,11 @@ export default function ChatHistoryPage() {
   return (
     <div className="h-full p-6">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{t('history.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('history.subtitle')}</p>
-        </div>
+        <PageHeader
+          title={t('history.title')}
+          subtitle={t('history.subtitle')}
+          className="mb-6"
+        />
 
         <div className="mb-4">
           <div className="relative">
@@ -74,7 +76,7 @@ export default function ChatHistoryPage() {
 
         <ScrollArea className="h-[calc(100vh-14rem)]">
           {isLoading ? (
-            <LoadingState message={t('common.loading')} />
+            <ListItemSkeleton count={5} />
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={MessageSquare}
