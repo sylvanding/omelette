@@ -14,6 +14,27 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _cached_embed_model: BaseEmbedding | None = None
+_env_injected = False
+
+
+def _inject_hf_env() -> None:
+    """Propagate proxy and HF mirror settings to os.environ so that
+    huggingface_hub / sentence-transformers honour them during downloads."""
+    global _env_injected
+    if _env_injected:
+        return
+    _env_injected = True
+
+    if settings.http_proxy and not os.environ.get("HTTP_PROXY"):
+        os.environ["HTTP_PROXY"] = settings.http_proxy
+        logger.info("Injected HTTP_PROXY=%s for HuggingFace downloads", settings.http_proxy)
+    if settings.https_proxy and not os.environ.get("HTTPS_PROXY"):
+        os.environ["HTTPS_PROXY"] = settings.https_proxy
+        logger.info("Injected HTTPS_PROXY=%s for HuggingFace downloads", settings.https_proxy)
+
+    if settings.hf_endpoint and not os.environ.get("HF_ENDPOINT"):
+        os.environ["HF_ENDPOINT"] = settings.hf_endpoint
+        logger.info("Using HuggingFace mirror: %s", settings.hf_endpoint)
 
 
 def detect_gpu() -> tuple[bool, int, str]:
@@ -71,6 +92,8 @@ def get_embedding_model(
 
 def _build_local_embedding(model_name: str) -> BaseEmbedding:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    _inject_hf_env()
 
     has_gpu, _count, device = detect_gpu()
     logger.info("Loading local embedding model=%s device=%s", model_name, device)

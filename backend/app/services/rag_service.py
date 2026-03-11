@@ -11,6 +11,7 @@ ChromaVectorStore, SentenceSplitter, and query engine for:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -84,16 +85,29 @@ class RAGService:
             embed_model=self._embed_model,
         )
 
-    async def index_chunks(self, project_id: int, chunks: list[dict]) -> dict:
+    async def index_chunks(
+        self,
+        project_id: int,
+        chunks: list[dict],
+        *,
+        on_progress: Callable[[str, int], None] | None = None,
+        batch_size: int = 64,
+    ) -> dict:
         """Index paper chunks into ChromaDB via LlamaIndex.
 
         Converts raw chunk dicts to LlamaIndex TextNodes with metadata,
-        then inserts them into the vector store.
+        then inserts them in batches, reporting progress via *on_progress*.
         """
         if not chunks:
             return {"indexed": 0}
 
+        if on_progress:
+            on_progress("loading_model", 0)
+
         index = self._get_index(project_id)
+
+        if on_progress:
+            on_progress("preparing", 5)
 
         nodes: list[TextNode] = []
         for chunk in chunks:
@@ -117,8 +131,17 @@ class RAGService:
 
         import asyncio
 
-        await asyncio.to_thread(index.insert_nodes, nodes)
-        return {"indexed": len(nodes), "collection": f"project_{project_id}"}
+        total = len(nodes)
+        indexed = 0
+        for i in range(0, total, batch_size):
+            batch = nodes[i : i + batch_size]
+            await asyncio.to_thread(index.insert_nodes, batch)
+            indexed += len(batch)
+            if on_progress:
+                pct = 10 + int(90 * indexed / total)
+                on_progress("indexing", min(pct, 99))
+
+        return {"indexed": total, "collection": f"project_{project_id}"}
 
     async def index_documents(
         self,

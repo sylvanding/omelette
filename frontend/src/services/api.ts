@@ -50,11 +50,55 @@ export const searchApi = {
     api.get(`/projects/${projectId}/search/sources`),
 };
 
+export interface IndexSSEEvent {
+  event: 'progress' | 'complete' | 'error';
+  data: {
+    stage?: string;
+    percent?: number;
+    message?: string;
+    indexed?: number;
+    collection?: string;
+    papers_updated?: number;
+  };
+}
+
 export const ragApi = {
   query: (projectId: number, question: string, topK?: number) =>
     api.post(`/projects/${projectId}/rag/query`, { question, top_k: topK }),
   index: (projectId: number) => api.post(`/projects/${projectId}/rag/index`),
   stats: (projectId: number) => api.get(`/projects/${projectId}/rag/stats`),
+
+  async *indexStream(
+    projectId: number,
+    signal?: AbortSignal,
+  ): AsyncGenerator<IndexSSEEvent> {
+    const response = await fetch(`/api/v1/projects/${projectId}/rag/index/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let currentEvent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop()!;
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+          yield { event: currentEvent as IndexSSEEvent['event'], data };
+        }
+      }
+    }
+  },
 };
 
 export const writingApi = {

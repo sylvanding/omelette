@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     http_proxy: str = ""
     https_proxy: str = ""
 
+    # HuggingFace Mirror (for users in China, e.g. https://hf-mirror.com)
+    hf_endpoint: str = ""
+
     # External APIs
     semantic_scholar_api_key: str = ""
     unpaywall_email: str = ""
