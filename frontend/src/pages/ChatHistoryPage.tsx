@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
@@ -16,6 +16,7 @@ import type { Conversation } from '@/types/chat';
 
 export default function ChatHistoryPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
@@ -79,6 +80,7 @@ export default function ChatHistoryPage() {
               icon={MessageSquare}
               title={search ? t('history.noMatch') : t('history.empty')}
               description={search ? t('history.noMatchDesc') : t('history.emptyDesc')}
+              action={!search ? { label: t('playground.newChat'), onClick: () => navigate('/') } : undefined}
             />
           ) : (
             <div className="space-y-2">
