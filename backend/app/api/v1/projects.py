@@ -9,7 +9,7 @@ from app.models import Keyword, Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(tags=["projects"])
 
 
 @router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]])
