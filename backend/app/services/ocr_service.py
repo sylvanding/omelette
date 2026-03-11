@@ -124,18 +124,18 @@ class OCRService:
             return {"error": f"File not found: {pdf_path}", "pages": []}
 
         # Try native extraction first
+        native_pages = []
         if not force_ocr:
-            pages = self.extract_text_native(pdf_path)
+            native_pages = self.extract_text_native(pdf_path)
 
-            # Check if native extraction yielded enough text
-            total_chars = sum(p["char_count"] for p in pages)
-            pages_with_text = sum(1 for p in pages if p["has_text"])
+            total_chars = sum(p["char_count"] for p in native_pages)
+            pages_with_text = sum(1 for p in native_pages if p["has_text"])
 
-            if pages and pages_with_text >= len(pages) * 0.5 and total_chars > 100:
+            if native_pages and pages_with_text >= len(native_pages) * 0.5 and total_chars > 100:
                 return {
                     "method": "native",
-                    "pages": pages,
-                    "total_pages": len(pages),
+                    "pages": native_pages,
+                    "total_pages": len(native_pages),
                     "total_chars": total_chars,
                     "pages_with_text": pages_with_text,
                 }
@@ -145,12 +145,37 @@ class OCRService:
         pages = self.extract_text_ocr(pdf_path)
         total_chars = sum(len(p.get("text", "")) for p in pages)
 
+        if pages:
+            return {
+                "method": "paddleocr",
+                "pages": pages,
+                "total_pages": len(pages),
+                "total_chars": total_chars,
+                "pages_with_text": sum(1 for p in pages if p.get("has_text")),
+            }
+
+        # PaddleOCR unavailable or failed — use native results if any text was found
+        if native_pages:
+            native_chars = sum(p["char_count"] for p in native_pages)
+            native_with_text = sum(1 for p in native_pages if p["has_text"])
+            if native_chars > 0:
+                logger.info(
+                    "PaddleOCR unavailable, using native extraction with %d chars for %s", native_chars, pdf_path
+                )
+                return {
+                    "method": "native",
+                    "pages": native_pages,
+                    "total_pages": len(native_pages),
+                    "total_chars": native_chars,
+                    "pages_with_text": native_with_text,
+                }
+
         return {
-            "method": "paddleocr" if pages else "failed",
-            "pages": pages,
-            "total_pages": len(pages),
-            "total_chars": total_chars,
-            "pages_with_text": sum(1 for p in pages if p.get("has_text")),
+            "method": "failed",
+            "pages": [],
+            "total_pages": 0,
+            "total_chars": 0,
+            "pages_with_text": 0,
         }
 
     def save_result(self, paper_id: int, result: dict) -> Path:

@@ -221,12 +221,18 @@ async def test_chat_stream_tool_modes(client: AsyncClient, project_id: int):
 
 
 @pytest.mark.asyncio
-async def test_chat_stream_missing_kb(client: AsyncClient):
+async def test_chat_stream_no_kb_direct_llm(client: AsyncClient):
+    """When no knowledge_base_ids are provided, direct LLM chat should work."""
     resp = await client.post(
         "/api/v1/chat/stream",
         json={
             "knowledge_base_ids": [],
-            "message": "Test",
+            "message": "What is photosynthesis?",
         },
     )
-    assert resp.status_code == 422
+    assert resp.status_code == 200
+    text = resp.text
+    assert "event: message_start" in text
+    assert "event: text_delta" in text
+    assert "event: message_end" in text
+    assert "event: citation" not in text

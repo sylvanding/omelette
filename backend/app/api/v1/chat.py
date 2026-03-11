@@ -76,34 +76,35 @@ async def _stream_chat(
 
         all_sources = []
         all_contexts = []
-
-        for kb_id in request.knowledge_base_ids:
-            result = await rag.query(
-                project_id=kb_id,
-                question=request.message,
-                top_k=5,
-                include_sources=True,
-            )
-            if result.get("sources"):
-                all_sources.extend(result["sources"])
-                for src in result["sources"]:
-                    all_contexts.append(
-                        f"[Source: {src.get('paper_title', 'Unknown')}, "
-                        f"p.{src.get('page_number', '?')}]\n{src.get('excerpt', '')}"
-                    )
-
         citations = []
-        for i, src in enumerate(all_sources, 1):
-            citation = {
-                "index": i,
-                "paper_id": src.get("paper_id"),
-                "paper_title": src.get("paper_title", ""),
-                "page_number": src.get("page_number"),
-                "excerpt": src.get("excerpt", ""),
-                "relevance_score": src.get("relevance_score", 0),
-            }
-            citations.append(citation)
-            yield _sse("citation", citation)
+
+        if request.knowledge_base_ids:
+            for kb_id in request.knowledge_base_ids:
+                result = await rag.query(
+                    project_id=kb_id,
+                    question=request.message,
+                    top_k=5,
+                    include_sources=True,
+                )
+                if result.get("sources"):
+                    all_sources.extend(result["sources"])
+                    for src in result["sources"]:
+                        all_contexts.append(
+                            f"[Source: {src.get('paper_title', 'Unknown')}, "
+                            f"p.{src.get('page_number', '?')}]\n{src.get('excerpt', '')}"
+                        )
+
+            for i, src in enumerate(all_sources, 1):
+                citation = {
+                    "index": i,
+                    "paper_id": src.get("paper_id"),
+                    "paper_title": src.get("paper_title", ""),
+                    "page_number": src.get("page_number"),
+                    "excerpt": src.get("excerpt", ""),
+                    "relevance_score": src.get("relevance_score", 0),
+                }
+                citations.append(citation)
+                yield _sse("citation", citation)
 
         history_messages = []
         conversation_id = request.conversation_id
@@ -119,16 +120,22 @@ async def _stream_chat(
                 for msg in conv.messages[-10:]:
                     history_messages.append({"role": msg.role, "content": msg.content})
 
-        system_prompt = TOOL_MODE_PROMPTS.get(request.tool_mode, TOOL_MODE_PROMPTS["qa"])
-        context_text = "\n\n---\n\n".join(all_contexts) if all_contexts else "No relevant documents found."
+        if request.knowledge_base_ids:
+            system_prompt = TOOL_MODE_PROMPTS.get(request.tool_mode, TOOL_MODE_PROMPTS["qa"])
+            context_text = "\n\n---\n\n".join(all_contexts) if all_contexts else "No relevant documents found."
+            user_content = f"Context:\n{context_text}\n\nQuestion: {request.message}"
+        else:
+            system_prompt = (
+                "You are a helpful scientific research assistant. "
+                "Answer questions clearly and accurately. "
+                "If you don't know the answer, say so honestly."
+            )
+            user_content = request.message
 
         messages = [
             {"role": "system", "content": system_prompt},
             *history_messages,
-            {
-                "role": "user",
-                "content": f"Context:\n{context_text}\n\nQuestion: {request.message}",
-            },
+            {"role": "user", "content": user_content},
         ]
 
         full_response = ""

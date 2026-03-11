@@ -14,6 +14,7 @@ export interface ChatMessage {
   conversation_id: number;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  citations: Citation[] | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
 }

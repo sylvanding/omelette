@@ -68,7 +68,7 @@ export default function PlaygroundPage() {
           id: `restored-${m.id}`,
           role: m.role as 'user' | 'assistant',
           content: m.content,
-          citations: (m.metadata?.citations as Citation[]) ?? [],
+          citations: (m.citations as Citation[]) ?? [],
         }));
         setMessages(restored);
       })

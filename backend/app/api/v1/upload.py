@@ -55,6 +55,11 @@ async def upload_pdfs(
 
         try:
             content = await upload_file.read()
+            if not content:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"File {upload_file.filename} is empty",
+                )
             if len(content) > max_bytes:
                 raise HTTPException(
                     status_code=413,

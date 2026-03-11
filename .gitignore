@@ -49,6 +49,9 @@ htmlcov/
 .pytest_cache/
 coverage.xml
 .mypy_cache/
+test-report-*/
+test-results/
+playwright-report/
 
 # Build artifacts
 *.log

@@ -172,9 +172,10 @@ class TestOCRService:
             pdf_path = f.name
             try:
                 result = service.process_pdf(pdf_path, force_ocr=False)
-                # Should fall back to OCR, which returns [] when unavailable
-                assert result["method"] in ("paddleocr", "failed")
-                assert result["total_pages"] == 0 or "pages" in result
+                # PaddleOCR unavailable: should fall back to native results
+                # since some text (10 chars) was extracted
+                assert result["method"] == "native"
+                assert result["total_chars"] == 10
             finally:
                 Path(pdf_path).unlink(missing_ok=True)
 
