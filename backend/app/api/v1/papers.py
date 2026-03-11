@@ -49,7 +49,8 @@ async def list_papers(
 
     total = (await db.execute(count_base)).scalar() or 0
 
-    sort_col = getattr(Paper, sort_by, Paper.created_at)
+    allowed_sort = {"id", "title", "year", "created_at", "updated_at", "citation_count", "source"}
+    sort_col = getattr(Paper, sort_by) if sort_by in allowed_sort else Paper.created_at
     base = base.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
 
     base = base.offset((page - 1) * page_size).limit(page_size)

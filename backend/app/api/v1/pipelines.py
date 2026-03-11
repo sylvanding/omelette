@@ -105,7 +105,19 @@ async def start_search_pipeline(body: SearchPipelineRequest, db: AsyncSession = 
 @router.post("/upload", response_model=ApiResponse[dict])
 async def start_upload_pipeline(body: UploadPipelineRequest, db: AsyncSession = Depends(get_db)):
     """Start a PDF-upload pipeline: extract → dedup → OCR → index."""
+    from pathlib import Path as _Path
+
+    from app.config import settings
+
     await _ensure_project(body.project_id, db)
+
+    allowed_root = _Path(settings.pdf_dir).resolve()
+    safe_paths: list[str] = []
+    for p in body.pdf_paths:
+        resolved = _Path(p).resolve()
+        if not str(resolved).startswith(str(allowed_root)):
+            raise HTTPException(status_code=400, detail=f"Path not within allowed directory: {p}")
+        safe_paths.append(str(resolved))
 
     from app.pipelines.graphs import create_upload_pipeline
 
@@ -116,7 +128,7 @@ async def start_upload_pipeline(body: UploadPipelineRequest, db: AsyncSession = 
         "project_id": body.project_id,
         "thread_id": thread_id,
         "pipeline_type": "upload",
-        "params": {"pdf_paths": body.pdf_paths},
+        "params": {"pdf_paths": safe_paths},
         "papers": [],
         "conflicts": [],
         "resolved_conflicts": [],

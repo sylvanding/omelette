@@ -113,6 +113,7 @@ class CrawlerService:
             return {
                 "success": True,
                 "paper_id": paper.id,
+                "path": str(file_path),
                 "file_path": str(file_path),
                 "file_size": file_size,
                 "md5": md5,
