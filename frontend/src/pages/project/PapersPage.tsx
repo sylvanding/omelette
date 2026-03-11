@@ -14,6 +14,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { paperApi, ocrApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
@@ -138,18 +139,17 @@ export default function PapersPage() {
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
+            <Input
               placeholder={t('papers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
+              className="pl-9"
             />
           </div>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as PaperStatus | '')}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
           >
             {STATUS_OPTIONS.map((o) => (
               <option key={o.value || 'all'} value={o.value}>
@@ -157,17 +157,17 @@ export default function PapersPage() {
               </option>
             ))}
           </select>
-          <input
+          <Input
             type="number"
             placeholder={t('common.year')}
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="w-24 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-24"
           />
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -175,12 +175,13 @@ export default function PapersPage() {
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
           >
             {order === 'asc' ? t('common.asc') : t('common.desc')}
-          </button>
+          </Button>
         </div>
       </div>
 

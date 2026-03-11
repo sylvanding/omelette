@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Plus, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LoadingState } from '@/components/ui/loading-state';
 import { keywordApi } from '@/services/api';
@@ -128,50 +130,43 @@ export default function KeywordsPage() {
           {t('keywords.addKeyword')}
         </h2>
         <form onSubmit={handleAddKeyword} className="flex flex-wrap gap-3">
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.term')}
             value={formTerm}
             onChange={(e) => setFormTerm(e.target.value)}
-            className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[120px] w-auto"
             required
           />
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.termEn')}
             value={formTermEn}
             onChange={(e) => setFormTermEn(e.target.value)}
-            className="min-w-[120px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[120px] w-auto"
           />
           <select
             value={formLevel}
             onChange={(e) => setFormLevel(Number(e.target.value) as 1 | 2 | 3)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
             <option value={1}>{t('keywords.level', { level: 1 })}</option>
             <option value={2}>{t('keywords.level', { level: 2 })}</option>
             <option value={3}>{t('keywords.level', { level: 3 })}</option>
           </select>
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.category')}
             value={formCategory}
             onChange={(e) => setFormCategory(e.target.value)}
-            className="min-w-[100px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[100px] w-auto"
           />
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.synonyms')}
             value={formSynonyms}
             onChange={(e) => setFormSynonyms(e.target.value)}
-            className="min-w-[180px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[180px] flex-1"
           />
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          <Button type="submit" disabled={createMutation.isPending} className="gap-1.5">
             <Plus className="size-4" />
             {t('common.add')}
-          </button>
+          </Button>
         </form>
       </div>
 
@@ -180,20 +175,21 @@ export default function KeywordsPage() {
           {t('keywords.aiExpand')}
         </h2>
         <div className="flex flex-wrap gap-2">
-          <input
-            type="text"
+          <Input
             placeholder={t('keywords.seedTerms')}
             value={expandSeeds}
             onChange={(e) => setExpandSeeds(e.target.value)}
-            className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="min-w-[200px] flex-1"
           />
-          <button
+          <Button
+            variant="secondary"
             onClick={handleExpand}
             disabled={expandMutation.isPending || !expandSeeds.trim()}
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50">
+            className="gap-1.5"
+          >
             <Sparkles className="size-4" />
             {t('keywords.expand')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -205,30 +201,25 @@ export default function KeywordsPage() {
           <select
             value={selectedDb}
             onChange={(e) => setSelectedDb(e.target.value)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
             {DATABASES.map((db) => (
               <option key={db.id} value={db.id}>
                 {db.name}
               </option>
             ))}
           </select>
-          <button
+          <Button
+            variant="outline"
             onClick={() => formulaQuery.refetch()}
             disabled={formulaQuery.isFetching}
-            className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm hover:bg-secondary/80 disabled:opacity-50">
+          >
             {t('common.generate')}
-          </button>
+          </Button>
           {formula && (
-            <button
-              onClick={copyFormula}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-              {copied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}{' '}
+            <Button onClick={copyFormula} className="gap-1.5">
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copied ? t('common.copied') : t('common.copy')}
-            </button>
+            </Button>
           )}
         </div>
         {formulaQuery.isFetching && (

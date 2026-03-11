@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { FileText, Quote, List, BarChart3, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { paperApi, writingApi } from '@/services/api';
 import type { Paper } from '@/types';
 import { cn } from '@/lib/utils';
@@ -169,22 +171,18 @@ export default function WritingPage() {
           )}
 
           {activeTab === 'outline' && (
-            <input
-              type="text"
+            <Input
               placeholder={t('writing.topicPlaceholder')}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           )}
 
           {activeTab === 'gap' && (
-            <input
-              type="text"
+            <Input
               placeholder={t('writing.researchTopicPlaceholder')}
               value={researchTopic}
               onChange={(e) => setResearchTopic(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           )}
 
@@ -196,7 +194,7 @@ export default function WritingPage() {
               <select
                 value={citeStyle}
                 onChange={(e) => setCiteStyle(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
                 {CITE_STYLES.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
@@ -214,22 +212,21 @@ export default function WritingPage() {
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
                 <option value="en">{t('writing.langEn')}</option>
                 <option value="zh">{t('writing.langZh')}</option>
               </select>
             </div>
           )}
 
-          <button
+          <Button
             onClick={runAction}
             disabled={isPending || !canRun}
-            className="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-            {isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : null}{' '}
+            className="mt-4 gap-1.5"
+          >
+            {isPending && <Loader2 className="size-4 animate-spin" />}
             {t('common.generate')}
-          </button>
+          </Button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">

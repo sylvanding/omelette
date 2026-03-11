@@ -68,8 +68,8 @@ export default function SettingsPage() {
       setTestResult({
         success: !!res?.success,
         message: res?.success
-          ? `${t('settings.testSuccess')}：${res.response}`
-          : `${t('settings.testFailed')}：${res?.error}`,
+          ? `${t('settings.testSuccess')}: ${res.response}`
+          : `${t('settings.testFailed')}: ${res?.error}`,
       });
     },
     onError: (err) => {

@@ -8,11 +8,11 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  running: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  cancelled: 'bg-gray-100 text-gray-800',
+  pending: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  running: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+  completed: 'bg-green-500/10 text-green-700 dark:text-green-400',
+  failed: 'bg-red-500/10 text-red-700 dark:text-red-400',
+  cancelled: 'bg-muted text-muted-foreground',
 };
 
 export default function TasksPage() {

@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Search, Download, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { searchApi, paperApi, type SearchSource } from '@/services/api';
 import { cn } from '@/lib/utils';
 
@@ -115,24 +117,20 @@ export default function SearchPage() {
             {t('searchPage.query')}
           </label>
           <div className="flex gap-2">
-            <input
-              type="text"
+            <Input
               placeholder={t('searchPage.queryPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="flex-1"
             />
-            <button
-              type="submit"
-              disabled={searchMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <Button type="submit" disabled={searchMutation.isPending} className="gap-1.5">
               {searchMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Search className="size-4" />
-              )}{' '}
+              )}
               {t('common.search')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -201,17 +199,14 @@ export default function SearchPage() {
             <h2 className="text-sm font-semibold text-foreground">
               {t('searchPage.results', { count: results.length })}
             </h2>
-            <button
-              onClick={handleImportAll}
-              disabled={importMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            <Button onClick={handleImportAll} disabled={importMutation.isPending} className="gap-1.5">
               {importMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Download className="size-4" />
-              )}{' '}
+              )}
               {t('searchPage.importAll')}
-            </button>
+            </Button>
           </div>
           <ul className="divide-y divide-border max-h-[500px] overflow-y-auto">
             {results.map((paper, i) => (
