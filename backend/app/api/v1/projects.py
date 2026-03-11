@@ -8,6 +8,7 @@ from app.api.deps import get_db
 from app.models import Keyword, Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.services.pipeline_service import PipelineService
 
 router = APIRouter(tags=["projects"])
 
@@ -126,3 +127,25 @@ async def delete_project(project_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
     await db.delete(project)
     return ApiResponse(message="Project deleted")
+
+
+@router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict])
+async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Trigger the crawl → OCR → index pipeline for all pending papers."""
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    svc = PipelineService(db)
+    result = await svc.process_project_pending(project_id)
+    return ApiResponse(data=result)
+
+
+@router.post("/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict])
+async def run_paper_pipeline(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
+    """Trigger the pipeline for a single paper."""
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    svc = PipelineService(db)
+    result = await svc.process_paper(paper_id)
+    return ApiResponse(data=result)
