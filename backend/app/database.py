@@ -53,6 +53,16 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db():
-    """Create all tables. Used for development; production should use Alembic."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Run Alembic migrations to bring the database schema up to date."""
+    import subprocess
+    import sys
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=str(backend_dir),
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Alembic migration failed:\n{result.stderr}")
