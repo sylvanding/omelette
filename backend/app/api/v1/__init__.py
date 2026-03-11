@@ -16,13 +16,18 @@ from app.api.v1 import (
     settings_api,
     subscription,
     tasks,
+    upload,
     writing,
 )
 
 api_router = APIRouter(prefix="/api/v1")
 
-api_router.include_router(projects.router)
-api_router.include_router(papers.router)
+api_router.include_router(projects.router, prefix="/projects")
+api_router.include_router(papers.router, prefix="/projects/{project_id}/papers")
+api_router.include_router(upload.router, prefix="/projects/{project_id}/papers")
+api_router.include_router(projects.router, prefix="/knowledge-bases", tags=["knowledge-bases"])
+api_router.include_router(papers.router, prefix="/knowledge-bases/{project_id}/papers", tags=["knowledge-bases"])
+api_router.include_router(upload.router, prefix="/knowledge-bases/{project_id}/papers", tags=["knowledge-bases"])
 api_router.include_router(keywords.router)
 api_router.include_router(search.router)
 api_router.include_router(dedup.router)

@@ -9,7 +9,7 @@ from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
-router = APIRouter(prefix="/projects/{project_id}/papers", tags=["papers"])
+router = APIRouter(tags=["papers"])
 
 
 async def _ensure_project(project_id: int, db: AsyncSession) -> Project:
