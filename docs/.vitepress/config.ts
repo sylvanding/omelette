@@ -5,7 +5,14 @@ export default defineConfig({
   description: 'Scientific Literature Lifecycle Management System',
   base: '/omelette/',
 
-  ignoreDeadLinks: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  ignoreDeadLinks: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:11434',
+    'http://localhost:8000',
+    /^http:\/\/localhost/,
+    /^http:\/\/127\.0\.0\.1/,
+  ],
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/omelette/logo.svg' }],
@@ -31,6 +38,14 @@ export default defineConfig({
                 { text: 'Getting Started', link: '/guide/getting-started' },
                 { text: 'Architecture', link: '/guide/architecture' },
                 { text: 'Configuration', link: '/guide/configuration' },
+              ],
+            },
+            {
+              text: 'V2 Features',
+              items: [
+                { text: 'Chat Playground', link: '/guide/chat' },
+                { text: 'LangGraph Pipeline', link: '/guide/pipeline' },
+                { text: 'MCP Integration', link: '/guide/mcp' },
               ],
             },
           ],
@@ -85,6 +100,14 @@ export default defineConfig({
                 { text: '快速开始', link: '/zh/guide/getting-started' },
                 { text: '系统架构', link: '/zh/guide/architecture' },
                 { text: '配置说明', link: '/zh/guide/configuration' },
+              ],
+            },
+            {
+              text: 'V2 新功能',
+              items: [
+                { text: '对话工作台', link: '/zh/guide/chat' },
+                { text: 'LangGraph 流水线', link: '/zh/guide/pipeline' },
+                { text: 'MCP 集成', link: '/zh/guide/mcp' },
               ],
             },
           ],
