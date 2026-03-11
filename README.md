@@ -25,7 +25,7 @@
 
 ---
 
-Omelette automates the full research literature pipeline — from keyword management and multi-source search, through deduplication and PDF crawling, to OCR processing, RAG-powered knowledge base, and AI writing assistance.
+Omelette automates the full research literature pipeline — from keyword management and multi-source search, through deduplication and PDF crawling, to OCR processing, RAG-powered knowledge base, and AI writing assistance. V2 adds a chat-centric UX, multi-provider LLM support, LangGraph pipeline orchestration, and MCP integration for AI IDE clients.
 
 > **Om** (Omni-) + **Lit** (Literature) = **Omlit** ≈ **Omelette** 🍳
 
@@ -47,6 +47,12 @@ Omelette automates the full research literature pipeline — from keyword manage
   **📡 Incremental Subscription**
   RSS feeds and API-based scheduled updates to track new publications automatically.
 
+  **💬 Chat Playground**
+  ChatGPT-style conversational interface for RAG queries and writing assistance.
+
+  **🔌 Multi-LLM Support**
+  LangChain integration for OpenAI, Anthropic, Aliyun, Volcengine, and Ollama providers.
+
   </td>
   <td width="50%">
 
@@ -57,10 +63,19 @@ Omelette automates the full research literature pipeline — from keyword manage
   Native text extraction with PaddleOCR GPU fallback for scanned documents.
 
   **🧠 RAG Knowledge Base**
-  ChromaDB vector indexing with hybrid retrieval and LLM-generated answers with citations.
+  LlamaIndex engine with ChromaDB, GPU-aware embeddings, hybrid retrieval, and cited answers.
 
   **✍️ Writing Assistant**
   Summarization, citation generation (GB/T 7714, APA, MLA), review outlines, and gap analysis.
+
+  **🔄 LangGraph Pipeline**
+  Pipeline orchestration with human-in-the-loop interrupt and resume.
+
+  **🔗 MCP Integration**
+  Model Context Protocol server for AI IDE clients (Cursor, Claude Code, etc.).
+
+  **🌐 i18n**
+  Bilingual UI (zh/en) with shadcn/ui and Radix primitives.
 
   </td>
 </tr>
@@ -72,18 +87,24 @@ Omelette automates the full research literature pipeline — from keyword manage
 Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ Writing
    │          │         │         │        │       │        │
    ▼          ▼         ▼         ▼        ▼       ▼        ▼
- [LLM]    [Sources]  [SQLite]  [PDFs]  [Paddle] [Chroma]  [LLM]
+[LangChain] [Sources] [SQLite]  [PDFs]  [Paddle] [LlamaIndex] [LLM]
+   │                                                      │
+   └────────────────── LangGraph ─────────────────────────┘
+   │
+   └── MCP (Model Context Protocol) ──→ AI IDE clients
 ```
 
 | Layer | Technology |
 |-------|------------|
 | **Backend** | FastAPI, SQLAlchemy 2 (async), Pydantic v2, Python 3.12 |
-| **Frontend** | React 18, Vite, TypeScript, TailwindCSS v4 |
-| **Database** | SQLite + aiosqlite |
+| **Frontend** | React 18, Vite, TypeScript, TailwindCSS v4, shadcn/ui, Radix |
+| **Database** | SQLite + aiosqlite, Alembic migrations |
 | **Vector Store** | ChromaDB |
+| **RAG** | LlamaIndex with GPU-aware embeddings |
+| **LLM** | LangChain (OpenAI, Anthropic, Aliyun, Volcengine, Ollama) |
+| **Orchestration** | LangGraph with HITL interrupt/resume |
 | **OCR** | pdfplumber (native) + PaddleOCR (scanned, optional) |
-| **LLM** | OpenAI-compatible API (Aliyun Bailian / Volcengine Doubao) |
-| **Embeddings** | BAAI/bge-m3 via sentence-transformers (optional) |
+| **MCP** | Model Context Protocol server |
 | **Docs** | VitePress (bilingual EN/ZH) |
 
 ## 🚀 Quick Start
@@ -93,7 +114,7 @@ Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ 
 - [Conda](https://docs.conda.io/) or Miniconda
 - Node.js 22+
 - (Optional) CUDA for GPU-accelerated OCR and embeddings
-- (Optional) API keys: Aliyun Bailian or Volcengine for LLM; Semantic Scholar for higher rate limits
+- (Optional) API keys: OpenAI, Anthropic, Aliyun Bailian, or Volcengine for LLM; Semantic Scholar for higher rate limits
 
 ### 1. Clone & setup
 
@@ -120,7 +141,9 @@ cp .env.example .env
 |----------|-------------|
 | `DATABASE_URL` | SQLite path (default: `sqlite:///./data/omelette.db`) |
 | `DATA_DIR` | Base path for PDFs, OCR output, ChromaDB |
-| `LLM_PROVIDER` | `aliyun`, `volcengine`, or `mock` |
+| `LLM_PROVIDER` | `openai`, `anthropic`, `aliyun`, `volcengine`, `ollama`, or `mock` |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
 | `ALIYUN_API_KEY` | Aliyun Bailian API key |
 | `VOLCENGINE_API_KEY` | Volcengine Doubao API key |
 | `SEMANTIC_SCHOLAR_API_KEY` | Optional; increases Semantic Scholar rate limit |
@@ -165,17 +188,22 @@ omelette/
 │   │   ├── models/       # SQLAlchemy ORM models
 │   │   ├── schemas/      # Pydantic request/response schemas
 │   │   ├── services/     # Business logic
+│   │   ├── pipelines/    # LangGraph pipeline definitions
 │   │   ├── config.py     # Settings from .env
 │   │   ├── database.py   # Async engine and session
 │   │   └── main.py       # App entry, lifespan, CORS
-│   ├── tests/            # pytest-asyncio tests (120+)
+│   ├── mcp_server.py     # MCP (Model Context Protocol) server
+│   ├── alembic/          # Database migrations
+│   ├── tests/            # pytest-asyncio tests (178)
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
-│       ├── pages/        # Dashboard, ProjectDetail, modules
+│       ├── pages/        # Dashboard, ProjectDetail, Chat, modules
 │       ├── components/   # Layout, shared UI
+│       │   └── ui/       # shadcn/ui components
 │       ├── services/     # Typed API client
 │       ├── stores/       # Zustand state
+│       ├── i18n/         # Internationalization (zh/en)
 │       └── lib/          # Axios client, utils
 ├── docs/                 # VitePress documentation (EN/ZH)
 ├── assets/               # Banner, logo, mascot images
@@ -198,7 +226,7 @@ make dev                  # Start both backend and frontend
 ### Running Tests
 
 ```bash
-# Backend (120+ tests)
+# Backend (178 tests)
 cd backend && pytest tests/ -v
 
 # Frontend type check and build
@@ -222,7 +250,14 @@ REST APIs under `/api/v1/`:
 | `POST /projects/{id}/rag/index` | Build vector index |
 | `POST /projects/{id}/rag/query` | RAG retrieval |
 | `POST /projects/{id}/writing/assist` | Writing assistance |
+| `POST /chat` | Chat messages (playground) |
+| `GET/POST /conversations` | Conversation CRUD |
+| `GET/POST /pipelines` | Pipeline management |
+| `GET/POST /subscriptions` | Subscription management |
+| `GET/POST /settings` | Settings and health |
 | `GET /settings/health` | Health check |
+
+MCP server: `/mcp` (WebSocket/SSE for AI IDE clients)
 
 Full documentation: [API Reference](https://sylvanding.github.io/omelette/api/)
 
