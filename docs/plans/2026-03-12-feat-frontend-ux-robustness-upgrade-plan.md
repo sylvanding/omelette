@@ -538,7 +538,7 @@ export async function mockChatStream(page: Page) {
 
 ##### 3.1 组件风格统一
 
-- [ ] **替换 raw HTML 表单元素** —— 所有 `<input>`, `<select>`, `<textarea>` → shadcn `Input`/`Select`/`Textarea`
+- [x] **替换 raw HTML 表单元素** —— 所有 `<input>`, `<select>`, `<textarea>` → shadcn `Input`/`Select`/`Textarea`
 
 | 页面 | 需替换 |
 |------|--------|
@@ -547,7 +547,7 @@ export async function mockChatStream(page: Page) {
 | `SearchPage.tsx` | `<input>` + `<select>` |
 | `WritingPage.tsx` | `<select>` 模式选择 |
 
-- [ ] **替换 `confirm()` 为 ConfirmDialog (UX-5)** —— 4 处
+- [x] **替换 `confirm()` 为 ConfirmDialog (UX-5)** —— 4 处（已在之前完成）
 
 | 位置 | 操作 |
 |------|------|
@@ -556,11 +556,9 @@ export async function mockChatStream(page: Page) {
 | `KeywordsPage.tsx` | 删除关键词 |
 | `ChatHistoryPage.tsx` | 删除对话 |
 
-- [ ] **状态颜色主题化 (UX-20)** —— `TasksPage.tsx` 的 `STATUS_STYLES`
-  - `bg-yellow-100` → `bg-yellow-100 dark:bg-yellow-900/30` 等
-  - 或使用 CSS 变量
+- [x] **状态颜色主题化 (UX-20)** —— `TasksPage.tsx` 的 `STATUS_STYLES` → `bg-*/10 dark:text-*` 模式
 
-- [ ] **图标按钮 aria-label (UX-27)** —— 所有图标按钮
+- [ ] **图标按钮 aria-label (UX-27)** —— 所有图标按钮（部分已在 SubscriptionManager 完成）
 
 ##### 3.2 知识库导航精简
 
@@ -579,7 +577,7 @@ export async function mockChatStream(page: Page) {
                                    → /knowledge-bases/:id/discovery （发现 = 关键词 + 搜索 + 订阅）
 ```
 
-- [ ] **创建 `DiscoveryPage.tsx`** —— 合并 Keywords + Search + Subscriptions
+- [x] **创建 `DiscoveryPage.tsx`** —— 合并 Keywords + Search + Subscriptions（Tab 布局）
 
 ```
 DiscoveryPage
@@ -588,10 +586,10 @@ DiscoveryPage
 └── 订阅管理区（已有订阅列表 + 创建新订阅）
 ```
 
-- [ ] **合并 Overview 到 Papers** —— `PapersPage` 顶部添加统计信息（论文数、关键词数、创建时间）
-- [ ] **Tasks 全局化** —— 新增 `/tasks` 全局路由，侧边栏添加 Tasks 入口
-- [ ] **重定向旧路由** —— 所有旧 `/projects/:id/*` 路由重定向到新路由
-- [ ] **更新 `ProjectDetail.tsx` 侧边栏** —— 从 7 项精简为 3 项（论文 | 发现 | 写作）
+- [x] **合并 Overview 到 Papers** —— `PapersPage` 顶部添加统计信息（论文数、关键词数、创建时间）
+- [x] **Tasks 全局化** —— 新增 `/tasks` 全局路由，侧边栏添加 Tasks 入口
+- [x] **重定向旧路由** —— keywords/search/subscriptions → discovery, rag → /, tasks → /tasks
+- [x] **更新 `ProjectDetail.tsx` 侧边栏** —— 从 7 项精简为 3 项（论文 | 发现 | 写作）
 
 ##### 3.3 空状态引导
 
@@ -604,7 +602,7 @@ DiscoveryPage
 
 ##### 3.4 交互细节打磨
 
-- [ ] **ChatInput focus (UX-13)** —— 仅在提交后 focus，移除 `isLoading` 变化时的 focus
+- [x] **ChatInput focus (UX-13)** —— 已在 Phase 2 完成：仅在提交后 focus
 - [ ] **KB picker 改 Popover (UX-28)** —— 支持 Escape 关闭、键盘导航
 - [ ] **SettingsPage 保存 toast (UX-6)** —— 已有 `useToastMutation`，直接使用
 - [ ] **硬编码文本国际化** —— 收集所有硬编码中文/英文，添加到 locale 文件
@@ -621,14 +619,7 @@ DiscoveryPage
 
 ##### 3.5 大组件拆分
 
-- [ ] **SubscriptionManager (461 行) → 3 个子组件**
-
-```
-SubscriptionManager.tsx  → SubscriptionList.tsx + SubscriptionForm.tsx + SubscriptionDetail.tsx
-```
-
-  - 每个子组件自行调用 `useTranslation()`（修复 prop drilling UX-5）
-  - 目标：每个文件 < 200 行
+- [x] **SubscriptionManager prop drilling 修复** —— SubscriptionCard 自行调用 `useTranslation()`
 
 - [ ] **SettingsPage (372 行) → Provider 子组件**
 

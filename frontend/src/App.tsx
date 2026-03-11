@@ -11,7 +11,6 @@ const KnowledgeBasesPage = lazy(() => import('@/pages/KnowledgeBasesPage'));
 const ChatHistoryPage = lazy(() => import('@/pages/ChatHistoryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'));
-const ProjectOverview = lazy(() => import('@/pages/project/ProjectOverview'));
 const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
