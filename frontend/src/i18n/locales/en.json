@@ -33,7 +33,16 @@
     "updateFailed": "Update failed",
     "operationFailed": "Operation failed",
     "confirmDeleteTitle": "Confirm Delete",
-    "confirmDeleteDesc": "This action cannot be undone."
+    "confirmDeleteDesc": "This action cannot be undone.",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Save failed"
+  },
+  "error": {
+    "boundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred.",
+      "reload": "Reload Page"
+    }
   },
   "nav": {
     "chat": "Chat",
@@ -243,6 +252,8 @@
     "authors": "Authors:",
     "downloadPdf": "Download PDF",
     "runOcr": "Run OCR",
+    "ocrSuccess": "OCR started",
+    "ocrFailed": "OCR failed",
     "confirmDelete": "Delete this paper?",
     "total": "{{count}} paper(s)",
     "statuses": {
@@ -271,6 +282,8 @@
     "aiExpand": "AI Expand",
     "seedTerms": "Seed terms (comma-separated)",
     "expand": "Expand",
+    "expandSuccess": "Expanded successfully",
+    "expandFailed": "Expand failed",
     "searchFormula": "Search Formula",
     "level": "Level {{level}}",
     "noKeywords": "No keywords",
@@ -286,7 +299,11 @@
     "available": "available",
     "results": "Results ({{count}})",
     "importAll": "Import All to Project",
-    "imported": "{{count}} paper(s) imported"
+    "imported": "{{count}} paper(s) imported",
+    "searchSuccess": "Search completed",
+    "searchFailed": "Search failed",
+    "importSuccess": "Import successful",
+    "importFailed": "Import failed"
   },
   "rag": {
     "title": "RAG Chat",
@@ -355,6 +372,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "trigger": "Trigger",
+    "triggerSuccess": "Triggered successfully",
+    "triggerFailed": "Trigger failed",
     "neverRun": "Never run",
     "totalFound": "{{count}} found",
     "active": "Active",

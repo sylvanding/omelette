@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import { conversationApi } from '@/services/chat-api';
 import type { Conversation } from '@/types/chat';
 
 export default function ChatHistoryPage() {
   const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
@@ -21,18 +22,14 @@ export default function ChatHistoryPage() {
     queryFn: () => conversationApi.list(1, 100),
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (id: number) => conversationApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['conversations']],
   });
 
-  const conversations: Conversation[] = data?.data?.items ?? [];
+  const conversations: Conversation[] = data?.items ?? [];
   const filtered = search
     ? conversations.filter((c) =>
         c.title.toLowerCase().includes(search.toLowerCase()),
@@ -75,19 +72,13 @@ export default function ChatHistoryPage() {
 
         <ScrollArea className="h-[calc(100vh-14rem)]">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">
-              {t('common.loading')}
-            </div>
+            <LoadingState message={t('common.loading')} />
           ) : filtered.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border p-12 text-center">
-              <MessageSquare className="mx-auto mb-3 size-12 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">
-                {search ? t('history.noMatch') : t('history.empty')}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {search ? t('history.noMatchDesc') : t('history.emptyDesc')}
-              </p>
-            </div>
+            <EmptyState
+              icon={MessageSquare}
+              title={search ? t('history.noMatch') : t('history.empty')}
+              description={search ? t('history.noMatchDesc') : t('history.emptyDesc')}
+            />
           ) : (
             <div className="space-y-2">
               {filtered.map((conv, i) => (

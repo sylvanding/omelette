@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Plus, Sparkles, Copy, Check, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LoadingState } from '@/components/ui/loading-state';
 import { keywordApi } from '@/services/api';
 import type { Keyword } from '@/types';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,6 @@ const DATABASES = [
 export default function KeywordsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
-  const queryClient = useQueryClient();
   const pid = Number(projectId!);
 
   const [activeLevel, setActiveLevel] = useState<1 | 2 | 3 | 'all'>(1);
@@ -38,38 +38,33 @@ export default function KeywordsPage() {
     enabled: !!pid,
   });
 
-  const createMutation = useMutation({
+  const createMutation = useToastMutation({
     mutationFn: (data: Partial<Keyword>) => keywordApi.create(pid, data),
+    successMessage: t('common.createSuccess'),
+    errorMessage: t('common.createFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keywords', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       setFormTerm('');
       setFormTermEn('');
       setFormCategory('');
       setFormSynonyms('');
-      toast.success(t('common.createSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.createFailed'), { description: error.message });
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (keywordId: number) => keywordApi.delete(pid, keywordId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keywords', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
   });
 
-  const expandMutation = useMutation({
+  const expandMutation = useToastMutation({
     mutationFn: (seedTerms: string[]) => keywordApi.expand(pid, seedTerms),
+    successMessage: t('keywords.expandSuccess'),
+    errorMessage: t('keywords.expandFailed'),
+    invalidateKeys: [['keywords', pid], ['project', projectId]],
     onSuccess: (res) => {
-      const terms = res?.data?.expanded_terms ?? [];
+      const terms = res?.expanded_terms ?? [];
       if (terms.length > 0) {
         terms.forEach((term: string) => {
           createMutation.mutate({
@@ -89,8 +84,8 @@ export default function KeywordsPage() {
     enabled: !!pid,
   });
 
-  const keywords: Keyword[] = keywordsData?.data ?? [];
-  const formula = formulaQuery.data?.data?.formula ?? '';
+  const keywords: Keyword[] = keywordsData ?? [];
+  const formula = formulaQuery.data?.formula ?? '';
 
   const handleAddKeyword = (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,7 +259,7 @@ export default function KeywordsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-muted-foreground">{t('common.loading')}</p>
+          <LoadingState message={t('common.loading')} />
         ) : (
           <div className="space-y-4">
             {(activeLevel === 'all' ? [1, 2, 3] : [activeLevel]).map((level) => (

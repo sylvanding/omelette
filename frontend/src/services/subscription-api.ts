@@ -1,4 +1,4 @@
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 
 export interface Subscription {
   id: number;
@@ -24,16 +24,17 @@ export interface SubscriptionCreate {
 }
 
 export const subscriptionApi = {
-  list: (projectId: number) => api.get(`/projects/${projectId}/subscriptions`),
+  list: (projectId: number) =>
+    api.get<Subscription[]>(`/projects/${projectId}/subscriptions`).then(r => r.data),
   create: (projectId: number, data: SubscriptionCreate) =>
-    api.post(`/projects/${projectId}/subscriptions`, data),
+    api.post<Subscription>(`/projects/${projectId}/subscriptions`, data).then(r => r.data),
   update: (
     projectId: number,
     subId: number,
     data: Partial<SubscriptionCreate & { is_active: boolean }>
-  ) => api.put(`/projects/${projectId}/subscriptions/${subId}`, data),
+  ) => api.put<Subscription>(`/projects/${projectId}/subscriptions/${subId}`, data).then(r => r.data),
   delete: (projectId: number, subId: number) =>
-    api.delete(`/projects/${projectId}/subscriptions/${subId}`),
+    api.delete<null>(`/projects/${projectId}/subscriptions/${subId}`).then(r => r.data),
   trigger: (projectId: number, subId: number) =>
-    api.post(`/projects/${projectId}/subscriptions/${subId}/trigger`),
+    api.post<{ status: string }>(`/projects/${projectId}/subscriptions/${subId}/trigger`).then(r => r.data),
 };

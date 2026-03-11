@@ -1,8 +1,11 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { ListTodo } from 'lucide-react';
 import { taskApi } from '@/services/api';
 import { cn } from '@/lib/utils';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -22,7 +25,7 @@ export default function TasksPage() {
     queryFn: () => taskApi.list(pid),
   });
 
-  const tasks = data?.data ?? [];
+  const tasks = data ?? [];
 
   return (
     <div className="space-y-6">
@@ -30,9 +33,12 @@ export default function TasksPage() {
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center py-12 text-muted-foreground">
-            {t('common.loading')}
-          </div>
+          <LoadingState message={t('common.loading')} />
+        ) : tasks.length === 0 ? (
+          <EmptyState
+            icon={ListTodo}
+            title={t('tasks.noTasks')}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -81,11 +87,6 @@ export default function TasksPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-        {tasks.length === 0 && !isLoading && (
-          <div className="py-12 text-center text-muted-foreground">
-            {t('tasks.noTasks')}
           </div>
         )}
       </div>

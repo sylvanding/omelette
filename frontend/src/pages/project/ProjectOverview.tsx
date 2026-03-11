@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { FileText, Tags, FlaskConical, Calendar } from 'lucide-react';
 import { projectApi } from '@/services/api';
+import { LoadingState } from '@/components/ui/loading-state';
 
 export default function ProjectOverview() {
   const { t } = useTranslation();
@@ -14,14 +15,10 @@ export default function ProjectOverview() {
     enabled: !!projectId,
   });
 
-  const project = data?.data;
+  const project = data;
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-20 text-muted-foreground">
-        {t('common.loading')}
-      </div>
-    );
+    return <LoadingState message={t('common.loading')} />;
   }
 
   if (!project) {

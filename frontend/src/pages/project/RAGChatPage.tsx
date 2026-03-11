@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Send, RefreshCw, Loader2, FileText, MessageSquare, AlertCircle } from 'lucide-react';
 import { ragApi } from '@/services/api';
 import type { IndexSSEEvent } from '@/services/api';
@@ -41,11 +42,12 @@ export default function RAGChatPage() {
     enabled: !!pid,
   });
 
-  const queryMutation = useMutation({
+  const queryMutation = useToastMutation({
     mutationFn: (q: string) => ragApi.query(pid, q),
+    errorMessage: t('common.operationFailed'),
     onSuccess: (res) => {
-      const answer = res?.data?.answer ?? '';
-      const sources = res?.data?.sources ?? [];
+      const answer = res?.answer ?? '';
+      const sources = (res?.sources ?? []) as { paper_title?: string; content?: string }[];
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: answer, sources },
@@ -109,7 +111,7 @@ export default function RAGChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const stats = (statsData?.data ?? {}) as { total_chunks?: number };
+  const stats = (statsData ?? {}) as { total_chunks?: number };
   const hasIndex = (stats.total_chunks ?? 0) > 0;
 
   const handleSubmit = (e: React.FormEvent) => {

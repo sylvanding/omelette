@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Save,
   Loader2,
@@ -11,6 +12,7 @@ import {
   Key,
   Brain,
 } from 'lucide-react';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,7 +29,6 @@ import { settingsApi } from '@/services/chat-api';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   const providers = [
     { value: 'mock', label: t('settings.providers.mock') },
@@ -54,22 +55,21 @@ export default function SettingsPage() {
     queryFn: () => settingsApi.get(),
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useToastMutation({
     mutationFn: (data: Record<string, unknown>) => settingsApi.update(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings'] });
-    },
+    successMessage: t('common.saveSuccess'),
+    errorMessage: t('common.saveFailed'),
+    invalidateKeys: [['settings']],
   });
 
   const testMutation = useMutation({
     mutationFn: () => settingsApi.testConnection(),
     onSuccess: (res) => {
-      const d = res?.data;
       setTestResult({
-        success: !!d?.success,
-        message: d?.success
-          ? `${t('settings.testSuccess')}：${d.response}`
-          : `${t('settings.testFailed')}：${d?.error}`,
+        success: !!res?.success,
+        message: res?.success
+          ? `${t('settings.testSuccess')}：${res.response}`
+          : `${t('settings.testFailed')}：${res?.error}`,
       });
     },
     onError: (err) => {
@@ -78,8 +78,8 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (data?.data) {
-      const d = data.data as Record<string, string>;
+    if (data) {
+      const d = data as Record<string, string>;
       setForm({
         llm_provider: d.llm_provider ?? 'mock',
         llm_temperature: String(d.llm_temperature ?? '0.7'),
@@ -115,9 +115,8 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        <Loader2 className="mr-2 size-5 animate-spin" />
-        {t('common.loading')}
+      <div className="flex h-full items-center justify-center">
+        <LoadingState message={t('common.loading')} />
       </div>
     );
   }

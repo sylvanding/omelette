@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { type UploadResult } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 
 interface PdfUploadDialogProps {
   projectId: number;
@@ -115,7 +115,7 @@ export function PdfUploadDialog({
       const formData = new FormData();
       files.forEach((f) => formData.append('files', f));
 
-      const res = await api.post(`/projects/${projectId}/papers/upload`, formData, {
+      const res = await api.post<UploadResult>(`/projects/${projectId}/papers/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 300000,
         signal: controller.signal,
@@ -130,8 +130,7 @@ export function PdfUploadDialog({
 
       setUploadProgress(100);
       setUploadStage('idle');
-      const result = res?.data as UploadResult;
-      setUploadResult(result);
+      setUploadResult(res.data);
     } catch (err: unknown) {
       if (controller.signal.aborted) return;
       const msg =

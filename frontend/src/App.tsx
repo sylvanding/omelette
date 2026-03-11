@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LoadingState } from '@/components/ui/loading-state';
 import AppShell from '@/components/layout/AppShell';
 
 const PlaygroundPage = lazy(() => import('@/pages/PlaygroundPage'));
@@ -33,12 +34,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Suspense
-            fallback={
-              <div className="flex h-screen items-center justify-center">
-                <div className="text-muted-foreground">Loading...</div>
-              </div>
-            }>
+          <Suspense fallback={<LoadingState className="h-screen" />}>
             <Routes>
               <Route path="/" element={<AppShell />}>
                 <Route index element={<PlaygroundPage />} />

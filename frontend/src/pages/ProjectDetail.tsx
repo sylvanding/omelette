@@ -38,7 +38,7 @@ export default function ProjectDetail() {
     enabled: !!projectId,
   });
 
-  const project = data?.data;
+  const project = data;
   const basePath = `/projects/${projectId}`;
 
   return (

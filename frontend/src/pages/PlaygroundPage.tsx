@@ -40,7 +40,7 @@ export default function PlaygroundPage() {
     queryKey: ['projects'],
     queryFn: () => projectApi.list(1, 100),
   });
-  const projects = projectsData?.data?.items ?? [];
+  const projects = projectsData?.items ?? [];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

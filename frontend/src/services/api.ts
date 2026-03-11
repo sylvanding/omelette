@@ -1,51 +1,51 @@
-import api from '@/lib/api';
-import type { ApiResponse, PaginatedData } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { PaginatedData } from '@/lib/api';
 import type { Project, Paper, Keyword, Task } from '@/types';
 
 export const projectApi = {
   list: (page = 1, pageSize = 20) =>
-    api.get(`/projects?page=${page}&page_size=${pageSize}`) as Promise<ApiResponse<PaginatedData<Project>>>,
+    api.get<PaginatedData<Project>>(`/projects?page=${page}&page_size=${pageSize}`).then(r => r.data),
   get: (id: number) =>
-    api.get(`/projects/${id}`) as Promise<ApiResponse<Project>>,
+    api.get<Project>(`/projects/${id}`).then(r => r.data),
   create: (data: Partial<Project>) =>
-    api.post('/projects', data) as Promise<ApiResponse<Project>>,
+    api.post<Project>('/projects', data).then(r => r.data),
   update: (id: number, data: Partial<Project>) =>
-    api.put(`/projects/${id}`, data) as Promise<ApiResponse<Project>>,
+    api.put<Project>(`/projects/${id}`, data).then(r => r.data),
   delete: (id: number) =>
-    api.delete(`/projects/${id}`) as Promise<ApiResponse<null>>,
+    api.delete<null>(`/projects/${id}`).then(r => r.data),
 };
 
 export const paperApi = {
   list: (projectId: number, params?: Record<string, unknown>) =>
-    api.get(`/projects/${projectId}/papers`, { params }) as Promise<ApiResponse<PaginatedData<Paper>>>,
+    api.get<PaginatedData<Paper>>(`/projects/${projectId}/papers`, { params }).then(r => r.data),
   get: (projectId: number, paperId: number) =>
-    api.get(`/projects/${projectId}/papers/${paperId}`) as Promise<ApiResponse<Paper>>,
+    api.get<Paper>(`/projects/${projectId}/papers/${paperId}`).then(r => r.data),
   create: (projectId: number, data: Partial<Paper>) =>
-    api.post(`/projects/${projectId}/papers`, data) as Promise<ApiResponse<Paper>>,
+    api.post<Paper>(`/projects/${projectId}/papers`, data).then(r => r.data),
   delete: (projectId: number, paperId: number) =>
-    api.delete(`/projects/${projectId}/papers/${paperId}`) as Promise<ApiResponse<null>>,
+    api.delete<null>(`/projects/${projectId}/papers/${paperId}`).then(r => r.data),
   bulkImport: (projectId: number, papers: Partial<Paper>[]) =>
-    api.post(`/projects/${projectId}/papers/bulk`, { papers }) as Promise<ApiResponse<{ imported: number }>>,
+    api.post<{ imported: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
 };
 
 export const keywordApi = {
   list: (projectId: number, level?: number) =>
-    api.get(`/projects/${projectId}/keywords`, { params: level ? { level } : {} }) as Promise<ApiResponse<Keyword[]>>,
+    api.get<Keyword[]>(`/projects/${projectId}/keywords`, { params: level ? { level } : {} }).then(r => r.data),
   create: (projectId: number, data: Partial<Keyword>) =>
-    api.post(`/projects/${projectId}/keywords`, data) as Promise<ApiResponse<Keyword>>,
+    api.post<Keyword>(`/projects/${projectId}/keywords`, data).then(r => r.data),
   update: (projectId: number, keywordId: number, data: Partial<Keyword>) =>
-    api.put(`/projects/${projectId}/keywords/${keywordId}`, data) as Promise<ApiResponse<Keyword>>,
+    api.put<Keyword>(`/projects/${projectId}/keywords/${keywordId}`, data).then(r => r.data),
   delete: (projectId: number, keywordId: number) =>
-    api.delete(`/projects/${projectId}/keywords/${keywordId}`) as Promise<ApiResponse<null>>,
+    api.delete<null>(`/projects/${projectId}/keywords/${keywordId}`).then(r => r.data),
   expand: (projectId: number, seedTerms: string[], language?: string) =>
-    api.post(`/projects/${projectId}/keywords/expand`, {
+    api.post<{ expanded_terms: string[] }>(`/projects/${projectId}/keywords/expand`, {
       seed_terms: seedTerms,
       language,
-    }) as Promise<ApiResponse<{ expanded_terms: string[] }>>,
+    }).then(r => r.data),
   searchFormula: (projectId: number, database?: string) =>
-    api.get(`/projects/${projectId}/keywords/search-formula`, {
+    api.get<{ formula: string }>(`/projects/${projectId}/keywords/search-formula`, {
       params: { database },
-    }) as Promise<ApiResponse<{ formula: string }>>,
+    }).then(r => r.data),
 };
 
 export interface SearchSource {
@@ -56,11 +56,11 @@ export interface SearchSource {
 
 export const searchApi = {
   execute: (projectId: number, data: Record<string, unknown>) =>
-    api.post(`/projects/${projectId}/search/execute`, null, { params: data }) as Promise<
-      ApiResponse<{ papers: Paper[]; imported: number; created?: number }>
-    >,
+    api.post<{ papers: Paper[]; imported: number; created?: number }>(
+      `/projects/${projectId}/search/execute`, null, { params: data }
+    ).then(r => r.data),
   sources: (projectId: number) =>
-    api.get(`/projects/${projectId}/search/sources`) as Promise<ApiResponse<SearchSource[]>>,
+    api.get<SearchSource[]>(`/projects/${projectId}/search/sources`).then(r => r.data),
 };
 
 export interface IndexSSEEvent {
@@ -77,9 +77,11 @@ export interface IndexSSEEvent {
 
 export const ragApi = {
   query: (projectId: number, question: string, topK?: number) =>
-    api.post(`/projects/${projectId}/rag/query`, { question, top_k: topK }),
-  index: (projectId: number) => api.post(`/projects/${projectId}/rag/index`),
-  stats: (projectId: number) => api.get(`/projects/${projectId}/rag/stats`),
+    api.post<{ answer: string; sources?: unknown[] }>(`/projects/${projectId}/rag/query`, { question, top_k: topK }).then(r => r.data),
+  index: (projectId: number) =>
+    api.post<{ status: string }>(`/projects/${projectId}/rag/index`).then(r => r.data),
+  stats: (projectId: number) =>
+    api.get<Record<string, unknown>>(`/projects/${projectId}/rag/stats`).then(r => r.data),
 
   async *indexStream(
     projectId: number,
@@ -117,38 +119,38 @@ export const ragApi = {
 
 export const writingApi = {
   summarize: (projectId: number, paperIds: number[], language?: string) =>
-    api.post(`/projects/${projectId}/writing/summarize`, {
+    api.post<{ summaries: { title?: string; summary?: string }[] }>(`/projects/${projectId}/writing/summarize`, {
       paper_ids: paperIds,
       language: language ?? 'en',
-    }) as Promise<ApiResponse<{ summaries: { title?: string; summary?: string }[] }>>,
+    }).then(r => r.data),
   citations: (projectId: number, paperIds: number[], style?: string) =>
-    api.post(`/projects/${projectId}/writing/citations`, {
+    api.post<{ citations: { citation?: string }[] }>(`/projects/${projectId}/writing/citations`, {
       paper_ids: paperIds,
       style: style ?? 'gb_t_7714',
-    }) as Promise<ApiResponse<{ citations: { citation?: string }[] }>>,
+    }).then(r => r.data),
   reviewOutline: (projectId: number, topic: string, language?: string) =>
-    api.post(`/projects/${projectId}/writing/review-outline`, {
+    api.post<{ outline: string }>(`/projects/${projectId}/writing/review-outline`, {
       topic,
       language: language ?? 'en',
-    }) as Promise<ApiResponse<{ outline: string }>>,
+    }).then(r => r.data),
   gapAnalysis: (projectId: number, researchTopic: string) =>
-    api.post(`/projects/${projectId}/writing/gap-analysis`, {
+    api.post<{ analysis: string }>(`/projects/${projectId}/writing/gap-analysis`, {
       research_topic: researchTopic,
-    }) as Promise<ApiResponse<{ analysis: string }>>,
+    }).then(r => r.data),
 };
 
 export const taskApi = {
   list: (projectId?: number) =>
-    api.get('/tasks', { params: projectId ? { project_id: projectId } : {} }) as Promise<ApiResponse<Task[]>>,
+    api.get<Task[]>('/tasks', { params: projectId ? { project_id: projectId } : {} }).then(r => r.data),
   get: (taskId: number) =>
-    api.get(`/tasks/${taskId}`) as Promise<ApiResponse<Task>>,
+    api.get<Task>(`/tasks/${taskId}`).then(r => r.data),
 };
 
 export const ocrApi = {
   process: (projectId: number, paperIds?: number[], forceOcr?: boolean) =>
-    api.post(`/projects/${projectId}/ocr/process`, null, {
+    api.post<{ processed: number }>(`/projects/${projectId}/ocr/process`, null, {
       params: paperIds?.length ? { paper_ids: paperIds, force_ocr: forceOcr } : { force_ocr: forceOcr },
-    }) as Promise<ApiResponse<{ processed: number }>>,
+    }).then(r => r.data),
   stats: (projectId: number) =>
-    api.get(`/projects/${projectId}/ocr/stats`) as Promise<ApiResponse<Record<string, unknown>>>,
+    api.get<Record<string, unknown>>(`/projects/${projectId}/ocr/stats`).then(r => r.data),
 };

@@ -1,29 +1,27 @@
-import api from '@/lib/api';
+import { api } from '@/lib/api';
+import type { PaginatedData } from '@/lib/api';
 import type {
   Conversation,
   ConversationCreate,
   ChatStreamRequest,
   SSEEvent,
 } from '@/types/chat';
-import type { ApiResponse, PaginatedData } from '@/lib/api';
 
 export const conversationApi = {
   list: (page = 1, pageSize = 20) =>
-    api.get(`/conversations?page=${page}&page_size=${pageSize}`) as Promise<
-      ApiResponse<PaginatedData<Conversation>>
-    >,
+    api.get<PaginatedData<Conversation>>(`/conversations?page=${page}&page_size=${pageSize}`).then(r => r.data),
 
   get: (id: number) =>
-    api.get(`/conversations/${id}`) as Promise<ApiResponse<Conversation>>,
+    api.get<Conversation>(`/conversations/${id}`).then(r => r.data),
 
   create: (data: ConversationCreate) =>
-    api.post('/conversations', data) as Promise<ApiResponse<Conversation>>,
+    api.post<Conversation>('/conversations', data).then(r => r.data),
 
   update: (id: number, data: Partial<ConversationCreate>) =>
-    api.put(`/conversations/${id}`, data) as Promise<ApiResponse<Conversation>>,
+    api.put<Conversation>(`/conversations/${id}`, data).then(r => r.data),
 
   delete: (id: number) =>
-    api.delete(`/conversations/${id}`) as Promise<ApiResponse<null>>,
+    api.delete<null>(`/conversations/${id}`).then(r => r.data),
 };
 
 export async function* streamChat(
@@ -81,16 +79,15 @@ export async function* streamChat(
 }
 
 export const settingsApi = {
-  get: () => api.get('/settings') as Promise<ApiResponse<Record<string, unknown>>>,
+  get: () =>
+    api.get<Record<string, unknown>>('/settings').then(r => r.data),
 
   update: (data: Record<string, unknown>) =>
-    api.put('/settings', data) as Promise<ApiResponse<Record<string, unknown>>>,
+    api.put<Record<string, unknown>>('/settings', data).then(r => r.data),
 
   listModels: () =>
-    api.get('/settings/models') as Promise<ApiResponse<Record<string, unknown>>>,
+    api.get<Record<string, unknown>>('/settings/models').then(r => r.data),
 
   testConnection: () =>
-    api.post('/settings/test-connection') as Promise<
-      ApiResponse<{ success: boolean; response?: string; error?: string }>
-    >,
+    api.post<{ success: boolean; response?: string; error?: string }>('/settings/test-connection').then(r => r.data),
 };

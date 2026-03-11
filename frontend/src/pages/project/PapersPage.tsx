@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Search,
   ChevronDown,
@@ -21,6 +21,8 @@ import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
 import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
+import { LoadingState } from '@/components/ui/loading-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 
 export default function PapersPage() {
@@ -68,27 +70,22 @@ export default function PapersPage() {
     enabled: !!pid,
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (paperId: number) => paperApi.delete(pid, paperId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      toast.success(t('common.deleteSuccess'));
-    },
-    onError: (error: Error) => {
-      toast.error(t('common.deleteFailed'), { description: error.message });
-    },
+    successMessage: t('common.deleteSuccess'),
+    errorMessage: t('common.deleteFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
-  const ocrMutation = useMutation({
+  const ocrMutation = useToastMutation({
     mutationFn: (paperIds: number[]) => ocrApi.process(pid, paperIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-    },
+    successMessage: t('papers.ocrSuccess'),
+    errorMessage: t('papers.ocrFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
-  const papers: Paper[] = data?.data?.items ?? [];
-  const total = data?.data?.total ?? 0;
+  const papers: Paper[] = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   const handleAddComplete = (uploadResult?: UploadResult) => {
     queryClient.invalidateQueries({ queryKey: ['papers', pid] });
@@ -188,19 +185,14 @@ export default function PapersPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12 text-muted-foreground">
-          {t('common.loading')}
-        </div>
+        <LoadingState message={t('common.loading')} />
       ) : papers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-muted-foreground">
-          <FileText className="mb-4 size-12 opacity-30" />
-          <p className="mb-1 text-sm font-medium">{t('papers.empty')}</p>
-          <p className="mb-4 text-xs">{t('papers.emptyHint')}</p>
-          <Button variant="outline" size="sm" onClick={() => setShowAddPaper(true)} className="gap-1.5">
-            <Plus className="size-4" />
-            {t('papers.addPaper')}
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={t('papers.empty')}
+          description={t('papers.emptyHint')}
+          action={{ label: t('papers.addPaper'), onClick: () => setShowAddPaper(true) }}
+        />
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">

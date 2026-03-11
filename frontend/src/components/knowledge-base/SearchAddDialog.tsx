@@ -97,7 +97,7 @@ export function SearchAddDialog({
     setError(null);
     try {
       const res = await kbApi.searchAndAdd(projectId, query.trim(), sources, maxResults);
-      const papers = (res?.data as { papers?: SearchResult[] })?.papers ?? [];
+      const papers = (res?.papers as unknown as SearchResult[]) ?? [];
       setResults(papers);
       setSelected(new Set());
       setStep(1);

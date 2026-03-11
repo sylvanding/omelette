@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { FileText, Quote, List, BarChart3, Loader2 } from 'lucide-react';
 import { paperApi, writingApi } from '@/services/api';
 import type { Paper } from '@/types';
@@ -40,42 +41,46 @@ export default function WritingPage() {
     enabled: !!pid,
   });
 
-  const papers: Paper[] = papersData?.data?.items ?? [];
+  const papers: Paper[] = papersData?.items ?? [];
 
-  const summarizeMutation = useMutation({
+  const summarizeMutation = useToastMutation({
     mutationFn: () =>
       writingApi.summarize(pid, selectedIds, language),
+    errorMessage: t('common.operationFailed'),
     onSuccess: (res) => {
-      const summaries = res?.data?.summaries ?? [];
+      const summaries = res?.summaries ?? [];
       setOutput(
-        summaries.map((s) => `## ${s.title}\n${s.summary}`).join('\n\n')
+        summaries.map((s: { title?: string; summary?: string }) => `## ${s.title}\n${s.summary}`).join('\n\n')
       );
     },
   });
 
-  const citeMutation = useMutation({
+  const citeMutation = useToastMutation({
     mutationFn: () =>
       writingApi.citations(pid, selectedIds, citeStyle),
+    errorMessage: t('common.operationFailed'),
     onSuccess: (res) => {
-      const citations = res?.data?.citations ?? [];
-      setOutput(citations.map((c) => c.citation ?? '').join('\n'));
+      const citations = res?.citations ?? [];
+      setOutput(citations.map((c: { citation?: string }) => c.citation ?? '').join('\n'));
     },
   });
 
-  const outlineMutation = useMutation({
+  const outlineMutation = useToastMutation({
     mutationFn: () =>
       writingApi.reviewOutline(pid, topic, language),
+    errorMessage: t('common.operationFailed'),
     onSuccess: (res) => {
-      setOutput(res?.data?.outline ?? '');
+      setOutput(res?.outline ?? '');
     },
     onError: () => setOutput(''),
   });
 
-  const gapMutation = useMutation({
+  const gapMutation = useToastMutation({
     mutationFn: () =>
       writingApi.gapAnalysis(pid, researchTopic),
+    errorMessage: t('common.operationFailed'),
     onSuccess: (res) => {
-      setOutput(res?.data?.analysis ?? '');
+      setOutput(res?.analysis ?? '');
     },
     onError: () => setOutput(''),
   });

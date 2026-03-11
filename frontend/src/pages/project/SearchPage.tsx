@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Search, Download, Loader2 } from 'lucide-react';
 import { searchApi, paperApi, type SearchSource } from '@/services/api';
 import { cn } from '@/lib/utils';
@@ -29,7 +30,6 @@ interface SearchPaper {
 export default function SearchPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
-  const queryClient = useQueryClient();
   const pid = Number(projectId!);
 
   const [query, setQuery] = useState('');
@@ -44,20 +44,22 @@ export default function SearchPage() {
     enabled: !!pid,
   });
 
-  const searchMutation = useMutation({
+  const searchMutation = useToastMutation({
     mutationFn: (params: { query?: string; sources?: string[]; max_results?: number }) =>
       searchApi.execute(pid, {
         query: params.query || query,
         sources: params.sources || sources,
         max_results: params.max_results ?? maxResults,
       }),
+    successMessage: t('searchPage.searchSuccess'),
+    errorMessage: t('searchPage.searchFailed'),
     onSuccess: (res) => {
-      setResults((res?.data?.papers as unknown as SearchPaper[]) ?? []);
-      setImported(res?.data?.imported ?? 0);
+      setResults((res?.papers as unknown as SearchPaper[]) ?? []);
+      setImported(res?.imported ?? 0);
     },
   });
 
-  const importMutation = useMutation({
+  const importMutation = useToastMutation({
     mutationFn: (papers: SearchPaper[]) =>
       paperApi.bulkImport(
         pid,
@@ -76,14 +78,15 @@ export default function SearchPage() {
           pdf_url: p.pdf_url ?? '',
         }))
       ),
+    successMessage: t('searchPage.importSuccess'),
+    errorMessage: t('searchPage.importFailed'),
+    invalidateKeys: [['papers', pid], ['project', projectId]],
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
-      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      setImported(res?.data?.imported ?? 0);
+      setImported(res?.imported ?? 0);
     },
   });
 
-  const sourceList: SearchSource[] = sourcesData?.data ?? SOURCE_OPTIONS;
+  const sourceList: SearchSource[] = sourcesData ?? SOURCE_OPTIONS;
 
   const toggleSource = (id: string) => {
     setSources((prev) =>

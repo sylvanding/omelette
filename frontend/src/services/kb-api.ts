@@ -1,5 +1,5 @@
-import api from '@/lib/api';
-import type { ApiResponse } from '@/lib/api';
+import { api } from '@/lib/api';
+import type { Paper } from '@/types';
 
 export interface NewPaperData {
   title: string;
@@ -27,13 +27,13 @@ export interface UploadResult {
 }
 
 export const kbApi = {
-  uploadPdfs: async (projectId: number, files: File[]): Promise<ApiResponse<UploadResult>> => {
+  uploadPdfs: (projectId: number, files: File[]) => {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
-    return api.post(`/projects/${projectId}/papers/upload`, formData, {
+    return api.post<UploadResult>(`/projects/${projectId}/papers/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
-    });
+    }).then(r => r.data);
   },
 
   resolveConflict: (
@@ -42,16 +42,16 @@ export const kbApi = {
     action: string,
     mergedPaper?: Record<string, unknown>
   ) =>
-    api.post(`/projects/${projectId}/dedup/resolve`, {
+    api.post<{ resolved: boolean }>(`/projects/${projectId}/dedup/resolve`, {
       conflict_id: conflictId,
       action,
       merged_paper: mergedPaper,
-    }),
+    }).then(r => r.data),
 
   autoResolve: (projectId: number, conflictIds: string[]) =>
-    api.post(`/projects/${projectId}/dedup/auto-resolve`, {
+    api.post<{ resolved: number }>(`/projects/${projectId}/dedup/auto-resolve`, {
       conflict_ids: conflictIds,
-    }),
+    }).then(r => r.data),
 
   searchAndAdd: (
     projectId: number,
@@ -59,15 +59,15 @@ export const kbApi = {
     sources: string[],
     maxResults: number
   ) =>
-    api.post(`/projects/${projectId}/search/execute`, null, {
+    api.post<{ papers: Paper[]; imported: number }>(`/projects/${projectId}/search/execute`, null, {
       params: {
         query,
         sources,
         max_results: maxResults,
         auto_import: false,
       },
-    }),
+    }).then(r => r.data),
 
   bulkImport: (projectId: number, papers: NewPaperData[]) =>
-    api.post(`/projects/${projectId}/papers/bulk`, { papers }),
+    api.post<{ imported: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
 };
