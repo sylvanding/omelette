@@ -32,9 +32,22 @@ class Settings(BaseSettings):
     ocr_output_dir: str = ""
     chroma_db_dir: str = ""
 
+    # LLM: Default Provider
+    llm_provider: str = "mock"
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 4096
+
+    # LLM: OpenAI
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+
+    # LLM: Anthropic
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-20250514"
+
     # LLM: Aliyun Bailian
     aliyun_api_key: str = ""
-    aliyun_base_url: str = "https://coding.dashscope.aliyuncs.com/v1"
+    aliyun_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     aliyun_model: str = "qwen3.5-plus"
 
     # LLM: Volcengine
@@ -42,8 +55,9 @@ class Settings(BaseSettings):
     volcengine_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
     volcengine_model: str = "doubao-seed-1-6-flash-250828"
 
-    # Default LLM Provider
-    llm_provider: Literal["aliyun", "volcengine", "mock"] = "mock"
+    # LLM: Ollama (local)
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3"
 
     # Embedding
     embedding_model: str = "BAAI/bge-m3"

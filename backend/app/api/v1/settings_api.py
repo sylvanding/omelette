@@ -1,41 +1,63 @@
-"""Application settings API — manage API keys and configuration."""
+"""Application settings API — CRUD, model listing, and connection testing."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.api.deps import get_db
 from app.schemas.common import ApiResponse
+from app.schemas.llm import ProviderModelInfo, SettingsSchema, SettingsUpdateSchema
+from app.services.user_settings_service import UserSettingsService, get_available_models
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
-@router.get("", response_model=ApiResponse[dict])
-async def get_settings():
-    """Return non-sensitive settings (masks API keys)."""
+@router.get("", response_model=ApiResponse[SettingsSchema])
+async def get_settings(db: AsyncSession = Depends(get_db)):
+    """Return merged settings (DB overrides .env); API keys are masked."""
+    svc = UserSettingsService(db)
+    merged = await svc.get_merged_settings(mask_sensitive=True)
+    return ApiResponse(data=merged)
 
-    def _mask(key: str) -> str:
-        if not key:
-            return ""
-        if len(key) <= 8:
-            return "***"
-        return key[:4] + "***" + key[-4:]
 
-    return ApiResponse(
-        data={
-            "llm_provider": settings.llm_provider,
-            "aliyun_api_key": _mask(settings.aliyun_api_key),
-            "aliyun_base_url": settings.aliyun_base_url,
-            "aliyun_model": settings.aliyun_model,
-            "volcengine_api_key": _mask(settings.volcengine_api_key),
-            "volcengine_base_url": settings.volcengine_base_url,
-            "volcengine_model": settings.volcengine_model,
-            "embedding_model": settings.embedding_model,
-            "reranker_model": settings.reranker_model,
-            "data_dir": settings.data_dir,
-            "cuda_visible_devices": settings.cuda_visible_devices,
-            "semantic_scholar_api_key": _mask(settings.semantic_scholar_api_key),
-            "unpaywall_email": settings.unpaywall_email,
-        }
-    )
+@router.put("", response_model=ApiResponse[SettingsSchema])
+async def put_settings(
+    payload: SettingsUpdateSchema,
+    db: AsyncSession = Depends(get_db),
+):
+    """Update user-configurable settings and persist to DB."""
+    svc = UserSettingsService(db)
+    await svc.update(payload)
+    merged = await svc.get_merged_settings(mask_sensitive=True)
+    return ApiResponse(data=merged)
+
+
+@router.get("/models", response_model=ApiResponse[list[ProviderModelInfo]])
+async def list_models():
+    """Return available LLM providers and their model lists."""
+    return ApiResponse(data=get_available_models())
+
+
+@router.post("/test-connection", response_model=ApiResponse[dict])
+async def test_connection(db: AsyncSession = Depends(get_db)):
+    """Test the current LLM configuration by sending a simple prompt."""
+    svc = UserSettingsService(db)
+    config = await svc.get_merged_llm_config()
+
+    try:
+        from app.services.llm.client import LLMClient
+
+        client = LLMClient(config=config)
+        response = await client.chat(
+            [{"role": "user", "content": "Hi, respond with OK."}],
+            task_type="connection_test",
+        )
+        return ApiResponse(data={"success": True, "response": response[:200]})
+    except Exception as e:
+        return ApiResponse(
+            code=500,
+            message="Connection test failed",
+            data={"success": False, "error": str(e)},
+        )
 
 
 @router.get("/health", response_model=ApiResponse[dict])

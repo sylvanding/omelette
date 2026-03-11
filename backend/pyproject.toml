@@ -32,6 +32,10 @@ dependencies = [
     "rich>=13.0.0",
     "typer>=0.14.0",
     "aiosqlite>=0.20.0",
+    "langchain-core>=0.3",
+    "langchain-openai>=0.3",
+    "langchain-anthropic>=0.3",
+    "langchain-ollama>=0.3",
 ]
 
 [project.optional-dependencies]
