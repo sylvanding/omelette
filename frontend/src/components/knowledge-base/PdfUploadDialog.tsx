@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Upload,
@@ -16,8 +16,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { kbApi, type UploadResult } from '@/services/kb-api';
+import { type UploadResult } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
 
 interface PdfUploadDialogProps {
   projectId: number;
@@ -36,13 +37,19 @@ export function PdfUploadDialog({
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<'idle' | 'uploading' | 'analyzing'>('idle');
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
     setFiles([]);
     setUploadResult(null);
     setError(null);
+    setUploadProgress(0);
+    setUploadStage('idle');
+    if (abortRef.current) abortRef.current.abort();
   }, []);
 
   const handleOpenChange = useCallback(
@@ -98,11 +105,35 @@ export function PdfUploadDialog({
     if (files.length === 0) return;
     setIsUploading(true);
     setError(null);
+    setUploadProgress(0);
+    setUploadStage('uploading');
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const res = await kbApi.uploadPdfs(projectId, files);
+      const formData = new FormData();
+      files.forEach((f) => formData.append('files', f));
+
+      const res = await api.post(`/projects/${projectId}/papers/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300000,
+        signal: controller.signal,
+        onUploadProgress: (e) => {
+          if (e.total) {
+            const pct = Math.round((e.loaded / e.total) * 80);
+            setUploadProgress(pct);
+            if (pct >= 80) setUploadStage('analyzing');
+          }
+        },
+      });
+
+      setUploadProgress(100);
+      setUploadStage('idle');
       const result = res?.data as UploadResult;
       setUploadResult(result);
     } catch (err: unknown) {
+      if (controller.signal.aborted) return;
       const msg =
         err && typeof err === 'object' && 'message' in err
           ? String((err as { message: string }).message)
@@ -110,6 +141,7 @@ export function PdfUploadDialog({
       setError(msg);
     } finally {
       setIsUploading(false);
+      abortRef.current = null;
     }
   }, [projectId, files, t]);
 
@@ -210,11 +242,13 @@ export function PdfUploadDialog({
                   {files.map((file, i) => (
                     <li
                       key={`${file.name}-${i}`}
-                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                      className="flex items-center gap-2 overflow-hidden rounded px-2 py-1.5 text-sm hover:bg-muted/50"
                     >
                       <FileText className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="min-w-0 flex-1 truncate" title={file.name}>
+                        {file.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         {formatSize(file.size)}
                       </span>
                       <button
@@ -228,6 +262,30 @@ export function PdfUploadDialog({
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>
+                    {uploadStage === 'uploading'
+                      ? t('kb.upload.uploading')
+                      : t('kb.upload.analyzing')}
+                  </span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all duration-300',
+                      uploadStage === 'analyzing'
+                        ? 'animate-pulse bg-amber-500'
+                        : 'bg-primary'
+                    )}
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
               </div>
             )}
 
