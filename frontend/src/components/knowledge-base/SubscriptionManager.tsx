@@ -213,7 +213,6 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
               onToggleActive={() => handleToggleActive(sub)}
               isTriggering={triggerMutation.isPending}
               isUpdating={updateMutation.isPending}
-              t={t}
             />
           ))}
         </div>
@@ -349,7 +348,6 @@ interface SubscriptionCardProps {
   onToggleActive: () => void;
   isTriggering: boolean;
   isUpdating: boolean;
-  t: (key: string) => string;
 }
 
 function SubscriptionCard({
@@ -360,8 +358,9 @@ function SubscriptionCard({
   onToggleActive,
   isTriggering,
   isUpdating,
-  t,
 }: SubscriptionCardProps) {
+  const { t } = useTranslation();
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('subscriptions.neverRun');
     return new Date(dateStr).toLocaleString();
