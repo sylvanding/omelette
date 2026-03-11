@@ -3,7 +3,7 @@ title: "feat: 前端用户体验与健壮性全面升级"
 type: feat
 status: completed
 date: 2026-03-12
-origin: docs/brainstorms/2026-03-12-frontend-ux-robustness-brainstorm.md
+origin: ../brainstorms/2026-03-12-frontend-ux-robustness-brainstorm.md
 supersedes:
   - docs/plans/2026-03-12-fix-batch1-security-stability-plan.md (frontend parts)
   - docs/plans/2026-03-12-fix-batch2-error-handling-ux-plan.md (frontend parts)
@@ -742,7 +742,7 @@ DiscoveryPage
 
 ### Origin
 
-- **Brainstorm document:** [docs/brainstorms/2026-03-12-frontend-ux-robustness-brainstorm.md](docs/brainstorms/2026-03-12-frontend-ux-robustness-brainstorm.md) — 关键决策：方案 A「由内而外加固」、全层级测试、聊天合并 + AI SDK、知识库 7→3 页面
+- **Brainstorm document:** [frontend-ux-robustness-brainstorm](../brainstorms/2026-03-12-frontend-ux-robustness-brainstorm.md) — 关键决策：方案 A「由内而外加固」、全层级测试、聊天合并 + AI SDK、知识库 7→3 页面
 
 ### Internal References
 

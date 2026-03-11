@@ -67,6 +67,7 @@ def test_get_file_path_unknown_year(tmp_path, monkeypatch):
 
 def test_get_channels_direct_first(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "pdf_dir", str(tmp_path))
+    monkeypatch.setattr(settings, "unpaywall_email", "test@example.com")
     service = CrawlerService()
     paper = _make_paper(
         pdf_url="https://example.com/direct.pdf",
@@ -82,6 +83,7 @@ def test_get_channels_direct_first(tmp_path, monkeypatch):
 
 def test_get_channels_priority_order(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "pdf_dir", str(tmp_path))
+    monkeypatch.setattr(settings, "unpaywall_email", "test@example.com")
     service = CrawlerService()
     paper = _make_paper(doi="10.1234/test", source="arxiv", source_id="2301.00001")
     channels = service._get_channels(paper)
