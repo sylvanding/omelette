@@ -87,7 +87,71 @@
     "descPlaceholder": "Brief description of this knowledge base topic (optional)",
     "confirmDelete": "Are you sure you want to delete knowledge base \"{{name}}\"?",
     "name": "Name",
-    "description": "Description"
+    "description": "Description",
+    "addPaper": {
+      "title": "Add Papers",
+      "subtitle": "Choose how to add papers",
+      "searchKeywords": "Search Keywords",
+      "searchDesc": "Search academic databases by keywords",
+      "uploadPdf": "Upload PDF",
+      "uploadDesc": "Drag and drop or select PDF files"
+    },
+    "upload": {
+      "title": "Upload PDF",
+      "dropzone": "Drop PDF files here, or click to select",
+      "dropzoneActive": "Release to upload",
+      "selectedFiles": "{{count}} file(s) selected",
+      "totalSize": "Total size: {{size}}",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "result": "Upload complete: {{parsed}} paper(s) parsed",
+      "conflictsFound": "{{count}} conflict(s) found",
+      "noConflicts": "No conflicts, ready to import",
+      "continueResolve": "Resolve Conflicts",
+      "done": "Done",
+      "remove": "Remove",
+      "maxSize": "File size cannot exceed 50MB"
+    },
+    "searchAdd": {
+      "title": "Search & Add Papers",
+      "step1": "Enter Keywords",
+      "step2": "Search Results",
+      "step3": "Select & Import",
+      "queryPlaceholder": "Enter search keywords...",
+      "dataSources": "Data Sources",
+      "maxResults": "Max Results",
+      "startSearch": "Search",
+      "searching": "Searching...",
+      "resultsCount": "Found {{count}} paper(s)",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "addSelected": "Add Selected ({{count}})",
+      "noResults": "No results found",
+      "noResultsDesc": "Try different keywords or select more data sources",
+      "importing": "Importing...",
+      "importSuccess": "Successfully imported {{count}} paper(s)"
+    },
+    "dedup": {
+      "conflictsCount": "{{count}} conflict(s)",
+      "existingPaper": "Existing Paper",
+      "newPaper": "New Paper",
+      "keepExisting": "Keep Existing",
+      "keepNew": "Keep New",
+      "skip": "Skip",
+      "aiResolve": "AI Resolve",
+      "keepAllExisting": "Keep All Existing",
+      "keepAllNew": "Keep All New",
+      "aiResolveAll": "AI Resolve All",
+      "reason": "Reason",
+      "similarity": "Similarity {{value}}",
+      "field": {
+        "title": "Title",
+        "authors": "Authors",
+        "doi": "DOI",
+        "year": "Year",
+        "journal": "Journal"
+      }
+    }
   },
   "history": {
     "title": "Chat History",
@@ -151,6 +215,7 @@
   },
   "papers": {
     "title": "Papers",
+    "addPaper": "Add Papers",
     "searchPlaceholder": "Search title or abstract...",
     "journal": "Journal",
     "citations": "Citations",

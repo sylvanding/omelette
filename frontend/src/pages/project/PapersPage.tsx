@@ -9,10 +9,16 @@ import {
   Trash2,
   FileDown,
   Scan,
+  Plus,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { paperApi, ocrApi } from '@/services/api';
+import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
+import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
+import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
+import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 
 export default function PapersPage() {
   const { t } = useTranslation();
@@ -43,6 +49,8 @@ export default function PapersPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showAddPaper, setShowAddPaper] = useState(false);
+  const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['papers', pid, search, status, year, sortBy, order],
@@ -73,11 +81,52 @@ export default function PapersPage() {
   const papers: Paper[] = data?.data?.items ?? [];
   const total = data?.data?.total ?? 0;
 
+  const handleAddComplete = (uploadResult?: UploadResult) => {
+    queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+    if (uploadResult?.conflicts?.length) {
+      setConflicts(uploadResult.conflicts);
+    }
+  };
+
+  const handleResolveConflict = async (conflictId: string, action: string) => {
+    try {
+      await kbApi.resolveConflict(pid, conflictId, action === 'keep_existing' ? 'keep_old' : action);
+      setConflicts((prev) => prev.filter((c) => c.conflict_id !== conflictId));
+      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+    } catch (err) {
+      console.error('Failed to resolve conflict:', err);
+    }
+  };
+
+  const handleAutoResolveAll = async () => {
+    const ids = conflicts.map((c) => c.conflict_id);
+    try {
+      await kbApi.autoResolve(pid, ids);
+      setConflicts([]);
+      queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+    } catch (err) {
+      console.error('Failed to auto-resolve:', err);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('papers.title')}</h1>
+        <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">
+          <Plus className="size-4" />
+          {t('papers.addPaper')}
+        </Button>
       </div>
+
+      {conflicts.length > 0 && (
+        <DedupConflictPanel
+          projectId={pid}
+          conflicts={conflicts}
+          onResolve={handleResolveConflict}
+          onAutoResolveAll={handleAutoResolveAll}
+        />
+      )}
 
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex flex-wrap gap-3">
@@ -280,6 +329,13 @@ export default function PapersPage() {
           </div>
         </div>
       )}
+
+      <AddPaperDialog
+        projectId={pid}
+        open={showAddPaper}
+        onOpenChange={setShowAddPaper}
+        onComplete={handleAddComplete}
+      />
     </div>
   );
 }

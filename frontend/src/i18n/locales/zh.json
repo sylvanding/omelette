@@ -87,7 +87,71 @@
     "descPlaceholder": "简要描述这个知识库的主题（可选）",
     "confirmDelete": "确定删除知识库「{{name}}」吗？",
     "name": "名称",
-    "description": "描述"
+    "description": "描述",
+    "addPaper": {
+      "title": "添加论文",
+      "subtitle": "选择添加论文的方式",
+      "searchKeywords": "关键词检索",
+      "searchDesc": "通过关键词搜索学术数据库添加论文",
+      "uploadPdf": "上传 PDF",
+      "uploadDesc": "拖拽或选择 PDF 文件上传"
+    },
+    "upload": {
+      "title": "上传 PDF",
+      "dropzone": "拖放 PDF 文件到这里，或点击选择",
+      "dropzoneActive": "松开文件即可上传",
+      "selectedFiles": "已选择 {{count}} 个文件",
+      "totalSize": "总大小：{{size}}",
+      "upload": "上传",
+      "uploading": "上传中...",
+      "result": "上传完成：{{parsed}} 篇论文已解析",
+      "conflictsFound": "发现 {{count}} 条冲突",
+      "noConflicts": "无冲突，可直接入库",
+      "continueResolve": "处理冲突",
+      "done": "完成",
+      "remove": "移除",
+      "maxSize": "文件大小不能超过 50MB"
+    },
+    "searchAdd": {
+      "title": "关键词检索添加",
+      "step1": "输入关键词",
+      "step2": "检索结果",
+      "step3": "选择导入",
+      "queryPlaceholder": "输入检索关键词...",
+      "dataSources": "数据源",
+      "maxResults": "最大结果数",
+      "startSearch": "开始检索",
+      "searching": "检索中...",
+      "resultsCount": "找到 {{count}} 篇论文",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "addSelected": "添加所选 ({{count}})",
+      "noResults": "未找到结果",
+      "noResultsDesc": "尝试修改关键词或选择更多数据源",
+      "importing": "导入中...",
+      "importSuccess": "成功导入 {{count}} 篇论文"
+    },
+    "dedup": {
+      "conflictsCount": "{{count}} 条冲突",
+      "existingPaper": "已有记录",
+      "newPaper": "新记录",
+      "keepExisting": "保留已有",
+      "keepNew": "保留新的",
+      "skip": "跳过",
+      "aiResolve": "AI 解决",
+      "keepAllExisting": "全部保留已有",
+      "keepAllNew": "全部保留新的",
+      "aiResolveAll": "全部 AI 解决",
+      "reason": "原因",
+      "similarity": "相似度 {{value}}",
+      "field": {
+        "title": "标题",
+        "authors": "作者",
+        "doi": "DOI",
+        "year": "年份",
+        "journal": "期刊"
+      }
+    }
   },
   "history": {
     "title": "对话历史",
@@ -151,6 +215,7 @@
   },
   "papers": {
     "title": "论文",
+    "addPaper": "添加论文",
     "searchPlaceholder": "搜索标题或摘要...",
     "journal": "期刊",
     "citations": "引用数",
