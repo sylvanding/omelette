@@ -12,9 +12,12 @@ import {
   Key,
   Brain,
 } from 'lucide-react';
-import { LoadingState } from '@/components/ui/loading-state';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SettingsSkeleton } from '@/components/ui/skeletons';
+import PageHeader from '@/components/layout/PageHeader';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 import {
   Select,
   SelectContent,
@@ -114,41 +117,45 @@ export default function SettingsPage() {
 
   const currentProvider = form.llm_provider ?? 'mock';
 
+  const saveButton = (
+    <Button
+      onClick={handleSave}
+      disabled={updateMutation.isPending}
+      className="gap-1.5"
+    >
+      {updateMutation.isPending ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : updateMutation.isSuccess ? (
+        <CheckCircle2 className="size-4" />
+      ) : (
+        <Save className="size-4" />
+      )}
+      {t('common.save')}
+    </Button>
+  );
+
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <LoadingState message={t('common.loading')} />
+      <div className="h-full overflow-y-auto p-6">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} action={saveButton} />
+          <SettingsSkeleton />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-full overflow-y-auto p-6">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.subtitle')}
-            </p>
-          </div>
-          <Button
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="gap-1.5"
-          >
-            {updateMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : updateMutation.isSuccess ? (
-              <CheckCircle2 className="size-4" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            {t('common.save')}
-          </Button>
-        </div>
+      <motion.div
+        className="mx-auto max-w-3xl space-y-6"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} action={saveButton} />
 
-        {/* LLM Provider */}
+        <motion.div variants={staggerItem}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -157,7 +164,7 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">{t('settings.provider')}</label>
                 <Select
@@ -185,6 +192,17 @@ export default function SettingsPage() {
                   max="2"
                   value={form.llm_temperature ?? '0.7'}
                   onChange={(e) => updateField('llm_temperature', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">{t('settings.maxTokens')}</label>
+                <Input
+                  type="number"
+                  step="256"
+                  min="256"
+                  max="128000"
+                  value={form.llm_max_tokens ?? '4096'}
+                  onChange={(e) => updateField('llm_max_tokens', e.target.value)}
                 />
               </div>
             </div>
@@ -252,40 +270,45 @@ export default function SettingsPage() {
               </p>
             )}
 
-            <Separator />
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setTestResult(null);
-                  testMutation.mutate();
-                }}
-                disabled={testMutation.isPending}
-                className="gap-1.5"
-              >
-                {testMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Zap className="size-4" />
-                )}
-                {t('settings.testConnection')}
-              </Button>
-              {testResult && (
-                <Badge variant={testResult.success ? 'default' : 'destructive'} className="gap-1">
-                  {testResult.success ? (
-                    <CheckCircle2 className="size-3" />
-                  ) : (
-                    <XCircle className="size-3" />
+            {currentProvider !== 'mock' && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setTestResult(null);
+                      testMutation.mutate();
+                    }}
+                    disabled={testMutation.isPending}
+                    className="gap-1.5"
+                  >
+                    {testMutation.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Zap className="size-4" />
+                    )}
+                    {t('settings.testConnection')}
+                  </Button>
+                  {testResult && (
+                    <Badge variant={testResult.success ? 'default' : 'destructive'} className="gap-1">
+                      {testResult.success ? (
+                        <CheckCircle2 className="size-3" />
+                      ) : (
+                        <XCircle className="size-3" />
+                      )}
+                      {testResult.message.slice(0, 60)}
+                    </Badge>
                   )}
-                  {testResult.message.slice(0, 60)}
-                </Badge>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Embedding */}
+        </motion.div>
+
+        <motion.div variants={staggerItem}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -327,10 +350,12 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        </motion.div>
+
         <p className="text-xs text-muted-foreground">
           {t('settings.envHint')}
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

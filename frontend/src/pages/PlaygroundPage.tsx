@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, Sparkles, Square } from 'lucide-react';
+import { Plus, ChevronDown, Sparkles, Square, BookOpen, Quote, List, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubble from '@/components/playground/MessageBubble';
-import ToolModeSelector from '@/components/playground/ToolModeSelector';
 import { streamChat, conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import type { ToolMode, Citation } from '@/types/chat';
@@ -211,10 +210,7 @@ export default function PlaygroundPage() {
     <div className="flex h-full flex-col">
       {/* Top bar */}
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold">Playground</h1>
-          <ToolModeSelector value={toolMode} onChange={setToolMode} />
-        </div>
+        <h1 className="text-lg font-semibold">Playground</h1>
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -284,21 +280,26 @@ export default function PlaygroundPage() {
                 {t('playground.welcomeDesc')}
               </p>
 
-              <div className="mx-auto mt-8 grid max-w-lg grid-cols-2 gap-3">
-                {[
-                  t('playground.suggestions.summarize'),
-                  t('playground.suggestions.citation'),
-                  t('playground.suggestions.outline'),
-                  t('playground.suggestions.gap'),
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => handleSend(q)}
+              <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+                {([
+                  { text: t('playground.suggestions.summarize'), icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
+                  { text: t('playground.suggestions.citation'), icon: Quote, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
+                  { text: t('playground.suggestions.outline'), icon: List, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10' },
+                  { text: t('playground.suggestions.gap'), icon: Target, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10' },
+                ] as const).map((item) => (
+                  <motion.button
+                    key={item.text}
+                    onClick={() => handleSend(item.text)}
                     disabled={isStreaming}
-                    className="rounded-xl border border-border bg-card p-3 text-left text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:bg-accent hover:text-foreground"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-md dark:hover:bg-muted/40"
                   >
-                    {q}
-                  </button>
+                    <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
+                      <item.icon className={`size-4 ${item.color}`} />
+                    </div>
+                    <span className="text-sm text-muted-foreground leading-relaxed">{item.text}</span>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
@@ -346,6 +347,16 @@ export default function PlaygroundPage() {
                 ? t('playground.inputPlaceholder')
                 : t('playground.inputPlaceholderNoKB')
             }
+            toolMode={toolMode}
+            onToolModeChange={setToolMode}
+            selectedKBs={selectedKBs
+              .map((id) => {
+                const p = projects.find((proj: { id: number; name: string }) => proj.id === id);
+                return p ? { id: p.id, name: p.name } : null;
+              })
+              .filter(Boolean) as { id: number; name: string }[]
+            }
+            onRemoveKB={toggleKB}
           />
           <p className="mt-2 text-center text-xs text-muted-foreground">
             {t('playground.disclaimer')}

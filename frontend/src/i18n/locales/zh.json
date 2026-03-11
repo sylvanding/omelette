@@ -207,6 +207,7 @@
     "llmConfig": "LLM 模型配置",
     "provider": "模型提供商",
     "temperature": "温度",
+    "maxTokens": "最大 Token 数",
     "modelName": "模型名称",
     "apiKey": "API Key",
     "serverUrl": "服务地址",
@@ -352,7 +353,9 @@
   },
   "tasks": {
     "title": "任务",
-    "noTasks": "暂无任务"
+    "subtitle": "查看和管理后台处理任务",
+    "noTasks": "暂无任务",
+    "noTasksDesc": "当进行文献检索、下载和索引时，系统会自动创建任务。"
   },
   "subscriptions": {
     "title": "订阅",

@@ -207,6 +207,7 @@
     "llmConfig": "LLM Configuration",
     "provider": "Provider",
     "temperature": "Temperature",
+    "maxTokens": "Max Tokens",
     "modelName": "Model Name",
     "apiKey": "API Key",
     "serverUrl": "Server URL",
@@ -352,7 +353,9 @@
   },
   "tasks": {
     "title": "Tasks",
-    "noTasks": "No tasks"
+    "subtitle": "View and manage background processing tasks",
+    "noTasks": "No tasks",
+    "noTasksDesc": "Tasks are automatically created when processing literature searches, downloads, and indexing."
   },
   "subscriptions": {
     "title": "Subscriptions",
