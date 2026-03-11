@@ -60,7 +60,9 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3"
 
     # Embedding
+    embedding_provider: str = "local"  # local | api | mock
     embedding_model: str = "BAAI/bge-m3"
+    embedding_api_key: str = ""
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
 
     # GPU
