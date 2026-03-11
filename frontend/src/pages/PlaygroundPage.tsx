@@ -169,7 +169,7 @@ export default function PlaygroundPage() {
                   </p>
                 ) : (
                   <div className="max-h-48 space-y-1 overflow-y-auto">
-                    {projects.map((p) => (
+                    {projects.map((p: { id: number; name: string }) => (
                       <button
                         key={p.id}
                         onClick={() => toggleKB(p.id)}

@@ -430,7 +430,7 @@ function SubscriptionCard({
           </span>
           <span className="flex items-center gap-1">
             <RefreshCw className="size-3" />
-            {t('subscriptions.totalFound', { count: sub.total_found })}
+            {(t as (key: string, opts?: Record<string, unknown>) => string)('subscriptions.totalFound', { count: sub.total_found })}
           </span>
         </div>
       </CardContent>

@@ -47,11 +47,12 @@ function isDifferent(
 }
 
 export function DedupConflictPanel({
-  projectId,
+  projectId: _projectId,
   conflicts,
   onResolve,
   onAutoResolveAll,
 }: DedupConflictPanelProps) {
+  void _projectId;
   const { t } = useTranslation();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [aiResolvingId, setAiResolvingId] = useState<string | null>(null);
