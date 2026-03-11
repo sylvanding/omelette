@@ -3,6 +3,8 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    chat,
+    conversations,
     crawler,
     dedup,
     keywords,
@@ -31,3 +33,5 @@ api_router.include_router(rag.router)
 api_router.include_router(writing.router)
 api_router.include_router(tasks.router)
 api_router.include_router(settings_api.router)
+api_router.include_router(conversations.router)
+api_router.include_router(chat.router)

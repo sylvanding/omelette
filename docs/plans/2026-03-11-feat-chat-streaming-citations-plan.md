@@ -182,13 +182,13 @@ origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 **目标**：可用的流式聊天端点与对话持久化
 
 **任务**：
-- [ ] 新增 `Conversation`、`Message` 模型与迁移
-- [ ] 实现对话 CRUD API（`/api/v1/conversations`）
-- [ ] 实现 `POST /api/v1/chat/stream` SSE 端点
-- [ ] 流式处理：RAG 检索 → 组装 prompt → LLM 流式调用（需 LLMClient 支持 stream）
-- [ ] 输出 `message_start`、`text_delta`、`message_end` 事件（citation 可 Phase 4 再加）
-- [ ] 创建/更新 Message，更新 Conversation
-- [ ] 单元测试：mock LLM、RAG，验证 SSE 事件序列
+- [x] 新增 `Conversation`、`Message` 模型与迁移 (Phase 0 已完成)
+- [x] 实现对话 CRUD API（`/api/v1/conversations`）
+- [x] 实现 `POST /api/v1/chat/stream` SSE 端点
+- [x] 流式处理：RAG 检索 → 组装 prompt → LLM 流式调用（LLMClient.chat_stream）
+- [x] 输出 `message_start`、`text_delta`、`citation`、`message_end` 事件
+- [x] 创建/更新 Message，更新 Conversation
+- [x] 单元测试：mock LLM、RAG，验证 SSE 事件序列
 
 ### Phase 2: 前端 ChatContainer + MessageBubble + Markdown 渲染
 
@@ -232,11 +232,11 @@ origin: docs/brainstorms/2026-03-11-ux-architecture-upgrade-brainstorm.md
 
 **任务**：
 - [ ] ChatInput 增加工具模式下拉（普通问答 | 引用查找 | 文献综述 | 研究空白分析）
-- [ ] 后端根据 tool_mode 选择不同 prompt 与检索策略
-- [ ] `citation_lookup`：返回引用列表为主，简短说明
-- [ ] `review_outline`：结构化提纲
-- [ ] `gap_analysis`：复用 WritingService，流式输出
-- [ ] 各模式端到端测试
+- [x] 后端根据 tool_mode 选择不同 prompt 与检索策略
+- [x] `citation_lookup`：返回引用列表为主，简短说明
+- [x] `review_outline`：结构化提纲
+- [x] `gap_analysis`：复用 WritingService，流式输出
+- [x] 各模式端到端测试
 
 ### Phase 6: 对话历史页面
 

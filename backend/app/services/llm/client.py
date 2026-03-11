@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 
 from app.config import settings
 from app.schemas.llm import LLMConfig
@@ -128,6 +129,42 @@ class LLMClient:
             return content
         except Exception:
             logger.exception("[LLM:%s] Error during chat", self.provider)
+            raise
+
+    async def chat_stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+        task_type: str = "default",
+    ) -> AsyncIterator[str]:
+        """Stream chat completion tokens as an async iterator of strings."""
+        if self.provider == "mock":
+            from app.services.llm.adapters.mock_adapter import MOCK_RESPONSES
+
+            full = MOCK_RESPONSES.get(task_type, MOCK_RESPONSES["default"])
+            for word in full.split(" "):
+                yield word + " "
+            return
+
+        model = self._get_model()
+        lc_messages = _to_langchain_messages(messages)
+
+        kwargs: dict[str, Any] = {}
+        if temperature != self._config.temperature:
+            kwargs["temperature"] = temperature
+        if max_tokens != self._config.max_tokens:
+            kwargs["max_tokens"] = max_tokens
+
+        try:
+            async for chunk in model.astream(lc_messages, **kwargs):
+                if isinstance(chunk, AIMessageChunk | AIMessage):
+                    text = chunk.content if isinstance(chunk.content, str) else str(chunk.content)
+                    if text:
+                        yield text
+        except Exception:
+            logger.exception("[LLM:%s] Error during stream", self.provider)
             raise
 
     async def chat_json(
