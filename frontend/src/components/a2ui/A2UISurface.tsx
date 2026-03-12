@@ -8,12 +8,8 @@
  */
 
 import { memo, useCallback, useMemo } from "react";
-import {
-  A2UIProvider,
-  A2UIRenderer,
-  type A2UIAction,
-} from "@a2ui-sdk/react/0.8";
-import type { A2UIMessage } from "@a2ui-sdk/types/0.8";
+import { A2UIProvider, A2UIRenderer } from "@a2ui-sdk/react/0.8";
+import type { A2UIMessage, ActionPayload } from "@a2ui-sdk/types/0.8";
 import { toast } from "sonner";
 import { omeletteCatalog } from "./catalog";
 
@@ -22,7 +18,7 @@ interface A2UISurfaceProps {
 }
 
 function A2UISurface({ messages }: A2UISurfaceProps) {
-  const handleAction = useCallback((action: A2UIAction) => {
+  const handleAction = useCallback((action: ActionPayload) => {
     if (action.name === "copy") {
       const text = action.context?.text;
       if (typeof text === "string") {
@@ -45,12 +41,8 @@ function A2UISurface({ messages }: A2UISurfaceProps) {
 
   return (
     <div className="mt-2 space-y-2">
-      <A2UIProvider
-        messages={validMessages}
-        onAction={handleAction}
-        catalog={omeletteCatalog}
-      >
-        <A2UIRenderer />
+      <A2UIProvider messages={validMessages} catalog={omeletteCatalog}>
+        <A2UIRenderer onAction={handleAction} />
       </A2UIProvider>
     </div>
   );

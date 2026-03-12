@@ -800,7 +800,7 @@ grpc = [
 
 ### Origin
 
-- **Brainstorm document:** [docs/brainstorms/2026-03-12-rich-citation-rewrite-brainstorm.md](docs/brainstorms/2026-03-12-rich-citation-rewrite-brainstorm.md) — 关键决策：渐进增强现有聊天界面、A2UI 第一步预埋、gRPC（调整为 ConnectRPC server streaming）、7 组件丰富集
+- **Brainstorm document:** [2026-03-12-rich-citation-rewrite-brainstorm.md](../brainstorms/2026-03-12-rich-citation-rewrite-brainstorm.md) — 关键决策：渐进增强现有聊天界面、A2UI 第一步预埋、gRPC（调整为 ConnectRPC server streaming）、7 组件丰富集
 
 ### Internal References
 

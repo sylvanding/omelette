@@ -6,14 +6,17 @@
  */
 
 import { memo } from "react";
-import {
-  useDataBinding,
-  type A2UIComponentProps,
-} from "@a2ui-sdk/react/0.8";
+import { useDataBinding } from "@a2ui-sdk/react/0.8";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CITATION_COLORS } from "@/components/playground/CitationCard";
 import type { ValueSource } from "@a2ui-sdk/types/0.8";
+
+type A2UIComponentProps<T = unknown> = T & {
+  surfaceId: string;
+  componentId: string;
+  weight?: number;
+};
 
 interface A2UICitationCardProps {
   title: ValueSource;

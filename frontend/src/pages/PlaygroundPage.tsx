@@ -89,7 +89,7 @@ export default function PlaygroundPage() {
   }, [messages]);
 
   const pendingDeltaRef = useRef('');
-  const flushTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const assistantIdRef = useRef<string>('');
 
   const flushDelta = useCallback(() => {

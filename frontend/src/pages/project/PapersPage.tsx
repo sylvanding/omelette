@@ -96,7 +96,7 @@ export default function PapersPage() {
     invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
-  const ocrMutation = useToastMutation({
+  const _ocrMutation = useToastMutation({
     mutationFn: (paperIds: number[]) => ocrApi.process(pid, paperIds),
     successMessage: t('papers.ocrSuccess'),
     errorMessage: t('papers.ocrFailed'),

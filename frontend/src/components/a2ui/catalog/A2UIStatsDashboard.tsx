@@ -6,12 +6,15 @@
  */
 
 import { memo } from "react";
-import {
-  useDataBinding,
-  type A2UIComponentProps,
-} from "@a2ui-sdk/react/0.8";
+import { useDataBinding } from "@a2ui-sdk/react/0.8";
 import { FileText, Users, Calendar, TrendingUp } from "lucide-react";
 import type { ValueSource } from "@a2ui-sdk/types/0.8";
+
+type A2UIComponentProps<T = unknown> = T & {
+  surfaceId: string;
+  componentId: string;
+  weight?: number;
+};
 
 interface StatItem {
   label: string;

@@ -60,23 +60,25 @@ function MessageBubble({
   const rehypePlugins = useMemo(() => [rehypeKatex, rehypeHighlight], []);
 
   const markdownComponents = useMemo(
-    () => ({
-      "citation-ref": ({
-        index: citationIndex,
-      }: {
-        index?: number;
-        children?: React.ReactNode;
-      }) => {
-        if (citationIndex == null) return null;
-        return (
-          <InlineCitationTag
-            citationIndex={citationIndex}
-            citation={citationMap.get(citationIndex)}
-            onClickCitation={handleClickCitation}
-          />
-        );
-      },
-    }),
+    () =>
+      ({
+        "citation-ref": ({
+          index: citationIndex,
+        }: {
+          index?: number;
+          children?: React.ReactNode;
+        }) => {
+          if (citationIndex == null) return null;
+          return (
+            <InlineCitationTag
+              citationIndex={citationIndex}
+              citation={citationMap.get(citationIndex)}
+              onClickCitation={handleClickCitation}
+            />
+          );
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
     [citationMap, handleClickCitation],
   );
 
