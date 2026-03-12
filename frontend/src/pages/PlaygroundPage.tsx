@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -16,44 +16,25 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
-import MessageBubble from '@/components/playground/MessageBubble';
+import MessageBubbleV2 from '@/components/playground/MessageBubbleV2';
 import ChatHistorySidebar from '@/components/playground/ChatHistorySidebar';
 import { useSidebarCollapsed } from '@/components/playground/sidebar-utils';
 import { SidebarToggleButton } from '@/components/playground/SidebarToggleButton';
-import { streamChat, conversationApi } from '@/services/chat-api';
+import { conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
-import type { ToolMode, Citation } from '@/types/chat';
-import { isCitation, normalizeCitation } from '@/types/chat';
-import type { LoadingStage } from '@/components/playground/MessageLoadingStages';
-import type { A2UIMessage } from '@a2ui-sdk/types/0.8';
-import type { ThinkingStep } from '@/components/playground/ThinkingChain';
-
-interface LocalMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  citations?: Citation[];
-  isStreaming?: boolean;
-  loadingStage?: LoadingStage;
-  a2uiMessages?: A2UIMessage[];
-  thinkingSteps?: ThinkingStep[];
-}
+import { useChatStream } from '@/hooks/use-chat-stream';
+import type { ToolMode, OmeletteUIMessage, Citation } from '@/types/chat';
 
 export default function PlaygroundPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { conversationId: routeConvId } = useParams<{ conversationId: string }>();
 
-  const [messages, setMessages] = useState<LocalMessage[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [toolMode, setToolMode] = useState<ToolMode>('qa');
-  const [selectedKBs, setSelectedKBs] = useState<number[]>([]);
-  const [conversationId, setConversationId] = useState<number | undefined>();
-  const [isRestoringConversation, setIsRestoringConversation] = useState(false);
+  const [toolModeOverride, setToolModeOverride] = useState<ToolMode | null>(null);
+  const [selectedKBsOverride, setSelectedKBsOverride] = useState<number[] | null>(null);
+  const [newConversationId, setNewConversationId] = useState<number | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
   const bottomRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const hasRestoredRef = useRef<string | undefined>(undefined);
 
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -61,224 +42,88 @@ export default function PlaygroundPage() {
   });
   const projects = projectsData?.items ?? [];
 
-  useEffect(() => {
-    if (!routeConvId || hasRestoredRef.current === routeConvId) return;
-    hasRestoredRef.current = routeConvId;
-    const convIdNum = Number(routeConvId);
-    if (Number.isNaN(convIdNum)) return;
+  const convIdNum = routeConvId ? Number(routeConvId) : undefined;
+  const { data: restoredConv, isLoading: isRestoringConversation, isError: restoreFailed } = useQuery({
+    queryKey: ['conversation', convIdNum],
+    queryFn: () => conversationApi.get(convIdNum!),
+    enabled: convIdNum != null && !Number.isNaN(convIdNum),
+  });
 
-    setIsRestoringConversation(true);
-    conversationApi.get(convIdNum)
-      .then((conv) => {
-        setConversationId(conv.id);
-        setToolMode((conv.tool_mode as ToolMode) || 'qa');
-        if (conv.knowledge_base_ids?.length) {
-          setSelectedKBs(conv.knowledge_base_ids);
+  const conversationId = restoredConv?.id ?? newConversationId;
+  const toolMode = toolModeOverride ?? (restoredConv?.tool_mode as ToolMode) ?? 'qa';
+  const selectedKBs = selectedKBsOverride ?? restoredConv?.knowledge_base_ids ?? [];
+
+  const setToolMode = useCallback((mode: ToolMode) => setToolModeOverride(mode), []);
+  const setSelectedKBs = useCallback((fn: number[] | ((prev: number[]) => number[])) => {
+    setSelectedKBsOverride((prev) =>
+      typeof fn === 'function' ? fn(prev ?? []) : fn,
+    );
+  }, []);
+
+  const restoredMessages = useMemo((): OmeletteUIMessage[] => {
+    if (!restoredConv) return [];
+    return (restoredConv.messages ?? []).map((m) => {
+      const parts: OmeletteUIMessage['parts'] = [{ type: 'text' as const, text: m.content }];
+      if (m.role === 'assistant' && m.citations) {
+        for (const cit of m.citations as Citation[]) {
+          parts.push({ type: 'data-citation' as const, id: `cit-${cit.index}`, data: cit });
         }
-        const restored: LocalMessage[] = (conv.messages ?? []).map((m) => ({
-          id: `restored-${m.id}`,
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-          citations: (m.citations as Citation[]) ?? [],
-        }));
-        setMessages(restored);
-      })
-      .catch(() => {
-        setMessages([]);
-        setConversationId(undefined);
-      })
-      .finally(() => setIsRestoringConversation(false));
-  }, [routeConvId]);
+      }
+      return {
+        id: `restored-${m.id}`,
+        role: m.role as 'user' | 'assistant',
+        parts,
+      };
+    });
+  }, [restoredConv]);
+
+  const handleConversationId = useCallback(
+    (cid: number) => {
+      setNewConversationId(cid);
+      if (!routeConvId) {
+        navigate(`/chat/${cid}`, { replace: true });
+      }
+    },
+    [routeConvId, navigate],
+  );
+
+  const {
+    messages,
+    sendMessage,
+    stop,
+    isStreaming,
+    setMessages,
+  } = useChatStream({
+    conversationId,
+    knowledgeBaseIds: selectedKBs,
+    toolMode,
+    initialMessages: restoredMessages.length > 0 ? restoredMessages : undefined,
+    onConversationId: handleConversationId,
+    onError: (err) => toast.error(err.message || t('playground.streamError')),
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const pendingDeltaRef = useRef('');
-  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const assistantIdRef = useRef<string>('');
-
-  const flushDelta = useCallback(() => {
-    if (!pendingDeltaRef.current || !assistantIdRef.current) return;
-    const delta = pendingDeltaRef.current;
-    const aid = assistantIdRef.current;
-    pendingDeltaRef.current = '';
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === aid
-          ? { ...m, content: m.content + delta, loadingStage: 'generating' as LoadingStage }
-          : m,
-      ),
-    );
-  }, []);
-
   const handleSend = useCallback(
-    async (message: string) => {
-      const userMsg: LocalMessage = {
-        id: `u-${Date.now()}`,
-        role: 'user',
-        content: message,
-      };
-      const assistantMsg: LocalMessage = {
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        content: '',
-        citations: [],
-        isStreaming: true,
-        loadingStage: 'searching',
-      };
-
-      assistantIdRef.current = assistantMsg.id;
-      pendingDeltaRef.current = '';
-
-      setMessages((prev) => [...prev, userMsg, assistantMsg]);
-      setIsStreaming(true);
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        const gen = streamChat(
-          {
-            conversation_id: conversationId,
-            message,
-            knowledge_base_ids: selectedKBs.length > 0 ? selectedKBs : undefined,
-            tool_mode: toolMode,
-          },
-          controller.signal,
-        );
-
-        for await (const event of gen) {
-          if (event.event === 'text_delta') {
-            const delta = (event.data as { delta: string }).delta;
-            pendingDeltaRef.current += delta;
-            if (!flushTimerRef.current) {
-              flushTimerRef.current = setTimeout(() => {
-                flushTimerRef.current = undefined;
-                flushDelta();
-              }, 80);
-            }
-          } else if (event.event === 'citation') {
-            if (!isCitation(event.data)) {
-              console.warn('Invalid citation event', event.data);
-              continue;
-            }
-            const citation = normalizeCitation(event.data as Record<string, unknown>);
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsg.id
-                  ? {
-                      ...m,
-                      citations: [...(m.citations ?? []), citation],
-                      loadingStage: 'citations' as LoadingStage,
-                    }
-                  : m,
-              ),
-            );
-          } else if (event.event === 'thinking_step') {
-            const step = event.data as ThinkingStep;
-            setMessages((prev) =>
-              prev.map((m) => {
-                if (m.id !== assistantMsg.id) return m;
-                const existing = m.thinkingSteps ?? [];
-                const idx = existing.findIndex((s) => s.step === step.step);
-                const updated = idx >= 0
-                  ? existing.map((s, i) => (i === idx ? { ...s, ...step } : s))
-                  : [...existing, step];
-                return { ...m, thinkingSteps: updated };
-              }),
-            );
-          } else if (event.event === 'citation_enhanced') {
-            const { index, cleaned_excerpt } = event.data as {
-              index: number;
-              cleaned_excerpt: string;
-            };
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsg.id
-                  ? {
-                      ...m,
-                      citations: (m.citations ?? []).map((c) =>
-                        c.index === index ? { ...c, excerpt: cleaned_excerpt } : c,
-                      ),
-                    }
-                  : m,
-              ),
-            );
-          } else if (event.event === 'a2ui_surface') {
-            const a2uiMsg = event.data as unknown as A2UIMessage;
-            if (a2uiMsg.beginRendering || a2uiMsg.surfaceUpdate || a2uiMsg.dataModelUpdate) {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id
-                    ? {
-                        ...m,
-                        a2uiMessages: [...(m.a2uiMessages ?? []), a2uiMsg],
-                      }
-                    : m,
-                ),
-              );
-            }
-          } else if (event.event === 'message_end') {
-            if (flushTimerRef.current) {
-              clearTimeout(flushTimerRef.current);
-              flushTimerRef.current = undefined;
-            }
-            flushDelta();
-
-            const cid = (event.data as { conversation_id?: number })
-              .conversation_id;
-            if (cid) {
-              setConversationId(cid);
-              if (!routeConvId) {
-                navigate(`/chat/${cid}`, { replace: true });
-              }
-            }
-          }
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          toast.error(t('playground.streamError'));
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsg.id
-                ? { ...m, content: m.content || t('playground.streamError') }
-                : m,
-            ),
-          );
-        }
-      } finally {
-        if (flushTimerRef.current) {
-          clearTimeout(flushTimerRef.current);
-          flushTimerRef.current = undefined;
-        }
-        flushDelta();
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsg.id
-              ? { ...m, isStreaming: false, loadingStage: 'complete' as LoadingStage }
-              : m,
-          ),
-        );
-        setIsStreaming(false);
-        abortRef.current = null;
-        assistantIdRef.current = '';
-      }
+    (message: string) => {
+      sendMessage(message);
     },
-    [conversationId, selectedKBs, toolMode, t, routeConvId, navigate, flushDelta],
+    [sendMessage],
   );
 
   const handleStop = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
+    stop();
+  }, [stop]);
 
   const handleNewChat = () => {
-    abortRef.current?.abort();
+    stop();
     setMessages([]);
-    setConversationId(undefined);
-    setIsStreaming(false);
-    hasRestoredRef.current = undefined;
+    setMessages([]);
+    setNewConversationId(undefined);
+    setToolModeOverride(null);
+    setSelectedKBsOverride(null);
     navigate('/', { replace: true });
   };
 
@@ -294,7 +139,7 @@ export default function PlaygroundPage() {
     return <LoadingState className="h-full" message={t('common.loading')} />;
   }
 
-  if (routeConvId && !conversationId && !isRestoringConversation && hasRestoredRef.current === routeConvId) {
+  if (routeConvId && !conversationId && !isRestoringConversation && restoreFailed) {
     return (
       <EmptyState
         icon={Sparkles}
@@ -425,14 +270,9 @@ export default function PlaygroundPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <MessageBubble
-                    role={msg.role}
-                    content={msg.content}
-                    citations={msg.citations}
-                    isStreaming={msg.isStreaming}
-                    loadingStage={msg.loadingStage}
-                    a2uiMessages={msg.a2uiMessages}
-                    thinkingSteps={msg.thinkingSteps}
+                  <MessageBubbleV2
+                    message={msg}
+                    isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === 'assistant'}
                   />
                 </motion.div>
               ))}

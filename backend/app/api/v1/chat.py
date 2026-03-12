@@ -351,3 +351,66 @@ async def chat_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# v2: LangGraph + Data Stream Protocol
+# ---------------------------------------------------------------------------
+
+
+async def _stream_chat_v2(request: ChatStreamRequest, db: AsyncSession):
+    """Yield Data Stream Protocol SSE events from the LangGraph chat pipeline."""
+    from app.pipelines.chat.graph import create_chat_pipeline
+    from app.pipelines.chat.stream_writer import (
+        format_done,
+        format_error,
+        format_finish,
+        format_start,
+    )
+
+    msg_id = f"msg_{uuid.uuid4().hex}"
+    yield format_start(msg_id)
+
+    try:
+        pipeline = create_chat_pipeline()
+
+        initial_state = {
+            "message": request.message,
+            "knowledge_base_ids": request.knowledge_base_ids,
+            "tool_mode": request.tool_mode,
+            "conversation_id": request.conversation_id,
+            "model": request.model or "",
+        }
+        config = {"configurable": {"db": db}}
+
+        async for _namespace, _mode, chunk in pipeline.astream(
+            initial_state,
+            config=config,
+            stream_mode=["custom"],
+        ):
+            yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+
+        yield format_finish()
+    except Exception as e:
+        logger.exception("Chat stream v2 error")
+        yield format_error(str(e))
+    finally:
+        yield format_done()
+
+
+@router.post("/stream/v2")
+async def chat_stream_v2(
+    request: ChatStreamRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Data Stream Protocol (Vercel AI SDK 5.0) chat endpoint."""
+    return StreamingResponse(
+        _stream_chat_v2(request, db),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "X-Vercel-AI-UI-Message-Stream": "v1",
+        },
+    )
