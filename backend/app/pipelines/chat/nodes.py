@@ -19,7 +19,6 @@ from app.pipelines.chat.config_helpers import (
     get_chat_db,
     get_chat_llm,
     get_chat_rag,
-    get_configurable,
 )
 from app.pipelines.chat.state import ChatMessageDict, ChatState, CitationDict
 
@@ -78,7 +77,11 @@ def _emit_thinking(
 
 
 async def understand_node(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
-    """Initialize services, load conversation history, build system prompt."""
+    """Load conversation history and build system prompt.
+
+    LLM and RAG services are already initialized in the endpoint layer
+    and available via ``get_chat_llm``/``get_chat_rag``.
+    """
     writer = get_stream_writer()
     t0 = time.monotonic()
 
@@ -90,31 +93,6 @@ async def understand_node(state: ChatState, config: RunnableConfig) -> dict[str,
     )
 
     db = get_chat_db(config)
-
-    from app.services.user_settings_service import UserSettingsService
-
-    svc = UserSettingsService(db)
-    llm_config = await svc.get_merged_llm_config()
-
-    from app.services.llm.client import get_llm_client
-
-    llm = get_llm_client(config=llm_config)
-
-    from app.services.embedding_service import get_embedding_model
-    from app.services.rag_service import RAGService
-
-    if llm_config.provider == "mock":
-        from llama_index.core.embeddings import MockEmbedding
-
-        embed = MockEmbedding(embed_dim=128)
-    else:
-        embed = get_embedding_model()
-
-    rag = RAGService(llm=llm, embed_model=embed)
-
-    cfg = get_configurable(config)
-    cfg["llm"] = llm
-    cfg["rag"] = rag
 
     # Load conversation history
     history_messages: list[ChatMessageDict] = []

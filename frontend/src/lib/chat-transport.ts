@@ -11,7 +11,7 @@ interface ChatTransportOptions {
 
 export function createChatTransport(options: ChatTransportOptions) {
   return new DefaultChatTransport<OmeletteUIMessage>({
-    api: '/api/v1/chat/stream/v2',
+    api: '/api/v1/chat/stream',
     prepareSendMessagesRequest({ messages, trigger }) {
       const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
       const messageText = lastUserMsg ? getMessageText(lastUserMsg) : '';
