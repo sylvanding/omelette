@@ -14,6 +14,10 @@
 | POST | /projects/{id}/keywords/expand | LLM 扩展 |
 | GET | /projects/{id}/keywords/search-formula | 检索公式 |
 
+## 扩展响应
+
+`expanded_terms` 为对象列表：`{ term, term_zh, relation }`，`relation` 为 `synonym`、`abbreviation` 或 `related`。
+
 ## 检索公式
 
-参数 `database`：wos、scopus、pubmed
+`GET /projects/{id}/keywords/search-formula?database=wos` — 查询参数 `database`：`wos`、`scopus`、`pubmed`（默认 `wos`）。

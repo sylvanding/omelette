@@ -219,7 +219,7 @@ class OpenAlexProvider(SearchProvider):
 class ArXivProvider(SearchProvider):
     """arXiv API — Atom XML feed."""
 
-    BASE = "http://export.arxiv.org/api/query"
+    BASE = "https://export.arxiv.org/api/query"
 
     @property
     def name(self) -> str:

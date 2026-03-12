@@ -13,7 +13,7 @@ from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
-from app.services.llm.client import LLMClient, get_llm_client
+from app.services.llm.client import get_llm_client
 from app.services.user_settings_service import UserSettingsService
 
 logger = logging.getLogger(__name__)
@@ -85,12 +85,10 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
 
             full_text = ""
             try:
-                async for token in asyncio.wait_for(
-                    _collect_stream(llm, messages),
-                    timeout=REWRITE_TIMEOUT,
-                ):
-                    full_text += token
-                    yield _sse("rewrite_delta", {"delta": token})
+                async with asyncio.timeout(REWRITE_TIMEOUT):
+                    async for token in llm.chat_stream(messages, temperature=0.3, task_type="rewrite"):
+                        full_text += token
+                        yield _sse("rewrite_delta", {"delta": token})
             except TimeoutError:
                 yield _sse("error", {"code": "timeout", "message": "Rewrite timed out after 30s"})
                 return
@@ -103,12 +101,6 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
     except Exception as e:
         logger.exception("Rewrite stream error")
         yield _sse("error", {"code": "rewrite_error", "message": str(e)})
-
-
-async def _collect_stream(llm: LLMClient, messages: list[dict[str, str]]):
-    """Wrap the async iterator so asyncio.wait_for can timeout the whole stream."""
-    async for token in llm.chat_stream(messages, temperature=0.3, task_type="rewrite"):
-        yield token
 
 
 @router.post("/rewrite")

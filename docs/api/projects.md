@@ -11,6 +11,8 @@ Base path: `/api/v1/projects`
 | GET | `/projects/{id}` | Get project |
 | PUT | `/projects/{id}` | Update project |
 | DELETE | `/projects/{id}` | Delete project |
+| POST | `/projects/{id}/pipeline/run` | Run full pipeline (crawl → OCR → index) for all pending papers |
+| POST | `/projects/{id}/pipeline/paper/{paper_id}` | Run pipeline for a single paper |
 
 ## Query Parameters (List)
 

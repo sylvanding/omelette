@@ -12,7 +12,7 @@ Base path: `/api/v1/projects/{project_id}/keywords`
 | PUT | `/projects/{id}/keywords/{kw_id}` | Update keyword |
 | DELETE | `/projects/{id}/keywords/{kw_id}` | Delete keyword |
 | POST | `/projects/{id}/keywords/expand` | LLM expand |
-| GET | `/projects/{id}/keywords/search-formula` | Generate formula |
+| GET | `/projects/{id}/keywords/search-formula` | Generate search formula |
 
 ## Query Parameters (List)
 
@@ -31,6 +31,14 @@ Base path: `/api/v1/projects/{project_id}/keywords`
 }
 ```
 
+## Bulk Create
+
+`POST /projects/{id}/keywords/bulk` — Create multiple keywords at once.
+
+**Request body:** Array of `KeywordCreate` objects.
+
+**Response:** `{ created }` — Number of keywords created.
+
 ## Expand Request
 
 ```json
@@ -41,6 +49,30 @@ Base path: `/api/v1/projects/{project_id}/keywords`
 }
 ```
 
+## Expand Response
+
+Returns `expanded_terms` as a list of objects:
+
+```json
+{
+  "expanded_terms": [
+    {"term": "self-attention", "term_zh": "自注意力", "relation": "synonym"},
+    {"term": "BERT", "term_zh": "", "relation": "abbreviation"}
+  ],
+  "source": "llm:openai"
+}
+```
+
+- `term` — Expanded term (English)
+- `term_zh` — Chinese translation (optional)
+- `relation` — `synonym`, `abbreviation`, or `related`
+
 ## Search Formula
 
-Query param: `database` — `wos`, `scopus`, or `pubmed`
+`GET /projects/{id}/keywords/search-formula?database=wos` — Generate a boolean search formula from project keywords for a specific database.
+
+**Query parameters:**
+
+- `database` — Target database: `wos`, `scopus`, or `pubmed` (default: `wos`)
+
+**Response:** `{ formula, database, keyword_count }`

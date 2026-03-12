@@ -144,7 +144,17 @@ export default function PapersPage() {
 
   const handleResolveConflict = async (conflictId: string, action: string) => {
     try {
-      await kbApi.resolveConflict(pid, conflictId, action === 'keep_existing' ? 'keep_old' : action);
+      const mappedAction = action === 'keep_existing' ? 'keep_old' : action === 'keep_new' ? 'keep_new' : action;
+      if (mappedAction === 'ai_resolve') {
+        const suggestions = await kbApi.autoResolve(pid, [conflictId]);
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+          await kbApi.resolveConflict(pid, conflictId, suggestions[0].action ?? 'skip');
+        }
+        setConflicts((prev) => prev.filter((c) => c.conflict_id !== conflictId));
+        queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+        return;
+      }
+      await kbApi.resolveConflict(pid, conflictId, mappedAction);
       setConflicts((prev) => prev.filter((c) => c.conflict_id !== conflictId));
       queryClient.invalidateQueries({ queryKey: ['papers', pid] });
     } catch (err) {
@@ -155,7 +165,14 @@ export default function PapersPage() {
   const handleAutoResolveAll = async () => {
     const ids = conflicts.map((c) => c.conflict_id);
     try {
-      await kbApi.autoResolve(pid, ids);
+      const suggestions = await kbApi.autoResolve(pid, ids);
+      if (Array.isArray(suggestions)) {
+        for (const s of suggestions) {
+          if (s.action && !s.error) {
+            await kbApi.resolveConflict(pid, s.conflict_id, s.action);
+          }
+        }
+      }
       setConflicts([]);
       queryClient.invalidateQueries({ queryKey: ['papers', pid] });
     } catch (err) {

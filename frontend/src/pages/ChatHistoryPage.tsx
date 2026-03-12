@@ -113,7 +113,7 @@ export default function ChatHistoryPage() {
                           {formatDate(conv.updated_at)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {t('history.messageCount', { count: conv.messages?.length ?? 0 })}
+                          {t('history.messageCount', { count: conv.message_count ?? conv.messages?.length ?? 0 })}
                         </span>
                       </div>
                     </div>
