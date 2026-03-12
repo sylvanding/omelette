@@ -49,7 +49,7 @@ export const kbApi = {
     }).then(r => r.data),
 
   autoResolve: (projectId: number, conflictIds: string[]) =>
-    api.post<{ resolved: number }>(`/projects/${projectId}/dedup/auto-resolve`, {
+    api.post<Array<{ conflict_id: string; action: string; reason: string }>>(`/projects/${projectId}/dedup/auto-resolve`, {
       conflict_ids: conflictIds,
     }).then(r => r.data),
 
@@ -69,5 +69,5 @@ export const kbApi = {
     }).then(r => r.data),
 
   bulkImport: (projectId: number, papers: NewPaperData[]) =>
-    api.post<{ imported: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
+    api.post<{ created: number; skipped: number; total: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
 };

@@ -68,10 +68,12 @@ export default function KeywordsPage() {
     onSuccess: (res) => {
       const terms = res?.expanded_terms ?? [];
       if (terms.length > 0) {
-        terms.forEach((term: string) => {
+        terms.forEach((item: string | { term: string; term_zh?: string; relation?: string }) => {
+          const termStr = typeof item === 'string' ? item : item.term;
+          const termEn = typeof item === 'string' ? item : item.term;
           createMutation.mutate({
-            term,
-            term_en: term,
+            term: termStr,
+            term_en: termEn,
             level: 1,
           });
         });

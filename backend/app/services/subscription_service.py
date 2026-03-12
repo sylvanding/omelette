@@ -91,10 +91,10 @@ class SubscriptionService:
         return [
             {
                 "name": "arXiv - Physics Optics",
-                "url": "http://export.arxiv.org/rss/physics.optics",
+                "url": "https://export.arxiv.org/rss/physics.optics",
                 "category": "preprint",
             },
-            {"name": "arXiv - Quantum Physics", "url": "http://export.arxiv.org/rss/quant-ph", "category": "preprint"},
+            {"name": "arXiv - Quantum Physics", "url": "https://export.arxiv.org/rss/quant-ph", "category": "preprint"},
             {"name": "Nature Photonics", "url": "https://www.nature.com/nphoton.rss", "category": "journal"},
             {
                 "name": "Science - Latest",
