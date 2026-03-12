@@ -1,7 +1,7 @@
 ---
 title: "feat: Rewrite chat message routing chain"
 type: feat
-status: active
+status: completed
 date: 2026-03-12
 origin: docs/brainstorms/2026-03-12-chat-message-routing-chain-brainstorm.md
 ---
