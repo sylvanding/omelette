@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { paperApi, ocrApi, projectApi, paperProcessApi } from '@/services/api';
+import { paperApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
@@ -93,13 +93,6 @@ export default function PapersPage() {
     mutationFn: (paperId: number) => paperApi.delete(pid, paperId),
     successMessage: t('common.deleteSuccess'),
     errorMessage: t('common.deleteFailed'),
-    invalidateKeys: [['papers', pid], ['project', projectId]],
-  });
-
-  const _ocrMutation = useToastMutation({
-    mutationFn: (paperIds: number[]) => ocrApi.process(pid, paperIds),
-    successMessage: t('papers.ocrSuccess'),
-    errorMessage: t('papers.ocrFailed'),
     invalidateKeys: [['papers', pid], ['project', projectId]],
   });
 
