@@ -1,11 +1,12 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import { ChevronDown, ExternalLink, Copy } from "lucide-react";
+import { ChevronDown, ExternalLink, Copy, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import RewritePanel from "./RewritePanel";
 import type { Citation } from "@/types/chat";
 
 const RELEVANCE_STYLES = {
@@ -46,6 +47,7 @@ interface CitationCardProps {
   colorIndex: CitationColorIndex;
   isExpanded: boolean;
   onToggle: () => void;
+  isRewriteActive?: boolean;
 }
 
 function CitationCard({
@@ -53,9 +55,11 @@ function CitationCard({
   colorIndex,
   isExpanded,
   onToggle,
+  isRewriteActive,
 }: CitationCardProps) {
   const { t } = useTranslation();
   const [showFullExcerpt, setShowFullExcerpt] = useState(false);
+  const [showRewrite, setShowRewrite] = useState(false);
   const level = getRelevanceLevel(citation.relevance_score);
   const color = CITATION_COLORS[colorIndex];
   const authors = formatAuthors(citation.authors);
@@ -157,22 +161,50 @@ function CitationCard({
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
-                {authors && <span>{authors}</span>}
-                {citation.year && <span>{citation.year}</span>}
-                {citation.doi && (
-                  <a
-                    href={`https://doi.org/${citation.doi}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-0.5 text-primary hover:underline"
+              <div className="flex items-center justify-between">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+                  {authors && <span>{authors}</span>}
+                  {citation.year && <span>{citation.year}</span>}
+                  {citation.doi && (
+                    <a
+                      href={`https://doi.org/${citation.doi}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                    >
+                      DOI
+                      <ExternalLink className="size-2" />
+                    </a>
+                  )}
+                </div>
+
+                {citation.excerpt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 px-1.5 text-[10px] gap-0.5"
+                    disabled={isRewriteActive && !showRewrite}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowRewrite(!showRewrite);
+                    }}
                   >
-                    DOI
-                    <ExternalLink className="size-2" />
-                  </a>
+                    <RefreshCw className="size-2.5" />
+                    {t("rewrite.title", { defaultValue: "重写" })}
+                  </Button>
                 )}
               </div>
+
+              <AnimatePresence>
+                {showRewrite && (
+                  <RewritePanel
+                    originalText={citation.excerpt}
+                    paperTitle={citation.paper_title}
+                    onClose={() => setShowRewrite(false)}
+                  />
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
