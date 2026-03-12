@@ -22,6 +22,7 @@ import { projectApi } from '@/services/api';
 import type { ToolMode, Citation } from '@/types/chat';
 import { isCitation, normalizeCitation } from '@/types/chat';
 import type { LoadingStage } from '@/components/playground/MessageLoadingStages';
+import type { A2UIMessage } from '@a2ui-sdk/types/0.8';
 
 interface LocalMessage {
   id: string;
@@ -30,6 +31,7 @@ interface LocalMessage {
   citations?: Citation[];
   isStreaming?: boolean;
   loadingStage?: LoadingStage;
+  a2uiMessages?: A2UIMessage[];
 }
 
 export default function PlaygroundPage() {
@@ -167,6 +169,20 @@ export default function PlaygroundPage() {
                   : m,
               ),
             );
+          } else if (event.event === 'a2ui_surface') {
+            const a2uiMsg = event.data as unknown as A2UIMessage;
+            if (a2uiMsg.beginRendering || a2uiMsg.surfaceUpdate || a2uiMsg.dataModelUpdate) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMsg.id
+                    ? {
+                        ...m,
+                        a2uiMessages: [...(m.a2uiMessages ?? []), a2uiMsg],
+                      }
+                    : m,
+                ),
+              );
+            }
           } else if (event.event === 'message_end') {
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
@@ -368,6 +384,7 @@ export default function PlaygroundPage() {
                     citations={msg.citations}
                     isStreaming={msg.isStreaming}
                     loadingStage={msg.loadingStage}
+                    a2uiMessages={msg.a2uiMessages}
                   />
                 </motion.div>
               ))}

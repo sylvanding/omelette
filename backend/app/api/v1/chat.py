@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -80,13 +81,21 @@ async def _stream_chat(
         citations = []
 
         if request.knowledge_base_ids:
-            for kb_id in request.knowledge_base_ids:
-                result = await rag.query(
+            rag_tasks = [
+                rag.query(
                     project_id=kb_id,
                     question=request.message,
                     top_k=5,
                     include_sources=True,
                 )
+                for kb_id in request.knowledge_base_ids
+            ]
+            results = await asyncio.gather(*rag_tasks, return_exceptions=True)
+
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning("RAG query failed for a KB: %s", result)
+                    continue
                 if result.get("sources"):
                     all_sources.extend(result["sources"])
                     for src in result["sources"]:

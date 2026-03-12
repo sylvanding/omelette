@@ -10,8 +10,10 @@ import remarkCitation from "@/lib/remark-citation";
 import InlineCitationTag from "./InlineCitationTag";
 import CitationCardList from "./CitationCardList";
 import MessageLoadingStages from "./MessageLoadingStages";
+import A2UISurface from "@/components/a2ui/A2UISurface";
 import type { LoadingStage } from "./MessageLoadingStages";
 import type { Citation } from "@/types/chat";
+import type { A2UIMessage } from "@a2ui-sdk/types/0.8";
 
 interface MessageBubbleProps {
   role: "user" | "assistant";
@@ -19,6 +21,7 @@ interface MessageBubbleProps {
   citations?: Citation[];
   isStreaming?: boolean;
   loadingStage?: LoadingStage;
+  a2uiMessages?: A2UIMessage[];
 }
 
 function MessageBubble({
@@ -27,6 +30,7 @@ function MessageBubble({
   citations,
   isStreaming,
   loadingStage,
+  a2uiMessages,
 }: MessageBubbleProps) {
   const isUser = role === "user";
   const effectiveStage = loadingStage ?? (isStreaming ? "generating" : "complete");
@@ -121,6 +125,10 @@ function MessageBubble({
                   <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
                 )}
               </div>
+            )}
+
+            {a2uiMessages && a2uiMessages.length > 0 && (
+              <A2UISurface messages={a2uiMessages} />
             )}
 
             <CitationCardList

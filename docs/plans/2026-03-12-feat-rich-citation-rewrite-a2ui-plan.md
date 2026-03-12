@@ -629,13 +629,13 @@ Browser ──SSE──→ FastAPI (fallback, /api/v1/chat/stream)
 
 #### 3.4.3 验收标准（Phase 4）
 
-- [ ] A2UI 渲染器正常工作，能渲染至少 3 种自定义组件
-- [ ] LLM 可根据查询意图动态输出 A2UI JSON 或 Markdown
-- [ ] A2UI 解析失败时自动降级为 Markdown
-- [ ] ConnectRPC server streaming 正常工作
-- [ ] 多知识库检索并行化（`asyncio.gather()`）
-- [ ] ConnectRPC 不可用时自动降级为 SSE
-- [ ] 多流合并：检索 + 生成并行，前端正确渲染
+- [x] A2UI 渲染器正常工作，能渲染至少 3 种自定义组件
+- [x] LLM 可根据查询意图动态输出 A2UI JSON 或 Markdown
+- [x] A2UI 解析失败时自动降级为 Markdown
+- [ ] ConnectRPC server streaming 正常工作（延后：connect-python Alpha 风险高，后续迭代）
+- [x] 多知识库检索并行化（`asyncio.gather()`）
+- [ ] ConnectRPC 不可用时自动降级为 SSE（延后：与 ConnectRPC 一起迭代）
+- [x] 多流合并：检索 + 生成并行，前端正确渲染
 
 ---
 
