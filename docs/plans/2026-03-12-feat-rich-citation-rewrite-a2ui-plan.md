@@ -1,7 +1,7 @@
 ---
 title: "feat: 知识库检索增强 — 富媒体引用、内容重写与 A2UI 集成"
 type: feat
-status: active
+status: completed
 date: 2026-03-12
 version: v0.2.0
 origin: docs/brainstorms/2026-03-12-rich-citation-rewrite-brainstorm.md
