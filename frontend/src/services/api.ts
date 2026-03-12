@@ -154,3 +154,12 @@ export const ocrApi = {
   stats: (projectId: number) =>
     api.get<Record<string, unknown>>(`/projects/${projectId}/ocr/stats`).then(r => r.data),
 };
+
+export const paperProcessApi = {
+  process: (projectId: number, paperIds?: number[]) =>
+    api.post<{ queued: number; message: string }>(
+      `/projects/${projectId}/papers/process`,
+      null,
+      { params: paperIds?.length ? { paper_ids: paperIds } : {} },
+    ).then(r => r.data),
+};
