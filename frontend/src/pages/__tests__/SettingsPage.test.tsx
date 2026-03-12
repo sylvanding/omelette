@@ -11,12 +11,14 @@ describe('SettingsPage', () => {
     });
   });
 
-  it('renders test connection button', async () => {
+  it('hides test connection button for mock provider', async () => {
     renderWithProviders(<SettingsPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /test|测试/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /save|保存/i })).toBeInTheDocument();
     });
+
+    expect(screen.queryByRole('button', { name: /test|测试/i })).not.toBeInTheDocument();
   });
 
   it('loads settings from API', async () => {

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
@@ -15,6 +16,7 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import get_db
 from app.models.conversation import Conversation
 from app.models.message import Message
+from app.models.paper import Paper
 from app.schemas.conversation import ChatStreamRequest
 from app.services.llm.client import LLMClient, get_llm_client
 from app.services.rag_service import RAGService
@@ -79,13 +81,21 @@ async def _stream_chat(
         citations = []
 
         if request.knowledge_base_ids:
-            for kb_id in request.knowledge_base_ids:
-                result = await rag.query(
+            rag_tasks = [
+                rag.query(
                     project_id=kb_id,
                     question=request.message,
                     top_k=5,
                     include_sources=True,
                 )
+                for kb_id in request.knowledge_base_ids
+            ]
+            results = await asyncio.gather(*rag_tasks, return_exceptions=True)
+
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.warning("RAG query failed for a KB: %s", result)
+                    continue
                 if result.get("sources"):
                     all_sources.extend(result["sources"])
                     for src in result["sources"]:
@@ -94,7 +104,14 @@ async def _stream_chat(
                             f"p.{src.get('page_number', '?')}]\n{src.get('excerpt', '')}"
                         )
 
+            paper_ids = list({pid for pid in (src.get("paper_id") for src in all_sources) if pid is not None})
+            papers_by_id: dict[int, Paper] = {}
+            if paper_ids:
+                result = await db.execute(select(Paper).where(Paper.id.in_(paper_ids)))
+                papers_by_id = {p.id: p for p in result.scalars().all()}
+
             for i, src in enumerate(all_sources, 1):
+                paper = papers_by_id.get(src.get("paper_id")) if src.get("paper_id") else None
                 citation = {
                     "index": i,
                     "paper_id": src.get("paper_id"),
@@ -102,6 +119,10 @@ async def _stream_chat(
                     "page_number": src.get("page_number"),
                     "excerpt": src.get("excerpt", ""),
                     "relevance_score": src.get("relevance_score", 0),
+                    "chunk_type": src.get("chunk_type", "text"),
+                    "authors": paper.authors if paper else None,
+                    "year": paper.year if paper else None,
+                    "doi": paper.doi if paper else None,
                 }
                 citations.append(citation)
                 yield _sse("citation", citation)

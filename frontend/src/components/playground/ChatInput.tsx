@@ -103,6 +103,7 @@ export default function ChatInput({
         <div className="shrink-0 p-2">
           <Button
             size="icon"
+            aria-label={t('playground.send', { defaultValue: 'Send' })}
             onClick={handleSubmit}
             disabled={!value.trim() || isLoading || disabled}
             className="size-8 rounded-lg"

@@ -1,19 +1,27 @@
-import { memo } from 'react';
-import { useTranslation } from 'react-i18next';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import rehypeHighlight from 'rehype-highlight';
-import { User, Bot, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Citation } from '@/types/chat';
+import { memo, useState, useCallback, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import rehypeHighlight from "rehype-highlight";
+import { User, Bot } from "lucide-react";
+import { cn } from "@/lib/utils";
+import remarkCitation from "@/lib/remark-citation";
+import InlineCitationTag from "./InlineCitationTag";
+import CitationCardList from "./CitationCardList";
+import MessageLoadingStages from "./MessageLoadingStages";
+import A2UISurface from "@/components/a2ui/A2UISurface";
+import type { LoadingStage } from "./MessageLoadingStages";
+import type { Citation } from "@/types/chat";
+import type { A2UIMessage } from "@a2ui-sdk/types/0.8";
 
 interface MessageBubbleProps {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   citations?: Citation[];
   isStreaming?: boolean;
+  loadingStage?: LoadingStage;
+  a2uiMessages?: A2UIMessage[];
 }
 
 function MessageBubble({
@@ -21,18 +29,67 @@ function MessageBubble({
   content,
   citations,
   isStreaming,
+  loadingStage,
+  a2uiMessages,
 }: MessageBubbleProps) {
-  const { t } = useTranslation();
-  const isUser = role === 'user';
+  const isUser = role === "user";
+  const effectiveStage = loadingStage ?? (isStreaming ? "generating" : "complete");
+  const showLoading = isStreaming && !content && effectiveStage !== "complete";
+
+  const [highlightedCitationIndex, setHighlightedCitationIndex] = useState<
+    number | null
+  >(null);
+
+  const citationMap = useMemo(() => {
+    const map = new Map<number, Citation>();
+    for (const c of citations ?? []) {
+      map.set(c.index, c);
+    }
+    return map;
+  }, [citations]);
+
+  const handleClickCitation = useCallback((index: number) => {
+    setHighlightedCitationIndex(index);
+  }, []);
+
+  const remarkPlugins = useMemo(
+    () => [remarkGfm, remarkMath, remarkCitation],
+    [],
+  );
+
+  const rehypePlugins = useMemo(() => [rehypeKatex, rehypeHighlight], []);
+
+  const markdownComponents = useMemo(
+    () =>
+      ({
+        "citation-ref": ({
+          index: citationIndex,
+        }: {
+          index?: number;
+          children?: React.ReactNode;
+        }) => {
+          if (citationIndex == null) return null;
+          return (
+            <InlineCitationTag
+              citationIndex={citationIndex}
+              citation={citationMap.get(citationIndex)}
+              onClickCitation={handleClickCitation}
+            />
+          );
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any,
+    [citationMap, handleClickCitation],
+  );
 
   return (
-    <div className={cn('flex gap-3', isUser && 'flex-row-reverse')}>
+    <div className={cn("flex gap-3", isUser && "flex-row-reverse")}>
       <div
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-full',
+          "flex size-8 shrink-0 items-center justify-center rounded-full",
           isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground',
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-muted-foreground",
         )}
       >
         {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
@@ -40,46 +97,48 @@ function MessageBubble({
 
       <div
         className={cn(
-          'max-w-[75%] rounded-2xl px-4 py-3',
+          "max-w-[75%] rounded-2xl px-4 py-3",
           isUser
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-foreground',
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground",
         )}
       >
         {isUser ? (
           <p className="whitespace-pre-wrap text-sm">{content}</p>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none [&_pre]:bg-background/50 [&_pre]:rounded-lg [&_code]:text-xs">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex, rehypeHighlight]}
-            >
-              {content}
-            </ReactMarkdown>
-            {isStreaming && (
-              <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+          <>
+            {showLoading && (
+              <MessageLoadingStages
+                stage={effectiveStage}
+                citationCount={citations?.length}
+              />
             )}
-          </div>
-        )}
 
-        {citations && citations.length > 0 && (
-          <div className="mt-3 border-t border-border/30 pt-2">
-            <p className="mb-1 text-xs font-medium opacity-70">{t('playground.citations')}</p>
-            <ul className="space-y-1">
-              {citations.map((c) => (
-                <li
-                  key={c.index}
-                  className="flex items-start gap-1.5 text-xs opacity-80"
+            {content && (
+              <div className="prose prose-sm dark:prose-invert max-w-none [&_pre]:bg-background/50 [&_pre]:rounded-lg [&_code]:text-xs">
+                <ReactMarkdown
+                  remarkPlugins={remarkPlugins}
+                  rehypePlugins={rehypePlugins}
+                  components={markdownComponents}
                 >
-                  <FileText className="mt-0.5 size-3 shrink-0" />
-                  <span>
-                    [{c.index}] {c.paper_title}
-                    {c.page_number > 0 && ` (p.${c.page_number})`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  {content}
+                </ReactMarkdown>
+                {isStreaming && (
+                  <span className="inline-block size-2 animate-pulse rounded-full bg-primary" />
+                )}
+              </div>
+            )}
+
+            {a2uiMessages && a2uiMessages.length > 0 && (
+              <A2UISurface messages={a2uiMessages} />
+            )}
+
+            <CitationCardList
+              citations={citations ?? []}
+              isStreaming={isStreaming}
+              highlightedIndex={highlightedCitationIndex}
+            />
+          </>
         )}
       </div>
     </div>

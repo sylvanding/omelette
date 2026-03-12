@@ -20,6 +20,9 @@ import MessageBubble from '@/components/playground/MessageBubble';
 import { streamChat, conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import type { ToolMode, Citation } from '@/types/chat';
+import { isCitation, normalizeCitation } from '@/types/chat';
+import type { LoadingStage } from '@/components/playground/MessageLoadingStages';
+import type { A2UIMessage } from '@a2ui-sdk/types/0.8';
 
 interface LocalMessage {
   id: string;
@@ -27,6 +30,8 @@ interface LocalMessage {
   content: string;
   citations?: Citation[];
   isStreaming?: boolean;
+  loadingStage?: LoadingStage;
+  a2uiMessages?: A2UIMessage[];
 }
 
 export default function PlaygroundPage() {
@@ -83,6 +88,24 @@ export default function PlaygroundPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const pendingDeltaRef = useRef('');
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const assistantIdRef = useRef<string>('');
+
+  const flushDelta = useCallback(() => {
+    if (!pendingDeltaRef.current || !assistantIdRef.current) return;
+    const delta = pendingDeltaRef.current;
+    const aid = assistantIdRef.current;
+    pendingDeltaRef.current = '';
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === aid
+          ? { ...m, content: m.content + delta, loadingStage: 'generating' as LoadingStage }
+          : m,
+      ),
+    );
+  }, []);
+
   const handleSend = useCallback(
     async (message: string) => {
       const userMsg: LocalMessage = {
@@ -96,7 +119,11 @@ export default function PlaygroundPage() {
         content: '',
         citations: [],
         isStreaming: true,
+        loadingStage: 'searching',
       };
+
+      assistantIdRef.current = assistantMsg.id;
+      pendingDeltaRef.current = '';
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setIsStreaming(true);
@@ -118,23 +145,51 @@ export default function PlaygroundPage() {
         for await (const event of gen) {
           if (event.event === 'text_delta') {
             const delta = (event.data as { delta: string }).delta;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsg.id
-                  ? { ...m, content: m.content + delta }
-                  : m,
-              ),
-            );
+            pendingDeltaRef.current += delta;
+            if (!flushTimerRef.current) {
+              flushTimerRef.current = setTimeout(() => {
+                flushTimerRef.current = undefined;
+                flushDelta();
+              }, 80);
+            }
           } else if (event.event === 'citation') {
-            const citation = event.data as unknown as Citation;
+            if (!isCitation(event.data)) {
+              console.warn('Invalid citation event', event.data);
+              continue;
+            }
+            const citation = normalizeCitation(event.data as Record<string, unknown>);
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMsg.id
-                  ? { ...m, citations: [...(m.citations ?? []), citation] }
+                  ? {
+                      ...m,
+                      citations: [...(m.citations ?? []), citation],
+                      loadingStage: 'citations' as LoadingStage,
+                    }
                   : m,
               ),
             );
+          } else if (event.event === 'a2ui_surface') {
+            const a2uiMsg = event.data as unknown as A2UIMessage;
+            if (a2uiMsg.beginRendering || a2uiMsg.surfaceUpdate || a2uiMsg.dataModelUpdate) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantMsg.id
+                    ? {
+                        ...m,
+                        a2uiMessages: [...(m.a2uiMessages ?? []), a2uiMsg],
+                      }
+                    : m,
+                ),
+              );
+            }
           } else if (event.event === 'message_end') {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = undefined;
+            }
+            flushDelta();
+
             const cid = (event.data as { conversation_id?: number })
               .conversation_id;
             if (cid) {
@@ -157,16 +212,25 @@ export default function PlaygroundPage() {
           );
         }
       } finally {
+        if (flushTimerRef.current) {
+          clearTimeout(flushTimerRef.current);
+          flushTimerRef.current = undefined;
+        }
+        flushDelta();
+
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMsg.id ? { ...m, isStreaming: false } : m,
+            m.id === assistantMsg.id
+              ? { ...m, isStreaming: false, loadingStage: 'complete' as LoadingStage }
+              : m,
           ),
         );
         setIsStreaming(false);
         abortRef.current = null;
+        assistantIdRef.current = '';
       }
     },
-    [conversationId, selectedKBs, toolMode, t, routeConvId, navigate],
+    [conversationId, selectedKBs, toolMode, t, routeConvId, navigate, flushDelta],
   );
 
   const handleStop = useCallback(() => {
@@ -319,6 +383,8 @@ export default function PlaygroundPage() {
                     content={msg.content}
                     citations={msg.citations}
                     isStreaming={msg.isStreaming}
+                    loadingStage={msg.loadingStage}
+                    a2uiMessages={msg.a2uiMessages}
                   />
                 </motion.div>
               ))}

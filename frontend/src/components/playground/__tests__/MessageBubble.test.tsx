@@ -41,7 +41,7 @@ describe('MessageBubble', () => {
         chunk_type: 'abstract',
         page_number: 5,
         relevance_score: 0.95,
-        snippet: 'relevant text',
+        excerpt: 'relevant text',
       },
     ];
     renderWithProviders(

@@ -13,6 +13,7 @@ from app.api.v1 import (
     pipelines,
     projects,
     rag,
+    rewrite,
     search,
     settings_api,
     subscription,
@@ -41,4 +42,5 @@ api_router.include_router(tasks.router)
 api_router.include_router(settings_api.router)
 api_router.include_router(conversations.router)
 api_router.include_router(chat.router)
+api_router.include_router(rewrite.router)
 api_router.include_router(pipelines.router)

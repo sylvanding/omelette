@@ -26,7 +26,35 @@ export interface Citation {
   chunk_type: string;
   page_number: number;
   relevance_score: number;
-  snippet: string;
+  excerpt: string;
+  authors?: string[] | string | null;
+  year?: number | null;
+  doi?: string | null;
+}
+
+export function isCitation(data: unknown): data is Citation {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "index" in data &&
+    "paper_id" in data &&
+    ("excerpt" in data || "snippet" in data)
+  );
+}
+
+export function normalizeCitation(raw: Record<string, unknown>): Citation {
+  return {
+    index: raw.index as number,
+    paper_id: raw.paper_id as number,
+    paper_title: (raw.paper_title as string) ?? "",
+    chunk_type: (raw.chunk_type as string) ?? "text",
+    page_number: (raw.page_number as number) ?? 0,
+    relevance_score: (raw.relevance_score as number) ?? 0,
+    excerpt: (raw.excerpt as string) ?? (raw.snippet as string) ?? "",
+    authors: raw.authors as string[] | string | null | undefined,
+    year: raw.year as number | null | undefined,
+    doi: raw.doi as string | null | undefined,
+  };
 }
 
 export type ToolMode = 'qa' | 'citation_lookup' | 'review_outline' | 'gap_analysis';
