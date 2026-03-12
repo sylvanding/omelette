@@ -1,3 +1,9 @@
+import type { UIMessage, UIMessagePart } from 'ai';
+
+// ---------------------------------------------------------------------------
+// Domain types
+// ---------------------------------------------------------------------------
+
 export interface Conversation {
   id: number;
   title: string;
@@ -79,4 +85,60 @@ export interface ChatStreamRequest {
   knowledge_base_ids?: number[];
   model?: string;
   tool_mode?: string;
+}
+
+// ---------------------------------------------------------------------------
+// AI SDK 5.0 data part types (maps to backend data-* stream events)
+// ---------------------------------------------------------------------------
+
+export interface ThinkingData {
+  step: string;
+  label: string;
+  status: 'running' | 'done' | 'error';
+  detail?: string;
+  duration_ms?: number;
+  summary?: string;
+}
+
+export interface ConversationData {
+  conversation_id: number;
+}
+
+export type OmeletteDataParts = {
+  citation: Citation;
+  thinking: ThinkingData;
+  conversation: ConversationData;
+};
+
+export type OmeletteUIMessage = UIMessage<unknown, OmeletteDataParts>;
+export type OmelettePart = UIMessagePart<OmeletteDataParts, Record<string, never>>;
+
+// ---------------------------------------------------------------------------
+// Part extraction helpers
+// ---------------------------------------------------------------------------
+
+export function getCitations(message: OmeletteUIMessage): Citation[] {
+  return message.parts
+    .filter((p): p is { type: 'data-citation'; id?: string; data: Citation } => p.type === 'data-citation')
+    .map((p) => p.data);
+}
+
+export function getThinkingSteps(message: OmeletteUIMessage): ThinkingData[] {
+  return message.parts
+    .filter((p): p is { type: 'data-thinking'; id?: string; data: ThinkingData } => p.type === 'data-thinking')
+    .map((p) => p.data);
+}
+
+export function getConversationId(message: OmeletteUIMessage): number | undefined {
+  const part = message.parts.find(
+    (p): p is { type: 'data-conversation'; id?: string; data: ConversationData } => p.type === 'data-conversation',
+  );
+  return part?.data.conversation_id;
+}
+
+export function getMessageText(message: OmeletteUIMessage): string {
+  return message.parts
+    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+    .map((p) => p.text)
+    .join('');
 }

@@ -15,8 +15,10 @@
   "dependencies": {
     "@a2ui-sdk/react": "^0.4.0",
     "@a2ui-sdk/types": "^0.4.0",
+    "@ai-sdk/react": "^3.0.118",
     "@radix-ui/react-hover-card": "^1.1.15",
     "@tanstack/react-query": "^5.90.21",
+    "ai": "^6.0.116",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

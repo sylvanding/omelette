@@ -1,339 +1,89 @@
-"""Chat streaming API — SSE endpoint for real-time AI responses with citations."""
+"""Chat streaming API — Data Stream Protocol endpoint (Vercel AI SDK 5.0)."""
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-import time
 import uuid
+from collections.abc import Callable
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db
-from app.models.conversation import Conversation
-from app.models.message import Message
-from app.models.paper import Paper
+from app.pipelines.chat.graph import create_chat_pipeline
+from app.pipelines.chat.stream_writer import (
+    format_done,
+    format_error,
+    format_finish,
+    format_start,
+)
 from app.schemas.conversation import ChatStreamRequest
-from app.services.llm.client import LLMClient, get_llm_client
-from app.services.rag_service import RAGService
-from app.services.user_settings_service import UserSettingsService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
-TOOL_MODE_PROMPTS = {
-    "qa": (
-        "You are a scientific research assistant. Answer the question based on the provided context. "
-        "Use inline citations like [1], [2] to reference source papers. "
-        "If the context doesn't contain enough information, say so honestly."
-    ),
-    "citation_lookup": (
-        "You are a citation finder. Given the user's text, identify and list the most relevant "
-        "references from the provided context. Format as a numbered list with paper titles, authors, "
-        "and brief explanations of relevance. Keep your own commentary minimal."
-    ),
-    "review_outline": (
-        "You are a literature review expert. Based on the provided context, generate a structured "
-        "review outline with sections, subsections, and key points. Use citations like [1], [2] "
-        "to reference sources. Suggest a logical flow and highlight key themes."
-    ),
-    "gap_analysis": (
-        "You are a research gap analyst. Based on the provided literature context, identify "
-        "research gaps, unexplored areas, and potential future directions. Cite existing work "
-        "using [1], [2] format. Be specific about what has been studied and what remains open."
-    ),
-}
 
-EXCERPT_CLEAN_PROMPT = (
-    "Clean up the following text extracted from an academic PDF. "
-    "Fix OCR errors, add missing spaces between words, restore formatting. "
-    "Keep the original meaning intact. Output only the cleaned text, nothing else."
-)
+async def _init_services(db: AsyncSession) -> dict:
+    """Create LLM + RAG services from user settings."""
+    from app.services.llm.client import get_llm_client
+    from app.services.rag_service import RAGService
+    from app.services.user_settings_service import UserSettingsService
 
-_clean_semaphore = asyncio.Semaphore(3)
-
-
-async def _clean_excerpt(llm: LLMClient, excerpt: str) -> str:
-    """Use LLM to clean OCR-extracted text."""
-    if not excerpt or len(excerpt) < 20:
-        return excerpt
-    async with _clean_semaphore:
-        messages = [
-            {"role": "system", "content": EXCERPT_CLEAN_PROMPT},
-            {"role": "user", "content": excerpt},
-        ]
-        result = ""
-        try:
-            async with asyncio.timeout(10.0):
-                async for token in llm.chat_stream(messages, temperature=0.1, task_type="clean"):
-                    result += token
-        except TimeoutError:
-            logger.warning("Excerpt cleaning timed out, using original")
-            return excerpt
-        return result if result.strip() else excerpt
-
-
-async def _get_rag_service_for_chat(db: AsyncSession) -> tuple[RAGService, LLMClient]:
     svc = UserSettingsService(db)
-    config = await svc.get_merged_llm_config()
-    llm = get_llm_client(config=config)
+    llm_config = await svc.get_merged_llm_config()
+    llm = get_llm_client(config=llm_config)
 
-    from llama_index.core.embeddings import MockEmbedding
+    if llm_config.provider == "mock":
+        from llama_index.core.embeddings import MockEmbedding
 
-    from app.services.embedding_service import get_embedding_model
+        embed = MockEmbedding(embed_dim=128)
+    else:
+        from app.services.embedding_service import get_embedding_model
 
-    embed = MockEmbedding(embed_dim=128) if config.provider == "mock" else get_embedding_model()
+        embed = get_embedding_model()
+
     rag = RAGService(llm=llm, embed_model=embed)
-    return rag, llm
-
-
-def _thinking(step: str, label: str, status: str = "running", **kwargs) -> str:
-    data = {"step": step, "label": label, "status": status, **kwargs}
-    return _sse("thinking_step", data)
+    return {"llm": llm, "rag": rag}
 
 
 async def _stream_chat(
     request: ChatStreamRequest,
     db: AsyncSession,
+    init_services: Callable = _init_services,
 ):
-    """Generator that yields SSE events for the chat stream."""
-    message_id = str(uuid.uuid4())[:12]
-    t0 = time.monotonic()
-
-    yield _sse("message_start", {"message_id": message_id})
+    """Yield Data Stream Protocol SSE events from the LangGraph chat pipeline."""
+    msg_id = f"msg_{uuid.uuid4().hex}"
+    yield format_start(msg_id)
 
     try:
-        yield _thinking("understand", "Understanding query", detail=f"Analyzing '{request.message[:40]}...'")
+        services = await init_services(db)
+        config = {"configurable": {"db": db, "_services": services}}
 
-        rag, llm = await _get_rag_service_for_chat(db)
+        pipeline = create_chat_pipeline()
+        initial_state = {
+            "message": request.message,
+            "knowledge_base_ids": request.knowledge_base_ids,
+            "tool_mode": request.tool_mode,
+            "conversation_id": request.conversation_id,
+            "model": request.model or "",
+        }
 
-        yield _thinking(
-            "understand",
-            "Understanding query",
-            status="done",
-            duration_ms=int((time.monotonic() - t0) * 1000),
-            summary="Ready",
-        )
+        async for event in pipeline.astream(
+            initial_state,
+            config=config,
+            stream_mode="custom",
+        ):
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
-        all_sources = []
-        all_contexts = []
-        citations = []
-
-        if request.knowledge_base_ids:
-            t_retrieve = time.monotonic()
-            yield _thinking(
-                "retrieve",
-                "Searching knowledge base",
-                detail=f"Searching in {len(request.knowledge_base_ids)} knowledge base(s)...",
-            )
-
-            rag_tasks = [
-                rag.query(
-                    project_id=kb_id,
-                    question=request.message,
-                    top_k=5,
-                    include_sources=True,
-                )
-                for kb_id in request.knowledge_base_ids
-            ]
-            results = await asyncio.gather(*rag_tasks, return_exceptions=True)
-
-            for result in results:
-                if isinstance(result, Exception):
-                    logger.warning("RAG query failed for a KB: %s", result)
-                    continue
-                if result.get("sources"):
-                    all_sources.extend(result["sources"])
-                    for src in result["sources"]:
-                        all_contexts.append(
-                            f"[Source: {src.get('paper_title', 'Unknown')}, "
-                            f"p.{src.get('page_number', '?')}]\n{src.get('excerpt', '')}"
-                        )
-
-            yield _thinking(
-                "retrieve",
-                "Searching knowledge base",
-                status="done",
-                duration_ms=int((time.monotonic() - t_retrieve) * 1000),
-                summary=f"Found {len(all_sources)} relevant sources",
-            )
-
-            t_rank = time.monotonic()
-            yield _thinking("rank", "Analyzing citations", detail="Evaluating citation relevance...")
-
-            paper_ids = list({pid for pid in (src.get("paper_id") for src in all_sources) if pid is not None})
-            papers_by_id: dict[int, Paper] = {}
-            if paper_ids:
-                result = await db.execute(select(Paper).where(Paper.id.in_(paper_ids)))
-                papers_by_id = {p.id: p for p in result.scalars().all()}
-
-            for i, src in enumerate(all_sources, 1):
-                paper = papers_by_id.get(src.get("paper_id")) if src.get("paper_id") else None
-                citation = {
-                    "index": i,
-                    "paper_id": src.get("paper_id"),
-                    "paper_title": src.get("paper_title", ""),
-                    "page_number": src.get("page_number"),
-                    "excerpt": src.get("excerpt", ""),
-                    "relevance_score": src.get("relevance_score", 0),
-                    "chunk_type": src.get("chunk_type", "text"),
-                    "authors": paper.authors if paper else None,
-                    "year": paper.year if paper else None,
-                    "doi": paper.doi if paper else None,
-                }
-                citations.append(citation)
-                yield _sse("citation", citation)
-
-            high_relevance = sum(1 for c in citations if c.get("relevance_score", 0) > 0.6)
-            yield _thinking(
-                "rank",
-                "Analyzing citations",
-                status="done",
-                duration_ms=int((time.monotonic() - t_rank) * 1000),
-                summary=f"Selected {high_relevance} high-relevance citations (>60%)",
-            )
-
-            excerpts_to_clean = [(i, c["excerpt"]) for i, c in enumerate(citations) if c.get("excerpt")]
-            if excerpts_to_clean:
-                t_clean = time.monotonic()
-                yield _thinking(
-                    "clean",
-                    "Cleaning citation text",
-                    detail=f"Improving readability of {len(excerpts_to_clean)} citations in parallel...",
-                )
-
-                clean_tasks = [_clean_excerpt(llm, excerpt) for _, excerpt in excerpts_to_clean]
-                cleaned_results = await asyncio.gather(*clean_tasks, return_exceptions=True)
-
-                enhanced_count = 0
-                for (idx, _original), cleaned in zip(excerpts_to_clean, cleaned_results):
-                    if isinstance(cleaned, str) and cleaned.strip() and cleaned != citations[idx]["excerpt"]:
-                        citations[idx]["excerpt"] = cleaned
-                        enhanced_count += 1
-                        yield _sse(
-                            "citation_enhanced",
-                            {
-                                "index": citations[idx]["index"],
-                                "cleaned_excerpt": cleaned,
-                            },
-                        )
-
-                yield _thinking(
-                    "clean",
-                    "Cleaning citation text",
-                    status="done",
-                    duration_ms=int((time.monotonic() - t_clean) * 1000),
-                    summary=f"Enhanced {enhanced_count} citations",
-                )
-
-        history_messages = []
-        conversation_id = request.conversation_id
-
-        if conversation_id:
-            result = await db.execute(
-                select(Conversation)
-                .where(Conversation.id == conversation_id)
-                .options(selectinload(Conversation.messages))
-            )
-            conv = result.scalar_one_or_none()
-            if conv:
-                for msg in conv.messages[-10:]:
-                    history_messages.append({"role": msg.role, "content": msg.content})
-
-        if request.knowledge_base_ids:
-            system_prompt = TOOL_MODE_PROMPTS.get(request.tool_mode, TOOL_MODE_PROMPTS["qa"])
-            context_text = "\n\n---\n\n".join(all_contexts) if all_contexts else "No relevant documents found."
-            user_content = f"Context:\n{context_text}\n\nQuestion: {request.message}"
-        else:
-            system_prompt = (
-                "You are a helpful scientific research assistant. "
-                "Answer questions clearly and accurately. "
-                "If you don't know the answer, say so honestly."
-            )
-            user_content = request.message
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            *history_messages,
-            {"role": "user", "content": user_content},
-        ]
-
-        t_gen = time.monotonic()
-        yield _thinking(
-            "generate", "Generating answer", detail=f"Generating answer based on {len(citations)} citations..."
-        )
-
-        full_response = ""
-        async for token in llm.chat_stream(messages, temperature=0.3, task_type="chat"):
-            full_response += token
-            yield _sse("text_delta", {"delta": token})
-
-        yield _thinking(
-            "generate",
-            "Generating answer",
-            status="done",
-            duration_ms=int((time.monotonic() - t_gen) * 1000),
-            summary=f"Generated {len(full_response)} characters",
-        )
-
-        if not conversation_id:
-            title = request.message[:50] + ("..." if len(request.message) > 50 else "")
-            conv = Conversation(
-                title=title,
-                knowledge_base_ids=request.knowledge_base_ids,
-                model=request.model or "",
-                tool_mode=request.tool_mode,
-            )
-            db.add(conv)
-            await db.flush()
-            conversation_id = conv.id
-
-        user_msg = Message(
-            conversation_id=conversation_id,
-            role="user",
-            content=request.message,
-        )
-        assistant_msg = Message(
-            conversation_id=conversation_id,
-            role="assistant",
-            content=full_response,
-            citations=citations if citations else None,
-        )
-        db.add(user_msg)
-        db.add(assistant_msg)
-        await db.commit()
-
-        total_ms = int((time.monotonic() - t0) * 1000)
-        yield _thinking(
-            "complete",
-            "Complete",
-            status="done",
-            duration_ms=total_ms,
-            summary=f"Total {total_ms / 1000:.1f}s, cited {len(citations)} sources",
-        )
-
-        yield _sse(
-            "message_end",
-            {
-                "message_id": message_id,
-                "conversation_id": conversation_id,
-                "finish_reason": "stop",
-            },
-        )
-
+        yield format_finish()
     except Exception as e:
         logger.exception("Chat stream error")
-        yield _sse("error", {"code": "stream_error", "message": str(e)})
-
-
-def _sse(event: str, data: dict) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+        yield format_error(str(e))
+    finally:
+        yield format_done()
 
 
 @router.post("/stream")
@@ -341,7 +91,7 @@ async def chat_stream(
     request: ChatStreamRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """SSE streaming chat endpoint — sends token-level events."""
+    """Data Stream Protocol (Vercel AI SDK 5.0) chat endpoint."""
     return StreamingResponse(
         _stream_chat(request, db),
         media_type="text/event-stream",
@@ -349,5 +99,6 @@ async def chat_stream(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+            "X-Vercel-AI-UI-Message-Stream": "v1",
         },
     )
