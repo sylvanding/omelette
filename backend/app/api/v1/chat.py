@@ -109,12 +109,16 @@ async def _stream_chat(
     yield _sse("message_start", {"message_id": message_id})
 
     try:
-        yield _thinking("understand", "理解问题", detail=f"分析 '{request.message[:40]}...'")
+        yield _thinking("understand", "Understanding query", detail=f"Analyzing '{request.message[:40]}...'")
 
         rag, llm = await _get_rag_service_for_chat(db)
 
         yield _thinking(
-            "understand", "理解问题", status="done", duration_ms=int((time.monotonic() - t0) * 1000), summary="已就绪"
+            "understand",
+            "Understanding query",
+            status="done",
+            duration_ms=int((time.monotonic() - t0) * 1000),
+            summary="Ready",
         )
 
         all_sources = []
@@ -123,7 +127,11 @@ async def _stream_chat(
 
         if request.knowledge_base_ids:
             t_retrieve = time.monotonic()
-            yield _thinking("retrieve", "检索知识库", detail=f"在 {len(request.knowledge_base_ids)} 个知识库中搜索...")
+            yield _thinking(
+                "retrieve",
+                "Searching knowledge base",
+                detail=f"Searching in {len(request.knowledge_base_ids)} knowledge base(s)...",
+            )
 
             rag_tasks = [
                 rag.query(
@@ -150,14 +158,14 @@ async def _stream_chat(
 
             yield _thinking(
                 "retrieve",
-                "检索知识库",
+                "Searching knowledge base",
                 status="done",
                 duration_ms=int((time.monotonic() - t_retrieve) * 1000),
-                summary=f"找到 {len(all_sources)} 条相关文献",
+                summary=f"Found {len(all_sources)} relevant sources",
             )
 
             t_rank = time.monotonic()
-            yield _thinking("rank", "分析引用", detail="正在评估引用相关性...")
+            yield _thinking("rank", "Analyzing citations", detail="Evaluating citation relevance...")
 
             paper_ids = list({pid for pid in (src.get("paper_id") for src in all_sources) if pid is not None})
             papers_by_id: dict[int, Paper] = {}
@@ -185,16 +193,20 @@ async def _stream_chat(
             high_relevance = sum(1 for c in citations if c.get("relevance_score", 0) > 0.6)
             yield _thinking(
                 "rank",
-                "分析引用",
+                "Analyzing citations",
                 status="done",
                 duration_ms=int((time.monotonic() - t_rank) * 1000),
-                summary=f"筛选出 {high_relevance} 条高相关引用（>60%）",
+                summary=f"Selected {high_relevance} high-relevance citations (>60%)",
             )
 
             excerpts_to_clean = [(i, c["excerpt"]) for i, c in enumerate(citations) if c.get("excerpt")]
             if excerpts_to_clean:
                 t_clean = time.monotonic()
-                yield _thinking("clean", "清洗引用文本", detail=f"并行优化 {len(excerpts_to_clean)} 条引用的可读性...")
+                yield _thinking(
+                    "clean",
+                    "Cleaning citation text",
+                    detail=f"Improving readability of {len(excerpts_to_clean)} citations in parallel...",
+                )
 
                 clean_tasks = [_clean_excerpt(llm, excerpt) for _, excerpt in excerpts_to_clean]
                 cleaned_results = await asyncio.gather(*clean_tasks, return_exceptions=True)
@@ -214,10 +226,10 @@ async def _stream_chat(
 
                 yield _thinking(
                     "clean",
-                    "清洗引用文本",
+                    "Cleaning citation text",
                     status="done",
                     duration_ms=int((time.monotonic() - t_clean) * 1000),
-                    summary=f"优化了 {enhanced_count} 条引用",
+                    summary=f"Enhanced {enhanced_count} citations",
                 )
 
         history_messages = []
@@ -253,7 +265,9 @@ async def _stream_chat(
         ]
 
         t_gen = time.monotonic()
-        yield _thinking("generate", "生成回答", detail=f"基于 {len(citations)} 条引用生成回答...")
+        yield _thinking(
+            "generate", "Generating answer", detail=f"Generating answer based on {len(citations)} citations..."
+        )
 
         full_response = ""
         async for token in llm.chat_stream(messages, temperature=0.3, task_type="chat"):
@@ -262,10 +276,10 @@ async def _stream_chat(
 
         yield _thinking(
             "generate",
-            "生成回答",
+            "Generating answer",
             status="done",
             duration_ms=int((time.monotonic() - t_gen) * 1000),
-            summary=f"生成了 {len(full_response)} 字符",
+            summary=f"Generated {len(full_response)} characters",
         )
 
         if not conversation_id:
@@ -298,10 +312,10 @@ async def _stream_chat(
         total_ms = int((time.monotonic() - t0) * 1000)
         yield _thinking(
             "complete",
-            "完成",
+            "Complete",
             status="done",
             duration_ms=total_ms,
-            summary=f"总用时 {total_ms / 1000:.1f}s，引用 {len(citations)} 篇文献",
+            summary=f"Total {total_ms / 1000:.1f}s, cited {len(citations)} sources",
         )
 
         yield _sse(
