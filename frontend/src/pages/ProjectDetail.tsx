@@ -10,6 +10,7 @@ import {
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ProjectDetail() {
   const { t } = useTranslation();
@@ -35,12 +36,18 @@ export default function ProjectDetail() {
     <div className="flex h-full">
       <aside className="w-52 shrink-0 border-r border-border bg-muted/30">
         <div className="flex h-full flex-col p-3">
-          <Link to="/knowledge-bases">
-            <Button variant="ghost" size="sm" className="mb-2 w-full justify-start gap-1.5">
-              <ArrowLeft className="size-3.5" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to="/knowledge-bases">
+                <Button variant="ghost" size="icon" className="mb-2 size-8">
+                  <ArrowLeft className="size-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
               {t('project.backToKB')}
-            </Button>
-          </Link>
+            </TooltipContent>
+          </Tooltip>
 
           {project && (
             <h2 className="mb-3 truncate px-2 text-sm font-semibold">

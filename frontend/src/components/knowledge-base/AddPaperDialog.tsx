@@ -365,7 +365,7 @@ export function AddPaperDialog({
                         size: formatSize(totalSize),
                       })}
                     </span>
-                    <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-2 pr-3">
+                    <ul className="max-h-40 space-y-1 overflow-y-auto overflow-x-hidden rounded-md border border-border p-2 pr-3">
                       {files.map((file, i) => (
                         <li
                           key={`${file.name}-${i}`}
@@ -378,7 +378,7 @@ export function AddPaperDialog({
                           >
                             {file.name}
                           </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
+                          <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
                             {formatSize(file.size)}
                           </span>
                           <button

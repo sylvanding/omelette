@@ -14,6 +14,9 @@
     "generating": "生成中...",
     "copy": "复制",
     "copied": "已复制！",
+    "collapse": "收起",
+    "expandAll": "展开全文",
+    "showMore": "显示剩余 {{count}} 条",
     "add": "添加",
     "back": "返回",
     "year": "年份",
@@ -50,7 +53,8 @@
     "history": "历史记录",
     "tasks": "任务",
     "settings": "设置",
-    "home": "Omelette 首页"
+    "home": "Omelette 首页",
+    "more": "更多"
   },
   "discovery": {
     "title": "发现"
@@ -92,7 +96,23 @@
       "gap_analysis": "研究空白",
       "gap_analysisDesc": "分析研究领域空白"
     },
-    "citations": "引用来源"
+    "citations": "引用来源",
+    "attach": "附加文件",
+    "send": "发送",
+    "loading": {
+      "searching": "正在检索文献...",
+      "citations": "已找到相关文献",
+      "generating": "正在生成回答..."
+    },
+    "thinking": {
+      "understand": "理解问题",
+      "retrieve": "检索知识库",
+      "rank": "分析引用",
+      "clean": "清洗引用文本",
+      "generate": "生成回答",
+      "complete": "完成",
+      "collapsed": "思考过程"
+    }
   },
   "kb": {
     "title": "知识库",
@@ -364,6 +384,22 @@
     "subtitle": "查看和管理后台处理任务",
     "noTasks": "暂无任务",
     "noTasksDesc": "当进行文献检索、下载和索引时，系统会自动创建任务。"
+  },
+  "rewrite": {
+    "title": "重写",
+    "error": "重写失败",
+    "streaming": "正在重写...",
+    "retry": "重试",
+    "simplify": "简化表述",
+    "simplifyDesc": "将学术语言简化为通俗易懂的表述",
+    "academic": "学术改写",
+    "academicDesc": "改写为符合学术规范的正式表述",
+    "translateEn": "翻译为英文",
+    "translateEnDesc": "翻译为英文，保留学术术语",
+    "translateZh": "翻译为中文",
+    "translateZhDesc": "翻译为中文，保留学术术语",
+    "custom": "自定义指令",
+    "customPlaceholder": "输入自定义重写指令..."
   },
   "subscriptions": {
     "title": "订阅",

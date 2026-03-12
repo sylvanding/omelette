@@ -46,7 +46,7 @@ export default function MobileBottomNav() {
           className="flex flex-col items-center gap-0.5 px-3 py-2 text-[10px] text-muted-foreground transition-colors"
         >
           <Menu className="size-5" />
-          <span>{t('nav.more', { defaultValue: 'More' })}</span>
+          <span>{t('nav.more')}</span>
         </button>
       </nav>
 

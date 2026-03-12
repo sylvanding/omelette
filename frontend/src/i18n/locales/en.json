@@ -14,6 +14,9 @@
     "generating": "Generating...",
     "copy": "Copy",
     "copied": "Copied!",
+    "collapse": "Collapse",
+    "expandAll": "Show more",
+    "showMore": "Show {{count}} more",
     "add": "Add",
     "back": "Back",
     "year": "Year",
@@ -50,7 +53,8 @@
     "history": "History",
     "tasks": "Tasks",
     "settings": "Settings",
-    "home": "Omelette Home"
+    "home": "Omelette Home",
+    "more": "More"
   },
   "discovery": {
     "title": "Discovery"
@@ -92,7 +96,23 @@
       "gap_analysis": "Gap Analysis",
       "gap_analysisDesc": "Analyze research field gaps"
     },
-    "citations": "Citations"
+    "citations": "Citations",
+    "attach": "Attach file",
+    "send": "Send",
+    "loading": {
+      "searching": "Searching literature...",
+      "citations": "Found relevant sources",
+      "generating": "Generating response..."
+    },
+    "thinking": {
+      "understand": "Understanding query",
+      "retrieve": "Searching knowledge base",
+      "rank": "Analyzing citations",
+      "clean": "Cleaning citation text",
+      "generate": "Generating answer",
+      "complete": "Complete",
+      "collapsed": "Reasoning steps"
+    }
   },
   "kb": {
     "title": "Knowledge Bases",
@@ -364,6 +384,22 @@
     "subtitle": "View and manage background processing tasks",
     "noTasks": "No tasks",
     "noTasksDesc": "Tasks are automatically created when processing literature searches, downloads, and indexing."
+  },
+  "rewrite": {
+    "title": "Rewrite",
+    "error": "Rewrite failed",
+    "streaming": "Rewriting...",
+    "retry": "Retry",
+    "simplify": "Simplify",
+    "simplifyDesc": "Simplify academic language into plain language",
+    "academic": "Academic rewrite",
+    "academicDesc": "Rewrite in formal academic style",
+    "translateEn": "Translate to English",
+    "translateEnDesc": "Translate to English, preserving academic terms",
+    "translateZh": "Translate to Chinese",
+    "translateZhDesc": "Translate to Chinese, preserving academic terms",
+    "custom": "Custom prompt",
+    "customPlaceholder": "Enter custom rewrite instructions..."
   },
   "subscriptions": {
     "title": "Subscriptions",

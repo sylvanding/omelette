@@ -64,7 +64,7 @@ function RewritePanel({ originalText, paperTitle, onClose }: RewritePanelProps) 
         setState((prev) => (prev === "streaming" ? "done" : prev));
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          toast.error(t("rewrite.error", { defaultValue: "重写失败" }));
+          toast.error(t("rewrite.error"));
           setState("error");
         }
       } finally {
@@ -102,7 +102,7 @@ function RewritePanel({ originalText, paperTitle, onClose }: RewritePanelProps) 
       <div className="px-3 py-2.5 space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium">
-            {t("rewrite.title", { defaultValue: "重写" })}
+            {t("rewrite.title")}
             <span className="ml-1.5 text-muted-foreground font-normal truncate">
               — {paperTitle}
             </span>
@@ -144,7 +144,7 @@ function RewritePanel({ originalText, paperTitle, onClose }: RewritePanelProps) 
             {state === "streaming" && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Loader2 className="size-3 animate-spin" />
-                {t("rewrite.streaming", { defaultValue: "正在重写..." })}
+                {t("rewrite.streaming")}
               </div>
             )}
 
@@ -162,8 +162,8 @@ function RewritePanel({ originalText, paperTitle, onClose }: RewritePanelProps) 
                     <Copy className="size-3" />
                   )}
                   {copied
-                    ? t("common.copied", { defaultValue: "已复制" })
-                    : t("common.copy", { defaultValue: "复制" })}
+                    ? t("common.copied")
+                    : t("common.copy")}
                 </Button>
               )}
 
@@ -175,7 +175,7 @@ function RewritePanel({ originalText, paperTitle, onClose }: RewritePanelProps) 
                   onClick={handleRetry}
                 >
                   <RotateCcw className="size-3" />
-                  {t("rewrite.retry", { defaultValue: "重试" })}
+                  {t("rewrite.retry")}
                 </Button>
               )}
             </div>
