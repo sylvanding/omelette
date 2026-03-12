@@ -1,7 +1,8 @@
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import CitationCard from "./CitationCard";
 import type { CitationColorIndex } from "./CitationCard";
@@ -12,12 +13,40 @@ const INITIAL_DISPLAY_COUNT = 5;
 interface CitationCardListProps {
   citations: Citation[];
   isStreaming?: boolean;
+  highlightedIndex?: number | null;
 }
 
-function CitationCardList({ citations, isStreaming }: CitationCardListProps) {
+function CitationCardList({
+  citations,
+  isStreaming,
+  highlightedIndex,
+}: CitationCardListProps) {
   const { t } = useTranslation();
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
   const [showAll, setShowAll] = useState(false);
+  const [flashIndex, setFlashIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (highlightedIndex == null) return;
+
+    const hiddenCitation = citations.find(
+      (c) => c.index === highlightedIndex && !displayedIndices.has(c.index),
+    );
+    if (hiddenCitation) {
+      setShowAll(true);
+    }
+
+    setExpandedIndices((prev) => new Set(prev).add(highlightedIndex));
+    setFlashIndex(highlightedIndex);
+
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-citation-index="${highlightedIndex}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    const timer = setTimeout(() => setFlashIndex(null), 1500);
+    return () => clearTimeout(timer);
+  }, [highlightedIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleExpand = useCallback((index: number) => {
     setExpandedIndices((prev) => {
@@ -36,6 +65,11 @@ function CitationCardList({ citations, isStreaming }: CitationCardListProps) {
     [citations, showAll],
   );
 
+  const displayedIndices = useMemo(
+    () => new Set(displayCitations.map((c) => c.index)),
+    [displayCitations],
+  );
+
   const hasMore = citations.length > INITIAL_DISPLAY_COUNT;
 
   if (citations.length === 0) return null;
@@ -52,10 +86,18 @@ function CitationCardList({ citations, isStreaming }: CitationCardListProps) {
         animate="visible"
       >
         {displayCitations.map((c) => (
-          <motion.div key={c.index} variants={staggerItem}>
+          <motion.div
+            key={c.index}
+            variants={staggerItem}
+            data-citation-index={c.index}
+            className={cn(
+              flashIndex === c.index &&
+                "animate-pulse ring-2 ring-primary/50 rounded-lg",
+            )}
+          >
             <CitationCard
               citation={c}
-              colorIndex={(c.index - 1) % 6 as CitationColorIndex}
+              colorIndex={((c.index - 1) % 6) as CitationColorIndex}
               isExpanded={expandedIndices.has(c.index)}
               onToggle={() => toggleExpand(c.index)}
             />
