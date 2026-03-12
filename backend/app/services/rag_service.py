@@ -245,7 +245,7 @@ class RAGService:
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
                     "relevance_score": round(float(score), 3),
-                    "excerpt": text[:500] + "..." if len(text) > 500 else text,
+                    "excerpt": full_context[:800] + "..." if len(full_context) > 800 else full_context,
                 }
             )
 

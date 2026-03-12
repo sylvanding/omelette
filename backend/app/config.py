@@ -1,5 +1,6 @@
 """Application configuration using Pydantic Settings."""
 
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -101,3 +102,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Propagate CUDA_VISIBLE_DEVICES to os.environ so PyTorch (which reads it
+# at import time, before our code runs) respects the user's .env config.
+if settings.cuda_visible_devices and "CUDA_VISIBLE_DEVICES" not in os.environ:
+    os.environ["CUDA_VISIBLE_DEVICES"] = settings.cuda_visible_devices

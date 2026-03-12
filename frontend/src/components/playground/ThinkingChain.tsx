@@ -50,10 +50,19 @@ function formatDuration(ms?: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function ThinkingChain({ steps }: ThinkingChainProps) {
+function deduplicateSteps(raw: ThinkingStep[]): ThinkingStep[] {
+  const map = new Map<string, ThinkingStep>();
+  for (const step of raw) {
+    map.set(step.step, step);
+  }
+  return Array.from(map.values());
+}
+
+function ThinkingChain({ steps: rawSteps }: ThinkingChainProps) {
   const { t } = useTranslation();
   const [userOverride, setUserOverride] = useState<boolean | null>(null);
 
+  const steps = deduplicateSteps(rawSteps);
   const allDoneLocal = steps.every((s) => s.status !== 'running');
   const expanded = userOverride !== null ? userOverride : !allDoneLocal;
 
