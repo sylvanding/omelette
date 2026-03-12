@@ -15,8 +15,8 @@ const RELEVANCE_STYLES = {
   low: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
 } as const;
 
-const EXCERPT_PREVIEW_LENGTH = 300;
-const EXCERPT_MAX_DISPLAY = 500;
+const EXCERPT_PREVIEW_LENGTH = 400;
+const EXCERPT_MAX_DISPLAY = 800;
 
 export const CITATION_COLORS = [
   "#3B82F6",

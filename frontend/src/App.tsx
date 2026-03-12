@@ -33,8 +33,8 @@ function App() {
           <Suspense fallback={<LoadingState className="h-screen" />}>
             <Routes>
               <Route path="/" element={<AppShell />}>
-                <Route index element={<PlaygroundPage />} />
-                <Route path="chat/:conversationId" element={<PlaygroundPage />} />
+                <Route index element={<PlaygroundPage key="playground" />} />
+                <Route path="chat/:conversationId" element={<PlaygroundPage key="playground" />} />
                 <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
                 <Route path="history" element={<ChatHistoryPage />} />
                 <Route path="settings" element={<SettingsPage />} />

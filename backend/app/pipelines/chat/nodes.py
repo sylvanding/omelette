@@ -161,18 +161,12 @@ async def retrieve_node(state: ChatState, config: RunnableConfig) -> dict[str, A
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_sources: list[dict[str, Any]] = []
-    all_contexts: list[str] = []
     for result in results:
         if isinstance(result, Exception):
             logger.warning("RAG query failed for a KB: %s", result)
             continue
         if result.get("sources"):
             all_sources.extend(result["sources"])
-            for src in result["sources"]:
-                all_contexts.append(
-                    f"[Source: {src.get('paper_title', 'Unknown')}, "
-                    f"p.{src.get('page_number', '?')}]\n{src.get('excerpt', '')}"
-                )
 
     _emit_thinking(
         writer,
@@ -183,7 +177,7 @@ async def retrieve_node(state: ChatState, config: RunnableConfig) -> dict[str, A
         summary=f"Found {len(all_sources)} relevant sources",
     )
 
-    return {"rag_results": all_sources, "all_contexts": all_contexts}
+    return {"rag_results": all_sources}
 
 
 # ---------------------------------------------------------------------------
@@ -212,14 +206,17 @@ async def rank_node(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         papers_by_id = {p.id: p for p in result.scalars().all()}
 
     citations: list[CitationDict] = []
+    all_contexts: list[str] = []
     for i, src in enumerate(all_sources, 1):
         paper = papers_by_id.get(src.get("paper_id")) if src.get("paper_id") else None
+        title = paper.title if paper and paper.title else src.get("paper_title", "")
+        excerpt = src.get("excerpt", "")
         cit: CitationDict = {
             "index": i,
             "paper_id": src.get("paper_id"),
-            "paper_title": src.get("paper_title", ""),
+            "paper_title": title,
             "page_number": src.get("page_number"),
-            "excerpt": src.get("excerpt", ""),
+            "excerpt": excerpt,
             "relevance_score": src.get("relevance_score", 0),
             "chunk_type": src.get("chunk_type", "text"),
             "authors": paper.authors if paper else None,
@@ -227,6 +224,7 @@ async def rank_node(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
             "doi": paper.doi if paper else None,
         }
         citations.append(cit)
+        all_contexts.append(f"[Source: {title}, p.{src.get('page_number', '?')}]\n{excerpt}")
         writer(
             {
                 "type": "data-citation",
@@ -245,7 +243,7 @@ async def rank_node(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         summary=f"Selected {high_relevance} high-relevance citations (>60%)",
     )
 
-    return {"citations": citations}
+    return {"citations": citations, "all_contexts": all_contexts}
 
 
 # ---------------------------------------------------------------------------
@@ -429,6 +427,15 @@ async def persist_node(state: ChatState, config: RunnableConfig) -> dict[str, An
         db.add(user_msg)
         db.add(assistant_msg)
         await db.commit()
+
+        citation_count = len(state.get("citations") or [])
+        _emit_thinking(
+            writer,
+            "complete",
+            "Complete",
+            status="done",
+            summary=f"Generating answer · {citation_count} citations" if citation_count else "Generating answer",
+        )
 
         writer(
             {

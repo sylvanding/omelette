@@ -1,6 +1,6 @@
 import { useMemo, useDeferredValue, useRef, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
-import { createChatTransport } from '@/lib/chat-transport';
+import { createRefChatTransport } from '@/lib/chat-transport';
 import type {
   OmeletteUIMessage,
   OmeletteDataParts,
@@ -44,17 +44,13 @@ export function useChatStream({
   const onConversationIdRef = useRef(onConversationId);
   onConversationIdRef.current = onConversationId;
 
-  const transport = useMemo(
-    () =>
-      createChatTransport({
-        conversationId,
-        knowledgeBaseIds,
-        toolMode,
-        model,
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [conversationId, JSON.stringify(knowledgeBaseIds), toolMode, model],
-  );
+  // AI SDK's useChat stores the Chat instance in a useRef and never recreates
+  // it when the transport prop changes. To work around this, we create ONE
+  // stable transport that reads the latest options from a ref on every request.
+  const optionsRef = useRef({ conversationId, knowledgeBaseIds, toolMode, model });
+  optionsRef.current = { conversationId, knowledgeBaseIds, toolMode, model };
+
+  const transport = useMemo(() => createRefChatTransport(optionsRef), []);
 
   const chat = useChat<OmeletteUIMessage>({
     transport,

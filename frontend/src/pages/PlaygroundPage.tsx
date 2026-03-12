@@ -81,10 +81,13 @@ export default function PlaygroundPage() {
     (cid: number) => {
       setNewConversationId(cid);
       if (!routeConvId) {
-        navigate(`/chat/${cid}`, { replace: true });
+        // Update URL without React Router navigation to avoid unmount/remount
+        // during streaming. The key="playground" on the Route prevents remount
+        // for sidebar clicks, but replaceState is safer during active streams.
+        window.history.replaceState(null, '', `/chat/${cid}`);
       }
     },
-    [routeConvId, navigate],
+    [routeConvId],
   );
 
   const {
@@ -101,6 +104,24 @@ export default function PlaygroundPage() {
     onConversationId: handleConversationId,
     onError: (err) => toast.error(err.message || t('playground.streamError')),
   });
+
+  // When navigating to a different conversation via sidebar, load its messages
+  // into the existing Chat instance (which is preserved thanks to key="playground").
+  const prevConvIdRef = useRef(convIdNum);
+  useEffect(() => {
+    if (convIdNum !== prevConvIdRef.current) {
+      prevConvIdRef.current = convIdNum;
+      setNewConversationId(undefined);
+      setToolModeOverride(null);
+      setSelectedKBsOverride(null);
+    }
+  }, [convIdNum]);
+
+  useEffect(() => {
+    if (restoredConv && restoredMessages.length > 0 && convIdNum != null) {
+      setMessages(restoredMessages);
+    }
+  }, [restoredConv, restoredMessages, convIdNum, setMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -119,7 +140,6 @@ export default function PlaygroundPage() {
 
   const handleNewChat = () => {
     stop();
-    setMessages([]);
     setMessages([]);
     setNewConversationId(undefined);
     setToolModeOverride(null);

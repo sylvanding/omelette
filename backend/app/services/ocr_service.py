@@ -28,7 +28,7 @@ class OCRService:
         try:
             with pdfplumber.open(pdf_path) as pdf:
                 for i, page in enumerate(pdf.pages):
-                    text = page.extract_text() or ""
+                    text = page.extract_text(x_tolerance=1) or ""
                     tables = page.extract_tables() or []
 
                     page_data = {
