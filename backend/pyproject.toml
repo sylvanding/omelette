@@ -1,6 +1,6 @@
 [project]
 name = "omelette-backend"
-version = "0.1.0"
+version = "0.2.0"
 description = "Scientific Literature Lifecycle Management System / 科研文献全生命周期管理系统"
 readme = "README.md"
 license = {text = "MIT"}
