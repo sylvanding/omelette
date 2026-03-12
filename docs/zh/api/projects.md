@@ -11,6 +11,8 @@
 | GET | /projects/{id} | 获取 |
 | PUT | /projects/{id} | 更新 |
 | DELETE | /projects/{id} | 删除 |
+| POST | /projects/{id}/pipeline/run | 运行完整流程（爬取→OCR→索引） |
+| POST | /projects/{id}/pipeline/paper/{paper_id} | 对单篇论文运行流程 |
 
 ## 请求体（创建/更新）
 

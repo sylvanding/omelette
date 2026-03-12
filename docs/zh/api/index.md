@@ -50,6 +50,14 @@ GET /api/v1/tasks/{task_id}
 | [Papers](/zh/api/papers) | /projects/{id}/papers |
 | [Keywords](/zh/api/keywords) | /projects/{id}/keywords |
 | [Search](/zh/api/search) | /projects/{id}/search |
+| [Dedup](/zh/api/dedup) | /projects/{id}/dedup |
+| [OCR](/zh/api/ocr) | /projects/{id}/ocr |
+| [Crawler](/zh/api/crawler) | /projects/{id}/crawl |
+| [Subscription](/zh/api/subscription) | /projects/{id}/subscriptions |
 | [RAG](/zh/api/rag) | /projects/{id}/rag |
 | [Writing](/zh/api/writing) | /projects/{id}/writing |
-| Tasks | /tasks |
+| [Chat](/zh/api/chat) | /chat |
+| [Conversations](/zh/api/conversations) | /conversations |
+| [Settings](/zh/api/settings) | /settings |
+| [Tasks](/zh/api/tasks) | /tasks |
+| [Pipelines](/zh/api/pipelines) | /pipelines |
