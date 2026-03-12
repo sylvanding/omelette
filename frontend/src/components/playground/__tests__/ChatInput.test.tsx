@@ -8,7 +8,7 @@ describe('ChatInput', () => {
     renderWithProviders(<ChatInput onSend={onSend} isLoading={false} />);
 
     expect(screen.getByRole('textbox')).toBeInTheDocument();
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
   });
 
   it('should call onSend when Enter is pressed with text', async () => {
@@ -40,10 +40,10 @@ describe('ChatInput', () => {
     renderWithProviders(<ChatInput onSend={onSend} isLoading={true} />);
 
     const textarea = screen.getByRole('textbox');
-    const button = screen.getByRole('button');
+    const sendButton = screen.getByRole('button', { name: /send/i });
 
     expect(textarea).toBeDisabled();
-    expect(button).toBeDisabled();
+    expect(sendButton).toBeDisabled();
 
     await user.type(textarea, 'Hello{Enter}');
     expect(onSend).not.toHaveBeenCalled();
