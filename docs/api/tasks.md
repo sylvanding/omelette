@@ -42,7 +42,7 @@ The Tasks API manages background processing jobs: search, dedup, crawl, OCR, ind
 | `total` | int | Total steps |
 | `created_at` | string | ISO 8601 datetime |
 
-### Example
+### List Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/tasks?project_id=1&status=running&limit=20"
@@ -97,7 +97,7 @@ curl -X GET "http://localhost:8000/api/v1/tasks?project_id=1&status=running&limi
 | `started_at` | string | ISO 8601 datetime (nullable) |
 | `completed_at` | string | ISO 8601 datetime (nullable) |
 
-### Example
+### Detail Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/tasks/42"
@@ -138,7 +138,7 @@ curl -X GET "http://localhost:8000/api/v1/tasks/42"
 
 **Response:** `ApiResponse` (no data)
 
-### Example
+### Cancel Example
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/tasks/42/cancel"

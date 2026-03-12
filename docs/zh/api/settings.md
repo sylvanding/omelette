@@ -51,7 +51,7 @@
 | `semantic_scholar_api_key` | string | Semantic Scholar API 密钥（脱敏） |
 | `unpaywall_email` | string | Unpaywall 邮箱 |
 
-### 示例
+### 获取设置示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings"
@@ -117,7 +117,7 @@ curl -X GET "http://localhost:8000/api/v1/settings"
 
 **响应：** `ApiResponse[SettingsSchema]`（更新后的合并设置）
 
-### 示例
+### 更新设置示例
 
 ```bash
 curl -X PUT "http://localhost:8000/api/v1/settings" \
@@ -144,7 +144,7 @@ curl -X PUT "http://localhost:8000/api/v1/settings" \
 | `requires_base_url` | bool | 是否可配置 base URL |
 | `default_base_url` | string | 默认 base URL（若适用） |
 
-### 示例
+### 模型列表示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings/models"
@@ -189,7 +189,7 @@ curl -X GET "http://localhost:8000/api/v1/settings/models"
 | `response` | string | LLM 响应前 200 字符（成功时） |
 | `error` | string | 错误信息（失败时） |
 
-### 示例
+### 连接测试示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/settings/test-connection"
@@ -232,7 +232,7 @@ curl -X POST "http://localhost:8000/api/v1/settings/test-connection"
 | `status` | string | `"healthy"` |
 | `version` | string | 应用版本 |
 
-### 示例
+### 健康检查示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings/health"

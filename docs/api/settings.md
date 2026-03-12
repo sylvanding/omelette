@@ -51,7 +51,7 @@ The Settings API manages application configuration: LLM provider selection, mode
 | `semantic_scholar_api_key` | string | Semantic Scholar API key (masked) |
 | `unpaywall_email` | string | Unpaywall email |
 
-### Example
+### Get Settings Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings"
@@ -117,7 +117,7 @@ curl -X GET "http://localhost:8000/api/v1/settings"
 
 **Response:** `ApiResponse[SettingsSchema]` (updated merged settings)
 
-### Example
+### Update Settings Example
 
 ```bash
 curl -X PUT "http://localhost:8000/api/v1/settings" \
@@ -144,7 +144,7 @@ curl -X PUT "http://localhost:8000/api/v1/settings" \
 | `requires_base_url` | bool | Whether base URL is configurable |
 | `default_base_url` | string | Default base URL if applicable |
 
-### Example
+### List Models Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings/models"
@@ -189,7 +189,7 @@ curl -X GET "http://localhost:8000/api/v1/settings/models"
 | `response` | string | First 200 chars of LLM response (on success) |
 | `error` | string | Error message (on failure) |
 
-### Example
+### Test Connection Example
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/settings/test-connection"
@@ -232,7 +232,7 @@ curl -X POST "http://localhost:8000/api/v1/settings/test-connection"
 | `status` | string | `"healthy"` |
 | `version` | string | Application version |
 
-### Example
+### Health Check Example
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/settings/health"

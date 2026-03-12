@@ -49,7 +49,7 @@ export const kbApi = {
     }).then(r => r.data),
 
   autoResolve: (projectId: number, conflictIds: string[]) =>
-    api.post<Array<{ conflict_id: string; action: string; reason: string }>>(`/projects/${projectId}/dedup/auto-resolve`, {
+    api.post<Array<{ conflict_id: string; action: string; reason: string; error?: string }>>(`/projects/${projectId}/dedup/auto-resolve`, {
       conflict_ids: conflictIds,
     }).then(r => r.data),
 

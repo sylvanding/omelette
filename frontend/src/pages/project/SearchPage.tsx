@@ -84,7 +84,7 @@ export default function SearchPage() {
     errorMessage: t('searchPage.importFailed'),
     invalidateKeys: [['papers', pid], ['project', projectId]],
     onSuccess: (res) => {
-      setImported(res?.created ?? res?.imported ?? 0);
+      setImported(res?.created ?? 0);
     },
   });
 

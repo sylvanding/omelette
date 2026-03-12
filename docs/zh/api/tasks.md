@@ -42,7 +42,7 @@
 | `total` | int | 总步数 |
 | `created_at` | string | ISO 8601 时间 |
 
-### 示例
+### 列表示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/tasks?project_id=1&status=running&limit=20"
@@ -97,7 +97,7 @@ curl -X GET "http://localhost:8000/api/v1/tasks?project_id=1&status=running&limi
 | `started_at` | string | ISO 8601 时间（可为空） |
 | `completed_at` | string | ISO 8601 时间（可为空） |
 
-### 示例
+### 详情示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/tasks/42"
@@ -138,7 +138,7 @@ curl -X GET "http://localhost:8000/api/v1/tasks/42"
 
 **响应：** `ApiResponse`（无 data）
 
-### 示例
+### 取消示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/tasks/42/cancel"

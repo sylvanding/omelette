@@ -25,7 +25,7 @@ export const paperApi = {
   delete: (projectId: number, paperId: number) =>
     api.delete<null>(`/projects/${projectId}/papers/${paperId}`).then(r => r.data),
   bulkImport: (projectId: number, papers: Partial<Paper>[]) =>
-    api.post<{ imported: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
+    api.post<{ created: number; skipped: number; total: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
 };
 
 export const keywordApi = {

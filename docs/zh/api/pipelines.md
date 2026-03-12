@@ -39,7 +39,7 @@
 | `status` | string | `running` |
 | `project_id` | int | 项目 ID |
 
-### 示例
+### 检索流水线示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/pipelines/search" \
@@ -85,7 +85,7 @@ curl -X POST "http://localhost:8000/api/v1/pipelines/search" \
 | `status` | string | `running` |
 | `project_id` | int | 项目 ID |
 
-### 示例
+### 上传流水线示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/pipelines/upload" \
@@ -136,7 +136,7 @@ curl -X POST "http://localhost:8000/api/v1/pipelines/upload" \
 | `result` | object | 最终结果（`completed` 时） |
 | `error` | string | 错误信息（`failed` 时） |
 
-### 示例
+### 状态查询示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/pipelines/search_a1b2c3d4e5f6/status"
@@ -215,7 +215,7 @@ curl -X GET "http://localhost:8000/api/v1/pipelines/search_a1b2c3d4e5f6/status"
 | `thread_id` | string | 线程 ID |
 | `status` | string | `running` |
 
-### 示例
+### 恢复流水线示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/pipelines/search_a1b2c3d4e5f6/resume" \
@@ -258,7 +258,7 @@ curl -X POST "http://localhost:8000/api/v1/pipelines/search_a1b2c3d4e5f6/resume"
 | `thread_id` | string | 线程 ID |
 | `status` | string | `cancelled` |
 
-### 示例
+### 取消流水线示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/pipelines/search_a1b2c3d4e5f6/cancel"

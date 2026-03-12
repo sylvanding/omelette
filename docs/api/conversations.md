@@ -6,13 +6,23 @@ Conversations 模块提供对话的 CRUD 接口，支持分页列表、按知识
 
 ---
 
-## 1. 列表对话
+## 端点总览
 
-### GET /api/v1/conversations
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/conversations` | 分页列表 |
+| POST | `/conversations` | 创建对话 |
+| GET | `/conversations/{id}` | 获取详情（含消息） |
+| PUT | `/conversations/{id}` | 更新对话 |
+| DELETE | `/conversations/{id}` | 删除对话 |
+
+---
+
+## GET /conversations — 列表对话
 
 分页获取对话列表，按更新时间倒序，支持按知识库 ID 筛选。
 
-#### 查询参数
+### 查询参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -20,7 +30,7 @@ Conversations 模块提供对话的 CRUD 接口，支持分页列表、按知识
 | `page_size` | int | 否 | 每页条数，默认 20 |
 | `knowledge_base_id` | int | 否 | 仅返回包含该知识库的对话 |
 
-#### 响应格式
+### 列表响应格式
 
 `ApiResponse[PaginatedData[ConversationListSchema]]`
 
@@ -54,7 +64,7 @@ Conversations 模块提供对话的 CRUD 接口，支持分页列表、按知识
 }
 ```
 
-#### 示例 curl
+### 列表示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/conversations?page=1&page_size=20"
@@ -63,13 +73,11 @@ curl -X GET "http://localhost:8000/api/v1/conversations?knowledge_base_id=1"
 
 ---
 
-## 2. 创建对话
-
-### POST /api/v1/conversations
+## POST /conversations — 创建对话
 
 创建新对话。
 
-#### 请求体
+### 创建请求体
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -78,11 +86,11 @@ curl -X GET "http://localhost:8000/api/v1/conversations?knowledge_base_id=1"
 | `model` | str | 否 | 模型标识 |
 | `tool_mode` | str | 否 | 工具模式，默认 `"qa"` |
 
-#### 响应格式
+### 创建响应格式
 
 `ApiResponse[ConversationSchema]`，包含完整对话及空 `messages` 数组。
 
-#### 示例 curl
+### 创建示例
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/conversations" \
@@ -96,19 +104,17 @@ curl -X POST "http://localhost:8000/api/v1/conversations" \
 
 ---
 
-## 3. 获取对话详情
-
-### GET /api/v1/conversations/{id}
+## GET /conversations/{id} — 获取对话详情
 
 获取单个对话及其全部消息。
 
-#### 路径参数
+### 详情路径参数
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `id` | int | 对话 ID |
 
-#### 响应格式
+### 详情响应格式
 
 `ApiResponse[ConversationSchema]`
 
@@ -136,13 +142,13 @@ curl -X POST "http://localhost:8000/api/v1/conversations" \
 | `citations` | list[dict] \| null | 引用列表（assistant 消息） |
 | `created_at` | datetime | 创建时间 |
 
-#### 示例 curl
+### 详情示例
 
 ```bash
 curl -X GET "http://localhost:8000/api/v1/conversations/1"
 ```
 
-#### 错误码
+### 详情错误码
 
 | HTTP 状态 | 说明 |
 |-----------|------|
@@ -150,19 +156,17 @@ curl -X GET "http://localhost:8000/api/v1/conversations/1"
 
 ---
 
-## 4. 更新对话
-
-### PUT /api/v1/conversations/{id}
+## PUT /conversations/{id} — 更新对话
 
 更新对话标题或设置。
 
-#### 路径参数
+### 更新路径参数
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `id` | int | 对话 ID |
 
-#### 请求体
+### 更新请求体
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -172,11 +176,11 @@ curl -X GET "http://localhost:8000/api/v1/conversations/1"
 
 仅传入需要更新的字段。
 
-#### 响应格式
+### 更新响应格式
 
 `ApiResponse[ConversationSchema]`，包含更新后的完整对话及消息。
 
-#### 示例 curl
+### 更新示例
 
 ```bash
 curl -X PUT "http://localhost:8000/api/v1/conversations/1" \
@@ -184,7 +188,7 @@ curl -X PUT "http://localhost:8000/api/v1/conversations/1" \
   -d '{"title": "新标题"}'
 ```
 
-#### 错误码
+### 更新错误码
 
 | HTTP 状态 | 说明 |
 |-----------|------|
@@ -192,19 +196,17 @@ curl -X PUT "http://localhost:8000/api/v1/conversations/1" \
 
 ---
 
-## 5. 删除对话
-
-### DELETE /api/v1/conversations/{id}
+## DELETE /conversations/{id} — 删除对话
 
 删除对话及其全部消息（级联删除）。
 
-#### 路径参数
+### 删除路径参数
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `id` | int | 对话 ID |
 
-#### 响应格式
+### 删除响应格式
 
 ```json
 {
@@ -217,13 +219,13 @@ curl -X PUT "http://localhost:8000/api/v1/conversations/1" \
 }
 ```
 
-#### 示例 curl
+### 删除示例
 
 ```bash
 curl -X DELETE "http://localhost:8000/api/v1/conversations/1"
 ```
 
-#### 错误码
+### 删除错误码
 
 | HTTP 状态 | 说明 |
 |-----------|------|
