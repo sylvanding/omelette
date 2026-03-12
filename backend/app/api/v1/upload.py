@@ -1,21 +1,23 @@
 """PDF upload API endpoints."""
 
+import asyncio
 import logging
 import uuid
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
 from app.config import settings
-from app.models import Paper, Project
+from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.schemas.knowledge_base import DedupConflictPair, NewPaperData, UploadResult
 from app.schemas.paper import PaperRead
 from app.services.dedup_service import DedupService
+from app.services.paper_processor import process_papers_background
 from app.services.pdf_metadata import extract_metadata
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,7 @@ async def upload_pdfs(
     max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
     papers: list[NewPaperData] = []
     conflicts: list[DedupConflictPair] = []
+    new_paper_objects: list[Paper] = []
     total_uploaded = 0
 
     existing_papers_stmt = select(Paper).where(Paper.project_id == project_id)
@@ -114,7 +117,7 @@ async def upload_pdfs(
                     project_id=project_id,
                     title=metadata.title,
                     abstract=metadata.abstract or "",
-                    authors=[{"name": a.name} for a in metadata.authors] if metadata.authors else [],
+                    authors=metadata.authors or [],
                     doi=metadata.doi or None,
                     year=metadata.year,
                     journal=metadata.journal or "",
@@ -128,6 +131,7 @@ async def upload_pdfs(
                     citation_count=0,
                 )
                 db.add(paper)
+                new_paper_objects.append(paper)
                 papers.append(metadata)
 
         except HTTPException:
@@ -137,6 +141,11 @@ async def upload_pdfs(
             raise HTTPException(status_code=422, detail=f"Invalid or corrupted PDF: {upload_file.filename}") from e
 
     await db.flush()
+    new_paper_ids = [p.id for p in new_paper_objects]
+    await db.commit()
+
+    if new_paper_ids:
+        asyncio.create_task(process_papers_background(project_id, new_paper_ids))
 
     return ApiResponse(
         data=UploadResult(
@@ -145,3 +154,35 @@ async def upload_pdfs(
             total_uploaded=total_uploaded,
         )
     )
+
+
+@router.post("/process", response_model=ApiResponse[dict])
+async def process_papers(
+    project_id: int,
+    paper_ids: list[int] | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Trigger OCR + RAG indexing for papers (batch or retry).
+
+    If *paper_ids* is omitted, all unprocessed papers in the project are queued.
+    """
+    if paper_ids:
+        stmt = select(Paper.id).where(
+            Paper.id.in_(paper_ids),
+            Paper.project_id == project_id,
+            Paper.status.in_([PaperStatus.PDF_DOWNLOADED, PaperStatus.ERROR, PaperStatus.OCR_COMPLETE]),
+        )
+    else:
+        stmt = select(Paper.id).where(
+            Paper.project_id == project_id,
+            Paper.status.in_([PaperStatus.PDF_DOWNLOADED, PaperStatus.ERROR, PaperStatus.OCR_COMPLETE]),
+        )
+
+    ids = list((await db.execute(stmt)).scalars().all())
+
+    if not ids:
+        return ApiResponse(data={"queued": 0, "message": "No papers to process"})
+
+    asyncio.create_task(process_papers_background(project_id, ids))
+    return ApiResponse(data={"queued": len(ids), "message": f"Processing {len(ids)} paper(s) in background"})

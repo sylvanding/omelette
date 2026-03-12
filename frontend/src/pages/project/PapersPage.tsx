@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
+import { toast } from 'sonner';
 import {
   Search,
   ChevronDown,
   ChevronRight,
   Trash2,
   FileDown,
-  Scan,
   Plus,
   FileText,
+  RefreshCw,
+  Loader2,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { paperApi, ocrApi, projectApi } from '@/services/api';
+import { paperApi, ocrApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
@@ -25,6 +28,8 @@ import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
 import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
+
+const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
 export default function PapersPage() {
   const { t, i18n } = useTranslation();
@@ -75,6 +80,13 @@ export default function PapersPage() {
         order,
       }),
     enabled: !!pid,
+    refetchInterval: (query) => {
+      const items = query.state.data?.items ?? [];
+      const hasProcessing = items.some((p: Paper) =>
+        PROCESSING_STATUSES.includes(p.status),
+      );
+      return hasProcessing ? 3000 : false;
+    },
   });
 
   const deleteMutation = useToastMutation({
@@ -93,6 +105,42 @@ export default function PapersPage() {
 
   const papers: Paper[] = data?.items ?? [];
   const total = data?.total ?? 0;
+
+  const statusCounts = useMemo(() => {
+    const counts = { processing: 0, indexed: 0, error: 0, total: papers.length };
+    for (const p of papers) {
+      if (PROCESSING_STATUSES.includes(p.status)) counts.processing++;
+      else if (p.status === 'indexed') counts.indexed++;
+      else if (p.status === 'error') counts.error++;
+    }
+    return counts;
+  }, [papers]);
+
+  const handleProcessAll = async () => {
+    try {
+      const result = await paperProcessApi.process(pid);
+      if (result.queued > 0) {
+        toast.success(t('papers.processQueued', { count: result.queued }));
+        queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+      } else {
+        toast.info(t('papers.noPapersToProcess'));
+      }
+    } catch {
+      toast.error(t('papers.processFailed'));
+    }
+  };
+
+  const handleRetry = async (paperId: number) => {
+    try {
+      const result = await paperProcessApi.process(pid, [paperId]);
+      if (result.queued > 0) {
+        toast.success(t('papers.retryQueued'));
+        queryClient.invalidateQueries({ queryKey: ['papers', pid] });
+      }
+    } catch {
+      toast.error(t('papers.processFailed'));
+    }
+  };
 
   const handleAddComplete = (uploadResult?: UploadResult) => {
     queryClient.invalidateQueries({ queryKey: ['papers', pid] });
@@ -122,6 +170,8 @@ export default function PapersPage() {
     }
   };
 
+  const needsProcessing = statusCounts.processing > 0 || statusCounts.error > 0;
+
   return (
     <div className="space-y-4">
       {projectData && (
@@ -133,11 +183,35 @@ export default function PapersPage() {
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">{t('papers.title')}</h1>
-        <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">
-          <Plus className="size-4" />
-          {t('papers.addPaper')}
-        </Button>
+        <div className="flex gap-2">
+          {needsProcessing && (
+            <Button variant="outline" onClick={handleProcessAll} className="gap-1.5">
+              <Zap className="size-4" />
+              {t('papers.processAll')}
+            </Button>
+          )}
+          <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">
+            <Plus className="size-4" />
+            {t('papers.addPaper')}
+          </Button>
+        </div>
       </div>
+
+      {/* Processing progress banner */}
+      {statusCounts.processing > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-blue-500/30 bg-blue-500/5 px-4 py-3">
+          <Loader2 className="size-4 animate-spin text-blue-600 dark:text-blue-400" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {t('papers.processingBanner', {
+                processing: statusCounts.processing,
+                indexed: statusCounts.indexed,
+                total: statusCounts.total,
+              })}
+            </p>
+          </div>
+        </div>
+      )}
 
       {conflicts.length > 0 && (
         <DedupConflictPanel
@@ -270,7 +344,7 @@ export default function PapersPage() {
                       <td className="px-4 py-2">
                         <span
                           className={cn(
-                            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300',
                             paper.status === 'indexed' && 'bg-green-500/10 text-green-700 dark:text-green-400',
                             paper.status === 'ocr_complete' && 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
                             paper.status === 'pdf_downloaded' && 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
@@ -278,6 +352,9 @@ export default function PapersPage() {
                             paper.status === 'pending' && 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
                             paper.status === 'metadata_only' && 'bg-slate-500/10 text-slate-700 dark:text-slate-400',
                           )}>
+                          {PROCESSING_STATUSES.includes(paper.status) && (
+                            <Loader2 className="size-3 animate-spin" />
+                          )}
                           {t(`papers.statuses.${paper.status}`, paper.status)}
                         </span>
                       </td>
@@ -293,14 +370,14 @@ export default function PapersPage() {
                               <FileDown className="size-4" />
                             </a>
                           )}
-                          <button
-                            onClick={() =>
-                              ocrMutation.mutate([paper.id])}
-                            disabled={ocrMutation.isPending || paper.status === 'ocr_complete'}
-                            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50"
-                            title={t('papers.runOcr')}>
-                            <Scan className="size-4" />
-                          </button>
+                          {paper.status === 'error' && (
+                            <button
+                              onClick={() => handleRetry(paper.id)}
+                              className="rounded p-1.5 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
+                              title={t('papers.retry')}>
+                              <RefreshCw className="size-4" />
+                            </button>
+                          )}
                           <ConfirmDialog
                             trigger={
                               <button
@@ -344,6 +421,19 @@ export default function PapersPage() {
                                 </span>
                               </div>
                             )}
+                            {paper.doi && (
+                              <div>
+                                <span className="font-medium text-muted-foreground">DOI</span>{' '}
+                                <a
+                                  href={`https://doi.org/${paper.doi}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  {paper.doi}
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -353,8 +443,25 @@ export default function PapersPage() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-border px-4 py-2 text-sm text-muted-foreground">
-            {t('papers.total', { count: total })}
+          <div className="flex items-center justify-between border-t border-border px-4 py-2 text-sm text-muted-foreground">
+            <span>{t('papers.total', { count: total })}</span>
+            {total > 0 && (
+              <span className="flex gap-3">
+                <span className="text-green-600 dark:text-green-400">
+                  {statusCounts.indexed} {t('papers.statuses.indexed')}
+                </span>
+                {statusCounts.processing > 0 && (
+                  <span className="text-blue-600 dark:text-blue-400">
+                    {statusCounts.processing} {t('papers.processing')}
+                  </span>
+                )}
+                {statusCounts.error > 0 && (
+                  <span className="text-red-600 dark:text-red-400">
+                    {statusCounts.error} {t('papers.statuses.error')}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
         </div>
       )}
