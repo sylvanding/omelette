@@ -96,11 +96,11 @@ function ThinkingChain({ steps }: ThinkingChainProps) {
             className="overflow-hidden"
           >
             <div className="ml-1 mt-1.5 space-y-1 border-l-2 border-border/50 pl-3">
-              {steps.filter((s) => s.step !== 'complete').map((step) => {
+              {steps.filter((s) => s.step !== 'complete').map((step, index) => {
                 const Icon = STEP_ICONS[step.step] ?? Search;
                 const StatusIcon = STATUS_ICON[step.status];
                 return (
-                  <div key={step.step} className="flex items-start gap-2 py-0.5">
+                  <div key={`${step.step}-${index}`} className="flex items-start gap-2 py-0.5">
                     <Icon className={cn(
                       'mt-0.5 size-3 shrink-0',
                       step.status === 'running' && 'text-primary',
