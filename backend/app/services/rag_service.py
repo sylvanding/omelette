@@ -164,6 +164,30 @@ class RAGService:
         await asyncio.to_thread(index.insert_nodes, nodes)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
+    def _get_adjacent_chunks(
+        self,
+        collection: chromadb.Collection,
+        paper_id: int,
+        chunk_index: int,
+        window: int = 1,
+    ) -> str:
+        """Fetch adjacent chunks for context expansion.
+
+        Returns combined text of [chunk_index - window, ..., chunk_index + window].
+        """
+        target_ids = [
+            f"paper_{paper_id}_chunk_{chunk_index + offset}" for offset in range(-window, window + 1) if offset != 0
+        ]
+        if not target_ids:
+            return ""
+
+        try:
+            result = collection.get(ids=target_ids, include=["documents"])
+            docs = result.get("documents") or []
+            return "\n".join(d for d in docs if d)
+        except Exception:
+            return ""
+
     async def query(
         self,
         project_id: int,
@@ -198,15 +222,30 @@ class RAGService:
             score = node_with_score.score or 0.0
             text = node.get_content()
 
-            contexts.append(f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{text}")
+            paper_id = meta.get("paper_id")
+            chunk_idx = meta.get("chunk_index")
+            adjacent_text = ""
+            if paper_id is not None and chunk_idx is not None:
+                adjacent_text = await asyncio.to_thread(
+                    self._get_adjacent_chunks,
+                    collection,
+                    paper_id,
+                    chunk_idx,
+                )
+
+            full_context = f"{adjacent_text}\n{text}\n{adjacent_text}".strip() if adjacent_text else text
+
+            contexts.append(
+                f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{full_context}"
+            )
             sources.append(
                 {
-                    "paper_id": meta.get("paper_id"),
+                    "paper_id": paper_id,
                     "paper_title": meta.get("paper_title", ""),
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
                     "relevance_score": round(float(score), 3),
-                    "excerpt": text[:200] + "..." if len(text) > 200 else text,
+                    "excerpt": text[:500] + "..." if len(text) > 500 else text,
                 }
             )
 

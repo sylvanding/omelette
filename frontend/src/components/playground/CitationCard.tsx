@@ -35,11 +35,17 @@ function getRelevanceLevel(score: number) {
   return "low";
 }
 
-function formatAuthors(authors: string[] | string | null | undefined): string {
+function formatAuthors(authors: unknown[] | string | null | undefined): string {
   if (!authors) return "";
   if (typeof authors === "string") return authors;
-  if (authors.length <= 2) return authors.join(", ");
-  return `${authors[0]} et al.`;
+  if (!Array.isArray(authors)) return "";
+  const names = authors.map((a) =>
+    typeof a === "object" && a !== null && "name" in a
+      ? String((a as { name: string }).name)
+      : String(a),
+  );
+  if (names.length <= 2) return names.join(", ");
+  return `${names[0]} et al.`;
 }
 
 interface CitationCardProps {
@@ -141,8 +147,8 @@ function CitationCard({
                         className="text-[10px] text-primary hover:underline"
                       >
                         {showFullExcerpt
-                          ? t("common.collapse", { defaultValue: "收起" })
-                          : t("common.expandAll", { defaultValue: "展开全文" })}
+                          ? t("common.collapse")
+                          : t("common.expandAll")}
                       </button>
                     )}
                     <Button
@@ -155,7 +161,7 @@ function CitationCard({
                       }}
                     >
                       <Copy className="mr-0.5 size-2.5" />
-                      {t("common.copy", { defaultValue: "复制" })}
+                      {t("common.copy")}
                     </Button>
                   </div>
                 </div>
@@ -191,7 +197,7 @@ function CitationCard({
                     }}
                   >
                     <RefreshCw className="size-2.5" />
-                    {t("rewrite.title", { defaultValue: "重写" })}
+                    {t("rewrite.title")}
                   </Button>
                 )}
               </div>

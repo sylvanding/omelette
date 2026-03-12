@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 import remarkCitation from "@/lib/remark-citation";
 import InlineCitationTag from "./InlineCitationTag";
 import CitationCardList from "./CitationCardList";
-import MessageLoadingStages from "./MessageLoadingStages";
+import ThinkingChain from "./ThinkingChain";
 import A2UISurface from "@/components/a2ui/A2UISurface";
 import type { LoadingStage } from "./MessageLoadingStages";
+import type { ThinkingStep } from "./ThinkingChain";
 import type { Citation } from "@/types/chat";
 import type { A2UIMessage } from "@a2ui-sdk/types/0.8";
 
@@ -22,6 +23,7 @@ interface MessageBubbleProps {
   isStreaming?: boolean;
   loadingStage?: LoadingStage;
   a2uiMessages?: A2UIMessage[];
+  thinkingSteps?: ThinkingStep[];
 }
 
 function MessageBubble({
@@ -31,10 +33,11 @@ function MessageBubble({
   isStreaming,
   loadingStage,
   a2uiMessages,
+  thinkingSteps,
 }: MessageBubbleProps) {
   const isUser = role === "user";
-  const effectiveStage = loadingStage ?? (isStreaming ? "generating" : "complete");
-  const showLoading = isStreaming && !content && effectiveStage !== "complete";
+  const hasThinkingSteps = thinkingSteps && thinkingSteps.length > 0;
+  const showLegacyLoading = isStreaming && !content && !hasThinkingSteps && loadingStage !== "complete";
 
   const [highlightedCitationIndex, setHighlightedCitationIndex] = useState<
     number | null
@@ -107,11 +110,16 @@ function MessageBubble({
           <p className="whitespace-pre-wrap text-sm">{content}</p>
         ) : (
           <>
-            {showLoading && (
-              <MessageLoadingStages
-                stage={effectiveStage}
-                citationCount={citations?.length}
-              />
+            {hasThinkingSteps && (
+              <ThinkingChain steps={thinkingSteps} />
+            )}
+
+            {showLegacyLoading && !hasThinkingSteps && (
+              <div className="flex items-center gap-2 py-1">
+                <div className="animate-pulse">
+                  <span className="size-3.5 text-primary">...</span>
+                </div>
+              </div>
             )}
 
             {content && (

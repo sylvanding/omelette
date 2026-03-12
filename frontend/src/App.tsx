@@ -6,7 +6,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LoadingState } from '@/components/ui/loading-state';
 import AppShell from '@/components/layout/AppShell';
 
-const PlaygroundPage = lazy(() => import('@/pages/PlaygroundPage'));
+import PlaygroundPage from '@/pages/PlaygroundPage';
 const KnowledgeBasesPage = lazy(() => import('@/pages/KnowledgeBasesPage'));
 const ChatHistoryPage = lazy(() => import('@/pages/ChatHistoryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));

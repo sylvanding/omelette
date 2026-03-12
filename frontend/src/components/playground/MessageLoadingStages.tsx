@@ -15,28 +15,24 @@ const STAGE_CONFIG = {
   searching: {
     icon: Search,
     labelKey: "playground.loading.searching",
-    defaultLabel: "正在检索文献...",
     color: "text-blue-500",
     pulse: true,
   },
   citations: {
     icon: BookOpen,
     labelKey: "playground.loading.citations",
-    defaultLabel: "已找到相关文献",
     color: "text-emerald-500",
     pulse: true,
   },
   generating: {
     icon: Sparkles,
     labelKey: "playground.loading.generating",
-    defaultLabel: "正在生成回答...",
     color: "text-primary",
     pulse: false,
   },
   complete: {
     icon: Sparkles,
     labelKey: "",
-    defaultLabel: "",
     color: "text-primary",
     pulse: false,
   },
@@ -51,8 +47,8 @@ function MessageLoadingStages({ stage, citationCount }: MessageLoadingStagesProp
   const Icon = config.icon;
 
   const label = stage === "citations" && citationCount
-    ? `${t(config.labelKey, { defaultValue: config.defaultLabel })} (${citationCount})`
-    : t(config.labelKey, { defaultValue: config.defaultLabel });
+    ? `${t(config.labelKey)} (${citationCount})`
+    : t(config.labelKey);
 
   return (
     <AnimatePresence mode="wait">

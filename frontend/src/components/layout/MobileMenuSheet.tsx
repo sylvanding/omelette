@@ -36,7 +36,7 @@ export default function MobileMenuSheet({ open, onOpenChange }: MobileMenuSheetP
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle>{t('nav.more', { defaultValue: 'More' })}</SheetTitle>
+          <SheetTitle>{t('nav.more')}</SheetTitle>
         </SheetHeader>
         <div className="space-y-1 py-4">
           <Link

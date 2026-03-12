@@ -103,10 +103,10 @@ function RewriteStyleSelector({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-medium truncate">
-                {t(style.labelKey, { defaultValue: style.defaultLabel })}
+                {t(style.labelKey)}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {t(style.descKey, { defaultValue: style.defaultDesc })}
+                {t(style.descKey)}
               </p>
             </div>
           </motion.button>
@@ -118,9 +118,7 @@ function RewriteStyleSelector({
           <Input
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
-            placeholder={t("rewrite.customPlaceholder", {
-              defaultValue: "输入自定义重写指令...",
-            })}
+            placeholder={t("rewrite.customPlaceholder")}
             className="h-8 text-xs"
             onKeyDown={(e) => e.key === "Enter" && handleCustomSubmit()}
             disabled={disabled}
@@ -143,13 +141,13 @@ function RewriteStyleSelector({
             className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
           >
             <Pen className="size-3" />
-            {t("rewrite.custom", { defaultValue: "自定义指令" })}
+            {t("rewrite.custom")}
           </button>
           <button
             onClick={onCancel}
             className="ml-auto text-[11px] text-muted-foreground hover:text-foreground transition-colors"
           >
-            {t("common.cancel", { defaultValue: "取消" })}
+            {t("common.cancel")}
           </button>
         </div>
       )}

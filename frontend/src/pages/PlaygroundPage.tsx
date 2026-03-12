@@ -17,12 +17,16 @@ import {
 } from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubble from '@/components/playground/MessageBubble';
+import ChatHistorySidebar from '@/components/playground/ChatHistorySidebar';
+import { useSidebarCollapsed } from '@/components/playground/sidebar-utils';
+import { SidebarToggleButton } from '@/components/playground/SidebarToggleButton';
 import { streamChat, conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import type { ToolMode, Citation } from '@/types/chat';
 import { isCitation, normalizeCitation } from '@/types/chat';
 import type { LoadingStage } from '@/components/playground/MessageLoadingStages';
 import type { A2UIMessage } from '@a2ui-sdk/types/0.8';
+import type { ThinkingStep } from '@/components/playground/ThinkingChain';
 
 interface LocalMessage {
   id: string;
@@ -32,6 +36,7 @@ interface LocalMessage {
   isStreaming?: boolean;
   loadingStage?: LoadingStage;
   a2uiMessages?: A2UIMessage[];
+  thinkingSteps?: ThinkingStep[];
 }
 
 export default function PlaygroundPage() {
@@ -45,6 +50,7 @@ export default function PlaygroundPage() {
   const [selectedKBs, setSelectedKBs] = useState<number[]>([]);
   const [conversationId, setConversationId] = useState<number | undefined>();
   const [isRestoringConversation, setIsRestoringConversation] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const hasRestoredRef = useRef<string | undefined>(undefined);
@@ -169,6 +175,36 @@ export default function PlaygroundPage() {
                   : m,
               ),
             );
+          } else if (event.event === 'thinking_step') {
+            const step = event.data as ThinkingStep;
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== assistantMsg.id) return m;
+                const existing = m.thinkingSteps ?? [];
+                const idx = existing.findIndex((s) => s.step === step.step);
+                const updated = idx >= 0
+                  ? existing.map((s, i) => (i === idx ? { ...s, ...step } : s))
+                  : [...existing, step];
+                return { ...m, thinkingSteps: updated };
+              }),
+            );
+          } else if (event.event === 'citation_enhanced') {
+            const { index, cleaned_excerpt } = event.data as {
+              index: number;
+              cleaned_excerpt: string;
+            };
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? {
+                      ...m,
+                      citations: (m.citations ?? []).map((c) =>
+                        c.index === index ? { ...c, excerpt: cleaned_excerpt } : c,
+                      ),
+                    }
+                  : m,
+              ),
+            );
           } else if (event.event === 'a2ui_surface') {
             const a2uiMsg = event.data as unknown as A2UIMessage;
             if (a2uiMsg.beginRendering || a2uiMsg.surfaceUpdate || a2uiMsg.dataModelUpdate) {
@@ -262,8 +298,8 @@ export default function PlaygroundPage() {
     return (
       <EmptyState
         icon={Sparkles}
-        title={t('history.conversationNotFound', { defaultValue: '对话未找到' })}
-        description={t('history.conversationNotFoundDesc', { defaultValue: '该对话可能已被删除。' })}
+        title={t('history.conversationNotFound')}
+        description={t('history.conversationNotFoundDesc')}
         action={{ label: t('playground.newChat'), onClick: handleNewChat }}
         className="h-full"
       />
@@ -271,10 +307,21 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full">
+      <ChatHistorySidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        currentConversationId={conversationId}
+        onSelectConversation={(id) => navigate(`/chat/${id}`)}
+        onNewChat={handleNewChat}
+      />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       {/* Top bar */}
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
-        <h1 className="text-lg font-semibold">Playground</h1>
+        <div className="flex items-center gap-2">
+          <SidebarToggleButton collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+          <h1 className="text-lg font-semibold">{t('playground.title')}</h1>
+        </div>
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -325,7 +372,7 @@ export default function PlaygroundPage() {
       </header>
 
       {/* Messages area */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         {isEmpty ? (
           <div className="flex h-full min-h-[60vh] flex-col items-center justify-center px-4">
             <motion.div
@@ -385,6 +432,7 @@ export default function PlaygroundPage() {
                     isStreaming={msg.isStreaming}
                     loadingStage={msg.loadingStage}
                     a2uiMessages={msg.a2uiMessages}
+                    thinkingSteps={msg.thinkingSteps}
                   />
                 </motion.div>
               ))}
@@ -401,7 +449,7 @@ export default function PlaygroundPage() {
             <div className="flex justify-center mb-2">
               <Button variant="outline" size="sm" onClick={handleStop} className="gap-1.5">
                 <Square className="size-3" />
-                {t('playground.stop', { defaultValue: '停止生成' })}
+                {t('playground.stop')}
               </Button>
             </div>
           ) : null}
@@ -428,6 +476,7 @@ export default function PlaygroundPage() {
             {t('playground.disclaimer')}
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

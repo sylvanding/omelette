@@ -86,7 +86,7 @@ export default function ChatInput({
         <button
           type="button"
           className="shrink-0 p-3 text-muted-foreground transition-colors hover:text-foreground"
-          title={t('playground.attach', { defaultValue: 'Attach file' })}
+          title={t('playground.attach')}
         >
           <Paperclip className="size-5" />
         </button>
@@ -103,7 +103,7 @@ export default function ChatInput({
         <div className="shrink-0 p-2">
           <Button
             size="icon"
-            aria-label={t('playground.send', { defaultValue: 'Send' })}
+            aria-label={t('playground.send')}
             onClick={handleSubmit}
             disabled={!value.trim() || isLoading || disabled}
             className="size-8 rounded-lg"
