@@ -114,7 +114,7 @@ class OCRService:
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
-                lang="en",
+                lang=getattr(settings, "ocr_lang", "ch"),
                 use_gpu=self.use_gpu,
                 gpu_id=self.gpu_id,
             )

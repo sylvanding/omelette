@@ -69,6 +69,16 @@ class Settings(BaseSettings):
     embedding_api_key: str = ""
     reranker_model: str = "BAAI/bge-reranker-v2-m3"
 
+    # OCR
+    ocr_lang: str = "ch"  # PaddleOCR language: ch (Chinese+English) | en (English only)
+
+    # Dedup thresholds
+    dedup_title_hard_threshold: float = 0.90
+    dedup_title_llm_threshold: float = 0.80
+
+    # LangGraph
+    langgraph_checkpoint_dir: str = ""
+
     # GPU
     cuda_visible_devices: str = "0,3"
 
@@ -95,6 +105,8 @@ class Settings(BaseSettings):
             self.ocr_output_dir = f"{self.data_dir}/ocr_output"
         if not self.chroma_db_dir:
             self.chroma_db_dir = f"{self.data_dir}/chroma_db"
+        if not self.langgraph_checkpoint_dir:
+            self.langgraph_checkpoint_dir = f"{self.data_dir}/langgraph_checkpoints"
 
     @property
     def cors_origin_list(self) -> list[str]:

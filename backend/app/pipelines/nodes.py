@@ -59,6 +59,7 @@ async def dedup_node(state: PipelineState) -> dict[str, Any]:
     """Check for duplicates against existing papers in the knowledge base."""
     from sqlalchemy import select
 
+    from app.config import settings
     from app.database import async_session_factory
     from app.models import Paper
     from app.services.dedup_service import DedupService
@@ -68,6 +69,7 @@ async def dedup_node(state: PipelineState) -> dict[str, Any]:
     if not new_papers:
         return {"papers": [], "conflicts": [], "stage": "dedup", "progress": 40}
 
+    title_threshold = settings.dedup_title_hard_threshold
     conflicts: list[dict] = []
     clean_papers: list[dict] = []
 
@@ -103,7 +105,7 @@ async def dedup_node(state: PipelineState) -> dict[str, Any]:
                     if not norm_new or not enorm:
                         continue
                     sim = SequenceMatcher(None, norm_new, enorm).ratio()
-                    if sim >= 0.85:
+                    if sim >= title_threshold:
                         match = next((p for p in existing if p.id == eid), None)
                         if match:
                             conflicts.append(
@@ -153,7 +155,7 @@ async def apply_resolution_node(state: PipelineState) -> dict[str, Any]:
     for res in resolved:
         action = res.get("action", "skip")
         new_paper = res.get("new_paper", {})
-        if action in ("keep_new", "skip") and new_paper:
+        if action == "keep_new" and new_paper:
             clean_papers.append(new_paper)
 
     return {"papers": clean_papers, "stage": "resolved"}
@@ -265,19 +267,21 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
                     paper.status = PaperStatus.ERROR
                     continue
 
-                chunk_idx = 0
-                for page in result.get("pages", []):
-                    text = page.get("text", "").strip()
-                    if text:
-                        db.add(
-                            PaperChunk(
-                                paper_id=paper.id,
-                                content=text,
-                                page_number=page.get("page_number", 0),
-                                chunk_index=chunk_idx,
-                            )
+                pages = result.get("pages", [])
+                chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+
+                for chunk_data in chunks:
+                    db.add(
+                        PaperChunk(
+                            paper_id=paper.id,
+                            content=chunk_data["content"],
+                            page_number=chunk_data.get("page_number", 0),
+                            chunk_index=chunk_data["chunk_index"],
+                            chunk_type=chunk_data.get("chunk_type", "text"),
+                            section=chunk_data.get("section", ""),
+                            token_count=chunk_data.get("token_count", 0),
                         )
-                        chunk_idx += 1
+                    )
 
                 paper.status = PaperStatus.OCR_COMPLETE
                 processed += 1
@@ -313,10 +317,23 @@ async def index_node(state: PipelineState) -> dict[str, Any]:
         papers = (await db.execute(stmt)).scalars().all()
         rag = RAGService()
 
+        paper_ids = [p.id for p in papers]
+        all_chunks = (
+            (await db.execute(select(PaperChunk).where(PaperChunk.paper_id.in_(paper_ids)))).scalars().all()
+            if paper_ids
+            else []
+        )
+
+        from collections import defaultdict
+
+        chunks_by_paper: dict[int, list] = defaultdict(list)
+        for c in all_chunks:
+            chunks_by_paper[c.paper_id].append(c)
+
         for paper in papers:
             if state.get("cancelled"):
                 break
-            chunks = (await db.execute(select(PaperChunk).where(PaperChunk.paper_id == paper.id))).scalars().all()
+            chunks = chunks_by_paper.get(paper.id, [])
 
             if not chunks:
                 continue
@@ -328,6 +345,8 @@ async def index_node(state: PipelineState) -> dict[str, Any]:
                     "content": c.content,
                     "page_number": c.page_number,
                     "chunk_index": c.chunk_index,
+                    "chunk_type": c.chunk_type,
+                    "section": c.section,
                 }
                 for c in chunks
             ]

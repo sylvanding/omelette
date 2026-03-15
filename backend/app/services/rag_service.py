@@ -122,6 +122,7 @@ class RAGService:
                     "chunk_type": chunk.get("chunk_type", "text"),
                     "page_number": chunk.get("page_number", 0),
                     "chunk_index": chunk.get("chunk_index", 0),
+                    "section": chunk.get("section", ""),
                 },
                 excluded_embed_metadata_keys=["paper_id", "chunk_index"],
                 excluded_llm_metadata_keys=["paper_id", "chunk_index"],
@@ -164,29 +165,45 @@ class RAGService:
         await asyncio.to_thread(index.insert_nodes, nodes)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
+    @staticmethod
+    def _smart_truncate(text: str, max_len: int = 800) -> str:
+        if len(text) <= max_len:
+            return text
+        truncated = text[:max_len]
+        last_break = max(truncated.rfind("。"), truncated.rfind(". "), truncated.rfind("\n"))
+        if last_break > max_len * 0.5:
+            return truncated[: last_break + 1] + "..."
+        return truncated + "..."
+
     def _get_adjacent_chunks(
         self,
         collection: chromadb.Collection,
         paper_id: int,
         chunk_index: int,
         window: int = 1,
-    ) -> str:
+    ) -> tuple[str, str]:
         """Fetch adjacent chunks for context expansion.
 
-        Returns combined text of [chunk_index - window, ..., chunk_index + window].
+        Returns ``(prev_text, next_text)`` so the caller can assemble
+        ``[prev] \\n [main] \\n [next]`` in the correct order.
         """
-        target_ids = [
-            f"paper_{paper_id}_chunk_{chunk_index + offset}" for offset in range(-window, window + 1) if offset != 0
-        ]
-        if not target_ids:
-            return ""
+        prev_ids = [f"paper_{paper_id}_chunk_{chunk_index + offset}" for offset in range(-window, 0)]
+        next_ids = [f"paper_{paper_id}_chunk_{chunk_index + offset}" for offset in range(1, window + 1)]
 
+        prev_text = ""
+        next_text = ""
         try:
-            result = collection.get(ids=target_ids, include=["documents"])
-            docs = result.get("documents") or []
-            return "\n".join(d for d in docs if d)
+            if prev_ids:
+                result = collection.get(ids=prev_ids, include=["documents"])
+                docs = result.get("documents") or []
+                prev_text = "\n".join(d for d in docs if d)
+            if next_ids:
+                result = collection.get(ids=next_ids, include=["documents"])
+                docs = result.get("documents") or []
+                next_text = "\n".join(d for d in docs if d)
         except Exception:
-            return ""
+            pass
+        return prev_text, next_text
 
     async def query(
         self,
@@ -224,16 +241,17 @@ class RAGService:
 
             paper_id = meta.get("paper_id")
             chunk_idx = meta.get("chunk_index")
-            adjacent_text = ""
+            prev_text, next_text = "", ""
             if paper_id is not None and chunk_idx is not None:
-                adjacent_text = await asyncio.to_thread(
+                prev_text, next_text = await asyncio.to_thread(
                     self._get_adjacent_chunks,
                     collection,
                     paper_id,
                     chunk_idx,
                 )
 
-            full_context = f"{adjacent_text}\n{text}\n{adjacent_text}".strip() if adjacent_text else text
+            parts = [p for p in [prev_text, text, next_text] if p]
+            full_context = "\n".join(parts)
 
             contexts.append(
                 f"[Source: {meta.get('paper_title', 'Unknown')}, p.{meta.get('page_number', '?')}]\n{full_context}"
@@ -245,7 +263,7 @@ class RAGService:
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
                     "relevance_score": round(float(score), 3),
-                    "excerpt": full_context[:800] + "..." if len(full_context) > 800 else full_context,
+                    "excerpt": self._smart_truncate(full_context),
                 }
             )
 
@@ -263,6 +281,60 @@ class RAGService:
             "sources": sources if include_sources else [],
             "confidence": round(avg_score, 3),
         }
+
+    async def retrieve_only(
+        self,
+        project_id: int,
+        question: str,
+        top_k: int = 10,
+    ) -> list[dict]:
+        """Retrieve relevant chunks without LLM generation.
+
+        Designed for the Chat Pipeline where the LLM call happens
+        downstream in the generate node, avoiding a redundant call here.
+        """
+        collection = self._get_collection(project_id)
+        if collection.count() == 0:
+            return []
+
+        import asyncio
+
+        index = self._get_index(project_id)
+        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+        retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
+
+        sources: list[dict] = []
+        for node_with_score in retrieved_nodes:
+            node = node_with_score.node
+            meta = node.metadata or {}
+            score = node_with_score.score or 0.0
+            text = node.get_content()
+
+            paper_id = meta.get("paper_id")
+            chunk_idx = meta.get("chunk_index")
+            prev_text, next_text = "", ""
+            if paper_id is not None and chunk_idx is not None:
+                prev_text, next_text = await asyncio.to_thread(
+                    self._get_adjacent_chunks,
+                    collection,
+                    paper_id,
+                    chunk_idx,
+                )
+            parts = [p for p in [prev_text, text, next_text] if p]
+            full_context = "\n".join(parts)
+
+            sources.append(
+                {
+                    "paper_id": paper_id,
+                    "paper_title": meta.get("paper_title", ""),
+                    "page_number": meta.get("page_number"),
+                    "chunk_type": meta.get("chunk_type", "text"),
+                    "section": meta.get("section", ""),
+                    "relevance_score": round(float(score), 3),
+                    "excerpt": self._smart_truncate(full_context),
+                }
+            )
+        return sources
 
     async def _generate_answer(self, question: str, context: str) -> str:
         prompt = (
