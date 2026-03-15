@@ -1,10 +1,14 @@
 """Paper CRUD and management API endpoints."""
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
+from app.config import settings
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
@@ -141,3 +145,47 @@ async def delete_paper(
         raise HTTPException(status_code=404, detail="Paper not found")
     await db.delete(paper)
     return ApiResponse(message="Paper deleted")
+
+
+@router.get("/{paper_id}/pdf")
+async def serve_pdf(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Serve the PDF file for a paper."""
+    paper = await db.get(Paper, paper_id)
+    if not paper or paper.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    if not paper.pdf_path or not Path(paper.pdf_path).exists():
+        raise HTTPException(status_code=404, detail="PDF file not available")
+
+    pdf_path = Path(paper.pdf_path).resolve()
+    pdf_dir = Path(settings.pdf_dir).resolve()
+    if not str(pdf_path).startswith(str(pdf_dir)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    with open(pdf_path, "rb") as f:
+        magic = f.read(5)
+    if magic != b"%PDF-":
+        raise HTTPException(status_code=400, detail="Invalid PDF file")
+
+    return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
+
+
+@router.get("/{paper_id}/citation-graph", response_model=ApiResponse)
+async def get_citation_graph(
+    project_id: int,
+    paper_id: int,
+    depth: int = Query(1, ge=1, le=2),
+    max_nodes: int = Query(50, ge=10, le=200),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Get citation relationship graph for a paper via Semantic Scholar."""
+    from app.services.citation_graph_service import CitationGraphService
+
+    svc = CitationGraphService(db)
+    graph = await svc.get_citation_graph(paper_id, project_id, depth=depth, max_nodes=max_nodes)
+    return ApiResponse(data=graph)

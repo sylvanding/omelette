@@ -15,6 +15,7 @@ const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
 const DiscoveryPage = lazy(() => import('@/pages/project/DiscoveryPage'));
+const PDFReaderPage = lazy(() => import('@/pages/project/PDFReaderPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,7 @@ function App() {
                 <Route path="projects/:projectId" element={<ProjectDetail />}>
                   <Route index element={<PapersPage />} />
                   <Route path="papers" element={<PapersPage />} />
+                  <Route path="papers/:paperId/read" element={<PDFReaderPage />} />
                   <Route path="discovery" element={<DiscoveryPage />} />
                   <Route path="writing" element={<WritingPage />} />
                   <Route path="keywords" element={<Navigate to="../discovery" replace />} />

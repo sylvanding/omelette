@@ -1,6 +1,7 @@
 """Writing assistance API endpoints."""
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -163,3 +164,34 @@ async def analyze_gaps(
         research_topic=body.research_topic,
     )
     return ApiResponse(data=result)
+
+
+class ReviewDraftRequest(BaseModel):
+    topic: str = ""
+    style: str = Field(default="narrative", pattern=r"^(narrative|systematic|thematic)$")
+    citation_format: str = Field(default="numbered", pattern=r"^(numbered|apa|gb_t_7714)$")
+    language: str = Field(default="zh", pattern=r"^(zh|en)$")
+
+
+@router.post("/review-draft/stream")
+async def stream_review_draft(
+    project_id: int,
+    body: ReviewDraftRequest,
+    svc: WritingService = Depends(get_writing_service),
+    project: Project = Depends(get_project),
+):
+    """Stream a structured literature review draft via SSE."""
+    return StreamingResponse(
+        svc.generate_literature_review(
+            project_id=project_id,
+            topic=body.topic,
+            style=body.style,
+            citation_format=body.citation_format,
+            language=body.language,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

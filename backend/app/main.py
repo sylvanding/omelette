@@ -3,13 +3,15 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_router
 from app.config import settings
 from app.database import init_db
 from app.middleware.auth import ApiKeyMiddleware
+from app.middleware.rate_limit import setup_rate_limiting
 from app.schemas.common import ApiResponse
 
 logging.basicConfig(
@@ -48,7 +50,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+setup_rate_limiting(app)
 app.include_router(api_router)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Return sanitised error in production, full detail in debug mode."""
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    detail = str(exc) if settings.app_debug else "Internal server error"
+    return JSONResponse(
+        status_code=500,
+        content={"code": 500, "message": detail, "data": None},
+    )
+
 
 # MCP Server — expose tools and resources to AI IDEs
 try:

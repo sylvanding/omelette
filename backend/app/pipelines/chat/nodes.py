@@ -157,7 +157,8 @@ async def retrieve_node(state: ChatState, config: RunnableConfig) -> dict[str, A
         detail=f"Searching in {len(kb_ids)} knowledge base(s)...",
     )
 
-    tasks = [rag.query(project_id=kb_id, question=state["message"], top_k=5, include_sources=True) for kb_id in kb_ids]
+    top_k = state.get("rag_top_k") or 10
+    tasks = [rag.retrieve_only(project_id=kb_id, question=state["message"], top_k=top_k) for kb_id in kb_ids]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_sources: list[dict[str, Any]] = []
@@ -165,8 +166,8 @@ async def retrieve_node(state: ChatState, config: RunnableConfig) -> dict[str, A
         if isinstance(result, Exception):
             logger.warning("RAG query failed for a KB: %s", result)
             continue
-        if result.get("sources"):
-            all_sources.extend(result["sources"])
+        if isinstance(result, list):
+            all_sources.extend(result)
 
     _emit_thinking(
         writer,

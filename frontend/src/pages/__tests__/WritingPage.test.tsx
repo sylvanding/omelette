@@ -24,7 +24,8 @@ describe('WritingPage', () => {
     renderWithProviders(<WritingPage />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /generate|生成/i })).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /generate|生成/i });
+      expect(buttons.length).toBeGreaterThanOrEqual(1);
     });
   });
 

@@ -31,30 +31,6 @@ async def project(client: AsyncClient) -> dict:
     return resp.json()["data"]
 
 
-# --- Knowledge Base Alias Routes ---
-
-
-@pytest.mark.asyncio
-async def test_kb_alias_list(client: AsyncClient, project: dict):
-    resp = await client.get("/api/v1/knowledge-bases")
-    assert resp.status_code == 200
-    data = resp.json()["data"]
-    assert "items" in data
-
-
-@pytest.mark.asyncio
-async def test_kb_alias_get(client: AsyncClient, project: dict):
-    resp = await client.get(f"/api/v1/knowledge-bases/{project['id']}")
-    assert resp.status_code == 200
-    assert resp.json()["data"]["name"] == "KB Test"
-
-
-@pytest.mark.asyncio
-async def test_kb_alias_papers(client: AsyncClient, project: dict):
-    resp = await client.get(f"/api/v1/knowledge-bases/{project['id']}/papers")
-    assert resp.status_code == 200
-
-
 # --- PDF Upload ---
 
 

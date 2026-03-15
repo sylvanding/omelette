@@ -6,7 +6,6 @@ API can return immediately while processing continues in the background.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from sqlalchemy import select
@@ -55,7 +54,7 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
                 continue
 
             try:
-                result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
+                result = await ocr.process_pdf_async(paper.pdf_path)
 
                 if result.get("error"):
                     paper.status = PaperStatus.ERROR
@@ -64,7 +63,10 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
 
                 ocr.save_result(paper.id, result)
 
-                chunks = ocr.chunk_text(result.get("pages", []))
+                if result.get("method") == "mineru":
+                    chunks = ocr.chunk_mineru_markdown(result["md_content"])
+                else:
+                    chunks = ocr.chunk_text(result.get("pages", []))
                 for chunk_data in chunks:
                     db.add(
                         PaperChunk(
@@ -74,6 +76,8 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
                             page_number=chunk_data.get("page_number"),
                             chunk_index=chunk_data["chunk_index"],
                             token_count=chunk_data.get("token_count", 0),
+                            has_formula=chunk_data.get("has_formula", False),
+                            figure_path=chunk_data.get("figure_path", ""),
                         )
                     )
 
@@ -108,6 +112,8 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
                         "page_number": chunk.page_number or 0,
                         "chunk_index": chunk.chunk_index or 0,
                         "content": chunk.content,
+                        "has_formula": chunk.has_formula,
+                        "figure_path": chunk.figure_path,
                     }
                 )
 

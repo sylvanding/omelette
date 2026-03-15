@@ -55,3 +55,42 @@ Base path: `/api/v1/projects/{project_id}/writing`
 ```
 
 **Citation styles:** `gb_t_7714`, `apa`, `mla`
+
+---
+
+## Literature Review Draft (Streaming)
+
+### POST /api/v1/projects/{project_id}/writing/review-draft/stream
+
+Generate a structured literature review draft via SSE (Server-Sent Events).
+
+**Request Body:**
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| topic | string | "" | Review topic (empty for auto-detection) |
+| style | string | "narrative" | Review style: narrative, systematic, thematic |
+| citation_format | string | "numbered" | Citation format: numbered, apa, gb_t_7714 |
+| language | string | "zh" | Output language: zh, en |
+
+**SSE Events:**
+
+| Event | Data | Description |
+|-------|------|-------------|
+| progress | {step, message} | Progress update |
+| outline | {sections: string[]} | Generated outline sections |
+| section-start | {title, section_index} | Section generation begins |
+| text-delta | {delta, section_index} | Text chunk for current section |
+| section-end | {section_index} | Section generation complete |
+| citation-map | {citations: {[num]: {paper_id, title, number}}} | Reference mapping |
+| done | {total_sections} | Generation complete |
+| error | {message} | Error occurred |
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/projects/1/writing/review-draft/stream \
+  -H "Content-Type: application/json" \
+  -d '{"topic": "deep learning in NLP", "style": "narrative"}' \
+  --no-buffer
+```

@@ -15,7 +15,6 @@ from typing import Any
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage
 
-from app.config import settings
 from app.schemas.llm import LLMConfig
 from app.services.llm.factory import get_chat_model
 
@@ -24,41 +23,9 @@ logger = logging.getLogger(__name__)
 
 def _resolve_config(provider: str | None = None) -> LLMConfig:
     """Build an LLMConfig from env settings for the given (or default) provider."""
-    prov = provider or settings.llm_provider
+    from app.services.llm_config_resolver import LLMConfigResolver
 
-    key_map: dict[str, tuple[str, str, str]] = {
-        "openai": (
-            getattr(settings, "openai_api_key", ""),
-            "",
-            getattr(settings, "openai_model", "gpt-4o-mini"),
-        ),
-        "anthropic": (
-            getattr(settings, "anthropic_api_key", ""),
-            "",
-            getattr(settings, "anthropic_model", "claude-sonnet-4-20250514"),
-        ),
-        "aliyun": (settings.aliyun_api_key, settings.aliyun_base_url, settings.aliyun_model),
-        "volcengine": (
-            settings.volcengine_api_key,
-            settings.volcengine_base_url,
-            settings.volcengine_model,
-        ),
-        "ollama": (
-            "",
-            getattr(settings, "ollama_base_url", "http://localhost:11434"),
-            getattr(settings, "ollama_model", "llama3"),
-        ),
-        "mock": ("", "", "mock-model"),
-    }
-
-    api_key, base_url, model = key_map.get(prov, ("", "", ""))
-
-    return LLMConfig(
-        provider=prov,
-        api_key=api_key,
-        base_url=base_url,
-        model=model,
-    )
+    return LLMConfigResolver.from_env(provider=provider)
 
 
 def _to_langchain_messages(messages: list[dict[str, str]]) -> list:

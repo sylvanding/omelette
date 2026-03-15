@@ -171,35 +171,11 @@ class UserSettingsService:
 
     async def get_merged_llm_config(self) -> LLMConfig:
         """Build an LLMConfig from merged settings for the active provider."""
+        from app.services.llm_config_resolver import LLMConfigResolver
+
         merged = await self.get_merged_settings(mask_sensitive=False)
-        provider = merged.llm_provider
-
-        key_map: dict[str, tuple[str, str, str]] = {
-            "openai": (merged.openai_api_key, "", merged.openai_model or "gpt-4o-mini"),
-            "anthropic": (
-                merged.anthropic_api_key,
-                "",
-                merged.anthropic_model or "claude-sonnet-4-20250514",
-            ),
-            "aliyun": (merged.aliyun_api_key, merged.aliyun_base_url, merged.aliyun_model),
-            "volcengine": (
-                merged.volcengine_api_key,
-                merged.volcengine_base_url,
-                merged.volcengine_model,
-            ),
-            "ollama": ("", merged.ollama_base_url, merged.ollama_model),
-            "mock": ("", "", "mock-model"),
-        }
-        api_key, base_url, model = key_map.get(provider, ("", "", ""))
-
-        if merged.llm_model:
-            model = merged.llm_model
-
-        return LLMConfig(
-            provider=provider,
-            api_key=api_key,
-            base_url=base_url,
-            model=model,
+        return LLMConfigResolver.from_merged(
+            merged,
             temperature=merged.llm_temperature,
             max_tokens=merged.llm_max_tokens,
         )

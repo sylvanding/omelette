@@ -1,5 +1,7 @@
 """Tests for Writing service and API endpoints."""
 
+from unittest.mock import patch
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -302,3 +304,82 @@ async def test_assist_unknown_task(client: AsyncClient, project_with_papers):
     body = resp.json()
     assert body["code"] == 400
     assert "Unknown task" in body["message"]
+
+
+# --- Review Draft Stream tests ---
+
+
+@pytest.mark.asyncio
+async def test_review_draft_stream_endpoint(client: AsyncClient, project_with_papers):
+    project_id, _ = project_with_papers
+
+    async def mock_stream(*args, **kwargs):
+        yield 'event: progress\ndata: {"step": 1, "message": "analyzing"}\n\n'
+        yield 'event: done\ndata: {"total_sections": 0}\n\n'
+
+    with patch(
+        "app.services.writing_service.WritingService.generate_literature_review",
+        side_effect=mock_stream,
+    ):
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/writing/review-draft/stream",
+            json={"topic": "Super-resolution microscopy", "style": "narrative", "language": "en"},
+        )
+    assert resp.status_code == 200
+    assert resp.headers.get("content-type", "").startswith("text/event-stream")
+
+    text = resp.text
+    assert "event:" in text
+    assert "data:" in text
+
+
+@pytest.mark.asyncio
+async def test_review_draft_stream_invalid_style(client: AsyncClient, project_with_papers):
+    project_id, _ = project_with_papers
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/writing/review-draft/stream",
+        json={"topic": "test", "style": "invalid_style"},
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_parse_outline_sections():
+    from app.services.writing_service import _parse_outline_sections
+
+    outline = """## Introduction
+Background and context.
+
+## Methods
+Review of methodologies.
+
+## Results
+Key findings.
+"""
+    sections = _parse_outline_sections(outline)
+    assert len(sections) == 3
+    assert sections[0]["title"] == "Introduction"
+    assert sections[1]["title"] == "Methods"
+    assert sections[2]["title"] == "Results"
+
+
+@pytest.mark.asyncio
+async def test_parse_outline_sections_empty():
+    from app.services.writing_service import _parse_outline_sections
+
+    sections = _parse_outline_sections("No headings here, just plain text.")
+    assert len(sections) == 0
+
+
+@pytest.mark.asyncio
+async def test_sse_helper():
+    import json
+
+    from app.services.writing_service import _sse
+
+    result = _sse("test-event", {"key": "value"})
+    assert result.startswith("event: test-event\n")
+    assert "data:" in result
+    data_line = result.split("\n")[1]
+    parsed = json.loads(data_line.replace("data: ", ""))
+    assert parsed["key"] == "value"

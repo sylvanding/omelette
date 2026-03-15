@@ -36,6 +36,8 @@ class ChatState(TypedDict, total=False):
     tool_mode: str
     conversation_id: int | None
     model: str
+    rag_top_k: int
+    use_reranker: bool
 
     # --- Intermediate (between nodes) ---
     rag_results: list[dict[str, Any]]

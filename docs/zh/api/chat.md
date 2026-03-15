@@ -119,3 +119,27 @@ curl -X POST "http://localhost:8000/api/v1/chat/rewrite" \
 |------|------|
 | `timeout` | 改写超时（30 秒） |
 | `rewrite_error` | 改写处理异常 |
+
+---
+
+## 3. 智能补全
+
+### POST /api/v1/chat/complete
+
+根据用户输入前缀预测后续文本，用于输入框自动补全。
+
+**请求体：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| prefix | string | ✅ | 输入前缀（10-2000字符） |
+| conversation_id | int | ❌ | 当前会话ID |
+| knowledge_base_ids | int[] | ❌ | 关联知识库ID |
+| recent_messages | object[] | ❌ | 最近消息（提供上下文） |
+
+**响应：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| completion | string | 建议补全文本 |
+| confidence | float | 置信度（0-1） |

@@ -149,7 +149,7 @@ This analysis evaluates the performance implications of migrating from the curre
 | **Comparison** | Network send of 80 bytes at 1Gbps = 0.0006ms. CPU cost dominates; still negligible. |
 
 **Recommendation**:
-- **No change needed**: `json.dumps` is not a bottleneck. If profiling ever shows it (unlikely), consider `orjson.dumps` (2–3× faster) or pre-built template for `text-delta` (e.g. `f'{{"type":"text-delta","id":"{id}","delta":{escape(delta)}}}'`) — only if proven hot.
+- **No change needed**: `json.dumps` is not a bottleneck. If profiling ever shows it (unlikely), consider `orjson.dumps` (2–3×&nbsp;faster) or a pre-built f-string template for `text-delta` — only if proven hot.
 
 **Estimate**: < 3ms total for 500-token response. **Negligible**.
 

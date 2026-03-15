@@ -25,6 +25,16 @@ logger = logging.getLogger(__name__)
 _memory_saver = MemorySaver()
 
 
+def _get_checkpointer():
+    """Return a checkpointer for pipeline state persistence.
+
+    AsyncSqliteSaver.from_conn_string returns an async context manager,
+    not a direct BaseCheckpointSaver instance. Use MemorySaver which is
+    sufficient for single-process deployments with in-memory task tracking.
+    """
+    return _memory_saver
+
+
 def _route_after_dedup(state: PipelineState) -> str:
     if state.get("conflicts"):
         return "hitl_dedup"
@@ -64,7 +74,7 @@ def create_search_pipeline(checkpointer=None):
     graph.add_edge("ocr", "index")
     graph.add_edge("index", END)
 
-    return graph.compile(checkpointer=checkpointer or _memory_saver)
+    return graph.compile(checkpointer=checkpointer or _get_checkpointer())
 
 
 def create_upload_pipeline(checkpointer=None):
@@ -99,4 +109,4 @@ def create_upload_pipeline(checkpointer=None):
     graph.add_edge("ocr", "index")
     graph.add_edge("index", END)
 
-    return graph.compile(checkpointer=checkpointer or _memory_saver)
+    return graph.compile(checkpointer=checkpointer or _get_checkpointer())

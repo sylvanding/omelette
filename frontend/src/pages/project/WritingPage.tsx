@@ -1,14 +1,26 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
-import { FileText, Quote, List, BarChart3, Loader2 } from 'lucide-react';
+import {
+  FileText,
+  Quote,
+  List,
+  BarChart3,
+  Loader2,
+  BookOpen,
+  Copy,
+  Download,
+  Square,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { paperApi, writingApi } from '@/services/api';
 import type { Paper } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { useThrottledValue } from '@/hooks/useThrottledValue';
 
 const CITE_STYLES = [
   { id: 'gb_t_7714', label: 'GB/T 7714' },
@@ -27,6 +39,7 @@ export default function WritingPage() {
     { id: 'cite', label: t('writing.tabs.cite'), icon: Quote },
     { id: 'outline', label: t('writing.tabs.outline'), icon: List },
     { id: 'gap', label: t('writing.tabs.gap'), icon: BarChart3 },
+    { id: 'review', label: t('writing.tabs.review', '综述生成'), icon: BookOpen },
   ];
 
   const [activeTab, setActiveTab] = useState('summarize');
@@ -36,6 +49,17 @@ export default function WritingPage() {
   const [citeStyle, setCiteStyle] = useState('gb_t_7714');
   const [language, setLanguage] = useState('en');
   const [output, setOutput] = useState('');
+
+  const [reviewTopic, setReviewTopic] = useState('');
+  const [reviewStyle, setReviewStyle] = useState('narrative');
+  const [reviewLang, setReviewLang] = useState('zh');
+  const [reviewStreaming, setReviewStreaming] = useState(false);
+  const [reviewSections, setReviewSections] = useState<string[]>([]);
+  const [reviewContent, setReviewContent] = useState('');
+  const [reviewCitations, setReviewCitations] = useState<Record<string, { paper_id: number; title: string; number: number }>>({});
+  const [currentSection, setCurrentSection] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
+  const displayContent = useThrottledValue(reviewContent, 80);
 
   const { data: papersData } = useQuery({
     queryKey: ['papers', pid],
@@ -87,6 +111,110 @@ export default function WritingPage() {
     onError: () => setOutput(''),
   });
 
+  const startReviewStream = useCallback(async () => {
+    if (reviewStreaming) return;
+    setReviewStreaming(true);
+    setReviewContent('');
+    setReviewSections([]);
+    setReviewCitations({});
+    setCurrentSection('');
+
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    try {
+      const res = await fetch(`/api/v1/projects/${pid}/writing/review-draft/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: reviewTopic,
+          style: reviewStyle,
+          language: reviewLang,
+        }),
+        signal: ctrl.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        toast.error(t('common.operationFailed'));
+        setReviewStreaming(false);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        let currentEvent = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            const raw = line.slice(6);
+            try {
+              const data = JSON.parse(raw);
+              switch (currentEvent) {
+                case 'outline':
+                  setReviewSections(data.sections ?? []);
+                  break;
+                case 'section-start':
+                  setCurrentSection(data.title ?? '');
+                  setReviewContent((prev) => prev + `\n\n## ${data.title}\n\n`);
+                  break;
+                case 'text-delta':
+                  setReviewContent((prev) => prev + (data.delta ?? ''));
+                  break;
+                case 'citation-map':
+                  setReviewCitations(data.citations ?? {});
+                  break;
+                case 'error':
+                  toast.error(data.message ?? t('common.operationFailed'));
+                  break;
+              }
+            } catch {
+              /* skip malformed JSON */
+            }
+            currentEvent = '';
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        toast.error(t('common.operationFailed'));
+      }
+    } finally {
+      setReviewStreaming(false);
+      setCurrentSection('');
+      abortRef.current = null;
+    }
+  }, [pid, reviewTopic, reviewStyle, reviewLang, reviewStreaming, t]);
+
+  const stopReviewStream = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const copyReviewContent = useCallback(() => {
+    navigator.clipboard.writeText(reviewContent.trim());
+    toast.success(t('common.copied', '已复制到剪贴板'));
+  }, [reviewContent, t]);
+
+  const downloadReview = useCallback(() => {
+    const blob = new Blob([reviewContent.trim()], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `literature-review-${reviewTopic || 'draft'}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [reviewContent, reviewTopic]);
+
   const togglePaper = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
@@ -116,7 +244,8 @@ export default function WritingPage() {
     (activeTab === 'summarize' && selectedIds.length > 0) ||
     (activeTab === 'cite' && selectedIds.length > 0) ||
     (activeTab === 'outline' && topic.trim().length > 0) ||
-    (activeTab === 'gap' && researchTopic.trim().length > 0);
+    (activeTab === 'gap' && researchTopic.trim().length > 0) ||
+    activeTab === 'review';
 
   return (
     <div className="space-y-6">
@@ -219,21 +348,137 @@ export default function WritingPage() {
             </div>
           )}
 
-          <Button
-            onClick={runAction}
-            disabled={isPending || !canRun}
-            className="mt-4 gap-1.5"
-          >
-            {isPending && <Loader2 className="size-4 animate-spin" />}
-            {t('common.generate')}
-          </Button>
+          {activeTab === 'review' && (
+            <div className="space-y-3">
+              <Input
+                placeholder={t('writing.reviewTopicPlaceholder', '综述主题（可留空自动确定）')}
+                value={reviewTopic}
+                onChange={(e) => setReviewTopic(e.target.value)}
+              />
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  {t('writing.reviewStyle', '综述风格')}
+                </label>
+                <select
+                  value={reviewStyle}
+                  onChange={(e) => setReviewStyle(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
+                  <option value="narrative">{t('writing.styleNarrative', '叙述性综述')}</option>
+                  <option value="systematic">{t('writing.styleSystematic', '系统性综述')}</option>
+                  <option value="thematic">{t('writing.styleThematic', '主题性综述')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">
+                  {t('writing.language')}
+                </label>
+                <select
+                  value={reviewLang}
+                  onChange={(e) => setReviewLang(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs">
+                  <option value="zh">{t('writing.langZh')}</option>
+                  <option value="en">{t('writing.langEn')}</option>
+                </select>
+              </div>
+              {reviewSections.length > 0 && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    {t('writing.reviewOutline', '综述提纲')}
+                  </p>
+                  <ol className="list-decimal space-y-0.5 pl-4 text-sm">
+                    {reviewSections.map((s, i) => (
+                      <li
+                        key={i}
+                        className={cn(
+                          currentSection === s && 'font-semibold text-primary'
+                        )}>
+                        {s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab !== 'review' ? (
+            <Button
+              onClick={runAction}
+              disabled={isPending || !canRun}
+              className="mt-4 gap-1.5">
+              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {t('common.generate')}
+            </Button>
+          ) : (
+            <div className="mt-4 flex gap-2">
+              <Button
+                onClick={startReviewStream}
+                disabled={reviewStreaming}
+                className="gap-1.5">
+                {reviewStreaming && <Loader2 className="size-4 animate-spin" />}
+                {t('writing.generateReview', '生成综述草稿')}
+              </Button>
+              {reviewStreaming && (
+                <Button variant="outline" onClick={stopReviewStream} className="gap-1.5">
+                  <Square className="size-4" />
+                  {t('common.stop', '停止')}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">{t('common.output')}</h2>
-          <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm">
-            {output || (isPending ? t('common.generating') : '—')}
-          </pre>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">{t('common.output')}</h2>
+            {activeTab === 'review' && reviewContent.trim() && (
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={copyReviewContent} className="gap-1 text-xs">
+                  <Copy className="size-3.5" />
+                  {t('common.copy', '复制')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={downloadReview} className="gap-1 text-xs">
+                  <Download className="size-3.5" />
+                  {t('common.download', '下载')}
+                </Button>
+              </div>
+            )}
+          </div>
+          {activeTab === 'review' ? (
+            <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-background p-4">
+              {displayContent.trim() ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+                  {displayContent}
+                  {reviewStreaming && (
+                    <span className="ml-1 inline-block size-2 animate-pulse rounded-full bg-primary" />
+                  )}
+                </div>
+              ) : reviewStreaming ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  {t('common.generating', '正在生成...')}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">—</p>
+              )}
+              {Object.keys(reviewCitations).length > 0 && !reviewStreaming && (
+                <div className="mt-6 border-t border-border pt-4">
+                  <h3 className="mb-2 text-sm font-semibold">{t('writing.references', '参考文献')}</h3>
+                  <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                    {Object.entries(reviewCitations)
+                      .sort(([a], [b]) => Number(a) - Number(b))
+                      .map(([num, cite]) => (
+                        <li key={num}>{cite.title}</li>
+                      ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          ) : (
+            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm">
+              {output || (isPending ? t('common.generating') : '—')}
+            </pre>
+          )}
         </div>
       </div>
     </div>

@@ -33,9 +33,13 @@ class DedupService:
 
     async def run_full_dedup(self, project_id: int) -> dict:
         """Run all 3 stages of dedup and return results."""
+        from app.config import settings
+
         stage1 = await self.doi_hard_dedup(project_id)
-        stage2 = await self.title_similarity_dedup(project_id, threshold=0.90)
-        stage3_candidates = await self.find_llm_dedup_candidates(project_id, threshold=0.80)
+        stage2 = await self.title_similarity_dedup(project_id, threshold=settings.dedup_title_hard_threshold)
+        stage3_candidates = await self.find_llm_dedup_candidates(
+            project_id, threshold=settings.dedup_title_llm_threshold
+        )
 
         remaining = (
             await self.db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))

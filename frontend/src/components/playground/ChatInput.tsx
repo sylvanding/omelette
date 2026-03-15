@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Loader2, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import ToolModeSelector from './ToolModeSelector';
+import CompletionSuggestion from './CompletionSuggestion';
 import type { ToolMode } from '@/types/chat';
+import { api } from '@/lib/api';
 
 interface KBInfo {
   id: number;
@@ -21,7 +23,11 @@ interface ChatInputProps {
   onToolModeChange?: (mode: ToolMode) => void;
   selectedKBs?: KBInfo[];
   onRemoveKB?: (id: number) => void;
+  conversationId?: number | null;
 }
+
+const COMPLETION_DEBOUNCE_MS = 400;
+const COMPLETION_MIN_LENGTH = 10;
 
 export default function ChatInput({
   onSend,
@@ -32,20 +38,91 @@ export default function ChatInput({
   onToolModeChange,
   selectedKBs,
   onRemoveKB,
+  conversationId,
 }: ChatInputProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState('');
+  const [completion, setCompletion] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const clearCompletion = useCallback(() => {
+    setCompletion('');
+    abortRef.current?.abort();
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  const fetchCompletion = useCallback(
+    (prefix: string) => {
+      clearCompletion();
+      if (prefix.trim().length < COMPLETION_MIN_LENGTH || isLoading || disabled) return;
+
+      timerRef.current = setTimeout(async () => {
+        const controller = new AbortController();
+        abortRef.current = controller;
+        try {
+          const res = await api.post<{ completion: string; confidence: number }>(
+            '/chat/complete',
+            {
+              prefix,
+              conversation_id: conversationId ?? undefined,
+              knowledge_base_ids: selectedKBs?.map((kb) => kb.id) ?? [],
+            },
+            { signal: controller.signal },
+          );
+          if (!controller.signal.aborted && res.data?.completion) {
+            setCompletion(res.data.completion);
+          }
+        } catch {
+          /* aborted or error — silently ignore */
+        }
+      }, COMPLETION_DEBOUNCE_MS);
+    },
+    [clearCompletion, conversationId, selectedKBs, isLoading, disabled],
+  );
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newVal = e.target.value;
+    setValue(newVal);
+    fetchCompletion(newVal);
+  };
+
+  const acceptCompletion = () => {
+    if (completion) {
+      const newVal = value + completion;
+      setValue(newVal);
+      setCompletion('');
+    }
+  };
 
   const handleSubmit = () => {
     const trimmed = value.trim();
     if (!trimmed || isLoading || disabled) return;
+    clearCompletion();
     onSend(trimmed);
     setValue('');
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab' && completion) {
+      e.preventDefault();
+      acceptCompletion();
+      return;
+    }
+    if (e.key === 'Escape' && completion) {
+      e.preventDefault();
+      clearCompletion();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -90,16 +167,24 @@ export default function ChatInput({
         >
           <Paperclip className="size-5" />
         </button>
-        <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder ?? t('playground.inputPlaceholder')}
-          disabled={isLoading || disabled}
-          rows={1}
-          className="min-h-[48px] max-h-[200px] flex-1 resize-none border-0 bg-transparent px-0 py-3 text-base shadow-none focus-visible:ring-0"
-        />
+        <div className="relative flex-1">
+          <Textarea
+            ref={textareaRef}
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder ?? t('playground.inputPlaceholder')}
+            disabled={isLoading || disabled}
+            rows={1}
+            className="min-h-[48px] max-h-[200px] resize-none border-0 bg-transparent px-0 py-3 text-base shadow-none focus-visible:ring-0"
+          />
+          {completion && (
+            <div className="pointer-events-none absolute bottom-3 left-0 whitespace-pre-wrap text-base">
+              <span className="invisible">{value}</span>
+              <CompletionSuggestion completion={completion} visible={!!completion} />
+            </div>
+          )}
+        </div>
         <div className="shrink-0 p-2">
           <Button
             size="icon"
