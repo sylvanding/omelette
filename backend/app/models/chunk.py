@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -20,6 +20,8 @@ class PaperChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, default=0)
     chroma_id: Mapped[str] = mapped_column(String(255), default="", index=True)
     token_count: Mapped[int] = mapped_column(Integer, default=0)
+    has_formula: Mapped[bool] = mapped_column(Boolean, default=False)
+    figure_path: Mapped[str] = mapped_column(String(500), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     paper = relationship("Paper", back_populates="chunks")

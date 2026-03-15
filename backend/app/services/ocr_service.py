@@ -1,7 +1,15 @@
-"""OCR service — extract text from PDFs using marker-pdf, pdfplumber, and PaddleOCR."""
+"""OCR service — extract text from PDFs.
+
+Supports two extraction tiers:
+  1. MinerU API (deep parsing with formula/table/figure recognition)
+  2. pdfplumber (lightweight native text extraction, always available)
+
+Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
+"""
 
 import json
 import logging
+import re
 from pathlib import Path
 
 import pdfplumber
@@ -12,13 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 class OCRService:
-    """Extracts text from PDFs. Priority: native pdfplumber → marker-pdf → PaddleOCR."""
+    """Extracts text from PDFs with MinerU + pdfplumber dual-tier architecture."""
 
     def __init__(self, use_gpu: bool = True, gpu_id: int = 0):
         self.use_gpu = use_gpu
         self.gpu_id = gpu_id
         self._paddle_ocr = None
         self._marker_converter = None
+        self._mineru_client = None
         self.output_dir = Path(settings.ocr_output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -173,8 +182,44 @@ class OCRService:
 
         return pages
 
+    async def _extract_with_mineru(self, pdf_path: str) -> dict | None:
+        """Try MinerU API. Returns result dict or None if unavailable/failed."""
+        if settings.pdf_parser == "pdfplumber":
+            return None
+
+        from app.services.mineru_client import MinerUClient
+
+        if self._mineru_client is None:
+            self._mineru_client = MinerUClient()
+
+        if not await self._mineru_client.health_check():
+            logger.info("MinerU service not available, skipping")
+            return None
+
+        result = await self._mineru_client.parse_pdf(pdf_path)
+        if result.get("error"):
+            logger.warning("MinerU failed for %s: %s", pdf_path, result["error"])
+            return None
+
+        md_content = result.get("md_content", "")
+        if not md_content or len(md_content.strip()) < 50:
+            logger.info("MinerU returned insufficient content for %s", pdf_path)
+            return None
+
+        return {
+            "method": "mineru",
+            "md_content": md_content,
+            "content_list": result.get("content_list", []),
+            "backend": result.get("backend", ""),
+            "version": result.get("version", ""),
+            "total_chars": len(md_content),
+        }
+
     def process_pdf(self, pdf_path: str, force_ocr: bool = False) -> dict:
-        """Process a PDF: native → marker-pdf → PaddleOCR fallback chain."""
+        """Process a PDF: pdfplumber → PaddleOCR fallback chain (sync path).
+
+        For MinerU integration, use ``process_pdf_async`` instead.
+        """
         path = Path(pdf_path)
         if not path.exists():
             return {"error": f"File not found: {pdf_path}", "pages": []}
@@ -195,19 +240,7 @@ class OCRService:
                     "pages_with_text": pages_with_text,
                 }
 
-        logger.info("Native extraction insufficient for %s, trying marker-pdf", pdf_path)
-        marker_pages = self.extract_text_marker(pdf_path)
-        if marker_pages:
-            total_chars = sum(p["char_count"] for p in marker_pages)
-            return {
-                "method": "marker",
-                "pages": marker_pages,
-                "total_pages": len(marker_pages),
-                "total_chars": total_chars,
-                "pages_with_text": sum(1 for p in marker_pages if p.get("has_text")),
-            }
-
-        logger.info("marker-pdf unavailable/failed for %s, trying PaddleOCR", pdf_path)
+        logger.info("Native extraction insufficient for %s, trying PaddleOCR", pdf_path)
         pages = self.extract_text_ocr(pdf_path)
         total_chars = sum(len(p.get("text", "")) for p in pages)
 
@@ -224,9 +257,6 @@ class OCRService:
             native_chars = sum(p["char_count"] for p in native_pages)
             native_with_text = sum(1 for p in native_pages if p["has_text"])
             if native_chars > 0:
-                logger.info(
-                    "All OCR methods failed, using native extraction with %d chars for %s", native_chars, pdf_path
-                )
                 return {
                     "method": "native",
                     "pages": native_pages,
@@ -243,11 +273,182 @@ class OCRService:
             "pages_with_text": 0,
         }
 
+    async def process_pdf_async(self, pdf_path: str, force_ocr: bool = False) -> dict:
+        """Process a PDF with MinerU priority, falling back to pdfplumber/PaddleOCR.
+
+        Returns either:
+          - MinerU result: {"method": "mineru", "md_content": "...", ...}
+          - Legacy result: {"method": "native"|"paddleocr"|"failed", "pages": [...], ...}
+        """
+        if not force_ocr and settings.pdf_parser != "pdfplumber":
+            mineru_result = await self._extract_with_mineru(pdf_path)
+            if mineru_result:
+                return mineru_result
+
+        import asyncio
+
+        return await asyncio.to_thread(self.process_pdf, pdf_path, force_ocr)
+
     def save_result(self, paper_id: int, result: dict) -> Path:
         """Save OCR result to JSON file."""
         output_path = self.output_dir / f"paper_{paper_id}.json"
         output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2))
         return output_path
+
+    def chunk_mineru_markdown(self, md_content: str, chunk_size: int = 1024, overlap: int = 100) -> list[dict]:
+        """Parse MinerU Markdown output into typed chunks (text/table/figure_caption).
+
+        MinerU outputs Markdown with:
+          - ``$...$`` / ``$$...$$`` for formulas
+          - ``|...|`` pipe-delimited tables
+          - ``![...]()`` image references
+          - ``# ...`` section headings
+        """
+        chunks: list[dict] = []
+        chunk_index = 0
+        current_section = ""
+        current_text = ""
+        current_page = 1
+
+        lines = md_content.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+
+            heading_match = re.match(r"^(#{1,4})\s+(.+)$", line)
+            if heading_match:
+                if current_text.strip():
+                    chunks.extend(
+                        self._flush_text_chunk(
+                            current_text, current_section, current_page, chunk_index, chunk_size, overlap
+                        )
+                    )
+                    chunk_index = len(chunks)
+                current_section = heading_match.group(2).strip()
+                current_text = ""
+                i += 1
+                continue
+
+            if line.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s\-:|]+\|", lines[i + 1]):
+                if current_text.strip():
+                    chunks.extend(
+                        self._flush_text_chunk(
+                            current_text, current_section, current_page, chunk_index, chunk_size, overlap
+                        )
+                    )
+                    chunk_index = len(chunks)
+                    current_text = ""
+
+                table_lines = []
+                while i < len(lines) and lines[i].startswith("|"):
+                    table_lines.append(lines[i])
+                    i += 1
+                table_text = "\n".join(table_lines)
+                chunks.append(
+                    {
+                        "content": table_text,
+                        "page_number": current_page,
+                        "chunk_index": chunk_index,
+                        "chunk_type": "table",
+                        "section": current_section,
+                        "has_formula": "$" in table_text,
+                        "token_count": len(table_text.split()),
+                    }
+                )
+                chunk_index += 1
+                continue
+
+            img_match = re.match(r"!\[([^\]]*)\]\(([^)]+)\)", line)
+            if img_match:
+                if current_text.strip():
+                    chunks.extend(
+                        self._flush_text_chunk(
+                            current_text, current_section, current_page, chunk_index, chunk_size, overlap
+                        )
+                    )
+                    chunk_index = len(chunks)
+                    current_text = ""
+
+                caption = img_match.group(1).strip()
+                figure_path = img_match.group(2).strip()
+                if caption:
+                    chunks.append(
+                        {
+                            "content": caption,
+                            "page_number": current_page,
+                            "chunk_index": chunk_index,
+                            "chunk_type": "figure_caption",
+                            "section": current_section,
+                            "figure_path": figure_path,
+                            "has_formula": "$" in caption,
+                            "token_count": len(caption.split()),
+                        }
+                    )
+                    chunk_index += 1
+                i += 1
+                continue
+
+            current_text += line + "\n"
+            i += 1
+
+        if current_text.strip():
+            chunks.extend(
+                self._flush_text_chunk(current_text, current_section, current_page, chunk_index, chunk_size, overlap)
+            )
+
+        return chunks
+
+    def _flush_text_chunk(
+        self,
+        text: str,
+        section: str,
+        page_number: int,
+        start_index: int,
+        chunk_size: int,
+        overlap: int,
+    ) -> list[dict]:
+        """Split accumulated text into sized chunks, preserving paragraph boundaries."""
+        chunks: list[dict] = []
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        current = ""
+        idx = start_index
+
+        for para in paragraphs:
+            if len(current) + len(para) > chunk_size and current:
+                has_formula = "$" in current
+                chunks.append(
+                    {
+                        "content": current.strip(),
+                        "page_number": page_number,
+                        "chunk_index": idx,
+                        "chunk_type": "text",
+                        "section": section,
+                        "has_formula": has_formula,
+                        "token_count": len(current.split()),
+                    }
+                )
+                words = current.split()
+                overlap_text = " ".join(words[-overlap:]) if len(words) > overlap else ""
+                current = overlap_text + " " + para
+                idx += 1
+            else:
+                current += "\n\n" + para if current else para
+
+        if current.strip():
+            has_formula = "$" in current
+            chunks.append(
+                {
+                    "content": current.strip(),
+                    "page_number": page_number,
+                    "chunk_index": idx,
+                    "chunk_type": "text",
+                    "section": section,
+                    "has_formula": has_formula,
+                    "token_count": len(current.split()),
+                }
+            )
+
+        return chunks
 
     def chunk_text(self, pages: list[dict], chunk_size: int = 1024, overlap: int = 100) -> list[dict]:
         """Split extracted text into chunks for RAG indexing."""

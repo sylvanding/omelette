@@ -236,7 +236,11 @@ async def crawl_node(state: PipelineState) -> dict[str, Any]:
 
 
 async def ocr_node(state: PipelineState) -> dict[str, Any]:
-    """Run OCR on downloaded PDFs and create text chunks."""
+    """Run OCR on downloaded PDFs and create text chunks.
+
+    Uses MinerU (if available) for deep parsing with formula/table/figure
+    recognition, falling back to pdfplumber + PaddleOCR.
+    """
     from sqlalchemy import select
 
     from app.database import async_session_factory
@@ -260,15 +264,16 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
             if state.get("cancelled"):
                 break
             try:
-                import asyncio
-
-                result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
+                result = await ocr.process_pdf_async(paper.pdf_path)
                 if result.get("error"):
                     paper.status = PaperStatus.ERROR
                     continue
 
-                pages = result.get("pages", [])
-                chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+                if result.get("method") == "mineru":
+                    chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
+                else:
+                    pages = result.get("pages", [])
+                    chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
 
                 for chunk_data in chunks:
                     db.add(
@@ -280,6 +285,8 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
                             chunk_type=chunk_data.get("chunk_type", "text"),
                             section=chunk_data.get("section", ""),
                             token_count=chunk_data.get("token_count", 0),
+                            has_formula=chunk_data.get("has_formula", False),
+                            figure_path=chunk_data.get("figure_path", ""),
                         )
                     )
 
@@ -347,6 +354,8 @@ async def index_node(state: PipelineState) -> dict[str, Any]:
                     "chunk_index": c.chunk_index,
                     "chunk_type": c.chunk_type,
                     "section": c.section,
+                    "has_formula": c.has_formula,
+                    "figure_path": c.figure_path,
                 }
                 for c in chunks
             ]

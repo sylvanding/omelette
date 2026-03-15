@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     # OCR
     ocr_lang: str = "ch"  # PaddleOCR language: ch (Chinese+English) | en (English only)
 
+    # PDF Parsing / MinerU
+    pdf_parser: str = "auto"  # auto | mineru | pdfplumber
+    mineru_api_url: str = "http://localhost:8010"
+    mineru_backend: str = "pipeline"  # pipeline | hybrid-auto-engine | vlm-auto-engine
+    mineru_timeout: int = 300
+
     # Dedup thresholds
     dedup_title_hard_threshold: float = 0.90
     dedup_title_llm_threshold: float = 0.80

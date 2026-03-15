@@ -123,9 +123,11 @@ class RAGService:
                     "page_number": chunk.get("page_number", 0),
                     "chunk_index": chunk.get("chunk_index", 0),
                     "section": chunk.get("section", ""),
+                    "has_formula": chunk.get("has_formula", False),
+                    "figure_path": chunk.get("figure_path", ""),
                 },
-                excluded_embed_metadata_keys=["paper_id", "chunk_index"],
-                excluded_llm_metadata_keys=["paper_id", "chunk_index"],
+                excluded_embed_metadata_keys=["paper_id", "chunk_index", "has_formula", "figure_path"],
+                excluded_llm_metadata_keys=["paper_id", "chunk_index", "figure_path"],
             )
             node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=ref_doc_id)
             nodes.append(node)
