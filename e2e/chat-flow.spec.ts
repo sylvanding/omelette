@@ -14,7 +14,7 @@ test.describe('Chat Flow', () => {
 
   test('new chat button resets state', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /new/i }).click();
+    await page.getByRole('button', { name: /new/i }).first().click();
     await expect(page).toHaveURL('/');
   });
 });

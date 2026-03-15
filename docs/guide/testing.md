@@ -72,14 +72,63 @@ npm run build      # 构建验证
 
 前端使用 TypeScript strict mode，`npx tsc --noEmit` 确保无类型错误。
 
-## E2E 测试
+## E2E 测试（Playwright）
 
 ```bash
-# 需要前后端服务运行中
-npx playwright test
+# 需要前后端服务运行中（CI=1 时自动启动 frontend dev server）
+CI= npx playwright test
+
+# 运行指定测试文件
+CI= npx playwright test e2e/integration.spec.ts
 ```
 
 配置文件：`playwright.config.ts`
+
+### E2E 测试覆盖（19 个测试，最近验证：2026-03-15）
+
+| 测试文件 | 覆盖范围 | 测试数 |
+|----------|----------|--------|
+| `smoke.spec.ts` | 首页 Playground 加载 | 1 |
+| `chat-flow.spec.ts` | 聊天流程、KB 选择器、新建对话 | 3 |
+| `chat-restore.spec.ts` | 对话历史、无效 ID 处理 | 2 |
+| `kb-paper-flow.spec.ts` | 知识库列表、项目导航、路由重定向、任务页 | 4 |
+| `integration.spec.ts` | 创建项目、项目详情、写作页、发现页、设置页、导航 | 9 |
+
+## 后端 API 联调（curl）
+
+### 已验证端点（31 个端点，最近验证：2026-03-15）
+
+| # | 端点 | 方法 | 状态 |
+|---|------|------|------|
+| 1 | `/api/v1/settings/health` | GET | 通过 |
+| 2 | `/api/v1/projects` | POST | 通过 |
+| 3 | `/api/v1/projects` | GET | 通过 |
+| 4 | `/api/v1/projects/{id}` | GET | 通过 |
+| 5 | `/api/v1/projects/{id}/papers` | POST | 通过 |
+| 6 | `/api/v1/projects/{id}/papers` | GET | 通过 |
+| 7 | `/api/v1/projects/{id}/papers/{pid}` | GET | 通过 |
+| 8 | `/api/v1/projects/{id}/keywords` | POST | 通过 |
+| 9 | `/api/v1/projects/{id}/keywords` | GET | 通过 |
+| 10 | `/api/v1/projects/{id}/keywords/expand` | POST | 通过 |
+| 11 | `/api/v1/projects/{id}/keywords/search-formula` | GET | 通过 |
+| 12 | `/api/v1/projects/{id}/search/sources` | GET | 通过 |
+| 13 | `/api/v1/projects/{id}/search/execute` | POST | 通过 |
+| 14 | `/api/v1/projects/{id}/dedup/run` | POST | 通过 |
+| 15 | `/api/v1/conversations` | POST | 通过 |
+| 16 | `/api/v1/conversations` | GET | 通过 |
+| 17 | `/api/v1/conversations/{id}` | GET | 通过 |
+| 18 | `/api/v1/settings` | GET | 通过 |
+| 19 | `/api/v1/settings/models` | GET | 通过 |
+| 20 | `/api/v1/settings/test-connection` | POST | 通过 |
+| 21 | `/api/v1/projects/{id}/writing/summarize` | POST | 通过 |
+| 22 | `/api/v1/projects/{id}/writing/citations` | POST | 通过 |
+| 23 | `/api/v1/projects/{id}/subscriptions/feeds` | GET | 通过 |
+| 24 | `/api/v1/projects/{id}/subscriptions` | POST | 通过 |
+| 25 | `/api/v1/projects/{id}/subscriptions` | GET | 通过 |
+| 26 | `/api/v1/projects/{id}/ocr/stats` | GET | 通过 |
+| 27 | `/api/v1/projects/{id}/crawl/stats` | GET | 通过 |
+| 28 | `/api/v1/tasks` | GET | 通过 |
+| 29 | `/api/v1/chat/complete` | POST | 通过 |
 
 ## 联调测试清单
 
@@ -87,10 +136,14 @@ npx playwright test
 
 - [x] 后端 229 个 pytest 测试全部通过
 - [x] 后端 lint 零错误（ruff check + ruff format）
+- [x] 后端 API 联调 29 个端点全部通过（LLM_PROVIDER=mock）
+- [x] 前端 19 个 Playwright E2E 测试全部通过
 - [x] .env.example 与 config.py 配置项对齐
 - [x] pyproject.toml / package.json 依赖与实际安装一致
 - [x] VitePress 侧边栏与文档文件一一对应（16 个 API + Deployment guide）
 - [x] README API 列表包含 Phase 4 新端点
+- [x] 所有页面可正常加载（Playground、知识库、设置、历史、任务）
+- [x] 跨页面导航无错误
 
 ### 已修复的问题
 
