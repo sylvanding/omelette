@@ -9,6 +9,7 @@ from collections.abc import Callable
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
@@ -19,11 +20,24 @@ from app.pipelines.chat.stream_writer import (
     format_finish,
     format_start,
 )
+from app.schemas.common import ApiResponse
 from app.schemas.conversation import ChatStreamRequest
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+class CompletionRequest(BaseModel):
+    prefix: str = Field(..., min_length=10, max_length=2000)
+    conversation_id: int | None = None
+    knowledge_base_ids: list[int] = Field(default_factory=list)
+    recent_messages: list[dict] = Field(default_factory=list)
+
+
+class CompletionResponse(BaseModel):
+    completion: str
+    confidence: float
 
 
 async def _init_services(db: AsyncSession) -> dict:
@@ -102,3 +116,18 @@ async def chat_stream(
             "X-Vercel-AI-UI-Message-Stream": "v1",
         },
     )
+
+
+@router.post("/complete", response_model=ApiResponse[CompletionResponse])
+async def complete(request: CompletionRequest):
+    """Return a short text completion suggestion for autocomplete."""
+    from app.services.completion_service import CompletionService
+
+    svc = CompletionService()
+    result = await svc.complete(
+        prefix=request.prefix,
+        conversation_id=request.conversation_id,
+        knowledge_base_ids=request.knowledge_base_ids or [],
+        recent_messages=request.recent_messages or [],
+    )
+    return ApiResponse(data=CompletionResponse(**result))

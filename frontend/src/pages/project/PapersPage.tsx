@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { lazy, Suspense, useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
@@ -15,12 +15,16 @@ import {
   RefreshCw,
   Loader2,
   Zap,
+  GitBranch,
+  X,
+  BookOpenText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { paperApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
+import { api } from '@/lib/api';
 import type { Paper, PaperStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { cn } from '@/lib/utils';
@@ -28,6 +32,8 @@ import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
 import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
+
+const CitationGraphView = lazy(() => import('@/components/citation-graph/CitationGraphView'));
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -52,6 +58,7 @@ export default function PapersPage() {
     { value: 'title', label: t('papers.sortBy.title') },
   ];
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const pid = Number(projectId!);
 
   const [search, setSearch] = useState('');
@@ -62,6 +69,7 @@ export default function PapersPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showAddPaper, setShowAddPaper] = useState(false);
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
+  const [graphPaperId, setGraphPaperId] = useState<number | null>(null);
 
   const { data: projectData } = useQuery({
     queryKey: ['project', projectId],
@@ -370,6 +378,18 @@ export default function PapersPage() {
                       </td>
                       <td className="px-4 py-2 text-right">
                         <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => navigate(`/projects/${pid}/papers/${paper.id}/read`)}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            title={t('papers.readPdf', '阅读 PDF')}>
+                            <BookOpenText className="size-4" />
+                          </button>
+                          <button
+                            onClick={() => setGraphPaperId(paper.id)}
+                            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            title={t('papers.citationGraph.title', '引用图谱')}>
+                            <GitBranch className="size-4" />
+                          </button>
                           {paper.pdf_url && (
                             <a
                               href={paper.pdf_url}
@@ -476,12 +496,68 @@ export default function PapersPage() {
         </div>
       )}
 
+      {graphPaperId !== null && (
+        <CitationGraphDialog
+          projectId={pid}
+          paperId={graphPaperId}
+          onClose={() => setGraphPaperId(null)}
+        />
+      )}
+
       <AddPaperDialog
         projectId={pid}
         open={showAddPaper}
         onOpenChange={setShowAddPaper}
         onComplete={handleAddComplete}
       />
+    </div>
+  );
+}
+
+function CitationGraphDialog({
+  projectId,
+  paperId,
+  onClose,
+}: {
+  projectId: number;
+  paperId: number;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['citation-graph', projectId, paperId],
+    queryFn: () =>
+      api.get(`/projects/${projectId}/papers/${paperId}/citation-graph`).then((r) => r.data),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="relative h-[80vh] w-[90vw] max-w-6xl rounded-xl border border-border bg-background shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-lg font-semibold">
+            {t('papers.citationGraph.title', '引用关系图谱')}
+          </h2>
+          <Button size="icon" variant="ghost" onClick={onClose}>
+            <X className="size-5" />
+          </Button>
+        </div>
+        <div className="h-[calc(100%-56px)]">
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="size-8 animate-spin text-muted-foreground" />
+              </div>
+            }
+          >
+            <CitationGraphView
+              data={data ?? { nodes: [], edges: [], center_id: null }}
+              isLoading={isLoading}
+              projectId={projectId}
+            />
+          </Suspense>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,9 @@
 """Paper CRUD and management API endpoints."""
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -141,3 +144,36 @@ async def delete_paper(
         raise HTTPException(status_code=404, detail="Paper not found")
     await db.delete(paper)
     return ApiResponse(message="Paper deleted")
+
+
+@router.get("/{paper_id}/pdf")
+async def serve_pdf(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Serve the PDF file for a paper."""
+    paper = await db.get(Paper, paper_id)
+    if not paper or paper.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Paper not found")
+    if not paper.pdf_path or not Path(paper.pdf_path).exists():
+        raise HTTPException(status_code=404, detail="PDF file not available")
+    return FileResponse(paper.pdf_path, media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
+
+
+@router.get("/{paper_id}/citation-graph", response_model=ApiResponse)
+async def get_citation_graph(
+    project_id: int,
+    paper_id: int,
+    depth: int = Query(1, ge=1, le=2),
+    max_nodes: int = Query(50, ge=10, le=200),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Get citation relationship graph for a paper via Semantic Scholar."""
+    from app.services.citation_graph_service import CitationGraphService
+
+    svc = CitationGraphService(db)
+    graph = await svc.get_citation_graph(paper_id, project_id, depth=depth, max_nodes=max_nodes)
+    return ApiResponse(data=graph)

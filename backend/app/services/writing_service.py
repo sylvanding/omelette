@@ -1,6 +1,9 @@
-"""Writing assistance service — summarize, cite, outline, gap analysis."""
+"""Writing assistance service — summarize, cite, outline, gap analysis, literature review."""
 
+import json
 import logging
+import re
+from collections.abc import AsyncGenerator
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +13,20 @@ from app.services.llm_client import LLMClient
 from app.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
+
+REVIEW_STYLES = {
+    "narrative": "叙述性综述 (narrative review)：按主题逻辑串联文献，形成连贯论述",
+    "systematic": "系统性综述 (systematic review)：按纳入/排除标准系统梳理，侧重方法学",
+    "thematic": "主题性综述 (thematic review)：按研究主题分组对比，突出异同",
+}
+
+SECTION_SYSTEM_PROMPT = """\
+你是一位学术综述写作专家。请为以下章节撰写综述段落。
+要求：
+1. 使用学术语言，逻辑清晰
+2. 在适当位置使用 [1][2] 格式引用
+3. 每个引用必须对应提供的文献，不得捏造
+4. 段落长度 200-400 字"""
 
 
 class WritingService:
@@ -178,3 +195,155 @@ Identify:
             "analysis": analysis,
             "papers_analyzed": len(papers),
         }
+
+    async def generate_literature_review(
+        self,
+        project_id: int,
+        topic: str = "",
+        style: str = "narrative",
+        citation_format: str = "numbered",
+        language: str = "zh",
+    ) -> AsyncGenerator[str, None]:
+        """Generate a structured literature review draft with SSE events.
+
+        Three-step pipeline: outline → per-section RAG → streamed draft.
+        Yields SSE-formatted strings.
+        """
+        stmt = select(Paper).where(Paper.project_id == project_id).limit(50)
+        result = await self.db.execute(stmt)
+        papers = result.scalars().all()
+
+        if not papers:
+            yield _sse("error", {"message": "知识库中暂无文献，请先添加文献后再生成综述"})
+            return
+
+        yield _sse("progress", {"step": "outline", "message": "正在生成综述提纲..."})
+
+        style_desc = REVIEW_STYLES.get(style, REVIEW_STYLES["narrative"])
+        outline_result = await self._generate_review_outline_for_draft(papers, topic, style_desc, language)
+        sections = _parse_outline_sections(outline_result)
+
+        if not sections:
+            sections = [{"title": topic or "综述", "query": topic or "literature review"}]
+
+        yield _sse("outline", {"sections": [s["title"] for s in sections]})
+
+        rag = self.rag or RAGService(llm=self.llm)
+        global_citation_map: dict[int, dict] = {}
+        citation_counter = 0
+
+        for idx, section in enumerate(sections):
+            yield _sse("section-start", {"title": section["title"], "section_index": idx})
+
+            sources = await rag.retrieve_only(project_id, section["query"], top_k=8)
+            section_refs: list[dict] = []
+            for src in sources:
+                pid = src.get("paper_id")
+                if pid is not None and pid not in global_citation_map:
+                    citation_counter += 1
+                    global_citation_map[pid] = {
+                        "number": citation_counter,
+                        "paper_id": pid,
+                        "title": src.get("paper_title", ""),
+                    }
+                section_refs.append(src)
+
+            formatted_sources = self._format_sources_for_prompt(section_refs, global_citation_map)
+
+            prompt = f"""章节标题：{section["title"]}
+
+相关文献摘录：
+{formatted_sources}
+
+综述风格：{style_desc}
+语言：{"中文" if language == "zh" else "English"}
+
+请撰写该章节的综述段落。"""
+
+            async for chunk in self.llm.chat_stream(
+                messages=[
+                    {"role": "system", "content": SECTION_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.5,
+                max_tokens=2048,
+                task_type="default",
+            ):
+                yield _sse("text-delta", {"delta": chunk, "section_index": idx})
+
+            yield _sse("section-end", {"section_index": idx})
+
+        yield _sse(
+            "citation-map",
+            {"citations": {str(v["number"]): v for v in global_citation_map.values()}},
+        )
+        yield _sse("done", {"total_sections": len(sections)})
+
+    async def _generate_review_outline_for_draft(
+        self,
+        papers: list[Paper],
+        topic: str,
+        style_desc: str,
+        language: str,
+    ) -> str:
+        paper_summaries = "\n".join(
+            [f"- {p.title} ({p.year}, {p.journal}) [cited:{p.citation_count}]" for p in papers if p.title]
+        )
+        lang_str = "中文" if language == "zh" else "English"
+
+        prompt = f"""请用{lang_str}为以下主题生成文献综述提纲。
+
+主题：{topic or "（基于提供文献自动确定）"}
+综述风格：{style_desc}
+
+可用文献：
+{paper_summaries}
+
+要求：
+1. 生成 3-6 个章节标题（用 ## 标记）
+2. 每个章节标题后附一行简要描述
+3. 包含引言和结论章节"""
+
+        return await self.llm.chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a scientific writing expert. Generate well-structured review outlines.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+            task_type="default",
+        )
+
+    @staticmethod
+    def _format_sources_for_prompt(sources: list[dict], citation_map: dict[int, dict]) -> str:
+        lines = []
+        for src in sources:
+            pid = src.get("paper_id")
+            ref_num = citation_map.get(pid, {}).get("number", "?") if pid else "?"
+            title = src.get("paper_title", "Unknown")
+            excerpt = src.get("excerpt", "")
+            lines.append(f"[{ref_num}] {title}\n摘录：{excerpt}\n")
+        return "\n".join(lines) if lines else "（无相关文献）"
+
+
+def _parse_outline_sections(outline_text: str) -> list[dict]:
+    """Parse markdown outline into structured sections."""
+    sections = []
+    current_title = None
+
+    for line in outline_text.split("\n"):
+        heading_match = re.match(r"^#{1,3}\s+(.+)", line.strip())
+        if heading_match:
+            if current_title:
+                sections.append({"title": current_title, "query": current_title})
+            current_title = heading_match.group(1).strip()
+    if current_title:
+        sections.append({"title": current_title, "query": current_title})
+
+    return sections
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
