@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
@@ -27,19 +26,13 @@ _memory_saver = MemorySaver()
 
 
 def _get_checkpointer():
-    """Return a persistent SQLite checkpointer if available, else MemorySaver."""
-    try:
-        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+    """Return a checkpointer for pipeline state persistence.
 
-        from app.config import settings
-
-        cp_dir = settings.langgraph_checkpoint_dir
-        os.makedirs(cp_dir, exist_ok=True)
-        cp_path = os.path.join(cp_dir, "checkpoints.db")
-        return AsyncSqliteSaver.from_conn_string(cp_path)
-    except Exception:
-        logger.warning("SQLite checkpointer unavailable, falling back to MemorySaver")
-        return _memory_saver
+    AsyncSqliteSaver.from_conn_string returns an async context manager,
+    not a direct BaseCheckpointSaver instance. Use MemorySaver which is
+    sufficient for single-process deployments with in-memory task tracking.
+    """
+    return _memory_saver
 
 
 def _route_after_dedup(state: PipelineState) -> str:

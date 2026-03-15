@@ -260,7 +260,10 @@ REST APIs under `/api/v1/`:
 | `POST /projects/{id}/rag/index` | Build vector index |
 | `POST /projects/{id}/rag/query` | RAG retrieval |
 | `POST /projects/{id}/writing/assist` | Writing assistance |
+| `POST /projects/{id}/writing/review-draft/stream` | Streaming literature review (SSE) |
 | `POST /chat` | Chat messages (playground) |
+| `POST /chat/complete` | Smart autocomplete suggestions |
+| `GET /projects/{id}/papers/{paper_id}/citation-graph` | Citation graph (Semantic Scholar) |
 | `GET/POST /conversations` | Conversation CRUD |
 | `GET/POST /pipelines` | Pipeline management |
 | `GET/POST /subscriptions` | Subscription management |
