@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, ZoomIn, ZoomOut, Maximize, Filter } from 'lucide-react';
+import { Loader2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import NodeDetailPanel from './NodeDetailPanel';
@@ -66,23 +66,30 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
     return { nodes, links: edges };
   }, [data, showLocalOnly]);
 
-  const handleNodeClick = useCallback((node: GraphNode) => {
-    setSelectedNode(node);
+  const handleNodeClick = useCallback((node: object) => {
+    setSelectedNode(node as GraphNode);
   }, []);
 
-  const nodeColor = useCallback((node: GraphNode) => {
-    if (node.id === data.center_id) return '#ef4444';
-    if (node.is_local) return '#22c55e';
-    if (node.year && node.year >= 2020) return '#3b82f6';
+  const nodeColor = useCallback((node: object) => {
+    const n = node as GraphNode;
+    if (n.id === data.center_id) return '#ef4444';
+    if (n.is_local) return '#22c55e';
+    if (n.year && n.year >= 2020) return '#3b82f6';
     return '#94a3b8';
   }, [data.center_id]);
 
-  const nodeVal = useCallback((node: GraphNode) => {
-    return Math.log10((node.citation_count || 0) + 1) * 6 + 2;
+  const nodeVal = useCallback((node: object) => {
+    const n = node as GraphNode;
+    return Math.log10((n.citation_count || 0) + 1) * 6 + 2;
   }, []);
 
-  const linkColor = useCallback((link: GraphLink) => {
-    return link.type === 'cites' ? '#93c5fd' : '#fdba74';
+  const nodeLabel = useCallback((node: object) => {
+    const n = node as GraphNode;
+    return `${n.title}\n(${n.year ?? '?'}) 引用:${n.citation_count}`;
+  }, []);
+
+  const linkColor = useCallback((link: object) => {
+    return (link as GraphLink).type === 'cites' ? '#93c5fd' : '#fdba74';
   }, []);
 
   if (isLoading) return <GraphSkeleton />;
@@ -143,7 +150,7 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
         <ForceGraph2D
           graphData={graphData}
           nodeId="id"
-          nodeLabel={(node: GraphNode) => `${node.title}\n(${node.year ?? '?'}) 引用:${node.citation_count}`}
+          nodeLabel={nodeLabel}
           nodeVal={nodeVal}
           nodeColor={nodeColor}
           linkSource="source"

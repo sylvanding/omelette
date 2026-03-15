@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-
 interface CompletionSuggestionProps {
   completion: string;
   visible: boolean;
@@ -9,8 +7,6 @@ export default function CompletionSuggestion({
   completion,
   visible,
 }: CompletionSuggestionProps) {
-  const { t } = useTranslation();
-
   if (!visible || !completion) return null;
 
   return (

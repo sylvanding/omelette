@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 export function useThrottledValue<T>(value: T, intervalMs = 60): T {
   const [throttled, setThrottled] = useState(value);
   const lastUpdate = useRef(0);
-  const pending = useRef<ReturnType<typeof setTimeout>>();
+  const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const now = Date.now();

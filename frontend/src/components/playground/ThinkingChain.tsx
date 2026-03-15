@@ -71,7 +71,7 @@ function ThinkingChain({ steps: rawSteps }: ThinkingChainProps) {
   const stepLabel = (step: ThinkingStep) =>
     t(`playground.thinking.${step.step}`, { defaultValue: step.label });
 
-  const latestRunning = steps.findLast((s) => s.status === 'running');
+  const latestRunning = [...steps].reverse().find((s: ThinkingStep) => s.status === 'running');
   const completedStep = steps.find((s) => s.step === 'complete');
 
   return (

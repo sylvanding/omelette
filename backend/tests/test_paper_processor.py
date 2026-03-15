@@ -91,7 +91,7 @@ class TempPdfMock:
 
     def __enter__(self):
         mock_page = MagicMock()
-        mock_page.get_text.side_effect = lambda mode=None, **kw: ({"blocks": []} if mode == "dict" else "")
+        mock_page.get_text.side_effect = lambda mode=None, **kw: {"blocks": []} if mode == "dict" else ""
 
         mock_doc = MagicMock()
         mock_doc.metadata = {

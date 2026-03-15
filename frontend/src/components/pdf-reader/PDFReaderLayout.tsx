@@ -1,5 +1,4 @@
 import { lazy, Suspense, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ export default function PDFReaderLayout({
   projectId,
   onBack,
 }: PDFReaderLayoutProps) {
-  const { t } = useTranslation();
   const [selectedText, setSelectedText] = useState('');
   const [selectedPage, setSelectedPage] = useState(1);
 
@@ -43,7 +41,7 @@ export default function PDFReaderLayout({
 
       {/* Main content */}
       <div className="flex-1 overflow-hidden">
-        <Group direction="horizontal" autoSaveId="pdf-reader-layout">
+        <Group orientation="horizontal" id="pdf-reader-layout">
           <Panel defaultSize={70} minSize={40}>
             <Suspense
               fallback={

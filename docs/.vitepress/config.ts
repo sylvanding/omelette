@@ -12,6 +12,12 @@ export default defineConfig({
     'http://localhost:8000',
     /^http:\/\/localhost/,
     /^http:\/\/127\.0\.0\.1/,
+    /brainstorms\//,
+    /solutions\//,
+    /research\//,
+    /test-failures\//,
+    /deployment\//,
+    /\.mdc$/,
   ],
 
   head: [

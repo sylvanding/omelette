@@ -3,7 +3,6 @@ import { useChat } from '@ai-sdk/react';
 import { createRefChatTransport } from '@/lib/chat-transport';
 import type {
   OmeletteUIMessage,
-  OmeletteDataParts,
   Citation,
   ThinkingData,
   ToolMode,
@@ -54,7 +53,6 @@ export function useChatStream({
 
   const chat = useChat<OmeletteUIMessage>({
     transport,
-    dataPartSchemas: {} as Record<keyof OmeletteDataParts, undefined>,
     messages: initialMessages,
     onError,
     onFinish({ messages: finishedMessages }) {

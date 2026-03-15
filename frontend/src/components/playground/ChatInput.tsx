@@ -45,7 +45,7 @@ export default function ChatInput({
   const [completion, setCompletion] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const clearCompletion = useCallback(() => {
     setCompletion('');

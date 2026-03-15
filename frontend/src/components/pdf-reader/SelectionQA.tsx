@@ -38,7 +38,6 @@ export function SelectionQA({
   selectedPage,
   paperId,
   paperTitle,
-  projectId,
 }: SelectionQAProps) {
   const { t } = useTranslation();
   const [history, setHistory] = useState<QAEntry[]>([]);

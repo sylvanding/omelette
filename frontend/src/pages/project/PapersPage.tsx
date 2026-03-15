@@ -34,6 +34,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 
 const CitationGraphView = lazy(() => import('@/components/citation-graph/CitationGraphView'));
+import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -525,10 +526,10 @@ function CitationGraphDialog({
 }) {
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<GraphData>({
     queryKey: ['citation-graph', projectId, paperId],
     queryFn: () =>
-      api.get(`/projects/${projectId}/papers/${paperId}/citation-graph`).then((r) => r.data),
+      api.get(`/projects/${projectId}/papers/${paperId}/citation-graph`).then((r) => r.data as GraphData),
   });
 
   return (
