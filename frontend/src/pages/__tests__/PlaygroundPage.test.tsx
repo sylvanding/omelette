@@ -33,8 +33,8 @@ describe('PlaygroundPage', () => {
     renderWithProviders(<PlaygroundPage />);
 
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: /new/i });
-      expect(button).toBeInTheDocument();
+      const buttons = screen.getAllByRole('button', { name: /new/i });
+      expect(buttons.length).toBeGreaterThanOrEqual(1);
     });
   });
 
