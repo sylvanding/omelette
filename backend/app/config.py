@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     # Application
     app_env: Literal["development", "production", "testing"] = "development"
-    app_debug: bool = True
+    app_debug: bool = False
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     app_secret_key: str = "change-me-to-a-random-secret-key"

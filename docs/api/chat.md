@@ -119,3 +119,35 @@ curl -X POST "http://localhost:8000/api/v1/chat/rewrite" \
 |------|------|
 | `timeout` | 改写超时（30 秒） |
 | `rewrite_error` | 改写处理异常 |
+
+---
+
+## 3. Input Completion
+
+### POST /api/v1/chat/complete
+
+Based on user's input prefix, predict the next text fragment for autocomplete.
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| prefix | string | ✅ | Input prefix (10-2000 chars) |
+| conversation_id | int | ❌ | Current conversation ID |
+| knowledge_base_ids | int[] | ❌ | Associated knowledge bases |
+| recent_messages | object[] | ❌ | Recent messages for context |
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| completion | string | Suggested completion text |
+| confidence | float | Confidence score (0-1) |
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat/complete \
+  -H "Content-Type: application/json" \
+  -d '{"prefix": "深度学习在自然语言处理中"}'
+```

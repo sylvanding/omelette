@@ -48,6 +48,12 @@ export default defineConfig({
                 { text: 'MCP Integration', link: '/guide/mcp' },
               ],
             },
+            {
+              text: 'Phase 4 Features',
+              items: [
+                { text: 'Feature Guide', link: '/guide/features' },
+              ],
+            },
           ],
           '/modules/': [
             {
@@ -108,6 +114,12 @@ export default defineConfig({
                 { text: '对话工作台', link: '/zh/guide/chat' },
                 { text: 'LangGraph 流水线', link: '/zh/guide/pipeline' },
                 { text: 'MCP 集成', link: '/zh/guide/mcp' },
+              ],
+            },
+            {
+              text: 'Phase 4 新功能',
+              items: [
+                { text: '功能指南', link: '/zh/guide/features' },
               ],
             },
           ],

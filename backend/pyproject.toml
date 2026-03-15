@@ -43,6 +43,7 @@ dependencies = [
     "mcp>=1.26",
     "langgraph>=0.4.0",
     "langgraph-checkpoint-sqlite>=2.0.0",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

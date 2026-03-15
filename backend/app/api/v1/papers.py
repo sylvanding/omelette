@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
+from app.config import settings
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
@@ -159,7 +160,18 @@ async def serve_pdf(
         raise HTTPException(status_code=404, detail="Paper not found")
     if not paper.pdf_path or not Path(paper.pdf_path).exists():
         raise HTTPException(status_code=404, detail="PDF file not available")
-    return FileResponse(paper.pdf_path, media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
+
+    pdf_path = Path(paper.pdf_path).resolve()
+    pdf_dir = Path(settings.pdf_dir).resolve()
+    if not str(pdf_path).startswith(str(pdf_dir)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    with open(pdf_path, "rb") as f:
+        magic = f.read(5)
+    if magic != b"%PDF-":
+        raise HTTPException(status_code=400, detail="Invalid PDF file")
+
+    return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
 
 
 @router.get("/{paper_id}/citation-graph", response_model=ApiResponse)

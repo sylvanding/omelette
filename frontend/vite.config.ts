@@ -1,13 +1,33 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query': ['@tanstack/react-query'],
+          'ai-sdk': ['ai', '@ai-sdk/react'],
+          'react-pdf': ['react-pdf'],
+          'react-force-graph': ['react-force-graph-2d'],
+          'katex': ['katex'],
+        },
+      },
     },
   },
   server: {

@@ -69,3 +69,52 @@ Base path: `/api/v1/projects/{project_id}/papers`
 - `created` — Number of papers imported
 - `skipped` — Number skipped (duplicate DOI)
 - `total` — Total papers in request
+
+---
+
+## PDF File
+
+### GET /api/v1/projects/{project_id}/papers/{paper_id}/pdf
+
+Serve the PDF file for a paper. Returns the PDF binary with `application/pdf` content type.
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| project_id | int | Project ID |
+| paper_id | int | Paper ID |
+
+**Responses:**
+- `200` — PDF file
+- `404` — Paper not found or no PDF file available
+
+---
+
+## Citation Graph
+
+### GET /api/v1/projects/{project_id}/papers/{paper_id}/citation-graph
+
+Get the citation relationship graph for a paper using Semantic Scholar data.
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| project_id | int | Project ID |
+| paper_id | int | Paper ID |
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| depth | int | 1 | Graph depth (1-2) |
+| max_nodes | int | 50 | Maximum nodes (10-200) |
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| nodes | object[] | Graph nodes with id, title, year, citation_count, is_local |
+| edges | object[] | Graph edges with source, target, type |
+| center_id | string | Center paper's Semantic Scholar ID |

@@ -34,3 +34,34 @@
 ## 批量导入响应
 
 `POST /projects/{id}/papers/bulk` 返回 `{ created, skipped, total }`。
+
+---
+
+## PDF 文件
+
+### GET /api/v1/projects/{project_id}/papers/{paper_id}/pdf
+
+获取论文的PDF文件。返回 `application/pdf` 内容类型的二进制文件。
+
+---
+
+## 引用图谱
+
+### GET /api/v1/projects/{project_id}/papers/{paper_id}/citation-graph
+
+获取论文的引用关系图谱（基于 Semantic Scholar 数据）。
+
+**查询参数：**
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| depth | int | 1 | 图谱深度（1-2） |
+| max_nodes | int | 50 | 最大节点数（10-200） |
+
+**响应：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| nodes | object[] | 节点列表（id, title, year, citation_count, is_local） |
+| edges | object[] | 边列表（source, target, type） |
+| center_id | string | 中心论文的 Semantic Scholar ID |

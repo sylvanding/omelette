@@ -37,9 +37,13 @@ class WritingService:
 
     async def summarize_papers(self, paper_ids: list[int], language: str = "en") -> list[dict]:
         """Generate summaries for selected papers."""
+        stmt = select(Paper).where(Paper.id.in_(paper_ids))
+        result = await self.db.execute(stmt)
+        papers = {p.id: p for p in result.scalars().all()}
+
         summaries = []
         for paper_id in paper_ids:
-            paper = await self.db.get(Paper, paper_id)
+            paper = papers.get(paper_id)
             if not paper:
                 continue
 
@@ -79,9 +83,13 @@ Provide:
 
     async def generate_citations(self, paper_ids: list[int], style: str = "gb_t_7714") -> list[dict]:
         """Generate formatted citations for papers."""
+        stmt = select(Paper).where(Paper.id.in_(paper_ids))
+        result = await self.db.execute(stmt)
+        papers_map = {p.id: p for p in result.scalars().all()}
+
         citations = []
         for paper_id in paper_ids:
-            paper = await self.db.get(Paper, paper_id)
+            paper = papers_map.get(paper_id)
             if not paper:
                 continue
 

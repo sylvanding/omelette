@@ -20,6 +20,7 @@ import { paperApi, writingApi } from '@/services/api';
 import type { Paper } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useThrottledValue } from '@/hooks/useThrottledValue';
 
 const CITE_STYLES = [
   { id: 'gb_t_7714', label: 'GB/T 7714' },
@@ -58,6 +59,7 @@ export default function WritingPage() {
   const [reviewCitations, setReviewCitations] = useState<Record<string, { paper_id: number; title: string; number: number }>>({});
   const [currentSection, setCurrentSection] = useState('');
   const abortRef = useRef<AbortController | null>(null);
+  const displayContent = useThrottledValue(reviewContent, 80);
 
   const { data: papersData } = useQuery({
     queryKey: ['papers', pid],
@@ -444,9 +446,9 @@ export default function WritingPage() {
           </div>
           {activeTab === 'review' ? (
             <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-border bg-background p-4">
-              {reviewContent.trim() ? (
+              {displayContent.trim() ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                  {reviewContent}
+                  {displayContent}
                   {reviewStreaming && (
                     <span className="ml-1 inline-block size-2 animate-pulse rounded-full bg-primary" />
                   )}
