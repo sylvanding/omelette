@@ -10,7 +10,9 @@ ChromaVectorStore, SentenceSplitter, and query engine for:
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -34,6 +36,8 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """LlamaIndex-powered RAG service with ChromaDB vector store."""
 
+    _COUNT_CACHE_TTL = 60.0
+
     def __init__(
         self,
         llm: LLMClient | None = None,
@@ -44,6 +48,21 @@ class RAGService:
         self.llm = llm
         self._chroma_client = chroma_client
         self._embed_model = embed_model
+        self._count_cache: dict[int, tuple[int, float]] = {}
+
+    async def _get_count(self, project_id: int) -> int:
+        """Get collection count with caching and async wrapping."""
+        now = time.monotonic()
+        cached = self._count_cache.get(project_id)
+        if cached and now - cached[1] < self._COUNT_CACHE_TTL:
+            return cached[0]
+        collection = self._get_collection(project_id)
+        count = await asyncio.to_thread(collection.count)
+        self._count_cache[project_id] = (count, now)
+        return count
+
+    def _invalidate_count(self, project_id: int) -> None:
+        self._count_cache.pop(project_id, None)
 
     def _get_chroma_client(self) -> chromadb.ClientAPI:
         if self._chroma_client is None:
@@ -132,8 +151,6 @@ class RAGService:
             node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=ref_doc_id)
             nodes.append(node)
 
-        import asyncio
-
         total = len(nodes)
         indexed = 0
         for i in range(0, total, batch_size):
@@ -144,6 +161,7 @@ class RAGService:
                 pct = 10 + int(90 * indexed / total)
                 on_progress("indexing", min(pct, 99))
 
+        self._invalidate_count(project_id)
         return {"indexed": total, "collection": f"project_{project_id}"}
 
     async def index_documents(
@@ -161,10 +179,9 @@ class RAGService:
         splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         nodes = splitter.get_nodes_from_documents(documents)
 
-        import asyncio
-
         index = self._get_index(project_id)
         await asyncio.to_thread(index.insert_nodes, nodes)
+        self._invalidate_count(project_id)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
     @staticmethod
@@ -204,7 +221,7 @@ class RAGService:
                 docs = result.get("documents") or []
                 next_text = "\n".join(d for d in docs if d)
         except Exception:
-            pass
+            logger.debug("Adjacent chunk fetch failed for paper %d chunk %d", paper_id, chunk_index, exc_info=True)
         return prev_text, next_text
 
     async def query(
@@ -216,18 +233,17 @@ class RAGService:
         include_sources: bool = True,
     ) -> dict:
         """Query the knowledge base and generate an answer with citations."""
-        collection = self._get_collection(project_id)
-        if collection.count() == 0:
+        count = await self._get_count(project_id)
+        if count == 0:
             return {
                 "answer": "No documents have been indexed yet. Please process and index papers first.",
                 "sources": [],
                 "confidence": 0.0,
             }
 
-        import asyncio
-
+        collection = self._get_collection(project_id)
         index = self._get_index(project_id)
-        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+        retriever = index.as_retriever(similarity_top_k=min(top_k, count))
         retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
 
         if not retrieved_nodes:
@@ -295,14 +311,13 @@ class RAGService:
         Designed for the Chat Pipeline where the LLM call happens
         downstream in the generate node, avoiding a redundant call here.
         """
-        collection = self._get_collection(project_id)
-        if collection.count() == 0:
+        count = await self._get_count(project_id)
+        if count == 0:
             return []
 
-        import asyncio
-
+        collection = self._get_collection(project_id)
         index = self._get_index(project_id)
-        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+        retriever = index.as_retriever(similarity_top_k=min(top_k, count))
         retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
 
         sources: list[dict] = []
@@ -368,7 +383,8 @@ class RAGService:
         client = self._get_chroma_client()
         name = f"project_{project_id}"
         try:
-            client.delete_collection(name)
+            await asyncio.to_thread(client.delete_collection, name)
+            self._invalidate_count(project_id)
             return {"deleted": True, "collection": name}
         except ValueError:
             return {"deleted": False, "message": "Collection not found"}
@@ -377,7 +393,8 @@ class RAGService:
         """Delete all chunks for a single paper from the index."""
         collection = self._get_collection(project_id)
         try:
-            collection.delete(where={"paper_id": paper_id})
+            await asyncio.to_thread(collection.delete, where={"paper_id": paper_id})
+            self._invalidate_count(project_id)
             return {"deleted": True, "paper_id": paper_id}
         except Exception as e:
             logger.warning("Failed to delete paper %d from index: %s", paper_id, e)
@@ -386,10 +403,11 @@ class RAGService:
     async def get_stats(self, project_id: int) -> dict:
         """Get index statistics for a project."""
         try:
-            collection = self._get_collection(project_id)
+            count = await self._get_count(project_id)
             return {
-                "total_chunks": collection.count(),
+                "total_chunks": count,
                 "collection_name": f"project_{project_id}",
             }
         except Exception:
+            logger.warning("Failed to get stats for project %d", project_id, exc_info=True)
             return {"total_chunks": 0, "collection_name": f"project_{project_id}"}

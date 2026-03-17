@@ -112,7 +112,7 @@ async def create_conversation(
         tool_mode=body.tool_mode,
     )
     db.add(conv)
-    await db.commit()
+    await db.flush()
 
     result = await db.execute(
         select(Conversation).where(Conversation.id == conv.id).options(selectinload(Conversation.messages))
@@ -151,8 +151,6 @@ async def update_conversation(
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(conv, field, value)
 
-    await db.commit()
-
     result2 = await db.execute(
         select(Conversation).where(Conversation.id == conversation_id).options(selectinload(Conversation.messages))
     )
@@ -172,5 +170,4 @@ async def delete_conversation(
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     await db.delete(conv)
-    await db.commit()
     return ApiResponse(data={"deleted": True, "id": conversation_id})

@@ -72,8 +72,8 @@ try:
     mcp_app = mcp_server.streamable_http_app()
     app.mount("/mcp", mcp_app)
     logger.info("MCP server mounted at /mcp")
-except Exception as e:
-    logger.warning("MCP server mount failed: %s", e)
+except Exception:
+    logger.error("MCP server mount failed", exc_info=True)
 
 
 @app.get("/")

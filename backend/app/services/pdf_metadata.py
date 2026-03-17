@@ -9,6 +9,7 @@ Extraction strategy (ordered by reliability):
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from pathlib import Path
@@ -36,7 +37,7 @@ async def extract_metadata(
     fallback_title: str = "Untitled",
 ) -> NewPaperData:
     """Extract metadata from *pdf_path*, optionally enriching via Crossref."""
-    local = _extract_local(pdf_path, fallback_title)
+    local = await asyncio.to_thread(_extract_local, pdf_path, fallback_title)
 
     if local.doi:
         enriched = await _crossref_lookup(local.doi)

@@ -427,7 +427,7 @@ async def persist_node(state: ChatState, config: RunnableConfig) -> dict[str, An
         )
         db.add(user_msg)
         db.add(assistant_msg)
-        await db.commit()
+        await db.flush()
 
         citation_count = len(state.get("citations") or [])
         _emit_thinking(

@@ -1,5 +1,6 @@
 """Incremental subscription service — scheduled literature updates via API and RSS."""
 
+import asyncio
 import logging
 from datetime import datetime
 
@@ -25,7 +26,7 @@ class SubscriptionService:
             resp = await client.get(feed_url)
             resp.raise_for_status()
 
-        feed = feedparser.parse(resp.text)
+        feed = await asyncio.to_thread(feedparser.parse, resp.text)
         entries = []
 
         for entry in feed.entries:
