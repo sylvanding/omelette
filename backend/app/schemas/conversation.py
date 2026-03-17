@@ -58,7 +58,9 @@ class ConversationUpdateSchema(BaseModel):
 
 class ChatStreamRequest(BaseModel):
     conversation_id: int | None = None
-    knowledge_base_ids: list[int] = Field(default_factory=list)
+    knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20)
     model: str | None = None
     tool_mode: str = "qa"
     message: str = Field(min_length=1)
+    rag_top_k: int = Field(default=10, ge=1, le=50, description="RAG retrieval top-k")
+    use_reranker: bool = Field(default=False, description="Apply reranker to retrieved nodes")

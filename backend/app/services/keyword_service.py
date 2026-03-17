@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Keyword
+from app.prompts.keyword import KEYWORD_EXPAND_SYSTEM
 from app.services.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ Return JSON only:
         try:
             result = await self.llm.chat_json(
                 messages=[
-                    {"role": "system", "content": "You are a scientific terminology expert. Return valid JSON only."},
+                    {"role": "system", "content": KEYWORD_EXPAND_SYSTEM},
                     {"role": "user", "content": prompt},
                 ],
                 task_type="keyword_expand",

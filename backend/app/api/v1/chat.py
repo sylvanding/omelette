@@ -83,6 +83,8 @@ async def _stream_chat(
             "tool_mode": request.tool_mode,
             "conversation_id": request.conversation_id,
             "model": request.model or "",
+            "rag_top_k": request.rag_top_k,
+            "use_reranker": request.use_reranker,
         }
 
         async for event in pipeline.astream(

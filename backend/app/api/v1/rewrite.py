@@ -13,6 +13,8 @@ from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.config import settings
+from app.prompts.rewrite import REWRITE_PROMPTS
 from app.services.llm.client import get_llm_client
 from app.services.user_settings_service import UserSettingsService
 
@@ -20,26 +22,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/chat", tags=["rewrite"])
 
-_rewrite_semaphore = asyncio.Semaphore(3)
-
-REWRITE_PROMPTS: dict[str, str] = {
-    "simplify": (
-        "Rewrite the following academic text in plain, accessible language. "
-        "Keep the core meaning and key concepts intact, but make it understandable "
-        "to a general audience. Output only the rewritten text, no explanations."
-    ),
-    "academic": (
-        "Rewrite the following text in formal academic style. "
-        "Use precise terminology, passive voice where appropriate, and proper "
-        "academic conventions. Maintain the original meaning. Output only the rewritten text."
-    ),
-    "translate_en": (
-        "Translate the following text into English. "
-        "Preserve academic terminology and the original meaning. "
-        "Output only the translation, no explanations."
-    ),
-    "translate_zh": ("将以下文本翻译为中文。保留学术术语和原意。仅输出翻译结果，不要添加解释。"),
-}
+_rewrite_semaphore = asyncio.Semaphore(settings.rewrite_semaphore_limit)
 
 REWRITE_TIMEOUT = 30.0
 

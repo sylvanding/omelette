@@ -15,45 +15,23 @@ from typing import Any
 from langchain_core.runnables import RunnableConfig
 from langgraph.config import get_stream_writer
 
+from app.config import settings
 from app.pipelines.chat.config_helpers import (
     get_chat_db,
     get_chat_llm,
     get_chat_rag,
 )
 from app.pipelines.chat.state import ChatMessageDict, ChatState, CitationDict
+from app.prompts.chat import (
+    CHAT_FALLBACK_SYSTEM,
+    CHAT_QA_SYSTEM,
+    CHAT_TOOL_MODE_PROMPTS,
+    EXCERPT_CLEAN_SYSTEM,
+)
 
 logger = logging.getLogger(__name__)
 
-TOOL_MODE_PROMPTS = {
-    "qa": (
-        "You are a scientific research assistant. Answer the question based on the provided context. "
-        "Use inline citations like [1], [2] to reference source papers. "
-        "If the context doesn't contain enough information, say so honestly."
-    ),
-    "citation_lookup": (
-        "You are a citation finder. Given the user's text, identify and list the most relevant "
-        "references from the provided context. Format as a numbered list with paper titles, authors, "
-        "and brief explanations of relevance. Keep your own commentary minimal."
-    ),
-    "review_outline": (
-        "You are a literature review expert. Based on the provided context, generate a structured "
-        "review outline with sections, subsections, and key points. Use citations like [1], [2] "
-        "to reference sources. Suggest a logical flow and highlight key themes."
-    ),
-    "gap_analysis": (
-        "You are a research gap analyst. Based on the provided literature context, identify "
-        "research gaps, unexplored areas, and potential future directions. Cite existing work "
-        "using [1], [2] format. Be specific about what has been studied and what remains open."
-    ),
-}
-
-EXCERPT_CLEAN_PROMPT = (
-    "Clean up the following text extracted from an academic PDF. "
-    "Fix OCR errors, add missing spaces between words, restore formatting. "
-    "Keep the original meaning intact. Output only the cleaned text, nothing else."
-)
-
-_clean_semaphore = asyncio.Semaphore(3)
+_clean_semaphore = asyncio.Semaphore(settings.clean_semaphore_limit)
 
 
 def _emit_thinking(
@@ -114,14 +92,7 @@ async def understand_node(state: ChatState, config: RunnableConfig) -> dict[str,
     # Build system prompt
     kb_ids = state.get("knowledge_base_ids", [])
     tool_mode = state.get("tool_mode", "qa")
-    if kb_ids:
-        system_prompt = TOOL_MODE_PROMPTS.get(tool_mode, TOOL_MODE_PROMPTS["qa"])
-    else:
-        system_prompt = (
-            "You are a helpful scientific research assistant. "
-            "Answer questions clearly and accurately. "
-            "If you don't know the answer, say so honestly."
-        )
+    system_prompt = CHAT_TOOL_MODE_PROMPTS.get(tool_mode, CHAT_QA_SYSTEM) if kb_ids else CHAT_FALLBACK_SYSTEM
 
     _emit_thinking(
         writer,
@@ -158,7 +129,11 @@ async def retrieve_node(state: ChatState, config: RunnableConfig) -> dict[str, A
     )
 
     top_k = state.get("rag_top_k") or 10
-    tasks = [rag.retrieve_only(project_id=kb_id, question=state["message"], top_k=top_k) for kb_id in kb_ids]
+    use_reranker = state.get("use_reranker", False)
+    tasks = [
+        rag.retrieve_only(project_id=kb_id, question=state["message"], top_k=top_k, use_reranker=use_reranker)
+        for kb_id in kb_ids
+    ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     all_sources: list[dict[str, Any]] = []
@@ -258,7 +233,7 @@ async def _clean_single_excerpt(llm, excerpt: str) -> str:
         return excerpt
     async with _clean_semaphore:
         messages = [
-            {"role": "system", "content": EXCERPT_CLEAN_PROMPT},
+            {"role": "system", "content": EXCERPT_CLEAN_SYSTEM},
             {"role": "user", "content": excerpt},
         ]
         result = ""

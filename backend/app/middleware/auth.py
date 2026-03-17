@@ -10,7 +10,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-EXEMPT_PATHS = frozenset({"/", "/health", "/docs", "/openapi.json", "/redoc"})
+EXEMPT_PATHS = frozenset({"/", "/health", "/api/v1/settings/health", "/docs", "/openapi.json", "/redoc"})
 EXEMPT_PREFIXES = ("/mcp",)
 
 

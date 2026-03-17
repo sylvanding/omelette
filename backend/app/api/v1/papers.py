@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_project
+from app.api.deps import get_db, get_or_404, get_project
 from app.config import settings
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
@@ -109,9 +109,7 @@ async def get_paper(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     return ApiResponse(data=PaperRead.model_validate(paper))
 
 
@@ -123,9 +121,7 @@ async def update_paper(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(paper, key, value)
     await db.flush()
@@ -140,9 +136,7 @@ async def delete_paper(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     await db.delete(paper)
     return ApiResponse(message="Paper deleted")
 
@@ -155,9 +149,7 @@ async def serve_pdf(
     project: Project = Depends(get_project),
 ):
     """Serve the PDF file for a paper."""
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     if not paper.pdf_path or not Path(paper.pdf_path).exists():
         raise HTTPException(status_code=404, detail="PDF file not available")
 

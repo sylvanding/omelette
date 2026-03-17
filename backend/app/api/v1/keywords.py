@@ -1,12 +1,12 @@
 """Keyword management API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_llm, get_project
+from app.api.deps import get_db, get_llm, get_or_404, get_project
 from app.models import Keyword, Project
-from app.schemas.common import ApiResponse
+from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.keyword import KeywordCreate, KeywordExpandRequest, KeywordExpandResponse, KeywordRead, KeywordUpdate
 from app.services.keyword_service import KeywordService
 from app.services.llm_client import LLMClient
@@ -14,20 +14,35 @@ from app.services.llm_client import LLMClient
 router = APIRouter(prefix="/projects/{project_id}/keywords", tags=["keywords"])
 
 
-@router.get("", response_model=ApiResponse[list[KeywordRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[KeywordRead]])
 async def list_keywords(
     project_id: int,
+    page: int = 1,
+    page_size: int = 50,
     level: int | None = None,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    stmt = select(Keyword).where(Keyword.project_id == project_id)
+    base = select(Keyword).where(Keyword.project_id == project_id)
     if level is not None:
-        stmt = stmt.where(Keyword.level == level)
-    stmt = stmt.order_by(Keyword.level, Keyword.id)
-    result = await db.execute(stmt)
-    keywords = result.scalars().all()
-    return ApiResponse(data=[KeywordRead.model_validate(k) for k in keywords])
+        base = base.where(Keyword.level == level)
+
+    count = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one()
+    items = (
+        (await db.execute(base.order_by(Keyword.level, Keyword.id).offset((page - 1) * page_size).limit(page_size)))
+        .scalars()
+        .all()
+    )
+
+    return ApiResponse(
+        data=PaginatedData(
+            items=[KeywordRead.model_validate(k) for k in items],
+            total=count,
+            page=page,
+            page_size=page_size,
+            total_pages=(count + page_size - 1) // page_size or 1,
+        )
+    )
 
 
 @router.post("", response_model=ApiResponse[KeywordRead], status_code=201)
@@ -82,9 +97,7 @@ async def update_keyword(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    keyword = await db.get(Keyword, keyword_id)
-    if not keyword or keyword.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Keyword not found")
+    keyword = await get_or_404(db, Keyword, keyword_id, project_id=project_id, detail="Keyword not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(keyword, key, value)
     await db.flush()
@@ -99,9 +112,7 @@ async def delete_keyword(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    keyword = await db.get(Keyword, keyword_id)
-    if not keyword or keyword.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Keyword not found")
+    keyword = await get_or_404(db, Keyword, keyword_id, project_id=project_id, detail="Keyword not found")
     await db.delete(keyword)
     return ApiResponse(message="Keyword deleted")
 
@@ -115,26 +126,17 @@ async def expand_keywords(
     project: Project = Depends(get_project),
 ):
     """Use LLM to expand seed keywords with synonyms and related terms."""
-
-    prompt = (
-        f"Given these seed keywords in the field of scientific research: {body.seed_terms}\n"
-        f"Language: {body.language}\n"
-        f"Generate up to {body.max_results} related terms including synonyms, abbreviations, "
-        "alternate names, and cross-disciplinary terms.\n"
-        'Return JSON: {"expanded_terms": [{"term": "...", "term_zh": "...", "relation": "synonym|abbreviation|related"}]}'
-    )
-
-    result = await llm.chat_json(
-        messages=[
-            {"role": "system", "content": "You are a scientific terminology expert. Return valid JSON only."},
-            {"role": "user", "content": prompt},
-        ],
-        task_type="keyword_expand",
+    svc = KeywordService(db, llm)
+    expanded = await svc.expand_keywords_with_llm(
+        project_id=project_id,
+        seed_terms=body.seed_terms,
+        language=body.language,
+        max_results=body.max_results,
     )
 
     return ApiResponse(
         data=KeywordExpandResponse(
-            expanded_terms=result.get("expanded_terms", []),
-            source=f"llm:{llm.provider}",
+            expanded_terms=expanded,
+            source=f"llm:{llm.provider}" if llm else "none",
         )
     )

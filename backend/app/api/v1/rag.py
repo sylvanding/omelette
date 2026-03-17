@@ -6,7 +6,7 @@ import logging
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/projects/{project_id}/rag", tags=["rag"])
 
 class RAGQueryRequest(BaseModel):
     question: str
-    top_k: int = 10
+    top_k: int = Field(default=10, ge=1, le=50)
     use_reranker: bool = True
     include_sources: bool = True
 

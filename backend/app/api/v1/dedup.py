@@ -185,56 +185,14 @@ async def auto_resolve_conflicts(
 
         new_metadata = await extract_metadata(pdf_path, fallback_title="Untitled")
 
-        if not llm:
-            resolutions.append(
-                {
-                    "conflict_id": conflict_id,
-                    "action": "keep_new",
-                    "reason": "LLM not available, defaulting to keep_new",
-                }
-            )
-            continue
-
-        prompt = f"""Two papers may be duplicates. Decide the best resolution:
-
-Existing paper (in DB):
-- ID: {old_paper.id}
-- Title: {old_paper.title}
-- DOI: {old_paper.doi or "N/A"}
-- Year: {old_paper.year}
-- Journal: {old_paper.journal}
-
-New upload:
-- Title: {new_metadata.title}
-- DOI: {new_metadata.doi or "N/A"}
-- Year: {new_metadata.year}
-- Journal: {new_metadata.journal}
-
-Return JSON: {{"action": "keep_old"|"keep_new"|"merge", "reason": "..."}}
-- keep_old: existing is better, discard new
-- keep_new: new is better or different work, add new
-- merge: combine metadata, add as new paper"""
-
-        try:
-            result = await llm.chat_json(
-                messages=[
-                    {"role": "system", "content": "You are a deduplication expert. Return valid JSON only."},
-                    {"role": "user", "content": prompt},
-                ],
-                task_type="dedup_resolve",
-            )
-            action = result.get("action", "keep_new")
-            if action not in ("keep_old", "keep_new", "merge"):
-                action = "keep_new"
-            resolutions.append(
-                {
-                    "conflict_id": conflict_id,
-                    "action": action,
-                    "reason": result.get("reason", ""),
-                }
-            )
-        except Exception as e:
-            logger.warning("LLM auto-resolve failed for %s: %s", conflict_id, e)
-            resolutions.append({"conflict_id": conflict_id, "action": "keep_new", "reason": f"Error: {e}"})
+        dedup_svc = DedupService(db, llm)
+        resolution = await dedup_svc.resolve_conflict(
+            old_paper=old_paper,
+            new_title=new_metadata.title,
+            new_doi=new_metadata.doi,
+            new_year=new_metadata.year,
+            new_journal=new_metadata.journal,
+        )
+        resolutions.append({"conflict_id": conflict_id, **resolution})
 
     return ApiResponse(data=resolutions)

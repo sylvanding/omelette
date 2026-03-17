@@ -4,16 +4,10 @@ from __future__ import annotations
 
 import logging
 
+from app.prompts.completion import COMPLETION_SYSTEM
 from app.services.llm.client import LLMClient, get_llm_client
 
 logger = logging.getLogger(__name__)
-
-COMPLETION_SYSTEM_PROMPT = (
-    "你是一个科研写作助手。根据用户已输入的文本，预测并补全后续内容。\n"
-    "只返回补全的部分（不要重复用户已输入的内容），最多50个字符。\n"
-    "如果无法合理预测，返回空字符串。\n"
-    "不要添加任何解释、引号或格式标记，只返回纯文本补全内容。"
-)
 
 
 class CompletionService:
@@ -38,7 +32,7 @@ class CompletionService:
             return {"completion": "", "confidence": 0.0}
 
         messages: list[dict[str, str]] = [
-            {"role": "system", "content": COMPLETION_SYSTEM_PROMPT},
+            {"role": "system", "content": COMPLETION_SYSTEM},
         ]
 
         if recent_messages:

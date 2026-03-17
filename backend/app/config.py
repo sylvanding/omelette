@@ -65,28 +65,43 @@ class Settings(BaseSettings):
 
     # Embedding
     embedding_provider: str = "local"  # local | api | mock
-    embedding_model: str = "BAAI/bge-m3"
+    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
     embedding_api_key: str = ""
-    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    reranker_model: str = "tomaarsen/Qwen3-Reranker-0.6B-seq-cls"
 
     # OCR
     ocr_lang: str = "ch"  # PaddleOCR language: ch (Chinese+English) | en (English only)
 
     # PDF Parsing / MinerU
-    pdf_parser: str = "auto"  # auto | mineru | pdfplumber
+    pdf_parser: str = "mineru"  # auto | mineru | pdfplumber
     mineru_api_url: str = "http://localhost:8010"
     mineru_backend: str = "pipeline"  # pipeline | hybrid-auto-engine | vlm-auto-engine
-    mineru_timeout: int = 300
+    mineru_timeout: int = 8000
 
     # Dedup thresholds
     dedup_title_hard_threshold: float = 0.90
     dedup_title_llm_threshold: float = 0.80
 
+    # Concurrency limits
+    max_upload_size_mb: int = Field(default=50, ge=1, le=500)
+    rate_limit: str = Field(default="120/minute", description="API rate limit")
+    clean_semaphore_limit: int = Field(default=3, ge=1)
+    rewrite_semaphore_limit: int = Field(default=3, ge=1)
+    llm_parallel_limit: int = Field(default=5, ge=1, description="Max parallel LLM calls for batch operations")
+
+    # RAG retrieval
+    rag_default_top_k: int = Field(default=10, ge=1, le=100, description="Default retrieval top-k")
+    rag_oversample_factor: int = Field(default=3, ge=1, le=10, description="Multiplier for oversampling before rerank")
+    rag_mmr_threshold: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="MMR diversity threshold (0=max diversity, 1=max relevance)"
+    )
+    reranker_concurrency_limit: int = Field(default=1, ge=1, le=4, description="Max concurrent reranker calls")
+
     # LangGraph
     langgraph_checkpoint_dir: str = ""
 
     # GPU
-    cuda_visible_devices: str = "0,3"
+    cuda_visible_devices: str = "5,6,7"
 
     # Network Proxy
     http_proxy: str = ""

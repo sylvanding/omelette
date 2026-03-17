@@ -1,10 +1,10 @@
 """Project CRUD API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_or_404
 from app.models import Keyword, Paper, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
@@ -94,9 +94,7 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
 
 @router.get("/{project_id}", response_model=ApiResponse[ProjectRead])
 async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))).scalar() or 0
     kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == project_id))).scalar() or 0
     return ApiResponse(
@@ -116,9 +114,7 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{project_id}", response_model=ApiResponse[ProjectRead])
 async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(project, key, value)
     await db.flush()
@@ -142,9 +138,7 @@ async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession 
 
 @router.delete("/{project_id}", response_model=ApiResponse)
 async def delete_project(project_id: int, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     await db.delete(project)
     return ApiResponse(message="Project deleted")
 
@@ -152,9 +146,7 @@ async def delete_project(project_id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict])
 async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the crawl → OCR → index pipeline for all pending papers."""
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    await get_or_404(db, Project, project_id, detail="Project not found")
     svc = PipelineService(db)
     result = await svc.process_project_pending(project_id)
     return ApiResponse(data=result)
@@ -163,12 +155,8 @@ async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
 @router.post("/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict])
 async def run_paper_pipeline(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the pipeline for a single paper."""
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found in this project")
+    await get_or_404(db, Project, project_id, detail="Project not found")
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found in this project")
     svc = PipelineService(db)
     result = await svc.process_paper(paper_id)
     return ApiResponse(data=result)

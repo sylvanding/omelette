@@ -8,11 +8,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["120/minute"],
+    default_limits=[settings.rate_limit],
     storage_uri="memory://",
 )
 
@@ -22,4 +24,4 @@ def setup_rate_limiting(app: FastAPI) -> None:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
-    logger.info("Rate limiting enabled (default: 120/min)")
+    logger.info("Rate limiting enabled (default: %s)", settings.rate_limit)

@@ -9,6 +9,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Paper, PaperStatus
+from app.prompts.dedup import DEDUP_RESOLVE_SYSTEM, DEDUP_VERIFY_SYSTEM
 from app.services.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -219,12 +220,57 @@ Return JSON: {{"is_duplicate": true/false, "confidence": 0.0-1.0, "reason": "...
 
         result = await self.llm.chat_json(
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a scientific literature deduplication expert. Return valid JSON only.",
-                },
+                {"role": "system", "content": DEDUP_VERIFY_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             task_type="dedup_check",
         )
         return result
+
+    async def resolve_conflict(
+        self,
+        old_paper: Paper,
+        new_title: str,
+        new_doi: str | None,
+        new_year: int | None,
+        new_journal: str | None,
+    ) -> dict:
+        """Use LLM to decide how to resolve a duplicate conflict."""
+        if not self.llm:
+            return {"action": "keep_new", "reason": "LLM not available, defaulting to keep_new"}
+
+        prompt = f"""Two papers may be duplicates. Decide the best resolution:
+
+Existing paper (in DB):
+- ID: {old_paper.id}
+- Title: {old_paper.title}
+- DOI: {old_paper.doi or "N/A"}
+- Year: {old_paper.year}
+- Journal: {old_paper.journal}
+
+New upload:
+- Title: {new_title}
+- DOI: {new_doi or "N/A"}
+- Year: {new_year}
+- Journal: {new_journal}
+
+Return JSON: {{"action": "keep_old"|"keep_new"|"merge", "reason": "..."}}
+- keep_old: existing is better, discard new
+- keep_new: new is better or different work, add new
+- merge: combine metadata, add as new paper"""
+
+        try:
+            result = await self.llm.chat_json(
+                messages=[
+                    {"role": "system", "content": DEDUP_RESOLVE_SYSTEM},
+                    {"role": "user", "content": prompt},
+                ],
+                task_type="dedup_resolve",
+            )
+            action = result.get("action", "keep_new")
+            if action not in ("keep_old", "keep_new", "merge"):
+                action = "keep_new"
+            return {"action": action, "reason": result.get("reason", "")}
+        except Exception as e:
+            logger.warning("LLM auto-resolve failed: %s", e)
+            return {"action": "keep_new", "reason": f"Error: {e}"}
