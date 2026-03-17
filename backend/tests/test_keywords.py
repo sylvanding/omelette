@@ -58,7 +58,8 @@ async def test_list_keywords_empty(client: AsyncClient, project_id: int):
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 200
-    assert body["data"] == []
+    assert body["data"]["items"] == []
+    assert body["data"]["total"] == 0
 
 
 @pytest.mark.asyncio
@@ -80,8 +81,8 @@ async def test_list_keywords_by_level(client: AsyncClient, project_id: int):
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 200
-    assert len(body["data"]) == 2
-    assert all(k["level"] == 1 for k in body["data"])
+    assert len(body["data"]["items"]) == 2
+    assert all(k["level"] == 1 for k in body["data"]["items"])
 
 
 @pytest.mark.asyncio
@@ -114,7 +115,7 @@ async def test_delete_keyword(client: AsyncClient, project_id: int):
     assert resp.status_code == 200
 
     list_resp = await client.get(f"/api/v1/projects/{project_id}/keywords")
-    assert len(list_resp.json()["data"]) == 0
+    assert len(list_resp.json()["data"]["items"]) == 0
 
 
 @pytest.mark.asyncio
@@ -130,7 +131,7 @@ async def test_bulk_create_keywords(client: AsyncClient, project_id: int):
     assert body["data"]["created"] == 3
 
     list_resp = await client.get(f"/api/v1/projects/{project_id}/keywords")
-    assert len(list_resp.json()["data"]) == 3
+    assert len(list_resp.json()["data"]["items"]) == 3
 
 
 @pytest.mark.asyncio
