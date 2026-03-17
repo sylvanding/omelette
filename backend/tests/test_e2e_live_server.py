@@ -16,12 +16,15 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import time
 from pathlib import Path
 
 import httpx
 import pytest
+
+logger = logging.getLogger(__name__)
 
 E2E_BASE_URL = os.getenv("E2E_BASE_URL", "http://localhost:8099")
 E2E_PDF_DIR = Path(os.getenv("E2E_PDF_DIR", "/data0/djx/omelette_pdf_test"))
@@ -166,6 +169,61 @@ class TestPDFUploadAndProcessing:
         assert statuses <= {"ocr_complete", "indexed", "pdf_downloaded"}, (
             f"Papers not processed in time. Statuses: {statuses}"
         )
+
+
+class TestMinerUParsing:
+    """Verify that papers are processed via MinerU when configured."""
+
+    def test_paper_chunks_have_sections(self, client, e2e_project):
+        """MinerU chunks should have section headings (unlike pdfplumber)."""
+        r = client.get(f"/api/v1/projects/{e2e_project}/papers?page_size=1")
+        papers = r.json()["data"]["items"]
+        if not papers:
+            pytest.skip("No papers available")
+        paper_id = papers[0]["id"]
+        r = client.get(f"/api/v1/projects/{e2e_project}/papers/{paper_id}/chunks")
+        if r.status_code != 200:
+            pytest.skip(f"Chunks endpoint returned {r.status_code}")
+        chunks = r.json().get("data", {}).get("items", r.json().get("data", []))
+        if not chunks:
+            pytest.skip("No chunks for paper")
+        has_section = any(c.get("section", "") for c in chunks if isinstance(c, dict))
+        has_formula = any(c.get("has_formula", False) for c in chunks if isinstance(c, dict))
+        assert has_section or has_formula, "Expected MinerU-style chunks with sections or formulas"
+
+    def test_upload_all_pdfs(self, client, e2e_project, pdf_files):
+        """Upload all 8 test PDFs to exercise concurrent processing."""
+        with contextlib.ExitStack() as stack:
+            file_tuples = []
+            for pdf in pdf_files:
+                fh = stack.enter_context(open(pdf, "rb"))
+                file_tuples.append(("files", (pdf.name, fh, "application/pdf")))
+            r = client.post(
+                f"/api/v1/projects/{e2e_project}/papers/upload",
+                files=file_tuples,
+            )
+        assert r.status_code == 200, f"Bulk upload failed: {r.text}"
+        data = r.json()["data"]
+        assert data["total_uploaded"] >= len(pdf_files) - 4  # some may already exist
+
+    def test_wait_all_processed(self, client, e2e_project, pdf_files):
+        """Wait for all papers to reach indexed/ocr_complete (max 600s for MinerU)."""
+        deadline = time.time() + 600
+        total_expected = len(pdf_files)
+        while time.time() < deadline:
+            r = client.get(f"/api/v1/projects/{e2e_project}/papers?page_size=50")
+            papers = r.json()["data"]["items"]
+            done_count = sum(1 for p in papers if p["status"] in ("ocr_complete", "indexed"))
+            if done_count >= total_expected:
+                return
+            in_progress = sum(1 for p in papers if p["status"] == "pdf_downloaded")
+            logger.info("Processing: %d done, %d in progress, %d total", done_count, in_progress, len(papers))
+            time.sleep(10)
+        r = client.get(f"/api/v1/projects/{e2e_project}/papers?page_size=50")
+        papers = r.json()["data"]["items"]
+        statuses = {p["status"] for p in papers}
+        done = sum(1 for p in papers if p["status"] in ("ocr_complete", "indexed"))
+        assert done >= total_expected * 0.5, f"Only {done}/{total_expected} processed. Statuses: {statuses}"
 
 
 class TestRAGIndexAndQuery:

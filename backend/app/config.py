@@ -88,6 +88,12 @@ class Settings(BaseSettings):
     clean_semaphore_limit: int = Field(default=3, ge=1)
     rewrite_semaphore_limit: int = Field(default=3, ge=1)
     llm_parallel_limit: int = Field(default=5, ge=1, description="Max parallel LLM calls for batch operations")
+    ocr_parallel_limit: int = Field(
+        default=0,
+        ge=0,
+        le=16,
+        description="Max parallel OCR tasks. 0=auto (GPU count or 1 for CPU)",
+    )
 
     # RAG retrieval
     rag_default_top_k: int = Field(default=10, ge=1, le=100, description="Default retrieval top-k")
