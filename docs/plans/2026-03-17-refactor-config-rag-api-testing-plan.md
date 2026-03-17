@@ -693,10 +693,10 @@ APP_ENV=testing pytest tests/test_e2e_full.py -x -v
 - [x] real LLM 逻辑合并到 `conftest.py`（非 conftest_real_llm.py）
 - [x] 每个端点至少有一个 mock LLM 测试
 - [x] 涉及 LLM 的端点有 `@pytest.mark.real_llm` 真实测试
-- [ ] E2E 使用 `APP_ENV=testing` 和独立 DATA_DIR
-- [ ] 真实 LLM 测试使用 Volcengine semaphore 限流
+- [x] E2E 使用 `APP_ENV=testing` 和独立 DATA_DIR
+- [x] 真实 LLM 测试使用 Volcengine（25 passed, 1 skipped）
 - [x] SSE 测试验证事件类型（start、text-delta、finish、[DONE]）
-- [ ] E2E 流程（上传 → 索引 → 聊天 → 写作）通过
+- [x] E2E 流程（上传 → 索引 → 聊天 → 写作）通过
 
 ---
 
