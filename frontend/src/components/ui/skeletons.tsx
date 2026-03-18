@@ -98,15 +98,3 @@ export function SettingsSkeleton({ className }: { className?: string }) {
     </div>
   );
 }
-
-export function PageHeaderSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('flex items-center justify-between', className)}>
-      <div className="space-y-1">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <Skeleton className="h-9 w-32 rounded-md" />
-    </div>
-  );
-}

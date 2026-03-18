@@ -24,7 +24,7 @@ export default defineConfig({
           'query': ['@tanstack/react-query'],
           'ai-sdk': ['ai', '@ai-sdk/react'],
           'react-pdf': ['react-pdf'],
-          'react-force-graph': ['react-force-graph-2d'],
+          'd3': ['d3-force', 'd3-selection', 'd3-drag', 'd3-zoom', 'd3-scale'],
           'katex': ['katex'],
         },
       },

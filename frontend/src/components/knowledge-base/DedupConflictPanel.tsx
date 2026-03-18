@@ -75,7 +75,7 @@ export function DedupConflictPanel({
     }
   };
 
-  const handleKeepAll = (action: 'keep_existing' | 'keep_new') => {
+  const handleKeepAll = (action: 'keep_old' | 'keep_new') => {
     conflicts.forEach((c) => handleResolve(c.conflict_id, action));
   };
 
@@ -94,7 +94,7 @@ export function DedupConflictPanel({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleKeepAll('keep_existing')}
+            onClick={() => handleKeepAll('keep_old')}
           >
             {t('kb.dedup.keepAllExisting')}
           </Button>
@@ -134,7 +134,7 @@ export function DedupConflictPanel({
                     const oldVal = getFieldValue(conflict.old_paper, field);
                     const diff = isDifferent(
                       conflict.old_paper,
-                      conflict.new_paper as unknown as Record<string, unknown>,
+                      conflict.new_paper,
                       field
                     );
                     return (
@@ -167,12 +167,12 @@ export function DedupConflictPanel({
                 <CardContent className="space-y-2">
                   {PAPER_FIELDS.map((field) => {
                     const newVal = getFieldValue(
-                      conflict.new_paper as unknown as Record<string, unknown>,
+                      conflict.new_paper,
                       field
                     );
                     const diff = isDifferent(
                       conflict.old_paper,
-                      conflict.new_paper as unknown as Record<string, unknown>,
+                      conflict.new_paper,
                       field
                     );
                     return (
@@ -209,7 +209,7 @@ export function DedupConflictPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleResolve(conflict.conflict_id, 'keep_existing')}
+                onClick={() => handleResolve(conflict.conflict_id, 'keep_old')}
                 disabled={resolvingId === conflict.conflict_id}
               >
                 {t('kb.dedup.keepExisting')}

@@ -2,6 +2,7 @@ import type { MutableRefObject } from 'react';
 import { DefaultChatTransport } from 'ai';
 import type { OmeletteUIMessage } from '@/types/chat';
 import { getMessageText } from '@/types/chat';
+import { apiUrl } from '@/lib/api-config';
 
 export interface ChatTransportOptions {
   conversationId?: number;
@@ -22,7 +23,7 @@ export function createRefChatTransport(
   optionsRef: MutableRefObject<ChatTransportOptions>,
 ) {
   return new DefaultChatTransport<OmeletteUIMessage>({
-    api: '/api/v1/chat/stream',
+    api: apiUrl('/chat/stream'),
     prepareSendMessagesRequest({ messages, trigger }) {
       const opts = optionsRef.current;
       const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');

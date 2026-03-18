@@ -9,14 +9,17 @@ alwaysApply: false
 ## Stack
 - React 18 + TypeScript strict + Vite + TailwindCSS v4
 - shadcn/ui + Radix primitives for components
-- Framer Motion for animations
+- Framer Motion for chat animations (PlaygroundPage only)
 - react-i18next for i18n (zh/en)
-- TanStack Query for data fetching, Zustand for client state
+- TanStack Query for data fetching
 - lucide-react for icons, axios for HTTP
+- D3.js (submodule imports) for citation graph
 
 ## Conventions
 - Import alias `@/` maps to `frontend/src/`
 - API client at `@/lib/api.ts`, typed services at `@/services/api.ts`
+- API URLs: use `apiUrl()` / `wsUrl()` from `@/lib/api-config.ts` — never hardcode `/api/v1/`
+- Query keys: use typed factory at `@/lib/query-keys.ts` for all TanStack Query keys
 - Types at `@/types/index.ts` must mirror backend Pydantic schemas
 - Use `cn()` from `@/lib/utils` for conditional class merging
 - Functional components only, no class components
@@ -24,7 +27,14 @@ alwaysApply: false
 - i18n keys in `@/i18n/locales/{en,zh}.json`
 - UI components from shadcn/ui at `@/components/ui/`
 
+## Layout & Components
+- Use `PageLayout` (not PageHeader) for page structure
+- Use `DataTable` for tabular data with sorting/pagination/selection
+- Use `DualSidebar` for navigation — context-aware (chat history on chat routes)
+- Use shadcn `Select`, `Tabs`, `Badge` instead of native HTML elements
+- Prefer CSS transitions over Framer Motion for non-chat pages
+
 ## CI Build
 - Type check: `npx tsc -b` (stricter than `--noEmit`, matches CI)
 - Build: `cd frontend && npm run build`
-- Dev server: port 3000 on `0.0.0.0`, proxies `/api` → backend `:8000`
+- Dev server: port 3001 on `0.0.0.0`, proxies `/api` → backend `:8000`

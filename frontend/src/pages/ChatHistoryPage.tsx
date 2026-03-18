@@ -4,15 +4,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { MessageSquare, Trash2, Search, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ListItemSkeleton } from '@/components/ui/skeletons';
-import PageHeader from '@/components/layout/PageHeader';
+import PageLayout from '@/components/layout/PageLayout';
 import { conversationApi } from '@/services/chat-api';
+import { queryKeys } from '@/lib/query-keys';
 import type { Conversation } from '@/types/chat';
 
 export default function ChatHistoryPage() {
@@ -21,7 +21,7 @@ export default function ChatHistoryPage() {
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['conversations'],
+    queryKey: queryKeys.conversations.list(),
     queryFn: () => conversationApi.list(1, 100),
   });
 
@@ -29,13 +29,13 @@ export default function ChatHistoryPage() {
     mutationFn: (id: number) => conversationApi.delete(id),
     successMessage: t('common.deleteSuccess'),
     errorMessage: t('common.deleteFailed'),
-    invalidateKeys: [['conversations']],
+    invalidateKeys: [queryKeys.conversations.list()],
   });
 
   const conversations: Conversation[] = data?.items ?? [];
   const filtered = search
     ? conversations.filter((c) =>
-        c.title.toLowerCase().includes(search.toLowerCase()),
+        c.title.toLowerCase().includes(search.toLowerCase())
       )
     : conversations;
 
@@ -54,14 +54,8 @@ export default function ChatHistoryPage() {
   };
 
   return (
-    <div className="h-full p-6">
+    <PageLayout title={t('history.title')} subtitle={t('history.subtitle')}>
       <div className="mx-auto max-w-3xl">
-        <PageHeader
-          title={t('history.title')}
-          subtitle={t('history.subtitle')}
-          className="mb-6"
-        />
-
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -81,17 +75,21 @@ export default function ChatHistoryPage() {
             <EmptyState
               icon={MessageSquare}
               title={search ? t('history.noMatch') : t('history.empty')}
-              description={search ? t('history.noMatchDesc') : t('history.emptyDesc')}
-              action={!search ? { label: t('playground.newChat'), onClick: () => navigate('/') } : undefined}
+              description={
+                search ? t('history.noMatchDesc') : t('history.emptyDesc')
+              }
+              action={
+                !search
+                  ? { label: t('playground.newChat'), onClick: () => navigate('/') }
+                  : undefined
+              }
             />
           ) : (
             <div className="space-y-2">
-              {filtered.map((conv, i) => (
-                <motion.div
+              {filtered.map((conv) => (
+                <div
                   key={conv.id}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
+                  className="transition-opacity duration-200 ease-out"
                 >
                   <Link
                     to={`/chat/${conv.id}`}
@@ -101,7 +99,9 @@ export default function ChatHistoryPage() {
                       <h3 className="truncate font-medium">{conv.title}</h3>
                       <div className="mt-1.5 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
-                          {t(`playground.toolMode.${conv.tool_mode}`, { defaultValue: conv.tool_mode })}
+                          {t(`playground.toolMode.${conv.tool_mode}`, {
+                            defaultValue: conv.tool_mode,
+                          })}
                         </Badge>
                         {conv.model && (
                           <Badge variant="outline" className="text-xs">
@@ -113,14 +113,19 @@ export default function ChatHistoryPage() {
                           {formatDate(conv.updated_at)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {t('history.messageCount', { count: conv.message_count ?? conv.messages?.length ?? 0 })}
+                          {t('history.messageCount', {
+                            count: conv.message_count ?? conv.messages?.length ?? 0,
+                          })}
                         </span>
                       </div>
                     </div>
                     <ConfirmDialog
                       trigger={
                         <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           disabled={deleteMutation.isPending}
                           className="ml-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
                         >
@@ -135,12 +140,12 @@ export default function ChatHistoryPage() {
                       destructive
                     />
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
         </ScrollArea>
       </div>
-    </div>
+    </PageLayout>
   );
 }

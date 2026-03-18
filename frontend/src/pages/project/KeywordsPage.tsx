@@ -36,7 +36,7 @@ export default function KeywordsPage() {
   const { data: keywordsData, isLoading } = useQuery({
     queryKey: ['keywords', pid, activeLevel === 'all' ? undefined : activeLevel],
     queryFn: () =>
-      keywordApi.list(pid, activeLevel === 'all' ? undefined : activeLevel),
+      keywordApi.list(pid, activeLevel === 'all' ? undefined : { level: activeLevel }),
     enabled: !!pid,
   });
 
@@ -88,7 +88,7 @@ export default function KeywordsPage() {
     enabled: !!pid,
   });
 
-  const keywords: Keyword[] = keywordsData ?? [];
+  const keywords: Keyword[] = keywordsData?.items ?? [];
   const formula = formulaQuery.data?.formula ?? '';
 
   const handleAddKeyword = (e: React.FormEvent) => {

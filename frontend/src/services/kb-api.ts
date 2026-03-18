@@ -15,7 +15,7 @@ export interface NewPaperData {
 export interface DedupConflictPair {
   conflict_id: string;
   old_paper: Record<string, unknown>;
-  new_paper: NewPaperData;
+  new_paper: Record<string, unknown>;
   reason: string;
   similarity: number | null;
 }
@@ -59,13 +59,11 @@ export const kbApi = {
     sources: string[],
     maxResults: number
   ) =>
-    api.post<{ papers: Paper[]; imported: number }>(`/projects/${projectId}/search/execute`, null, {
-      params: {
-        query,
-        sources,
-        max_results: maxResults,
-        auto_import: false,
-      },
+    api.post<{ papers: Paper[]; imported: number }>(`/projects/${projectId}/search/execute`, {
+      query,
+      sources,
+      max_results: maxResults,
+      auto_import: false,
     }).then(r => r.data),
 
   bulkImport: (projectId: number, papers: NewPaperData[]) =>

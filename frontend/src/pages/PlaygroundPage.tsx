@@ -17,9 +17,6 @@ import {
 } from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubbleV2 from '@/components/playground/MessageBubbleV2';
-import ChatHistorySidebar from '@/components/playground/ChatHistorySidebar';
-import { useSidebarCollapsed } from '@/components/playground/sidebar-utils';
-import { SidebarToggleButton } from '@/components/playground/SidebarToggleButton';
 import { conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import { useChatStream } from '@/hooks/use-chat-stream';
@@ -33,7 +30,6 @@ export default function PlaygroundPage() {
   const [toolModeOverride, setToolModeOverride] = useState<ToolMode | null>(null);
   const [selectedKBsOverride, setSelectedKBsOverride] = useState<number[] | null>(null);
   const [newConversationId, setNewConversationId] = useState<number | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
@@ -172,19 +168,10 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="flex h-full">
-      <ChatHistorySidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        currentConversationId={conversationId}
-        onSelectConversation={(id) => navigate(`/chat/${id}`)}
-        onNewChat={handleNewChat}
-      />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Top bar */}
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
         <div className="flex items-center gap-2">
-          <SidebarToggleButton collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
           <h1 className="text-lg font-semibold">{t('playground.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -258,10 +245,10 @@ export default function PlaygroundPage() {
 
               <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
                 {([
-                  { text: t('playground.suggestions.summarize'), icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
-                  { text: t('playground.suggestions.citation'), icon: Quote, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-                  { text: t('playground.suggestions.outline'), icon: List, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10' },
-                  { text: t('playground.suggestions.gap'), icon: Target, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10' },
+                  { text: t('playground.suggestions.summarize'), icon: BookOpen, color: 'text-blue-700 dark:text-blue-300', gradient: 'from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40' },
+                  { text: t('playground.suggestions.citation'), icon: Quote, color: 'text-emerald-700 dark:text-emerald-300', gradient: 'from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40' },
+                  { text: t('playground.suggestions.outline'), icon: List, color: 'text-violet-700 dark:text-violet-300', gradient: 'from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40' },
+                  { text: t('playground.suggestions.gap'), icon: Target, color: 'text-rose-700 dark:text-rose-300', gradient: 'from-rose-50 to-pink-50 dark:from-rose-950/40 dark:to-pink-950/40' },
                 ] as const).map((item) => (
                   <motion.button
                     key={item.text}
@@ -269,12 +256,12 @@ export default function PlaygroundPage() {
                     disabled={isStreaming}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-md dark:hover:bg-muted/40"
+                    className={`flex items-start gap-3 rounded-xl border border-border/50 bg-linear-to-br ${item.gradient} p-4 text-left transition-all hover:border-primary/30 hover:shadow-md`}
                   >
-                    <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
+                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/60 dark:bg-white/10">
                       <item.icon className={`size-4 ${item.color}`} />
                     </div>
-                    <span className="text-sm text-muted-foreground leading-relaxed">{item.text}</span>
+                    <span className="text-sm text-foreground/80 leading-relaxed">{item.text}</span>
                   </motion.button>
                 ))}
               </div>
@@ -336,7 +323,6 @@ export default function PlaygroundPage() {
             {t('playground.disclaimer')}
           </p>
         </div>
-      </div>
       </div>
     </div>
   );

@@ -15,8 +15,8 @@ describe('WritingPage', () => {
     renderWithProviders(<WritingPage />);
 
     await waitFor(() => {
-      const buttons = screen.getAllByRole('button');
-      expect(buttons.length).toBeGreaterThanOrEqual(4);
+      const tabs = screen.getAllByRole('tab');
+      expect(tabs.length).toBeGreaterThanOrEqual(4);
     });
   });
 
