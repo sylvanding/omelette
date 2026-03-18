@@ -1,7 +1,7 @@
 ---
 title: "refactor(backend): 全面代码审核改进 — 48 项修复"
 type: refactor
-status: active
+status: completed
 date: 2026-03-18
 origin: docs/brainstorms/2026-03-18-backend-comprehensive-review-brainstorm.md
 ---
