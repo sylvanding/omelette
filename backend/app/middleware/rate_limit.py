@@ -16,6 +16,7 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=[settings.rate_limit],
     storage_uri="memory://",
+    enabled=settings.app_env != "testing",
 )
 
 

@@ -66,19 +66,19 @@ class SettingsUpdateSchema(BaseModel):
     llm_temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     llm_max_tokens: int | None = Field(default=None, ge=1, le=128000)
 
-    openai_api_key: str | None = None
-    openai_model: str | None = None
+    openai_api_key: str | None = Field(default=None, max_length=500)
+    openai_model: str | None = Field(default=None, max_length=200)
 
-    anthropic_api_key: str | None = None
-    anthropic_model: str | None = None
+    anthropic_api_key: str | None = Field(default=None, max_length=500)
+    anthropic_model: str | None = Field(default=None, max_length=200)
 
-    aliyun_api_key: str | None = None
-    aliyun_base_url: str | None = None
-    aliyun_model: str | None = None
+    aliyun_api_key: str | None = Field(default=None, max_length=500)
+    aliyun_base_url: str | None = Field(default=None, max_length=500)
+    aliyun_model: str | None = Field(default=None, max_length=200)
 
-    volcengine_api_key: str | None = None
-    volcengine_base_url: str | None = None
-    volcengine_model: str | None = None
+    volcengine_api_key: str | None = Field(default=None, max_length=500)
+    volcengine_base_url: str | None = Field(default=None, max_length=500)
+    volcengine_model: str | None = Field(default=None, max_length=200)
 
-    ollama_base_url: str | None = None
-    ollama_model: str | None = None
+    ollama_base_url: str | None = Field(default=None, max_length=500)
+    ollama_model: str | None = Field(default=None, max_length=200)

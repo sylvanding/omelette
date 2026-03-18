@@ -260,7 +260,7 @@ async def test_llm_verify_duplicate_with_patched_response(client: AsyncClient, p
 
     mock_result = {"is_duplicate": True, "confidence": 0.95, "reason": "Same DOI and title"}
 
-    with patch("app.services.llm_client.LLMClient.chat_json", new_callable=AsyncMock) as mock_chat:
+    with patch("app.services.llm.client.LLMClient.chat_json", new_callable=AsyncMock) as mock_chat:
         mock_chat.return_value = mock_result
 
         resp = await client.post(

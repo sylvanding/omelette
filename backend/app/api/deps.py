@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Base, get_session
 from app.models import Project
-from app.services.llm_client import LLMClient, get_llm_client
+from app.services.llm.client import LLMClient, get_llm_client
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

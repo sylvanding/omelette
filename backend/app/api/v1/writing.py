@@ -1,6 +1,6 @@
 """Writing assistance API endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_llm, get_project
 from app.models import Project
 from app.schemas.common import ApiResponse
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
 from app.services.writing_service import WritingService
 
@@ -86,10 +86,9 @@ async def writing_assist(
         result = await svc.analyze_gaps(project_id=project_id, research_topic=topic)
         content = result["analysis"]
     else:
-        return ApiResponse(
-            code=400,
-            message=f"Unknown task: {body.task}. Use summarize, cite, review_outline, or gap_analysis.",
-            data=WritingAssistResponse(content="", citations=[], suggestions=[]),
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown task: {body.task}. Use summarize, cite, review_outline, or gap_analysis.",
         )
 
     return ApiResponse(

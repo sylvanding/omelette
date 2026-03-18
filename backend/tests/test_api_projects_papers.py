@@ -506,7 +506,7 @@ class TestUploadAPI:
         )
         assert resp.status_code == 422
         body = resp.json()
-        assert "empty" in body.get("detail", "").lower()
+        assert "empty" in body.get("message", "").lower()
 
     @pytest.mark.asyncio
     async def test_upload_file_exceeds_size_limit_413(

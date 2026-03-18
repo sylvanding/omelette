@@ -1,12 +1,14 @@
 """OCR processing API endpoints."""
 
+import asyncio
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperChunk, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.services.ocr_service import OCRService
@@ -17,7 +19,9 @@ router = APIRouter(prefix="/projects/{project_id}/ocr", tags=["ocr"])
 
 
 @router.post("/process", response_model=ApiResponse[dict])
+@limiter.limit("5/minute")
 async def process_ocr(
+    request: Request,
     project_id: int,
     paper_ids: list[int] | None = None,
     force_ocr: bool = False,
@@ -51,7 +55,7 @@ async def process_ocr(
             continue
 
         try:
-            ocr_result = service.process_pdf(paper.pdf_path, force_ocr=force_ocr)
+            ocr_result = await asyncio.to_thread(service.process_pdf, paper.pdf_path, force_ocr=force_ocr)
 
             if ocr_result.get("error"):
                 failed += 1

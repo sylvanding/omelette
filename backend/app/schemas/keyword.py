@@ -40,9 +40,9 @@ class KeywordRead(BaseModel):
 
 
 class KeywordExpandRequest(BaseModel):
-    seed_terms: list[str]
-    language: str = "en"
-    max_results: int = 20
+    seed_terms: list[str] = Field(..., max_length=50)
+    language: str = Field(default="en", max_length=10)
+    max_results: int = Field(default=20, ge=1, le=100)
 
 
 class KeywordExpandResponse(BaseModel):

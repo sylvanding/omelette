@@ -60,7 +60,7 @@ def override_rag_dependency(rag_service):
 def mock_chat_services(monkeypatch):
     """Mock _init_services so Chat stream uses mock LLM/RAG without DB lookups."""
     import app.api.v1.chat as chat_module
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
 
     async def _mock_init_services(db):
         from app.services.rag_service import RAGService

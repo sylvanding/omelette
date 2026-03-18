@@ -26,7 +26,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         if path in EXEMPT_PATHS or any(path.startswith(p) for p in EXEMPT_PREFIXES):
             return await call_next(request)
 
-        api_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+        api_key = request.headers.get("X-API-Key")
         if api_key != settings.api_secret_key:
             return JSONResponse(
                 status_code=401,

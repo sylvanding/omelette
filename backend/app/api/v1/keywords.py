@@ -9,7 +9,7 @@ from app.models import Keyword, Project
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.keyword import KeywordCreate, KeywordExpandRequest, KeywordExpandResponse, KeywordRead, KeywordUpdate
 from app.services.keyword_service import KeywordService
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 
 router = APIRouter(prefix="/projects/{project_id}/keywords", tags=["keywords"])
 

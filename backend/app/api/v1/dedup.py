@@ -12,7 +12,7 @@ from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.schemas.knowledge_base import AutoResolveRequest, ResolveConflictRequest
 from app.services.dedup_service import DedupService
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.pdf_metadata import extract_metadata
 
 logger = logging.getLogger(__name__)

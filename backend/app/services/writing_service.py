@@ -17,7 +17,7 @@ from app.prompts.writing import (
     WRITING_SECTION_SYSTEM,
     WRITING_SUMMARIZE_SYSTEM,
 )
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)

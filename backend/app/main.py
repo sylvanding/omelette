@@ -3,7 +3,8 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -48,10 +49,36 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
+    max_age=600,
 )
 
 setup_rate_limiting(app)
 app.include_router(api_router)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Wrap HTTPException in ApiResponse format for consistent frontend handling."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.status_code, "message": exc.detail, "data": None},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Wrap Pydantic validation errors in ApiResponse format."""
+    errors = []
+    for err in exc.errors():
+        clean = {k: v for k, v in err.items() if k != "ctx"}
+        if "ctx" in err:
+            clean["ctx"] = {k: str(v) for k, v in err["ctx"].items()}
+        errors.append(clean)
+    return JSONResponse(
+        status_code=422,
+        content={"code": 422, "message": "Validation error", "data": errors},
+    )
 
 
 @app.exception_handler(Exception)
@@ -74,6 +101,12 @@ try:
     logger.info("MCP server mounted at /mcp")
 except Exception:
     logger.error("MCP server mount failed", exc_info=True)
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint — exempt from API key authentication."""
+    return ApiResponse(data={"status": "ok"})
 
 
 @app.get("/")

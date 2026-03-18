@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -12,9 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, get_llm
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperStatus
 from app.schemas.common import ApiResponse
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,9 @@ async def rag_query(
 
 
 @router.post("/index", response_model=ApiResponse[dict])
+@limiter.limit("5/minute")
 async def build_index(
+    request: Request,
     project_id: int,
     db: AsyncSession = Depends(get_db),
     rag: RAGService = Depends(get_rag_service),

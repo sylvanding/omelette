@@ -1,5 +1,6 @@
 """Automatic pipeline: crawl → OCR → index for newly added papers."""
 
+import asyncio
 import logging
 
 from sqlalchemy import select
@@ -78,7 +79,7 @@ class PipelineService:
     async def _ocr(self, paper: Paper) -> dict:
         try:
             ocr = OCRService(use_gpu=True)
-            result = ocr.process_pdf(paper.pdf_path)
+            result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
 
             if result.get("error"):
                 paper.status = PaperStatus.ERROR

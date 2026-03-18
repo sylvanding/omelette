@@ -141,10 +141,13 @@ async def trigger_subscription(
     project_id: int,
     sub_id: int,
     since_days: int = Query(7, ge=1, le=365),
+    auto_import: bool = Query(False, description="Auto-import new papers into project"),
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
     """Manually trigger a subscription update (check API for new papers)."""
+    from app.models import Paper
+
     sub = (
         await db.execute(select(Subscription).where(Subscription.id == sub_id, Subscription.project_id == project_id))
     ).scalar_one_or_none()
@@ -160,6 +163,23 @@ async def trigger_subscription(
     new_papers = result.get("new_papers", [])
     total_found = result.get("total_found", 0)
     sources_checked = result.get("sources_checked", {})
+
+    imported_count = 0
+    if auto_import and new_papers:
+        for paper_data in new_papers:
+            paper = Paper(
+                project_id=project_id,
+                title=paper_data.get("title", "Untitled"),
+                abstract=paper_data.get("abstract", ""),
+                doi=paper_data.get("doi"),
+                authors=paper_data.get("authors"),
+                year=paper_data.get("year"),
+                source=paper_data.get("source", "subscription"),
+                pdf_url=paper_data.get("pdf_url", ""),
+            )
+            db.add(paper)
+            imported_count += 1
+
     sub.last_run_at = datetime.now()
     sub.total_found = total_found
     await db.flush()
@@ -169,5 +189,6 @@ async def trigger_subscription(
             new_papers=len(new_papers),
             total_checked=total_found,
             sources_searched=list(sources_checked.keys()) if sources_checked else [],
+            imported=imported_count,
         )
     )

@@ -13,7 +13,7 @@ from app.models import Paper, Project
 from app.models.chunk import PaperChunk
 from app.schemas.chunk import ChunkRead
 from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
+from app.schemas.paper import PaperBatchDeleteRequest, PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
 router = APIRouter(tags=["papers"])
 
@@ -102,6 +102,26 @@ async def bulk_import_papers(
         created += 1
     await db.flush()
     return ApiResponse(data={"created": created, "skipped": skipped, "total": len(body.papers)})
+
+
+@router.post("/batch-delete", response_model=ApiResponse[dict])
+async def batch_delete_papers(
+    project_id: int,
+    body: PaperBatchDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Delete multiple papers at once."""
+    stmt = select(Paper).where(
+        Paper.project_id == project_id,
+        Paper.id.in_(body.paper_ids),
+    )
+    result = await db.execute(stmt)
+    papers = list(result.scalars().all())
+    for paper in papers:
+        await db.delete(paper)
+    await db.flush()
+    return ApiResponse(data={"deleted": len(papers), "requested": len(body.paper_ids)})
 
 
 @router.get("/{paper_id}", response_model=ApiResponse[PaperRead])

@@ -26,7 +26,7 @@ from llama_index.core.schema import Document, NodeRelationship, RelatedNodeInfo,
 
 from app.config import settings
 from app.prompts.rag import RAG_ANSWER_SYSTEM
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 
 if TYPE_CHECKING:
     from llama_index.core.embeddings import BaseEmbedding

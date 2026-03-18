@@ -434,7 +434,7 @@ async def test_execute_search_no_query_no_keywords(client: AsyncClient):
         params={"query": ""},
     )
     assert resp.status_code == 400
-    assert "no keywords" in resp.json()["detail"].lower()
+    assert "no keywords" in resp.json()["message"].lower()
 
 
 @pytest.mark.asyncio

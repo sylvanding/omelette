@@ -89,7 +89,7 @@ class TestConversationsAPI:
                 "title": "New Chat",
                 "knowledge_base_ids": [1, 2],
                 "model": "gpt-4o",
-                "tool_mode": "citation",
+                "tool_mode": "citation_lookup",
             },
         )
         assert resp.status_code == 200
@@ -97,7 +97,7 @@ class TestConversationsAPI:
         assert data["title"] == "New Chat"
         assert data["knowledge_base_ids"] == [1, 2]
         assert data["model"] == "gpt-4o"
-        assert data["tool_mode"] == "citation"
+        assert data["tool_mode"] == "citation_lookup"
         assert data["messages"] == []
         assert "id" in data
         assert "created_at" in data
@@ -146,12 +146,12 @@ class TestConversationsAPI:
         conv_id = create_resp.json()["data"]["id"]
         resp = await client.put(
             f"/api/v1/conversations/{conv_id}",
-            json={"title": "Updated", "tool_mode": "outline"},
+            json={"title": "Updated", "tool_mode": "review_outline"},
         )
         assert resp.status_code == 200
         data = resp.json()["data"]
         assert data["title"] == "Updated"
-        assert data["tool_mode"] == "outline"
+        assert data["tool_mode"] == "review_outline"
 
     @pytest.mark.asyncio
     async def test_update_conversation_not_found(self, client):
@@ -465,7 +465,7 @@ class TestTasksAPI:
 
         resp = await client.post(f"/api/v1/tasks/{task_id}/cancel")
         assert resp.status_code == 400
-        assert "Cannot cancel" in resp.json()["detail"]
+        assert "Cannot cancel" in resp.json()["message"]
 
     @pytest.mark.asyncio
     async def test_cancel_task_not_found(self, client):
@@ -631,7 +631,7 @@ class TestPipelinesAPI:
                 json={"resolved_conflicts": []},
             )
             assert resp.status_code == 400
-            assert "not interrupted" in resp.json()["detail"].lower()
+            assert "not interrupted" in resp.json()["message"].lower()
 
     @pytest.mark.asyncio
     async def test_cancel_pipeline(self, client, project):

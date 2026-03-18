@@ -12,8 +12,19 @@ from app.pipelines.state import PipelineState
 logger = logging.getLogger(__name__)
 
 
+def _is_cancelled(state: PipelineState) -> bool:
+    """Check if pipeline has been cancelled via the API."""
+    from app.api.v1.pipelines import _cancelled
+
+    thread_id = state.get("thread_id", "")
+    return _cancelled.get(thread_id, False) or state.get("cancelled", False)
+
+
 async def search_node(state: PipelineState) -> dict[str, Any]:
     """Run multi-source federated search."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.services.search_service import SearchService
 
     params = state.get("params", {})
@@ -34,6 +45,9 @@ async def search_node(state: PipelineState) -> dict[str, Any]:
 
 async def extract_metadata_node(state: PipelineState) -> dict[str, Any]:
     """Extract metadata from uploaded PDF files."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.services.pdf_metadata import extract_metadata
 
     params = state.get("params", {})
@@ -57,6 +71,9 @@ async def extract_metadata_node(state: PipelineState) -> dict[str, Any]:
 
 async def dedup_node(state: PipelineState) -> dict[str, Any]:
     """Check for duplicates against existing papers in the knowledge base."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.config import settings
@@ -149,6 +166,9 @@ async def hitl_dedup_node(state: PipelineState) -> dict[str, Any]:
 
 async def apply_resolution_node(state: PipelineState) -> dict[str, Any]:
     """Apply conflict resolutions and merge clean papers for import."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     resolved = state.get("resolved_conflicts", [])
     clean_papers = list(state.get("papers", []))
 
@@ -163,6 +183,9 @@ async def apply_resolution_node(state: PipelineState) -> dict[str, Any]:
 
 async def import_node(state: PipelineState) -> dict[str, Any]:
     """Import clean papers into the database."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.database import async_session_factory
     from app.models import Paper
 
@@ -193,6 +216,9 @@ async def import_node(state: PipelineState) -> dict[str, Any]:
 
 async def crawl_node(state: PipelineState) -> dict[str, Any]:
     """Download PDFs for papers that have pdf_url but no pdf_path."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory
@@ -241,6 +267,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
     Uses MinerU (if available) for deep parsing with formula/table/figure
     recognition, falling back to pdfplumber + PaddleOCR.
     """
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory
@@ -306,6 +335,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
 
 async def index_node(state: PipelineState) -> dict[str, Any]:
     """Index OCR-processed papers into the RAG vector store."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory

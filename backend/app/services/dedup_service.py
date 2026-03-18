@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Paper, PaperStatus
 from app.prompts.dedup import DEDUP_RESOLVE_SYSTEM, DEDUP_VERIFY_SYSTEM
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
 

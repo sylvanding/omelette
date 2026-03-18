@@ -72,8 +72,11 @@ async def search_knowledge_base(query: str, kb_id: int, top_k: int = 5) -> str:
     Args:
         query: The search question or keywords
         kb_id: Knowledge base ID (use list_knowledge_bases to find IDs)
-        top_k: Number of result chunks to return (default 5)
+        top_k: Number of result chunks to return (default 5, max 50)
     """
+    if top_k < 1 or top_k > 50:
+        return "Error: top_k must be between 1 and 50."
+
     from app.services.rag_service import RAGService
 
     rag = RAGService()
@@ -195,6 +198,13 @@ async def add_paper_by_doi(doi: str, kb_id: int) -> str:
         doi: The paper's DOI
         kb_id: Target knowledge base ID
     """
+    from app.services.url_validator import validate_doi
+
+    try:
+        validate_doi(doi)
+    except ValueError as e:
+        return f"Error: {e}"
+
     from sqlalchemy import select
 
     async with get_session() as db:
@@ -289,6 +299,9 @@ async def get_paper_summary(paper_id: int, summary_type: str = "abstract") -> st
         if not paper:
             return f"Error: Paper {paper_id} not found."
 
+        if summary_type not in ("abstract", "llm"):
+            return f"Error: Unknown summary type '{summary_type}'. Use 'abstract' or 'llm'."
+
         if summary_type == "abstract":
             return f"""## Paper Summary
 
@@ -315,8 +328,11 @@ async def search_papers_by_keyword(query: str, sources: str = "", max_results: i
     Args:
         query: Search keywords
         sources: Comma-separated data sources (semantic_scholar,openalex,arxiv,crossref). Empty = all.
-        max_results: Maximum number of results (default 20)
+        max_results: Maximum number of results (default 20, max 100)
     """
+    if max_results < 1 or max_results > 100:
+        return "Error: max_results must be between 1 and 100."
+
     from app.services.search_service import SearchService
 
     source_list = [s.strip() for s in sources.split(",") if s.strip()] if sources else None
@@ -348,6 +364,118 @@ async def search_papers_by_keyword(query: str, sources: str = "", max_results: i
         lines.append(f"| {title} | {authors} | {year} | {doi} | {source} |")
 
     return "\n".join(lines)
+
+
+@mcp.tool()
+async def summarize_papers(kb_id: int, paper_ids: list[int] | None = None, language: str = "en") -> str:
+    """Summarize papers in a knowledge base.
+
+    Args:
+        kb_id: Knowledge base ID
+        paper_ids: Optional list of specific paper IDs to summarize. If empty, summarizes all.
+        language: Output language (en/zh)
+    """
+    from app.services.writing_service import WritingService
+
+    svc = WritingService()
+    result = await svc.summarize(project_id=kb_id, paper_ids=paper_ids, language=language)
+    return f"## Summary\n\n{result.get('content', 'No summary generated.')}"
+
+
+@mcp.tool()
+async def generate_review_outline(kb_id: int, topic: str, language: str = "en") -> str:
+    """Generate a literature review outline based on papers in a knowledge base.
+
+    Args:
+        kb_id: Knowledge base ID
+        topic: Research topic for the review
+        language: Output language (en/zh)
+    """
+    from app.services.writing_service import WritingService
+
+    svc = WritingService()
+    result = await svc.generate_review_outline(project_id=kb_id, topic=topic, language=language)
+    return f"## Review Outline\n\n{result.get('outline', 'No outline generated.')}"
+
+
+@mcp.tool()
+async def analyze_gaps(kb_id: int, research_topic: str) -> str:
+    """Analyze research gaps in the literature of a knowledge base.
+
+    Args:
+        kb_id: Knowledge base ID
+        research_topic: The research topic to analyze gaps for
+    """
+    from app.services.writing_service import WritingService
+
+    svc = WritingService()
+    result = await svc.analyze_gaps(project_id=kb_id, research_topic=research_topic)
+    return f"## Gap Analysis\n\n{result.get('analysis', 'No gap analysis generated.')}"
+
+
+@mcp.tool()
+async def manage_keywords(kb_id: int, action: str = "list", term: str = "", language: str = "en") -> str:
+    """Manage keywords for a knowledge base — list, add, expand, or delete.
+
+    Args:
+        kb_id: Knowledge base ID
+        action: One of: list, add, expand, delete
+        term: Keyword term (required for add/expand/delete)
+        language: Language for keyword expansion (en/zh)
+    """
+    if action not in ("list", "add", "expand", "delete"):
+        return "Error: action must be one of: list, add, expand, delete."
+
+    from sqlalchemy import select
+
+    from app.models.keyword import Keyword
+
+    if action == "list":
+        async with get_session() as db:
+            stmt = select(Keyword).where(Keyword.project_id == kb_id).order_by(Keyword.level, Keyword.term)
+            result = await db.execute(stmt)
+            keywords = result.scalars().all()
+        if not keywords:
+            return "No keywords found in this knowledge base."
+        lines = ["## Keywords\n", "| Term | EN | Level | Category |", "|---|---|---|---|"]
+        for kw in keywords:
+            lines.append(f"| {kw.term} | {kw.term_en} | {kw.level} | {kw.category} |")
+        return "\n".join(lines)
+
+    if not term:
+        return f"Error: 'term' is required for action '{action}'."
+
+    if action == "add":
+        async with get_session() as db:
+            kw = Keyword(project_id=kb_id, term=term, level=1)
+            db.add(kw)
+            await db.flush()
+        return f"Added keyword: {term}"
+
+    if action == "expand":
+        from app.services.keyword_service import KeywordService
+
+        svc = KeywordService()
+        result = await svc.expand_keywords([term], language=language)
+        expanded = result.get("expanded_terms", [])
+        if not expanded:
+            return "No expanded terms found."
+        lines = [f"## Expanded from: {term}\n"]
+        for et in expanded:
+            lines.append(f"- {et.get('term', '')} ({et.get('relation', '')})")
+        return "\n".join(lines)
+
+    if action == "delete":
+        async with get_session() as db:
+            stmt = select(Keyword).where(Keyword.project_id == kb_id, Keyword.term == term)
+            result = await db.execute(stmt)
+            kw = result.scalar_one_or_none()
+            if not kw:
+                return f"Keyword '{term}' not found."
+            await db.delete(kw)
+        return f"Deleted keyword: {term}"
+
+    return "Unknown action."
 
 
 # ==================== RESOURCES ====================

@@ -80,6 +80,13 @@ class CrawlerService:
 
     async def _download_pdf(self, url: str, paper: Paper) -> dict:
         """Download a PDF from a URL and save to disk."""
+        from app.services.url_validator import validate_url_safe
+
+        try:
+            validate_url_safe(url)
+        except ValueError as e:
+            return {"success": False, "error": f"URL blocked: {e}"}
+
         proxy = _get_proxy()
         timeout = httpx.Timeout(60.0, connect=15.0)
 
@@ -93,6 +100,10 @@ class CrawlerService:
                 pdf_url = best_oa.get("url_for_pdf") or best_oa.get("url") if best_oa else None
                 if not pdf_url:
                     return {"success": False, "error": "No open access PDF found"}
+                try:
+                    validate_url_safe(pdf_url)
+                except ValueError as e:
+                    return {"success": False, "error": f"Resolved URL blocked: {e}"}
                 url = pdf_url
 
             # Download the actual PDF

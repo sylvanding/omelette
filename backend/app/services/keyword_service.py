@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Keyword
 from app.prompts.keyword import KEYWORD_EXPAND_SYSTEM
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
 

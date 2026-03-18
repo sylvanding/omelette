@@ -7,12 +7,13 @@ import logging
 import uuid
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.middleware.rate_limit import limiter
 from app.pipelines.chat.graph import create_chat_pipeline
 from app.pipelines.chat.stream_writer import (
     format_done,
@@ -103,13 +104,15 @@ async def _stream_chat(
 
 
 @router.post("/stream")
+@limiter.limit("30/minute")
 async def chat_stream(
-    request: ChatStreamRequest,
+    request: Request,
+    body: ChatStreamRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Data Stream Protocol (Vercel AI SDK 5.0) chat endpoint."""
     return StreamingResponse(
-        _stream_chat(request, db),
+        _stream_chat(body, db),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
