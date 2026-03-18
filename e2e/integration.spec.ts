@@ -44,7 +44,7 @@ test.describe('Project Management', () => {
     await page.goto('/knowledge-bases');
     await page.waitForLoadState('networkidle');
 
-    const createBtn = page.getByRole('button', { name: /new|create|新建/i }).first();
+    const createBtn = page.getByRole('button', { name: /new knowledge base|新建知识库/i }).first();
     if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await createBtn.click();
       await page.waitForTimeout(500);
