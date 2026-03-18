@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Plus, Trash2, BookOpen, FileText, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +18,8 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CardSkeleton } from '@/components/ui/skeletons';
-import PageHeader from '@/components/layout/PageHeader';
+import PageLayout from '@/components/layout/PageLayout';
+import { queryKeys } from '@/lib/query-keys';
 import { projectApi } from '@/services/api';
 import type { Project } from '@/types';
 
@@ -31,7 +31,7 @@ export default function KnowledgeBasesPage() {
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['projects'],
+    queryKey: queryKeys.projects.all,
     queryFn: () => projectApi.list(1, 100),
   });
 
@@ -40,7 +40,7 @@ export default function KnowledgeBasesPage() {
       projectApi.create(body),
     successMessage: t('common.createSuccess'),
     errorMessage: t('common.createFailed'),
-    invalidateKeys: [['projects']],
+    invalidateKeys: [queryKeys.projects.all],
     onSuccess: () => {
       setShowCreate(false);
       setName('');
@@ -52,7 +52,7 @@ export default function KnowledgeBasesPage() {
     mutationFn: (id: number) => projectApi.delete(id),
     successMessage: t('common.deleteSuccess'),
     errorMessage: t('common.deleteFailed'),
-    invalidateKeys: [['projects']],
+    invalidateKeys: [queryKeys.projects.all],
   });
 
   const projects: Project[] = data?.items ?? [];
@@ -74,20 +74,17 @@ export default function KnowledgeBasesPage() {
   };
 
   return (
-    <div className="h-full p-6">
+    <PageLayout
+      title={t('kb.title')}
+      subtitle={t('kb.subtitle')}
+      action={
+        <Button onClick={() => setShowCreate(true)} className="gap-1.5">
+          <Plus className="size-4" />
+          {t('kb.new')}
+        </Button>
+      }
+    >
       <div className="mx-auto max-w-5xl">
-        <PageHeader
-          title={t('kb.title')}
-          subtitle={t('kb.subtitle')}
-          action={
-            <Button onClick={() => setShowCreate(true)} className="gap-1.5">
-              <Plus className="size-4" />
-              {t('kb.new')}
-            </Button>
-          }
-          className="mb-6"
-        />
-
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -111,16 +108,14 @@ export default function KnowledgeBasesPage() {
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((project, i) => (
-              <motion.div
+            {filtered.map((project) => (
+              <div
                 key={project.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                className="animate-in fade-in duration-300 transition-all"
               >
                 <Link
                   to={`/projects/${project.id}`}
-                  className="group relative block rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-md"
+                  className="group relative block rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
                 >
                   <ConfirmDialog
                     trigger={
@@ -156,7 +151,7 @@ export default function KnowledgeBasesPage() {
                     </Badge>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
@@ -200,6 +195,6 @@ export default function KnowledgeBasesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   );
 }

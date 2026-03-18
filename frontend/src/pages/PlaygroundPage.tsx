@@ -258,10 +258,10 @@ export default function PlaygroundPage() {
 
               <div className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
                 {([
-                  { text: t('playground.suggestions.summarize'), icon: BookOpen, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
-                  { text: t('playground.suggestions.citation'), icon: Quote, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-                  { text: t('playground.suggestions.outline'), icon: List, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10' },
-                  { text: t('playground.suggestions.gap'), icon: Target, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10' },
+                  { text: t('playground.suggestions.summarize'), icon: BookOpen, color: 'text-blue-700 dark:text-blue-300', gradient: 'from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40' },
+                  { text: t('playground.suggestions.citation'), icon: Quote, color: 'text-emerald-700 dark:text-emerald-300', gradient: 'from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40' },
+                  { text: t('playground.suggestions.outline'), icon: List, color: 'text-violet-700 dark:text-violet-300', gradient: 'from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40' },
+                  { text: t('playground.suggestions.gap'), icon: Target, color: 'text-rose-700 dark:text-rose-300', gradient: 'from-rose-50 to-pink-50 dark:from-rose-950/40 dark:to-pink-950/40' },
                 ] as const).map((item) => (
                   <motion.button
                     key={item.text}
@@ -269,12 +269,12 @@ export default function PlaygroundPage() {
                     disabled={isStreaming}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-md dark:hover:bg-muted/40"
+                    className={`flex items-start gap-3 rounded-xl border border-border/50 bg-gradient-to-br ${item.gradient} p-4 text-left transition-all hover:border-primary/30 hover:shadow-md`}
                   >
-                    <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${item.bg}`}>
+                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/60 dark:bg-white/10">
                       <item.icon className={`size-4 ${item.color}`} />
                     </div>
-                    <span className="text-sm text-muted-foreground leading-relaxed">{item.text}</span>
+                    <span className="text-sm text-foreground/80 leading-relaxed">{item.text}</span>
                   </motion.button>
                 ))}
               </div>

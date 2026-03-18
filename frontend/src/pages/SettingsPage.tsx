@@ -11,13 +11,13 @@ import {
   Server,
   Key,
   Brain,
+  Activity,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SettingsSkeleton } from '@/components/ui/skeletons';
-import PageHeader from '@/components/layout/PageHeader';
-import { staggerContainer, staggerItem } from '@/lib/motion';
+import PageLayout from '@/components/layout/PageLayout';
+import { queryKeys } from '@/lib/query-keys';
 import {
   Select,
   SelectContent,
@@ -54,15 +54,24 @@ export default function SettingsPage() {
   } | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['settings'],
+    queryKey: queryKeys.settings.all(),
     queryFn: () => settingsApi.get(),
+  });
+
+  const {
+    data: healthData,
+    isLoading: healthLoading,
+    isError: healthError,
+  } = useQuery({
+    queryKey: queryKeys.settings.health(),
+    queryFn: () => settingsApi.health(),
   });
 
   const updateMutation = useToastMutation({
     mutationFn: (data: Record<string, unknown>) => settingsApi.update(data),
     successMessage: t('common.saveSuccess'),
     errorMessage: t('common.saveFailed'),
-    invalidateKeys: [['settings']],
+    invalidateKeys: [queryKeys.settings.all()],
   });
 
   const testMutation = useToastMutation({
@@ -134,28 +143,11 @@ export default function SettingsPage() {
     </Button>
   );
 
-  if (isLoading) {
-    return (
-      <div className="h-full overflow-y-auto p-6">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} action={saveButton} />
-          <SettingsSkeleton />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full overflow-y-auto p-6">
-      <motion.div
-        className="mx-auto max-w-3xl space-y-6"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} action={saveButton} />
-
-        <motion.div variants={staggerItem}>
+  const content = isLoading ? (
+    <SettingsSkeleton />
+  ) : (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="space-y-6 transition-opacity duration-300">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -243,11 +235,11 @@ export default function SettingsPage() {
             )}
             {currentProvider === 'ollama' && (
               <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">
-                  <Server className="mr-1 inline size-3.5" />
-                  {t('settings.serverUrl')}
-                </label>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">
+                    <Server className="mr-1 inline size-3.5" />
+                    {t('settings.serverUrl')}
+                  </label>
                   <Input
                     value={form.ollama_base_url ?? ''}
                     onChange={(e) => updateField('ollama_base_url', e.target.value)}
@@ -306,9 +298,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        </motion.div>
-
-        <motion.div variants={staggerItem}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -350,13 +339,59 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        </motion.div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="size-5" />
+              {t('settings.systemHealth')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                {t('common.loading')}
+              </div>
+            ) : healthError || !healthData ? (
+              <Badge variant="destructive" className="gap-1">
+                <XCircle className="size-3" />
+                {t('settings.healthError')}
+              </Badge>
+            ) : (
+              <Badge
+                variant={
+                  (healthData as { status?: string }).status === 'ok' ? 'default' : 'destructive'
+                }
+                className="gap-1"
+              >
+                {(healthData as { status?: string }).status === 'ok' ? (
+                  <CheckCircle2 className="size-3" />
+                ) : (
+                  <XCircle className="size-3" />
+                )}
+                {(healthData as { status?: string }).status === 'ok'
+                  ? t('settings.healthOk')
+                  : t('settings.healthError')}
+              </Badge>
+            )}
+          </CardContent>
+        </Card>
 
         <p className="text-xs text-muted-foreground">
           {t('settings.envHint')}
         </p>
-      </motion.div>
+      </div>
     </div>
+  );
+
+  return (
+    <PageLayout
+      title={t('settings.title')}
+      subtitle={t('settings.subtitle')}
+      action={saveButton}
+    >
+      {content}
+    </PageLayout>
   );
 }
 

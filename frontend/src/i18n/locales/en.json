@@ -250,7 +250,10 @@
       "mock": "Mock (Test)",
       "local": "Local GPU/CPU",
       "api": "API"
-    }
+    },
+    "systemHealth": "System Health",
+    "healthOk": "Healthy",
+    "healthError": "Unhealthy"
   },
   "project": {
     "overview": "Overview",

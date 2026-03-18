@@ -250,7 +250,10 @@
       "mock": "Mock（测试）",
       "local": "本地 GPU/CPU",
       "api": "API"
-    }
+    },
+    "systemHealth": "系统健康",
+    "healthOk": "正常",
+    "healthError": "异常"
   },
   "project": {
     "overview": "概览",

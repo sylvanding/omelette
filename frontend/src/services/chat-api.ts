@@ -30,8 +30,11 @@ export const settingsApi = {
     api.put<Record<string, unknown>>('/settings', data).then(r => r.data),
 
   listModels: () =>
-    api.get<Record<string, unknown>>('/settings/models').then(r => r.data),
+    api.get<Array<Record<string, unknown>>>('/settings/models').then(r => r.data),
 
   testConnection: () =>
     api.post<{ success: boolean; response?: string; error?: string }>('/settings/test-connection').then(r => r.data),
+
+  health: () =>
+    api.get<Record<string, unknown>>('/settings/health').then(r => r.data),
 };

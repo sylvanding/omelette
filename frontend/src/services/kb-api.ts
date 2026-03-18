@@ -59,13 +59,11 @@ export const kbApi = {
     sources: string[],
     maxResults: number
   ) =>
-    api.post<{ papers: Paper[]; imported: number }>(`/projects/${projectId}/search/execute`, null, {
-      params: {
-        query,
-        sources,
-        max_results: maxResults,
-        auto_import: false,
-      },
+    api.post<{ papers: Paper[]; imported: number }>(`/projects/${projectId}/search/execute`, {
+      query,
+      sources,
+      max_results: maxResults,
+      auto_import: false,
     }).then(r => r.data),
 
   bulkImport: (projectId: number, papers: NewPaperData[]) =>
