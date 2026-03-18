@@ -151,7 +151,6 @@ class MinerUProcessManager:
             "run",
             "-n",
             env_name,
-            "--no-banner",
             "python",
             "-m",
             "mineru.cli.fast_api",
