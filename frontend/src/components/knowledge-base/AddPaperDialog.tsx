@@ -253,7 +253,7 @@ export function AddPaperDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>{t('kb.addPaper.title')}</DialogTitle>
         </DialogHeader>
@@ -377,7 +377,7 @@ export function AddPaperDialog({
                       {files.map((file, i) => (
                         <li
                           key={`${file.name}-${i}`}
-                          className="flex items-center gap-2 overflow-hidden rounded px-2 py-1.5 text-sm hover:bg-muted/50"
+                          className="flex min-w-0 items-center gap-2 overflow-hidden rounded px-2 py-1.5 text-sm hover:bg-muted/50"
                         >
                           <FileText className="size-4 shrink-0 text-muted-foreground" />
                           <span
