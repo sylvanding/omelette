@@ -60,7 +60,7 @@ Omelette 覆盖科研文献全流程自动化 — 从关键词管理、多源检
   Unpaywall、arXiv、直链多通道下载，智能回退策略。
 
   **📝 OCR 解析**
-  pdfplumber 原生文本提取，PaddleOCR GPU 加速处理扫描件。
+  MinerU（自动管理子进程）或 pdfplumber 原生提取，PaddleOCR GPU 加速处理扫描件。
 
   **🧠 RAG 知识库**
   LlamaIndex 引擎，ChromaDB 向量存储，GPU 感知嵌入，混合检索，带引用回答。
@@ -69,7 +69,10 @@ Omelette 覆盖科研文献全流程自动化 — 从关键词管理、多源检
   论文摘要、引用生成（GB/T 7714、APA、MLA）、综述提纲、缺口分析。
 
   **🔄 LangGraph 流水线**
-  流水线编排，支持人机协同中断与恢复。
+  流水线编排，支持人机协同中断/恢复与持久化检查点。
+
+  **⚡ GPU 资源管理**
+  TTL 自动卸载 GPU 模型、MinerU 子进程自动管理、监控 API、退出清理看门狗。
 
   **🔗 MCP 集成**
   Model Context Protocol 服务端，面向 AI IDE 客户端（Cursor、Claude Code 等）。
@@ -103,7 +106,7 @@ Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ 
 | **RAG** | LlamaIndex，GPU 感知嵌入 |
 | **LLM** | LangChain（OpenAI、Anthropic、阿里云、火山引擎、Ollama） |
 | **编排** | LangGraph，支持人机协同中断与恢复 |
-| **OCR** | pdfplumber（原生）+ PaddleOCR（扫描件，可选） |
+| **OCR** | MinerU（自动管理）+ pdfplumber（原生）+ PaddleOCR（扫描件） |
 | **MCP** | Model Context Protocol 服务端 |
 | **文档** | VitePress（中英双语） |
 
@@ -156,10 +159,31 @@ cp .env.example .env
 
 ```bash
 cd backend
+
+# 执行数据库迁移
+alembic upgrade head
+
+# 启动服务
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4. 启动前端
+启动时后端自动完成以下操作：
+- 写入 PID 文件到 `DATA_DIR/omelette.pid`
+- 启动 GPU 模型 TTL 监控（自动卸载空闲模型）
+- 若 `MINERU_AUTO_MANAGE=true`，自动管理 MinerU 子进程生命周期
+- 注册清理钩子（`atexit` + `SIGHUP`），即使进程意外退出也会释放 GPU 资源
+
+### 4.（可选）GPU 看门狗
+
+为防止 `kill -9` 或崩溃导致资源泄漏，可运行外部看门狗：
+
+```bash
+python backend/scripts/gpu_watchdog.py --daemon
+```
+
+看门狗会监控 Omelette 进程，在其异常终止后自动清理 GPU 资源。
+
+### 5. 启动前端
 
 ```bash
 cd frontend
@@ -169,12 +193,18 @@ npm run dev
 
 在浏览器中打开 [http://localhost:3000](http://localhost:3000)。
 
-### 5.（可选）OCR 与嵌入
+### 6.（可选）MinerU 配置
+
+若使用 MinerU 解析 PDF（`PDF_PARSER=mineru`）：
 
 ```bash
-cd backend
-pip install -e ".[ocr,ml]"
+# 为 MinerU 创建独立 conda 环境
+conda create -n mineru python=3.10
+conda activate mineru
+pip install magic-pdf[full]
 ```
+
+在 `.env` 中设置 `MINERU_CONDA_ENV=mineru`，Omelette 将在需要时自动启动 MinerU。
 
 > **常见问题：** 若出现 `ModuleNotFoundError: No module named 'fastapi'`，请确认已激活 conda 环境：`conda activate omelette`。
 
@@ -194,7 +224,8 @@ omelette/
 │   │   └── main.py       # App entry, lifespan, CORS
 │   ├── mcp_server.py     # MCP (Model Context Protocol) server
 │   ├── alembic/          # Database migrations
-│   ├── tests/            # pytest-asyncio 测试（178 个）
+│   ├── scripts/          # 工具脚本（gpu_watchdog.py）
+│   ├── tests/            # pytest-asyncio 测试（526 个）
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
@@ -230,7 +261,7 @@ make dev                  # Start both backend and frontend
 ### 运行测试
 
 ```bash
-# 后端（178 个测试）
+# 后端（526 个测试）
 cd backend && pytest tests/ -v
 
 # 前端单元测试（28 个测试 — Vitest + Testing Library + MSW）
@@ -266,6 +297,8 @@ REST API 位于 `/api/v1/` 下：
 | `GET/POST /subscriptions` | 订阅管理 |
 | `GET/POST /settings` | 设置与健康状态 |
 | `GET /settings/health` | 健康检查 |
+| `GET /gpu/status` | GPU 模型与显存状态 |
+| `POST /gpu/unload` | 手动卸载 GPU 模型 |
 
 MCP 服务端：`/mcp`（WebSocket/SSE，面向 AI IDE 客户端）
 

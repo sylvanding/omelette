@@ -1,14 +1,15 @@
 """Writing assistance API endpoints."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_llm, get_project
+from app.middleware.rate_limit import limiter
 from app.models import Project
 from app.schemas.common import ApiResponse
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
 from app.services.writing_service import WritingService
 
@@ -57,8 +58,10 @@ def get_writing_service(
     return WritingService(db=db, llm=llm, rag=rag)
 
 
-@router.post("/assist", response_model=ApiResponse[WritingAssistResponse])
+@router.post("/assist", response_model=ApiResponse[WritingAssistResponse], summary="AI writing assistance")
+@limiter.limit("10/minute")
 async def writing_assist(
+    request: Request,
     project_id: int,
     body: WritingAssistRequest,
     db: AsyncSession = Depends(get_db),
@@ -86,10 +89,9 @@ async def writing_assist(
         result = await svc.analyze_gaps(project_id=project_id, research_topic=topic)
         content = result["analysis"]
     else:
-        return ApiResponse(
-            code=400,
-            message=f"Unknown task: {body.task}. Use summarize, cite, review_outline, or gap_analysis.",
-            data=WritingAssistResponse(content="", citations=[], suggestions=[]),
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown task: {body.task}. Use summarize, cite, review_outline, or gap_analysis.",
         )
 
     return ApiResponse(
@@ -101,7 +103,7 @@ async def writing_assist(
     )
 
 
-@router.post("/summarize", response_model=ApiResponse[dict])
+@router.post("/summarize", response_model=ApiResponse[dict], summary="Summarize papers")
 async def summarize_papers(
     project_id: int,
     body: SummarizeRequest,
@@ -117,7 +119,7 @@ async def summarize_papers(
     return ApiResponse(data={"summaries": summaries})
 
 
-@router.post("/citations", response_model=ApiResponse[dict])
+@router.post("/citations", response_model=ApiResponse[dict], summary="Generate citations")
 async def generate_citations(
     project_id: int,
     body: CitationsRequest,
@@ -133,7 +135,7 @@ async def generate_citations(
     return ApiResponse(data={"citations": citations, "style": body.style})
 
 
-@router.post("/review-outline", response_model=ApiResponse[dict])
+@router.post("/review-outline", response_model=ApiResponse[dict], summary="Generate review outline")
 async def generate_review_outline(
     project_id: int,
     body: ReviewOutlineRequest,
@@ -150,7 +152,7 @@ async def generate_review_outline(
     return ApiResponse(data=result)
 
 
-@router.post("/gap-analysis", response_model=ApiResponse[dict])
+@router.post("/gap-analysis", response_model=ApiResponse[dict], summary="Analyze research gaps")
 async def analyze_gaps(
     project_id: int,
     body: GapAnalysisRequest,
@@ -173,8 +175,10 @@ class ReviewDraftRequest(BaseModel):
     language: str = Field(default="zh", pattern=r"^(zh|en)$")
 
 
-@router.post("/review-draft/stream")
+@router.post("/review-draft/stream", summary="Stream literature review draft")
+@limiter.limit("10/minute")
 async def stream_review_draft(
+    request: Request,
     project_id: int,
     body: ReviewDraftRequest,
     svc: WritingService = Depends(get_writing_service),

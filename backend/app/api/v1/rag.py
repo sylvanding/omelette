@@ -4,27 +4,30 @@ import asyncio
 import json
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_llm
-from app.models import Paper, PaperStatus
+from app.api.deps import get_db, get_llm, get_project
+from app.middleware.rate_limit import limiter
+from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/projects/{project_id}/rag", tags=["rag"])
 
 
 class RAGQueryRequest(BaseModel):
     question: str
-    top_k: int = 10
+    top_k: int = Field(default=10, ge=1, le=50)
     use_reranker: bool = True
     include_sources: bool = True
 
@@ -39,11 +42,12 @@ def get_rag_service(llm: LLMClient = Depends(get_llm)) -> RAGService:
     return RAGService(llm=llm)
 
 
-@router.post("/query", response_model=ApiResponse[RAGQueryResponse])
+@router.post("/query", response_model=ApiResponse[RAGQueryResponse], summary="RAG query over literature")
 async def rag_query(
     project_id: int,
     body: RAGQueryRequest,
     rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
 ):
     """Answer a question using RAG over the project's indexed literature."""
     result = await rag.query(
@@ -56,8 +60,10 @@ async def rag_query(
     return ApiResponse(data=RAGQueryResponse(**result))
 
 
-@router.post("/index", response_model=ApiResponse[dict])
+@router.post("/index", response_model=ApiResponse[dict], summary="Build vector index")
+@limiter.limit("5/minute")
 async def build_index(
+    request: Request,
     project_id: int,
     db: AsyncSession = Depends(get_db),
     rag: RAGService = Depends(get_rag_service),
@@ -95,7 +101,14 @@ async def build_index(
             }
         )
 
-    index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
+    try:
+        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
+    except RuntimeError as exc:
+        if "CUDA out of memory" not in str(exc):
+            raise
+        logger.warning("CUDA OOM during indexing, reloading model on best GPU and retrying")
+        rag._reload_embed_model()
+        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
 
     # Update paper status to INDEXED
     for paper in papers:
@@ -110,11 +123,12 @@ async def build_index(
     )
 
 
-@router.post("/index/stream")
+@router.post("/index/stream", summary="Build index with SSE progress")
 async def build_index_stream(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
 ):
     """SSE streaming rebuild — sends progress events so the UI stays responsive."""
 
@@ -191,7 +205,7 @@ async def build_index_stream(
             )
         except Exception as exc:
             logger.exception("SSE index build failed")
-            yield _sse("error", {"message": str(exc)})
+            yield format_sse_error(str(exc), code=500)
 
     return StreamingResponse(
         _generate(),
@@ -204,15 +218,23 @@ async def build_index_stream(
     )
 
 
-@router.get("/stats", response_model=ApiResponse[dict])
-async def index_stats(project_id: int, rag: RAGService = Depends(get_rag_service)):
+@router.get("/stats", response_model=ApiResponse[dict], summary="Get index statistics")
+async def index_stats(
+    project_id: int,
+    rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
+):
     """Return indexing statistics."""
     stats = await rag.get_stats(project_id=project_id)
     return ApiResponse(data=stats)
 
 
-@router.delete("/index", response_model=ApiResponse[dict])
-async def delete_index(project_id: int, rag: RAGService = Depends(get_rag_service)):
+@router.delete("/index", response_model=ApiResponse[dict], summary="Delete vector index")
+async def delete_index(
+    project_id: int,
+    rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
+):
     """Delete the vector index for the project."""
     result = await rag.delete_index(project_id=project_id)
     return ApiResponse(data=result)

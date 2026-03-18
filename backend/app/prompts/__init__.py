@@ -1,0 +1,52 @@
+"""Centralized LLM prompt management for all Omelette backend services."""
+
+from app.prompts.chat import (
+    CHAT_CITATION_SYSTEM,
+    CHAT_FALLBACK_SYSTEM,
+    CHAT_GAP_SYSTEM,
+    CHAT_OUTLINE_SYSTEM,
+    CHAT_QA_SYSTEM,
+    CHAT_TOOL_MODE_PROMPTS,
+    EXCERPT_CLEAN_SYSTEM,
+)
+from app.prompts.completion import COMPLETION_SYSTEM
+from app.prompts.dedup import DEDUP_RESOLVE_SYSTEM, DEDUP_VERIFY_SYSTEM
+from app.prompts.keyword import KEYWORD_EXPAND_SYSTEM
+from app.prompts.rag import RAG_ANSWER_SYSTEM
+from app.prompts.rewrite import (
+    REWRITE_ACADEMIC,
+    REWRITE_PROMPTS,
+    REWRITE_SIMPLIFY,
+    REWRITE_TRANSLATE_EN,
+    REWRITE_TRANSLATE_ZH,
+)
+from app.prompts.writing import (
+    WRITING_GAP_SYSTEM,
+    WRITING_OUTLINE_SYSTEM,
+    WRITING_SECTION_SYSTEM,
+    WRITING_SUMMARIZE_SYSTEM,
+)
+
+__all__ = [
+    "CHAT_CITATION_SYSTEM",
+    "CHAT_FALLBACK_SYSTEM",
+    "CHAT_GAP_SYSTEM",
+    "CHAT_OUTLINE_SYSTEM",
+    "CHAT_QA_SYSTEM",
+    "CHAT_TOOL_MODE_PROMPTS",
+    "COMPLETION_SYSTEM",
+    "DEDUP_RESOLVE_SYSTEM",
+    "DEDUP_VERIFY_SYSTEM",
+    "EXCERPT_CLEAN_SYSTEM",
+    "KEYWORD_EXPAND_SYSTEM",
+    "RAG_ANSWER_SYSTEM",
+    "REWRITE_ACADEMIC",
+    "REWRITE_PROMPTS",
+    "REWRITE_SIMPLIFY",
+    "REWRITE_TRANSLATE_EN",
+    "REWRITE_TRANSLATE_ZH",
+    "WRITING_GAP_SYSTEM",
+    "WRITING_OUTLINE_SYSTEM",
+    "WRITING_SECTION_SYSTEM",
+    "WRITING_SUMMARIZE_SYSTEM",
+]

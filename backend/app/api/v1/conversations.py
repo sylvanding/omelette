@@ -1,7 +1,7 @@
 """Conversation CRUD API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -19,7 +19,7 @@ from app.schemas.conversation import (
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[ConversationListSchema]])
+@router.get("", response_model=ApiResponse[PaginatedData[ConversationListSchema]], summary="List conversations")
 async def list_conversations(
     page: int = 1,
     page_size: int = 20,
@@ -27,15 +27,16 @@ async def list_conversations(
     db: AsyncSession = Depends(get_db),
 ):
     """List conversations, newest first."""
-    stmt = select(Conversation).order_by(Conversation.updated_at.desc())
-
+    kb_filter = None
     if knowledge_base_id is not None:
-        stmt = stmt.where(
-            Conversation.knowledge_base_ids.isnot(None),
-        )
+        kb_filter = text(
+            "EXISTS (SELECT 1 FROM json_each(conversations.knowledge_base_ids) WHERE value = :kb_id)"
+        ).bindparams(kb_id=knowledge_base_id)
 
-    count_stmt = select(func.count()).select_from(stmt.subquery())
-    total = (await db.execute(count_stmt)).scalar_one()
+    count_base = select(func.count(Conversation.id))
+    if kb_filter is not None:
+        count_base = count_base.where(kb_filter)
+    total = (await db.execute(count_base)).scalar_one()
 
     msg_count_sq = (
         select(func.count(Message.id))
@@ -60,31 +61,25 @@ async def list_conversations(
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    if knowledge_base_id is not None:
-        detail_stmt = detail_stmt.where(Conversation.knowledge_base_ids.isnot(None))
+    if kb_filter is not None:
+        detail_stmt = detail_stmt.where(kb_filter)
 
     detail_result = await db.execute(detail_stmt)
 
-    items = []
-    for conv, msg_count, last_msg_content in detail_result.all():
-        if knowledge_base_id is not None:
-            kb_ids = conv.knowledge_base_ids or []
-            if knowledge_base_id not in kb_ids:
-                continue
-
-        items.append(
-            ConversationListSchema(
-                id=conv.id,
-                title=conv.title,
-                knowledge_base_ids=conv.knowledge_base_ids,
-                model=conv.model,
-                tool_mode=conv.tool_mode,
-                created_at=conv.created_at,
-                updated_at=conv.updated_at,
-                message_count=msg_count or 0,
-                last_message_preview=(last_msg_content[:100] if last_msg_content else ""),
-            )
+    items = [
+        ConversationListSchema(
+            id=conv.id,
+            title=conv.title,
+            knowledge_base_ids=conv.knowledge_base_ids,
+            model=conv.model,
+            tool_mode=conv.tool_mode,
+            created_at=conv.created_at,
+            updated_at=conv.updated_at,
+            message_count=msg_count or 0,
+            last_message_preview=(last_msg_content[:100] if last_msg_content else ""),
         )
+        for conv, msg_count, last_msg_content in detail_result.all()
+    ]
 
     total_pages = (total + page_size - 1) // page_size if total > 0 else 1
 
@@ -99,7 +94,7 @@ async def list_conversations(
     )
 
 
-@router.post("", response_model=ApiResponse[ConversationSchema])
+@router.post("", response_model=ApiResponse[ConversationSchema], summary="Create conversation")
 async def create_conversation(
     body: ConversationCreateSchema,
     db: AsyncSession = Depends(get_db),
@@ -112,7 +107,7 @@ async def create_conversation(
         tool_mode=body.tool_mode,
     )
     db.add(conv)
-    await db.commit()
+    await db.flush()
 
     result = await db.execute(
         select(Conversation).where(Conversation.id == conv.id).options(selectinload(Conversation.messages))
@@ -121,7 +116,7 @@ async def create_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.get("/{conversation_id}", response_model=ApiResponse[ConversationSchema])
+@router.get("/{conversation_id}", response_model=ApiResponse[ConversationSchema], summary="Get conversation")
 async def get_conversation(
     conversation_id: int,
     db: AsyncSession = Depends(get_db),
@@ -136,7 +131,7 @@ async def get_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.put("/{conversation_id}", response_model=ApiResponse[ConversationSchema])
+@router.put("/{conversation_id}", response_model=ApiResponse[ConversationSchema], summary="Update conversation")
 async def update_conversation(
     conversation_id: int,
     body: ConversationUpdateSchema,
@@ -151,8 +146,6 @@ async def update_conversation(
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(conv, field, value)
 
-    await db.commit()
-
     result2 = await db.execute(
         select(Conversation).where(Conversation.id == conversation_id).options(selectinload(Conversation.messages))
     )
@@ -160,7 +153,7 @@ async def update_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.delete("/{conversation_id}", response_model=ApiResponse[dict])
+@router.delete("/{conversation_id}", response_model=ApiResponse[dict], summary="Delete conversation")
 async def delete_conversation(
     conversation_id: int,
     db: AsyncSession = Depends(get_db),
@@ -172,5 +165,4 @@ async def delete_conversation(
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     await db.delete(conv)
-    await db.commit()
     return ApiResponse(data={"deleted": True, "id": conversation_id})

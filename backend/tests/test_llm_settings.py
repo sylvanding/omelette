@@ -103,16 +103,16 @@ async def test_client_from_config():
     assert isinstance(result, str)
 
 
-# --- Backward-compatibility via old import path ---
+# --- Verify direct import path works ---
 
 
 @pytest.mark.asyncio
-async def test_backward_compat_import():
-    from app.services.llm_client import LLMClient as OldLLMClient
-    from app.services.llm_client import get_llm_client as old_get
+async def test_direct_import_path():
+    from app.services.llm.client import LLMClient as DirectLLMClient
+    from app.services.llm.client import get_llm_client as direct_get
 
-    assert OldLLMClient is LLMClient
-    assert old_get is get_llm_client
+    assert DirectLLMClient is LLMClient
+    assert direct_get is get_llm_client
 
 
 # --- Settings API tests ---

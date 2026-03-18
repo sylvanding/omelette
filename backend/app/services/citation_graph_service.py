@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 import httpx
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,10 +15,10 @@ from app.models.paper import Paper
 
 logger = logging.getLogger(__name__)
 
-S2_API_BASE = "https://api.semanticscholar.org/graph/v1"
 S2_FIELDS = "title,year,citationCount,externalIds,authors"
-S2_TIMEOUT = 15
-S2_MAX_PER_REQUEST = 50
+
+# Error messages (extracted for maintainability)
+CITATION_NOT_FOUND = "无法获取引用数据：Semantic Scholar 未收录此论文"
 
 
 class CitationGraphService:
@@ -37,16 +38,11 @@ class CitationGraphService:
         """Return {nodes, edges, center_id} for a paper's citation network."""
         paper = await self._db.get(Paper, paper_id)
         if not paper or paper.project_id != project_id:
-            return {"nodes": [], "edges": [], "center_id": None, "error": "Paper not found"}
+            raise HTTPException(status_code=404, detail="Paper not found")
 
         s2_id = await self._resolve_s2_id(paper)
         if not s2_id:
-            return {
-                "nodes": [],
-                "edges": [],
-                "center_id": None,
-                "error": "无法获取引用数据：Semantic Scholar 未收录此论文",
-            }
+            raise HTTPException(status_code=502, detail=CITATION_NOT_FOUND)
 
         local_source_ids = await self._get_local_source_ids(project_id)
 
@@ -64,7 +60,7 @@ class CitationGraphService:
         }
         nodes[s2_id] = center_node
 
-        citations = await self._fetch_s2_list(f"{S2_API_BASE}/paper/{s2_id}/citations", max_nodes // 2)
+        citations = await self._fetch_s2_list(f"{settings.s2_api_base}/paper/{s2_id}/citations", max_nodes // 2)
         for item in citations:
             cited_paper = item.get("citingPaper", {})
             cid = cited_paper.get("paperId")
@@ -76,7 +72,9 @@ class CitationGraphService:
                 break
 
         if len(nodes) < max_nodes:
-            references = await self._fetch_s2_list(f"{S2_API_BASE}/paper/{s2_id}/references", max_nodes - len(nodes))
+            references = await self._fetch_s2_list(
+                f"{settings.s2_api_base}/paper/{s2_id}/references", max_nodes - len(nodes)
+            )
             for item in references:
                 ref_paper = item.get("citedPaper", {})
                 rid = ref_paper.get("paperId")
@@ -100,7 +98,7 @@ class CitationGraphService:
 
         if paper.doi:
             try:
-                data = await self._fetch_s2_json(f"{S2_API_BASE}/paper/DOI:{paper.doi}?fields=paperId")
+                data = await self._fetch_s2_json(f"{settings.s2_api_base}/paper/DOI:{paper.doi}?fields=paperId")
                 if pid := data.get("paperId"):
                     return pid
             except Exception:
@@ -109,7 +107,7 @@ class CitationGraphService:
         if paper.title:
             try:
                 data = await self._fetch_s2_json(
-                    f"{S2_API_BASE}/paper/search",
+                    f"{settings.s2_api_base}/paper/search",
                     params={"query": paper.title[:200], "limit": "1", "fields": "paperId"},
                 )
                 papers = data.get("data", [])
@@ -147,7 +145,7 @@ class CitationGraphService:
 
     async def _fetch_s2_list(self, url: str, limit: int) -> list[dict]:
         """Fetch paginated list from S2 citations/references endpoint."""
-        actual_limit = min(limit, S2_MAX_PER_REQUEST)
+        actual_limit = min(limit, settings.s2_max_per_request)
         try:
             data = await self._fetch_s2_json(url, params={"fields": S2_FIELDS, "limit": str(actual_limit)})
             return data.get("data", [])
@@ -160,7 +158,7 @@ class CitationGraphService:
         if settings.semantic_scholar_api_key:
             headers["x-api-key"] = settings.semantic_scholar_api_key
 
-        async with httpx.AsyncClient(timeout=S2_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=settings.s2_timeout) as client:
             resp = await client.get(url, headers=headers, params=params)
             if resp.status_code == 429:
                 logger.warning("S2 API rate limited")

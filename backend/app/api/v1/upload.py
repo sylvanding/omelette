@@ -6,12 +6,13 @@ import uuid
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
 from app.config import settings
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.schemas.knowledge_base import DedupConflictPair, NewPaperData, UploadResult
@@ -24,12 +25,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["papers"])
 
-MAX_FILE_SIZE_MB = 50
-TITLE_SIMILARITY_THRESHOLD = 0.85
 
-
-@router.post("/upload", response_model=ApiResponse[UploadResult])
+@router.post("/upload", response_model=ApiResponse[UploadResult], summary="Upload PDF files")
+@limiter.limit("5/minute")
 async def upload_pdfs(
+    request: Request,
     project_id: int,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
@@ -41,7 +41,7 @@ async def upload_pdfs(
     project_pdf_dir = pdf_dir / str(project_id)
     project_pdf_dir.mkdir(parents=True, exist_ok=True)
 
-    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
     papers: list[NewPaperData] = []
     conflicts: list[DedupConflictPair] = []
     new_paper_objects: list[Paper] = []
@@ -66,7 +66,7 @@ async def upload_pdfs(
             if len(content) > max_bytes:
                 raise HTTPException(
                     status_code=413,
-                    detail=f"File {upload_file.filename} exceeds {MAX_FILE_SIZE_MB}MB limit",
+                    detail=f"File {upload_file.filename} exceeds {settings.max_upload_size_mb}MB limit",
                 )
 
             safe_filename = Path(upload_file.filename or "upload.pdf").name.replace("..", "")
@@ -98,7 +98,7 @@ async def upload_pdfs(
                 norm_new = DedupService.normalize_title(metadata.title)
                 if norm_existing and norm_new:
                     sim = SequenceMatcher(None, norm_existing, norm_new).ratio()
-                    if sim >= TITLE_SIMILARITY_THRESHOLD:
+                    if sim >= settings.title_similarity_threshold:
                         conflict_id = f"{existing.id}:{saved_name}"
                         conflicts.append(
                             DedupConflictPair(
@@ -156,7 +156,7 @@ async def upload_pdfs(
     )
 
 
-@router.post("/process", response_model=ApiResponse[dict])
+@router.post("/process", response_model=ApiResponse[dict], summary="Trigger OCR and RAG indexing")
 async def process_papers(
     project_id: int,
     paper_ids: list[int] | None = Query(default=None),

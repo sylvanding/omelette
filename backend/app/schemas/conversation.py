@@ -1,6 +1,7 @@
 """Schemas for conversations and messages."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,21 +45,23 @@ class ConversationListSchema(BaseModel):
 
 
 class ConversationCreateSchema(BaseModel):
-    title: str = ""
+    title: str = Field(default="", max_length=500)
     knowledge_base_ids: list[int] | None = None
     model: str = ""
-    tool_mode: str = "qa"
+    tool_mode: Literal["qa", "citation_lookup", "review_outline", "gap_analysis"] = "qa"
 
 
 class ConversationUpdateSchema(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=500)
     model: str | None = None
-    tool_mode: str | None = None
+    tool_mode: Literal["qa", "citation_lookup", "review_outline", "gap_analysis"] | None = None
 
 
 class ChatStreamRequest(BaseModel):
     conversation_id: int | None = None
-    knowledge_base_ids: list[int] = Field(default_factory=list)
+    knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20)
     model: str | None = None
-    tool_mode: str = "qa"
+    tool_mode: Literal["qa", "citation_lookup", "review_outline", "gap_analysis"] = "qa"
     message: str = Field(min_length=1)
+    rag_top_k: int = Field(default=10, ge=1, le=50, description="RAG retrieval top-k")
+    use_reranker: bool = Field(default=False, description="Apply reranker to retrieved nodes")

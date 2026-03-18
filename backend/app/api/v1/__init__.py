@@ -7,6 +7,7 @@ from app.api.v1 import (
     conversations,
     crawler,
     dedup,
+    gpu,
     keywords,
     ocr,
     papers,
@@ -41,3 +42,4 @@ api_router.include_router(conversations.router)
 api_router.include_router(chat.router)
 api_router.include_router(rewrite.router)
 api_router.include_router(pipelines.router)
+api_router.include_router(gpu.router)

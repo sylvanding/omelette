@@ -1,13 +1,15 @@
 """Pydantic schemas for knowledge base and PDF upload operations."""
 
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 from app.schemas.paper import PaperRead
 
 
 class NewPaperData(BaseModel):
-    title: str
-    abstract: str = ""
+    title: str = Field(..., max_length=2000)
+    abstract: str = Field(default="", max_length=50000)
     authors: list[dict[str, str]] | None = None
     doi: str | None = None
     year: int | None = None
@@ -32,7 +34,7 @@ class UploadResult(BaseModel):
 
 class ResolveConflictRequest(BaseModel):
     conflict_id: str
-    action: str  # "keep_old" | "keep_new" | "merge" | "skip"
+    action: Literal["keep_old", "keep_new", "merge", "skip"]
     merged_paper: dict | None = None
 
 

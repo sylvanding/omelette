@@ -2,17 +2,19 @@
 
 import logging
 from pathlib import Path
+from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_llm, get_project
 from app.config import settings
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperStatus, Project
-from app.schemas.common import ApiResponse
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
 from app.schemas.knowledge_base import AutoResolveRequest, ResolveConflictRequest
 from app.services.dedup_service import DedupService
-from app.services.llm_client import LLMClient
+from app.services.llm.client import LLMClient
 from app.services.pdf_metadata import extract_metadata
 
 logger = logging.getLogger(__name__)
@@ -20,10 +22,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/dedup", tags=["dedup"])
 
 
-@router.post("/run", response_model=ApiResponse[dict])
+@router.post("/run", response_model=ApiResponse[dict], summary="Run deduplication pipeline")
+@limiter.limit("5/minute")
 async def run_dedup(
+    request: Request,
     project_id: int,
-    strategy: str = "full",
+    strategy: Literal["full", "doi_only", "title_only"] = "full",
     db: AsyncSession = Depends(get_db),
     llm: LLMClient = Depends(get_llm),
     project: Project = Depends(get_project),
@@ -41,19 +45,33 @@ async def run_dedup(
     return ApiResponse(data=result)
 
 
-@router.get("/candidates", response_model=ApiResponse[list[dict]])
+@router.get("/candidates", response_model=ApiResponse[PaginatedData[dict]], summary="List dedup candidates")
 async def list_dedup_candidates(
     project_id: int,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    """List potential duplicate pairs for manual review."""
+    """List potential duplicate pairs for manual review with pagination."""
+    page, page_size = pagination.page, pagination.page_size
     service = DedupService(db)
     candidates = await service.find_llm_dedup_candidates(project_id)
-    return ApiResponse(data=candidates)
+    total = len(candidates)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = candidates[start:end]
+    return ApiResponse(
+        data=PaginatedData(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
 
 
-@router.post("/verify", response_model=ApiResponse[dict])
+@router.post("/verify", response_model=ApiResponse[dict], summary="Verify duplicate with LLM")
 async def verify_duplicate(
     project_id: int,
     paper_a_id: int = Query(..., description="First paper ID"),
@@ -68,7 +86,7 @@ async def verify_duplicate(
     return ApiResponse(data=result)
 
 
-@router.post("/resolve", response_model=ApiResponse[dict])
+@router.post("/resolve", response_model=ApiResponse[dict], summary="Resolve upload conflict")
 async def resolve_conflict(
     project_id: int,
     body: ResolveConflictRequest,
@@ -141,7 +159,7 @@ async def resolve_conflict(
     raise HTTPException(status_code=400, detail=f"Invalid action: {body.action}")
 
 
-@router.post("/auto-resolve", response_model=ApiResponse[list[dict]])
+@router.post("/auto-resolve", response_model=ApiResponse[list[dict]], summary="Auto-resolve conflicts with LLM")
 async def auto_resolve_conflicts(
     project_id: int,
     body: AutoResolveRequest,
@@ -185,56 +203,14 @@ async def auto_resolve_conflicts(
 
         new_metadata = await extract_metadata(pdf_path, fallback_title="Untitled")
 
-        if not llm:
-            resolutions.append(
-                {
-                    "conflict_id": conflict_id,
-                    "action": "keep_new",
-                    "reason": "LLM not available, defaulting to keep_new",
-                }
-            )
-            continue
-
-        prompt = f"""Two papers may be duplicates. Decide the best resolution:
-
-Existing paper (in DB):
-- ID: {old_paper.id}
-- Title: {old_paper.title}
-- DOI: {old_paper.doi or "N/A"}
-- Year: {old_paper.year}
-- Journal: {old_paper.journal}
-
-New upload:
-- Title: {new_metadata.title}
-- DOI: {new_metadata.doi or "N/A"}
-- Year: {new_metadata.year}
-- Journal: {new_metadata.journal}
-
-Return JSON: {{"action": "keep_old"|"keep_new"|"merge", "reason": "..."}}
-- keep_old: existing is better, discard new
-- keep_new: new is better or different work, add new
-- merge: combine metadata, add as new paper"""
-
-        try:
-            result = await llm.chat_json(
-                messages=[
-                    {"role": "system", "content": "You are a deduplication expert. Return valid JSON only."},
-                    {"role": "user", "content": prompt},
-                ],
-                task_type="dedup_resolve",
-            )
-            action = result.get("action", "keep_new")
-            if action not in ("keep_old", "keep_new", "merge"):
-                action = "keep_new"
-            resolutions.append(
-                {
-                    "conflict_id": conflict_id,
-                    "action": action,
-                    "reason": result.get("reason", ""),
-                }
-            )
-        except Exception as e:
-            logger.warning("LLM auto-resolve failed for %s: %s", conflict_id, e)
-            resolutions.append({"conflict_id": conflict_id, "action": "keep_new", "reason": f"Error: {e}"})
+        dedup_svc = DedupService(db, llm)
+        resolution = await dedup_svc.resolve_conflict(
+            old_paper=old_paper,
+            new_title=new_metadata.title,
+            new_doi=new_metadata.doi,
+            new_year=new_metadata.year,
+            new_journal=new_metadata.journal,
+        )
+        resolutions.append({"conflict_id": conflict_id, **resolution})
 
     return ApiResponse(data=resolutions)

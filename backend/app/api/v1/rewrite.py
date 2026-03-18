@@ -7,41 +7,24 @@ import json
 import logging
 from typing import Literal
 
+import httpx
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.config import settings
+from app.prompts.rewrite import REWRITE_PROMPTS
 from app.services.llm.client import get_llm_client
 from app.services.user_settings_service import UserSettingsService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/chat", tags=["rewrite"])
+router = APIRouter(prefix="/chat", tags=["chat"])
 
-_rewrite_semaphore = asyncio.Semaphore(3)
-
-REWRITE_PROMPTS: dict[str, str] = {
-    "simplify": (
-        "Rewrite the following academic text in plain, accessible language. "
-        "Keep the core meaning and key concepts intact, but make it understandable "
-        "to a general audience. Output only the rewritten text, no explanations."
-    ),
-    "academic": (
-        "Rewrite the following text in formal academic style. "
-        "Use precise terminology, passive voice where appropriate, and proper "
-        "academic conventions. Maintain the original meaning. Output only the rewritten text."
-    ),
-    "translate_en": (
-        "Translate the following text into English. "
-        "Preserve academic terminology and the original meaning. "
-        "Output only the translation, no explanations."
-    ),
-    "translate_zh": ("将以下文本翻译为中文。保留学术术语和原意。仅输出翻译结果，不要添加解释。"),
-}
-
-REWRITE_TIMEOUT = 30.0
+_rewrite_semaphore = asyncio.Semaphore(settings.rewrite_semaphore_limit)
 
 
 class RewriteRequest(BaseModel):
@@ -85,12 +68,15 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
 
             full_text = ""
             try:
-                async with asyncio.timeout(REWRITE_TIMEOUT):
+                async with asyncio.timeout(settings.rewrite_timeout):
                     async for token in llm.chat_stream(messages, temperature=0.3, task_type="rewrite"):
                         full_text += token
                         yield _sse("rewrite_delta", {"delta": token})
             except TimeoutError:
-                yield _sse("error", {"code": "timeout", "message": "Rewrite timed out after 30s"})
+                yield format_sse_error(
+                    f"Rewrite timed out after {settings.rewrite_timeout}s",
+                    code=408,
+                )
                 return
 
             yield _sse("rewrite_end", {"full_text": full_text})
@@ -98,12 +84,12 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
     except asyncio.CancelledError:
         logger.info("Rewrite stream cancelled by client")
         return
-    except Exception as e:
+    except (httpx.HTTPError, ValueError, RuntimeError) as e:
         logger.exception("Rewrite stream error")
-        yield _sse("error", {"code": "rewrite_error", "message": str(e)})
+        yield format_sse_error(str(e), code=500)
 
 
-@router.post("/rewrite")
+@router.post("/rewrite", summary="Stream excerpt rewrite")
 async def rewrite_stream(
     request: RewriteRequest,
     db: AsyncSession = Depends(get_db),

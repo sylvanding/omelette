@@ -12,8 +12,19 @@ from app.pipelines.state import PipelineState
 logger = logging.getLogger(__name__)
 
 
+def _is_cancelled(state: PipelineState) -> bool:
+    """Check if pipeline has been cancelled via the API."""
+    from app.pipelines.cancellation import is_cancelled
+
+    thread_id = state.get("thread_id", "")
+    return is_cancelled(thread_id) or state.get("cancelled", False)
+
+
 async def search_node(state: PipelineState) -> dict[str, Any]:
     """Run multi-source federated search."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.services.search_service import SearchService
 
     params = state.get("params", {})
@@ -34,6 +45,9 @@ async def search_node(state: PipelineState) -> dict[str, Any]:
 
 async def extract_metadata_node(state: PipelineState) -> dict[str, Any]:
     """Extract metadata from uploaded PDF files."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.services.pdf_metadata import extract_metadata
 
     params = state.get("params", {})
@@ -57,6 +71,9 @@ async def extract_metadata_node(state: PipelineState) -> dict[str, Any]:
 
 async def dedup_node(state: PipelineState) -> dict[str, Any]:
     """Check for duplicates against existing papers in the knowledge base."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.config import settings
@@ -149,20 +166,29 @@ async def hitl_dedup_node(state: PipelineState) -> dict[str, Any]:
 
 async def apply_resolution_node(state: PipelineState) -> dict[str, Any]:
     """Apply conflict resolutions and merge clean papers for import."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     resolved = state.get("resolved_conflicts", [])
     clean_papers = list(state.get("papers", []))
 
     for res in resolved:
         action = res.get("action", "skip")
-        new_paper = res.get("new_paper", {})
+        new_paper = res.get("new_paper") or {}
+        merged_paper = res.get("merged_paper") or {}
         if action == "keep_new" and new_paper:
             clean_papers.append(new_paper)
+        elif action == "merge" and merged_paper:
+            clean_papers.append(merged_paper)
 
     return {"papers": clean_papers, "stage": "resolved"}
 
 
 async def import_node(state: PipelineState) -> dict[str, Any]:
     """Import clean papers into the database."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from app.database import async_session_factory
     from app.models import Paper
 
@@ -193,6 +219,9 @@ async def import_node(state: PipelineState) -> dict[str, Any]:
 
 async def crawl_node(state: PipelineState) -> dict[str, Any]:
     """Download PDFs for papers that have pdf_url but no pdf_path."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory
@@ -241,6 +270,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
     Uses MinerU (if available) for deep parsing with formula/table/figure
     recognition, falling back to pdfplumber + PaddleOCR.
     """
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory
@@ -258,43 +290,43 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
             Paper.pdf_path != "",
         )
         papers = (await db.execute(stmt)).scalars().all()
-        ocr = OCRService(use_gpu=True)
 
-        for paper in papers:
-            if state.get("cancelled"):
-                break
-            try:
-                result = await ocr.process_pdf_async(paper.pdf_path)
-                if result.get("error"):
-                    paper.status = PaperStatus.ERROR
-                    continue
+        with OCRService(use_gpu=True) as ocr:
+            for paper in papers:
+                if state.get("cancelled"):
+                    break
+                try:
+                    result = await ocr.process_pdf_async(paper.pdf_path)
+                    if result.get("error"):
+                        paper.status = PaperStatus.ERROR
+                        continue
 
-                if result.get("method") == "mineru":
-                    chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
-                else:
-                    pages = result.get("pages", [])
-                    chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+                    if result.get("method") == "mineru":
+                        chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
+                    else:
+                        pages = result.get("pages", [])
+                        chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
 
-                for chunk_data in chunks:
-                    db.add(
-                        PaperChunk(
-                            paper_id=paper.id,
-                            content=chunk_data["content"],
-                            page_number=chunk_data.get("page_number", 0),
-                            chunk_index=chunk_data["chunk_index"],
-                            chunk_type=chunk_data.get("chunk_type", "text"),
-                            section=chunk_data.get("section", ""),
-                            token_count=chunk_data.get("token_count", 0),
-                            has_formula=chunk_data.get("has_formula", False),
-                            figure_path=chunk_data.get("figure_path", ""),
+                    for chunk_data in chunks:
+                        db.add(
+                            PaperChunk(
+                                paper_id=paper.id,
+                                content=chunk_data["content"],
+                                page_number=chunk_data.get("page_number", 0),
+                                chunk_index=chunk_data["chunk_index"],
+                                chunk_type=chunk_data.get("chunk_type", "text"),
+                                section=chunk_data.get("section", ""),
+                                token_count=chunk_data.get("token_count", 0),
+                                has_formula=chunk_data.get("has_formula", False),
+                                figure_path=chunk_data.get("figure_path", ""),
+                            )
                         )
-                    )
 
-                paper.status = PaperStatus.OCR_COMPLETE
-                processed += 1
-            except Exception as e:
-                logger.warning("OCR failed for paper %d: %s", paper.id, e)
-                paper.status = PaperStatus.ERROR
+                    paper.status = PaperStatus.OCR_COMPLETE
+                    processed += 1
+                except Exception as e:
+                    logger.warning("OCR failed for paper %d: %s", paper.id, e)
+                    paper.status = PaperStatus.ERROR
         await db.commit()
 
     return {
@@ -306,6 +338,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
 
 async def index_node(state: PipelineState) -> dict[str, Any]:
     """Index OCR-processed papers into the RAG vector store."""
+    if _is_cancelled(state):
+        return {"stage": "cancelled", "cancelled": True}
+
     from sqlalchemy import select
 
     from app.database import async_session_factory

@@ -10,9 +10,11 @@ from app.services import embedding_service
 @pytest.fixture(autouse=True)
 def reset_embedding_cache():
     """Clear cached embedding model between tests."""
-    embedding_service._cached_embed_model = None
+    from app.services.gpu_model_manager import gpu_model_manager
+
+    gpu_model_manager.unload("embedding")
     yield
-    embedding_service._cached_embed_model = None
+    gpu_model_manager.unload("embedding")
 
 
 class TestGetEmbeddingModel:
@@ -67,9 +69,9 @@ class TestDetectGpu:
         assert isinstance(has_gpu, bool)
         assert isinstance(count, int)
         assert isinstance(device, str)
-        assert device in ("cuda", "cpu")
+        assert device.startswith("cuda") or device == "cpu"
 
     def test_detect_gpu_no_raise(self):
         """detect_gpu never raises (handles missing torch)."""
         has_gpu, count, device = embedding_service.detect_gpu()
-        assert device in ("cuda", "cpu")
+        assert device.startswith("cuda") or device == "cpu"

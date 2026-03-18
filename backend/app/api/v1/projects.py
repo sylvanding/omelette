@@ -1,24 +1,43 @@
 """Project CRUD API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db
-from app.models import Keyword, Paper, Project
-from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.api.deps import get_db, get_or_404
+from app.models import Keyword, Paper, Project, Subscription
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
+from app.schemas.project import (
+    KeywordImportItem,
+    PaperImportItem,
+    ProjectCreate,
+    ProjectRead,
+    ProjectUpdate,
+    SubscriptionImportItem,
+)
 from app.services.pipeline_service import PipelineService
 
 router = APIRouter(tags=["projects"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]])
+class ProjectImportRequest(BaseModel):
+    """Request body for project import."""
+
+    name: str
+    description: str = ""
+    domain: str = ""
+    papers: list[PaperImportItem] = []
+    keywords: list[KeywordImportItem] = []
+    subscriptions: list[SubscriptionImportItem] = []
+
+
+@router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]], summary="List all projects")
 async def list_projects(
-    page: int = 1,
-    page_size: int = 20,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
+    page, page_size = pagination.page, pagination.page_size
     total_stmt = select(func.count(Project.id))
     total = (await db.execute(total_stmt)).scalar() or 0
 
@@ -71,7 +90,7 @@ async def list_projects(
     )
 
 
-@router.post("", response_model=ApiResponse[ProjectRead], status_code=201)
+@router.post("", response_model=ApiResponse[ProjectRead], status_code=201, summary="Create a project")
 async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)):
     project = Project(**body.model_dump())
     db.add(project)
@@ -92,11 +111,9 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
     )
 
 
-@router.get("/{project_id}", response_model=ApiResponse[ProjectRead])
+@router.get("/{project_id}", response_model=ApiResponse[ProjectRead], summary="Get project by ID")
 async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))).scalar() or 0
     kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == project_id))).scalar() or 0
     return ApiResponse(
@@ -114,11 +131,9 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.put("/{project_id}", response_model=ApiResponse[ProjectRead])
+@router.put("/{project_id}", response_model=ApiResponse[ProjectRead], summary="Update project")
 async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(project, key, value)
     await db.flush()
@@ -140,35 +155,119 @@ async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession 
     )
 
 
-@router.delete("/{project_id}", response_model=ApiResponse)
+@router.delete("/{project_id}", response_model=ApiResponse, summary="Delete project")
 async def delete_project(project_id: int, db: AsyncSession = Depends(get_db)):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
     await db.delete(project)
     return ApiResponse(message="Project deleted")
 
 
-@router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict])
+@router.get("/{project_id}/export", response_model=ApiResponse[dict], summary="Export project as JSON")
+async def export_project(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Export project data as JSON (papers, keywords, subscriptions)."""
+    project = await get_or_404(db, Project, project_id, detail="Project not found")
+
+    papers = (await db.execute(select(Paper).where(Paper.project_id == project_id))).scalars().all()
+    keywords = (await db.execute(select(Keyword).where(Keyword.project_id == project_id))).scalars().all()
+    subs = (await db.execute(select(Subscription).where(Subscription.project_id == project_id))).scalars().all()
+
+    return ApiResponse(
+        data={
+            "name": project.name,
+            "description": project.description,
+            "domain": project.domain,
+            "papers": [
+                {
+                    "title": p.title,
+                    "abstract": p.abstract,
+                    "doi": p.doi,
+                    "authors": p.authors,
+                    "year": p.year,
+                    "journal": p.journal,
+                    "source": p.source,
+                    "pdf_url": p.pdf_url,
+                    "status": p.status,
+                    "citation_count": p.citation_count,
+                }
+                for p in papers
+            ],
+            "keywords": [
+                {"term": k.term, "term_en": k.term_en, "level": k.level, "category": k.category, "synonyms": k.synonyms}
+                for k in keywords
+            ],
+            "subscriptions": [
+                {
+                    "name": s.name,
+                    "query": s.query,
+                    "sources": s.sources,
+                    "frequency": s.frequency,
+                    "max_results": s.max_results,
+                }
+                for s in subs
+            ],
+        }
+    )
+
+
+@router.post("/import", response_model=ApiResponse[ProjectRead], status_code=201, summary="Import project from JSON")
+async def import_project(body: ProjectImportRequest, db: AsyncSession = Depends(get_db)):
+    """Import a previously exported project."""
+    project = Project(name=body.name, description=body.description, domain=body.domain)
+    db.add(project)
+    await db.flush()
+
+    paper_cols = {c.name for c in Paper.__table__.columns} - {"id", "project_id", "created_at", "updated_at"}
+    kw_cols = {c.name for c in Keyword.__table__.columns} - {"id", "project_id", "created_at"}
+    sub_cols = {c.name for c in Subscription.__table__.columns} - {"id", "project_id", "created_at", "updated_at"}
+
+    for pd in body.papers:
+        db.add(Paper(project_id=project.id, **{k: v for k, v in pd.model_dump().items() if k in paper_cols}))
+
+    for kd in body.keywords:
+        db.add(Keyword(project_id=project.id, **{k: v for k, v in kd.model_dump().items() if k in kw_cols}))
+
+    for sd in body.subscriptions:
+        db.add(Subscription(project_id=project.id, **{k: v for k, v in sd.model_dump().items() if k in sub_cols}))
+
+    await db.flush()
+    await db.refresh(project)
+
+    paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project.id))).scalar() or 0
+    kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == project.id))).scalar() or 0
+
+    return ApiResponse(
+        code=201,
+        message="Project imported",
+        data=ProjectRead(
+            id=project.id,
+            name=project.name,
+            description=project.description,
+            domain=project.domain,
+            settings=project.settings,
+            created_at=project.created_at,
+            updated_at=project.updated_at,
+            paper_count=paper_count,
+            keyword_count=kw_count,
+        ),
+    )
+
+
+@router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict], summary="Run crawl-OCR-index pipeline")
 async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the crawl → OCR → index pipeline for all pending papers."""
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    await get_or_404(db, Project, project_id, detail="Project not found")
     svc = PipelineService(db)
     result = await svc.process_project_pending(project_id)
     return ApiResponse(data=result)
 
 
-@router.post("/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict])
+@router.post(
+    "/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict], summary="Run pipeline for single paper"
+)
 async def run_paper_pipeline(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the pipeline for a single paper."""
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found in this project")
+    await get_or_404(db, Project, project_id, detail="Project not found")
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found in this project")
     svc = PipelineService(db)
     result = await svc.process_paper(paper_id)
     return ApiResponse(data=result)

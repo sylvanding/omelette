@@ -68,7 +68,7 @@ async def project_with_papers():
 
 @pytest.mark.asyncio
 async def test_summarize_papers(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -84,7 +84,7 @@ async def test_summarize_papers(project_with_papers):
 
 @pytest.mark.asyncio
 async def test_generate_citations_gb_t_7714(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -103,7 +103,7 @@ async def test_generate_citations_gb_t_7714(project_with_papers):
 
 @pytest.mark.asyncio
 async def test_generate_citations_apa(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -119,7 +119,7 @@ async def test_generate_citations_apa(project_with_papers):
 
 @pytest.mark.asyncio
 async def test_generate_citations_mla(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -135,7 +135,7 @@ async def test_generate_citations_mla(project_with_papers):
 
 @pytest.mark.asyncio
 async def test_generate_review_outline(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -156,7 +156,7 @@ async def test_generate_review_outline(project_with_papers):
 
 @pytest.mark.asyncio
 async def test_analyze_gaps(project_with_papers):
-    from app.services.llm_client import LLMClient
+    from app.services.llm.client import LLMClient
     from app.services.writing_service import WritingService
 
     project_id, paper_ids = project_with_papers
@@ -300,7 +300,7 @@ async def test_assist_unknown_task(client: AsyncClient, project_with_papers):
         f"/api/v1/projects/{project_id}/writing/assist",
         json={"task": "unknown_task"},
     )
-    assert resp.status_code == 200  # We return 400 in data
+    assert resp.status_code == 400
     body = resp.json()
     assert body["code"] == 400
     assert "Unknown task" in body["message"]

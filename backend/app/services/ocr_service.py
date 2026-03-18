@@ -10,11 +10,13 @@ Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
 import json
 import logging
 import re
+import tempfile
 from pathlib import Path
 
 import pdfplumber
 
 from app.config import settings
+from app.services.gpu_utils import release_gpu_memory
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,25 @@ class OCRService:
         self._mineru_client = None
         self.output_dir = Path(settings.ocr_output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def close(self) -> None:
+        """Release PaddleOCR model and free GPU memory."""
+        if self._paddle_ocr is not None:
+            del self._paddle_ocr
+            self._paddle_ocr = None
+        if self._marker_converter is not None:
+            del self._marker_converter
+            self._marker_converter = None
+        release_gpu_memory(caller="OCRService")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def __del__(self):
+        self.close()
 
     def extract_text_native(self, pdf_path: str) -> list[dict]:
         """Extract text from native (non-scanned) PDF using pdfplumber."""
@@ -145,17 +166,16 @@ class OCRService:
             else:
                 import fitz
 
-                pdf_doc = fitz.open(pdf_path)
                 result = []
-                for page_num in range(len(pdf_doc)):
-                    page = pdf_doc[page_num]
-                    pix = page.get_pixmap(dpi=150)
-                    img_path = f"/tmp/omelette_ocr_page_{page_num}.png"
-                    pix.save(img_path)
-                    page_result = ocr.ocr(img_path, cls=False)
-                    result.append(page_result[0] if page_result else [])
-                    Path(img_path).unlink(missing_ok=True)
-                pdf_doc.close()
+                with fitz.open(pdf_path) as pdf_doc:
+                    for page_num in range(len(pdf_doc)):
+                        page = pdf_doc[page_num]
+                        pix = page.get_pixmap(dpi=150)
+                        img_path = str(Path(tempfile.gettempdir()) / f"omelette_ocr_page_{page_num}.png")
+                        pix.save(img_path)
+                        page_result = ocr.ocr(img_path, cls=False)
+                        result.append(page_result[0] if page_result else [])
+                        Path(img_path).unlink(missing_ok=True)
 
             for i, page_result in enumerate(result):
                 text_lines = []
@@ -188,15 +208,26 @@ class OCRService:
             return None
 
         from app.services.mineru_client import MinerUClient
+        from app.services.mineru_process_manager import mineru_process_manager
+
+        if settings.mineru_auto_manage:
+            ok = await mineru_process_manager.ensure_running()
+            if not ok:
+                logger.info("MinerU auto-start failed, falling back to pdfplumber")
+                return None
 
         if self._mineru_client is None:
             self._mineru_client = MinerUClient()
 
-        if not await self._mineru_client.health_check():
+        if not settings.mineru_auto_manage and not await self._mineru_client.health_check():
             logger.info("MinerU service not available, skipping")
             return None
 
         result = await self._mineru_client.parse_pdf(pdf_path)
+
+        if settings.mineru_auto_manage:
+            mineru_process_manager.touch()
+
         if result.get("error"):
             logger.warning("MinerU failed for %s: %s", pdf_path, result["error"])
             return None

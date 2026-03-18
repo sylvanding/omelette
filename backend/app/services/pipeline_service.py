@@ -77,25 +77,38 @@ class PipelineService:
 
     async def _ocr(self, paper: Paper) -> dict:
         try:
-            ocr = OCRService(use_gpu=True)
-            result = ocr.process_pdf(paper.pdf_path)
+            with OCRService(use_gpu=True) as ocr:
+                result = await ocr.process_pdf_async(paper.pdf_path)
 
             if result.get("error"):
                 paper.status = PaperStatus.ERROR
                 return {"success": False, "reason": result["error"]}
 
-            pages = result.get("pages", [])
             chunks = []
-            for page in pages:
-                if page.get("text", "").strip():
-                    chunks.append(
-                        {
-                            "paper_id": paper.id,
-                            "content": page["text"],
-                            "page_number": page.get("page_number", 0),
-                            "chunk_index": len(chunks),
-                        }
-                    )
+            if result.get("method") == "mineru":
+                mineru_chunks = ocr.chunk_mineru_markdown(result["md_content"])
+                for i, c in enumerate(mineru_chunks):
+                    if c.get("content", "").strip():
+                        chunks.append(
+                            {
+                                "paper_id": paper.id,
+                                "content": c["content"],
+                                "page_number": c.get("page_number", 1),
+                                "chunk_index": i,
+                            }
+                        )
+            else:
+                pages = result.get("pages", [])
+                for page in pages:
+                    if page.get("text", "").strip():
+                        chunks.append(
+                            {
+                                "paper_id": paper.id,
+                                "content": page["text"],
+                                "page_number": page.get("page_number", 0),
+                                "chunk_index": len(chunks),
+                            }
+                        )
 
             for chunk_data in chunks:
                 chunk = PaperChunk(**chunk_data)

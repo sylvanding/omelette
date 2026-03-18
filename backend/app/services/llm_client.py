@@ -1,5 +1,0 @@
-"""Backward-compatibility shim — imports redirect to app.services.llm."""
-
-from app.services.llm.client import LLMClient, get_llm_client
-
-__all__ = ["LLMClient", "get_llm_client"]

@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_cached_embed_model: BaseEmbedding | None = None
 _env_injected = False
 
 
@@ -37,26 +36,82 @@ def _inject_hf_env() -> None:
         logger.info("Using HuggingFace mirror: %s", settings.hf_endpoint)
 
 
-def detect_gpu() -> tuple[bool, int, str]:
-    """Detect GPU availability. Returns (has_gpu, device_count, device_string)."""
+def detect_gpu(*, pinned_gpu_id: int = -1) -> tuple[bool, int, str]:
+    """Detect GPU availability and pick the best device.
+
+    Args:
+        pinned_gpu_id: If >= 0, skip auto-detection and return ``cuda:N``.
+
+    Returns (has_gpu, device_count, device_string) where device_string is
+    ``"cuda:N"`` (best/pinned device) or ``"cpu"``.
+    """
     try:
         import torch
 
         if torch.cuda.is_available():
             count = torch.cuda.device_count()
             if count > 0:
+                if 0 <= pinned_gpu_id < count:
+                    device = f"cuda:{pinned_gpu_id}"
+                    logger.info("GPU pinned: %s (of %d device(s))", device, count)
+                    return True, count, device
                 devices_env = os.environ.get("CUDA_VISIBLE_DEVICES", settings.cuda_visible_devices)
+                best_device = _pick_best_gpu(count)
                 logger.info(
-                    "GPU detected: %d device(s), CUDA_VISIBLE_DEVICES=%s",
+                    "GPU detected: %d device(s), CUDA_VISIBLE_DEVICES=%s, selected=%s",
                     count,
                     devices_env,
+                    best_device,
                 )
-                return True, count, "cuda"
+                return True, count, best_device
         logger.info("No CUDA GPU available, using CPU")
         return False, 0, "cpu"
     except ImportError:
         logger.warning("torch not installed, GPU detection skipped")
         return False, 0, "cpu"
+
+
+def _make_api_loader(model_name: str):
+    """Return a callable that builds API embedding (avoids lambda for ruff E731)."""
+
+    def _load() -> BaseEmbedding:
+        return _build_api_embedding(model_name)
+
+    return _load
+
+
+def _make_local_loader(model_name: str):
+    """Return a callable that builds local embedding (avoids lambda for ruff E731)."""
+
+    def _load() -> BaseEmbedding:
+        return _build_local_embedding(model_name)
+
+    return _load
+
+
+def _pick_best_gpu(device_count: int) -> str:
+    """Select the CUDA device with the most free memory."""
+    if device_count <= 1:
+        return "cuda:0"
+    try:
+        import torch
+
+        best_idx = 0
+        best_free = 0
+        for idx in range(device_count):
+            free, _total = torch.cuda.mem_get_info(idx)
+            if free > best_free:
+                best_free = free
+                best_idx = idx
+        logger.info(
+            "GPU selection: device cuda:%d has %.1f GiB free (best of %d)",
+            best_idx,
+            best_free / (1024**3),
+            device_count,
+        )
+        return f"cuda:{best_idx}"
+    except Exception:
+        return "cuda:0"
 
 
 def get_embedding_model(
@@ -71,37 +126,55 @@ def get_embedding_model(
       - "local": HuggingFaceEmbedding with GPU auto-detection
       - "api":   OpenAIEmbedding (works with any OpenAI-compatible endpoint)
       - "mock":  Deterministic mock for tests
+
+    Local models are managed by :class:`GPUModelManager` which provides
+    TTL-based auto-unloading.
     """
-    global _cached_embed_model
-    if _cached_embed_model is not None and not force_reload:
-        return _cached_embed_model
+    from app.services.gpu_model_manager import gpu_model_manager
 
     prov = provider or getattr(settings, "embedding_provider", "local")
     name = model_name or settings.embedding_model
 
     if prov == "mock":
-        model = _build_mock_embedding()
+        loader = _build_mock_embedding
+        device = "cpu"
     elif prov == "api":
-        model = _build_api_embedding(name)
+        loader = _make_api_loader(name)
+        device = "cpu"
     else:
-        model = _build_local_embedding(name)
+        _, _, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
+        loader = _make_local_loader(name)
 
-    _cached_embed_model = model
-    return model
+    return gpu_model_manager.acquire(
+        "embedding",
+        loader,
+        model_name=name,
+        device=device,
+        force_reload=force_reload,
+    )
+
+
+def _cleanup_gpu_memory() -> None:
+    """Force garbage collection and release cached GPU memory."""
+    from app.services.gpu_utils import release_gpu_memory
+
+    release_gpu_memory(caller="embedding_service")
 
 
 def _build_local_embedding(model_name: str) -> BaseEmbedding:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
     _inject_hf_env()
+    _cleanup_gpu_memory()
 
-    has_gpu, _count, device = detect_gpu()
-    logger.info("Loading local embedding model=%s device=%s", model_name, device)
+    has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
+    batch_size = settings.embed_batch_size
+    logger.info("Loading local embedding model=%s device=%s batch_size=%d", model_name, device, batch_size)
 
     return HuggingFaceEmbedding(
         model_name=model_name,
         device=device,
-        embed_batch_size=32 if has_gpu else 8,
+        embed_batch_size=batch_size,
     )
 
 

@@ -10,7 +10,9 @@ ChromaVectorStore, SentenceSplitter, and query engine for:
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -23,7 +25,8 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import Document, NodeRelationship, RelatedNodeInfo, TextNode
 
 from app.config import settings
-from app.services.llm_client import LLMClient
+from app.prompts.rag import RAG_ANSWER_SYSTEM
+from app.services.llm.client import LLMClient
 
 if TYPE_CHECKING:
     from llama_index.core.embeddings import BaseEmbedding
@@ -33,6 +36,8 @@ logger = logging.getLogger(__name__)
 
 class RAGService:
     """LlamaIndex-powered RAG service with ChromaDB vector store."""
+
+    _COUNT_CACHE_TTL = 60.0
 
     def __init__(
         self,
@@ -44,6 +49,21 @@ class RAGService:
         self.llm = llm
         self._chroma_client = chroma_client
         self._embed_model = embed_model
+        self._count_cache: dict[int, tuple[int, float]] = {}
+
+    async def _get_count(self, project_id: int) -> int:
+        """Get collection count with caching and async wrapping."""
+        now = time.monotonic()
+        cached = self._count_cache.get(project_id)
+        if cached and now - cached[1] < self._COUNT_CACHE_TTL:
+            return cached[0]
+        collection = self._get_collection(project_id)
+        count = await asyncio.to_thread(collection.count)
+        self._count_cache[project_id] = (count, now)
+        return count
+
+    def _invalidate_count(self, project_id: int) -> None:
+        self._count_cache.pop(project_id, None)
 
     def _get_chroma_client(self) -> chromadb.ClientAPI:
         if self._chroma_client is None:
@@ -58,7 +78,12 @@ class RAGService:
     def _get_collection(self, project_id: int) -> chromadb.Collection:
         return self._get_chroma_client().get_or_create_collection(
             name=f"project_{project_id}",
-            metadata={"hnsw:space": "cosine"},
+            metadata={
+                "hnsw:space": "cosine",
+                "hnsw:construction_ef": 200,
+                "hnsw:search_ef": 100,
+                "hnsw:M": 32,
+            },
         )
 
     def _ensure_embed_model(self) -> BaseEmbedding:
@@ -66,6 +91,15 @@ class RAGService:
             from app.services.embedding_service import get_embedding_model
 
             self._embed_model = get_embedding_model()
+        LlamaSettings.embed_model = self._embed_model
+        return self._embed_model
+
+    def _reload_embed_model(self) -> BaseEmbedding:
+        """Force-reload the embedding model onto the best available GPU."""
+        from app.services.embedding_service import _cleanup_gpu_memory, get_embedding_model
+
+        _cleanup_gpu_memory()
+        self._embed_model = get_embedding_model(force_reload=True)
         LlamaSettings.embed_model = self._embed_model
         return self._embed_model
 
@@ -104,6 +138,9 @@ class RAGService:
         if on_progress:
             on_progress("loading_model", 0)
 
+        from app.services.embedding_service import _cleanup_gpu_memory
+
+        _cleanup_gpu_memory()
         index = self._get_index(project_id)
 
         if on_progress:
@@ -132,8 +169,6 @@ class RAGService:
             node.relationships[NodeRelationship.SOURCE] = RelatedNodeInfo(node_id=ref_doc_id)
             nodes.append(node)
 
-        import asyncio
-
         total = len(nodes)
         indexed = 0
         for i in range(0, total, batch_size):
@@ -144,6 +179,7 @@ class RAGService:
                 pct = 10 + int(90 * indexed / total)
                 on_progress("indexing", min(pct, 99))
 
+        self._invalidate_count(project_id)
         return {"indexed": total, "collection": f"project_{project_id}"}
 
     async def index_documents(
@@ -161,10 +197,9 @@ class RAGService:
         splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         nodes = splitter.get_nodes_from_documents(documents)
 
-        import asyncio
-
         index = self._get_index(project_id)
         await asyncio.to_thread(index.insert_nodes, nodes)
+        self._invalidate_count(project_id)
         return {"indexed": len(nodes), "collection": f"project_{project_id}"}
 
     @staticmethod
@@ -184,7 +219,7 @@ class RAGService:
         chunk_index: int,
         window: int = 1,
     ) -> tuple[str, str]:
-        """Fetch adjacent chunks for context expansion.
+        """Fetch adjacent chunks for context expansion (single node).
 
         Returns ``(prev_text, next_text)`` so the caller can assemble
         ``[prev] \\n [main] \\n [next]`` in the correct order.
@@ -204,8 +239,59 @@ class RAGService:
                 docs = result.get("documents") or []
                 next_text = "\n".join(d for d in docs if d)
         except Exception:
-            pass
+            logger.debug("Adjacent chunk fetch failed for paper %d chunk %d", paper_id, chunk_index, exc_info=True)
         return prev_text, next_text
+
+    async def _get_adjacent_chunks_batch(
+        self,
+        collection: chromadb.Collection,
+        nodes: list,
+    ) -> list[tuple[str, str]]:
+        """Batch-fetch adjacent chunks for all nodes in a single ChromaDB call.
+
+        Returns a list of (prev_text, next_text) tuples aligned with *nodes*.
+        """
+        all_ids: set[str] = set()
+        node_adj: list[tuple[str | None, str | None]] = []
+
+        for n in nodes:
+            node = n.node if hasattr(n, "node") else n
+            meta = node.metadata or {}
+            pid = meta.get("paper_id")
+            cidx = meta.get("chunk_index")
+            if pid is None or cidx is None:
+                node_adj.append((None, None))
+                continue
+            prev_id = f"paper_{pid}_chunk_{cidx - 1}"
+            next_id = f"paper_{pid}_chunk_{cidx + 1}"
+            all_ids.update([prev_id, next_id])
+            node_adj.append((prev_id, next_id))
+
+        id_to_doc: dict[str, str] = {}
+        if all_ids:
+            try:
+                result = await asyncio.to_thread(collection.get, ids=list(all_ids), include=["documents"])
+                for doc_id, doc in zip(result.get("ids") or [], result.get("documents") or []):
+                    if doc:
+                        id_to_doc[doc_id] = doc
+            except Exception:
+                logger.debug("Batch adjacent chunk fetch failed", exc_info=True)
+
+        return [
+            (id_to_doc.get(prev_id, ""), id_to_doc.get(next_id, "")) if prev_id is not None else ("", "")
+            for prev_id, next_id in node_adj
+        ]
+
+    def _build_retriever(self, index: VectorStoreIndex, fetch_k: int, count: int):
+        """Build a retriever, optionally with MMR mode."""
+        effective_k = min(fetch_k, count)
+        if settings.rag_mmr_threshold > 0:
+            return index.as_retriever(
+                similarity_top_k=effective_k,
+                vector_store_query_mode="mmr",
+                vector_store_kwargs={"mmr_threshold": settings.rag_mmr_threshold},
+            )
+        return index.as_retriever(similarity_top_k=effective_k)
 
     async def query(
         self,
@@ -216,41 +302,39 @@ class RAGService:
         include_sources: bool = True,
     ) -> dict:
         """Query the knowledge base and generate an answer with citations."""
-        collection = self._get_collection(project_id)
-        if collection.count() == 0:
+        count = await self._get_count(project_id)
+        if count == 0:
             return {
                 "answer": "No documents have been indexed yet. Please process and index papers first.",
                 "sources": [],
                 "confidence": 0.0,
             }
 
-        import asyncio
-
+        collection = self._get_collection(project_id)
         index = self._get_index(project_id)
-        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+
+        oversample = settings.rag_oversample_factor if use_reranker else 1
+        fetch_k = top_k * oversample
+        retriever = self._build_retriever(index, fetch_k, count)
         retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
 
         if not retrieved_nodes:
             return {"answer": "No relevant documents found.", "sources": [], "confidence": 0.0}
 
+        if use_reranker and retrieved_nodes:
+            from app.services.reranker_service import rerank_nodes
+
+            retrieved_nodes = await rerank_nodes(retrieved_nodes, question, top_n=top_k)
+
+        adj_results = await self._get_adjacent_chunks_batch(collection, retrieved_nodes)
+
         contexts = []
         sources = []
-        for node_with_score in retrieved_nodes:
+        for node_with_score, (prev_text, next_text) in zip(retrieved_nodes, adj_results):
             node = node_with_score.node
             meta = node.metadata or {}
             score = node_with_score.score or 0.0
             text = node.get_content()
-
-            paper_id = meta.get("paper_id")
-            chunk_idx = meta.get("chunk_index")
-            prev_text, next_text = "", ""
-            if paper_id is not None and chunk_idx is not None:
-                prev_text, next_text = await asyncio.to_thread(
-                    self._get_adjacent_chunks,
-                    collection,
-                    paper_id,
-                    chunk_idx,
-                )
 
             parts = [p for p in [prev_text, text, next_text] if p]
             full_context = "\n".join(parts)
@@ -260,7 +344,7 @@ class RAGService:
             )
             sources.append(
                 {
-                    "paper_id": paper_id,
+                    "paper_id": meta.get("paper_id"),
                     "paper_title": meta.get("paper_title", ""),
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
@@ -289,45 +373,45 @@ class RAGService:
         project_id: int,
         question: str,
         top_k: int = 10,
+        use_reranker: bool = False,
     ) -> list[dict]:
         """Retrieve relevant chunks without LLM generation.
 
         Designed for the Chat Pipeline where the LLM call happens
         downstream in the generate node, avoiding a redundant call here.
         """
-        collection = self._get_collection(project_id)
-        if collection.count() == 0:
+        count = await self._get_count(project_id)
+        if count == 0:
             return []
 
-        import asyncio
-
+        collection = self._get_collection(project_id)
         index = self._get_index(project_id)
-        retriever = index.as_retriever(similarity_top_k=min(top_k, collection.count()))
+
+        oversample = settings.rag_oversample_factor if use_reranker else 1
+        fetch_k = top_k * oversample
+        retriever = self._build_retriever(index, fetch_k, count)
         retrieved_nodes = await asyncio.to_thread(retriever.retrieve, question)
 
+        if use_reranker and retrieved_nodes:
+            from app.services.reranker_service import rerank_nodes
+
+            retrieved_nodes = await rerank_nodes(retrieved_nodes, question, top_n=top_k)
+
+        adj_results = await self._get_adjacent_chunks_batch(collection, retrieved_nodes)
+
         sources: list[dict] = []
-        for node_with_score in retrieved_nodes:
+        for node_with_score, (prev_text, next_text) in zip(retrieved_nodes, adj_results):
             node = node_with_score.node
             meta = node.metadata or {}
             score = node_with_score.score or 0.0
             text = node.get_content()
 
-            paper_id = meta.get("paper_id")
-            chunk_idx = meta.get("chunk_index")
-            prev_text, next_text = "", ""
-            if paper_id is not None and chunk_idx is not None:
-                prev_text, next_text = await asyncio.to_thread(
-                    self._get_adjacent_chunks,
-                    collection,
-                    paper_id,
-                    chunk_idx,
-                )
             parts = [p for p in [prev_text, text, next_text] if p]
             full_context = "\n".join(parts)
 
             sources.append(
                 {
-                    "paper_id": paper_id,
+                    "paper_id": meta.get("paper_id"),
                     "paper_title": meta.get("paper_title", ""),
                     "page_number": meta.get("page_number"),
                     "chunk_type": meta.get("chunk_type", "text"),
@@ -349,14 +433,7 @@ class RAGService:
         )
         return await self.llm.chat(
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a scientific research assistant. "
-                        "Answer questions based strictly on the provided context. "
-                        "Cite sources accurately."
-                    ),
-                },
+                {"role": "system", "content": RAG_ANSWER_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.3,
@@ -368,7 +445,8 @@ class RAGService:
         client = self._get_chroma_client()
         name = f"project_{project_id}"
         try:
-            client.delete_collection(name)
+            await asyncio.to_thread(client.delete_collection, name)
+            self._invalidate_count(project_id)
             return {"deleted": True, "collection": name}
         except ValueError:
             return {"deleted": False, "message": "Collection not found"}
@@ -377,7 +455,8 @@ class RAGService:
         """Delete all chunks for a single paper from the index."""
         collection = self._get_collection(project_id)
         try:
-            collection.delete(where={"paper_id": paper_id})
+            await asyncio.to_thread(collection.delete, where={"paper_id": paper_id})
+            self._invalidate_count(project_id)
             return {"deleted": True, "paper_id": paper_id}
         except Exception as e:
             logger.warning("Failed to delete paper %d from index: %s", paper_id, e)
@@ -386,10 +465,11 @@ class RAGService:
     async def get_stats(self, project_id: int) -> dict:
         """Get index statistics for a project."""
         try:
-            collection = self._get_collection(project_id)
+            count = await self._get_count(project_id)
             return {
-                "total_chunks": collection.count(),
+                "total_chunks": count,
                 "collection_name": f"project_{project_id}",
             }
         except Exception:
+            logger.warning("Failed to get stats for project %d", project_id, exc_info=True)
             return {"total_chunks": 0, "collection_name": f"project_{project_id}"}

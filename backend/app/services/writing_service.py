@@ -1,5 +1,6 @@
 """Writing assistance service — summarize, cite, outline, gap analysis, literature review."""
 
+import asyncio
 import json
 import logging
 import re
@@ -8,9 +9,17 @@ from collections.abc import AsyncGenerator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings as app_settings
 from app.models import Paper
-from app.services.llm_client import LLMClient
+from app.prompts.writing import (
+    WRITING_GAP_SYSTEM,
+    WRITING_OUTLINE_SYSTEM,
+    WRITING_SECTION_SYSTEM,
+    WRITING_SUMMARIZE_SYSTEM,
+)
+from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +29,6 @@ REVIEW_STYLES = {
     "thematic": "主题性综述 (thematic review)：按研究主题分组对比，突出异同",
 }
 
-SECTION_SYSTEM_PROMPT = """\
-你是一位学术综述写作专家。请为以下章节撰写综述段落。
-要求：
-1. 使用学术语言，逻辑清晰
-2. 在适当位置使用 [1][2] 格式引用
-3. 每个引用必须对应提供的文献，不得捏造
-4. 段落长度 200-400 字"""
-
 
 class WritingService:
     def __init__(self, db: AsyncSession, llm: LLMClient, rag: RAGService | None = None):
@@ -35,18 +36,15 @@ class WritingService:
         self.llm = llm
         self.rag = rag
 
+    _summarize_semaphore = asyncio.Semaphore(app_settings.llm_parallel_limit)
+
     async def summarize_papers(self, paper_ids: list[int], language: str = "en") -> list[dict]:
-        """Generate summaries for selected papers."""
+        """Generate summaries for selected papers (parallelized with semaphore)."""
         stmt = select(Paper).where(Paper.id.in_(paper_ids))
         result = await self.db.execute(stmt)
         papers = {p.id: p for p in result.scalars().all()}
 
-        summaries = []
-        for paper_id in paper_ids:
-            paper = papers.get(paper_id)
-            if not paper:
-                continue
-
+        async def _summarize_one(paper: Paper) -> dict:
             prompt = f"""Summarize this scientific paper in {language}:
 Title: {paper.title}
 Abstract: {paper.abstract}
@@ -59,27 +57,21 @@ Provide:
 3. Innovation points
 4. Limitations (if apparent from abstract)"""
 
-            summary = await self.llm.chat(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a scientific paper analyst. Provide concise, accurate summaries.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.3,
-                task_type="summarize",
-            )
+            async with self._summarize_semaphore:
+                summary = await self.llm.chat(
+                    messages=[
+                        {"role": "system", "content": WRITING_SUMMARIZE_SYSTEM},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.3,
+                    task_type="summarize",
+                )
 
-            summaries.append(
-                {
-                    "paper_id": paper.id,
-                    "title": paper.title,
-                    "summary": summary,
-                }
-            )
+            return {"paper_id": paper.id, "title": paper.title, "summary": summary}
 
-        return summaries
+        tasks = [_summarize_one(papers[pid]) for pid in paper_ids if pid in papers]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return [r for r in results if isinstance(r, dict)]
 
     async def generate_citations(self, paper_ids: list[int], style: str = "gb_t_7714") -> list[dict]:
         """Generate formatted citations for papers."""
@@ -150,10 +142,7 @@ For each section, suggest which papers are most relevant."""
 
         outline = await self.llm.chat(
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a scientific writing expert. Generate well-structured review outlines.",
-                },
+                {"role": "system", "content": WRITING_OUTLINE_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,
@@ -188,10 +177,7 @@ Identify:
 
         analysis = await self.llm.chat(
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a research gap analyst. Identify unexplored areas and innovation opportunities.",
-                },
+                {"role": "system", "content": WRITING_GAP_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,
@@ -222,7 +208,7 @@ Identify:
         papers = result.scalars().all()
 
         if not papers:
-            yield _sse("error", {"message": "知识库中暂无文献，请先添加文献后再生成综述"})
+            yield format_sse_error("知识库中暂无文献，请先添加文献后再生成综述", code=400)
             return
 
         yield _sse("progress", {"step": "outline", "message": "正在生成综述提纲..."})
@@ -270,7 +256,7 @@ Identify:
 
             async for chunk in self.llm.chat_stream(
                 messages=[
-                    {"role": "system", "content": SECTION_SYSTEM_PROMPT},
+                    {"role": "system", "content": WRITING_SECTION_SYSTEM},
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.5,
@@ -314,10 +300,7 @@ Identify:
 
         return await self.llm.chat(
             messages=[
-                {
-                    "role": "system",
-                    "content": "You are a scientific writing expert. Generate well-structured review outlines.",
-                },
+                {"role": "system", "content": WRITING_OUTLINE_SYSTEM},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,

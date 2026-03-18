@@ -60,7 +60,7 @@ Omelette automates the full research literature pipeline — from keyword manage
   Multi-channel download via Unpaywall, arXiv, and direct URL fallback strategies.
 
   **📝 OCR Processing**
-  Native text extraction with PaddleOCR GPU fallback for scanned documents.
+  Native text extraction via MinerU (auto-managed subprocess) or PaddleOCR GPU fallback.
 
   **🧠 RAG Knowledge Base**
   LlamaIndex engine with ChromaDB, GPU-aware embeddings, hybrid retrieval, and cited answers.
@@ -69,7 +69,10 @@ Omelette automates the full research literature pipeline — from keyword manage
   Summarization, citation generation (GB/T 7714, APA, MLA), review outlines, and gap analysis.
 
   **🔄 LangGraph Pipeline**
-  Pipeline orchestration with human-in-the-loop interrupt and resume.
+  Pipeline orchestration with HITL interrupt/resume and persistent checkpointing.
+
+  **⚡ GPU Resource Management**
+  TTL-based auto-unload for GPU models, MinerU subprocess auto-management, monitoring API, and exit cleanup watchdog.
 
   **🔗 MCP Integration**
   Model Context Protocol server for AI IDE clients (Cursor, Claude Code, etc.).
@@ -103,7 +106,7 @@ Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ 
 | **RAG** | LlamaIndex with GPU-aware embeddings |
 | **LLM** | LangChain (OpenAI, Anthropic, Aliyun, Volcengine, Ollama) |
 | **Orchestration** | LangGraph with HITL interrupt/resume |
-| **OCR** | pdfplumber (native) + PaddleOCR (scanned, optional) |
+| **OCR** | MinerU (auto-managed) + pdfplumber (native) + PaddleOCR (scanned) |
 | **MCP** | Model Context Protocol server |
 | **Docs** | VitePress (bilingual EN/ZH) |
 
@@ -147,6 +150,10 @@ cp .env.example .env
 | `ALIYUN_API_KEY` | Aliyun Bailian API key |
 | `VOLCENGINE_API_KEY` | Volcengine Doubao API key |
 | `SEMANTIC_SCHOLAR_API_KEY` | Optional; increases Semantic Scholar rate limit |
+| `GPU_MODE` | GPU preset: `conservative`, `balanced` (default), `aggressive` |
+| `MODEL_TTL_SECONDS` | Auto-unload GPU models after N seconds idle (default: 300) |
+| `MINERU_AUTO_MANAGE` | Auto start/stop MinerU subprocess (default: true) |
+| `PDF_PARSER` | `auto`, `mineru`, or `pdfplumber` |
 
 See [`.env.example`](.env.example) for the full list.
 
@@ -156,10 +163,31 @@ See [`.env.example`](.env.example) for the full list.
 
 ```bash
 cd backend
+
+# Run database migrations
+alembic upgrade head
+
+# Start server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4. Start frontend
+On startup, the backend automatically:
+- Writes a PID file to `DATA_DIR/omelette.pid`
+- Starts a GPU model TTL monitor (auto-unloads idle models)
+- If `MINERU_AUTO_MANAGE=true`, manages MinerU subprocess lifecycle
+- Registers cleanup handlers (`atexit` + `SIGHUP`) so GPU resources are released even if the process exits unexpectedly
+
+### 4. (Optional) GPU watchdog
+
+For extra safety against `kill -9` or crashes, run the external watchdog:
+
+```bash
+python backend/scripts/gpu_watchdog.py --daemon
+```
+
+The watchdog monitors the Omelette process and cleans up GPU resources if it terminates abnormally.
+
+### 5. Start frontend
 
 ```bash
 cd frontend
@@ -169,12 +197,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. (Optional) OCR & Embeddings
+### 6. (Optional) MinerU setup
+
+If using MinerU for PDF parsing (`PDF_PARSER=mineru`):
 
 ```bash
-cd backend
-pip install -e ".[ocr,ml]"
+# Create a separate conda env for MinerU
+conda create -n mineru python=3.10
+conda activate mineru
+pip install magic-pdf[full]
 ```
+
+Set `MINERU_CONDA_ENV=mineru` in `.env`. Omelette will auto-start MinerU when needed.
 
 > **Troubleshooting:** If you get `ModuleNotFoundError: No module named 'fastapi'`, ensure the conda environment is activated: `conda activate omelette`.
 
@@ -194,7 +228,8 @@ omelette/
 │   │   └── main.py       # App entry, lifespan, CORS
 │   ├── mcp_server.py     # MCP (Model Context Protocol) server
 │   ├── alembic/          # Database migrations
-│   ├── tests/            # pytest-asyncio tests (178 tests)
+│   ├── scripts/          # Utilities (gpu_watchdog.py)
+│   ├── tests/            # pytest-asyncio tests (526 tests)
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
@@ -230,7 +265,7 @@ make dev                  # Start both backend and frontend
 ### Running Tests
 
 ```bash
-# Backend (178 tests)
+# Backend (526 tests)
 cd backend && pytest tests/ -v
 
 # Frontend unit tests (28 tests — Vitest + Testing Library + MSW)
@@ -269,6 +304,8 @@ REST APIs under `/api/v1/`:
 | `GET/POST /subscriptions` | Subscription management |
 | `GET/POST /settings` | Settings and health |
 | `GET /settings/health` | Health check |
+| `GET /gpu/status` | GPU model and memory status |
+| `POST /gpu/unload` | Manually unload GPU models |
 
 MCP server: `/mcp` (WebSocket/SSE for AI IDE clients)
 

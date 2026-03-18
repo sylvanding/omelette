@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from conftest import remove_paper_doi_unique_constraint
 from httpx import ASGITransport, AsyncClient
 
 from app.database import Base, engine
@@ -14,6 +15,7 @@ from app.services.dedup_service import DedupService
 
 @pytest.fixture(autouse=True)
 async def setup_db():
+    remove_paper_doi_unique_constraint()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -190,7 +192,8 @@ async def test_find_llm_dedup_candidates(client: AsyncClient, project_id: int):
 
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    candidates = resp.json()["data"]
+    data = resp.json()["data"]
+    candidates = data["items"]
     assert len(candidates) >= 1
     assert "paper_a_id" in candidates[0]
     assert "paper_b_id" in candidates[0]
@@ -212,7 +215,7 @@ async def test_find_llm_candidates_empty_when_no_similar(client: AsyncClient, pr
 
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    assert resp.json()["data"] == []
+    assert resp.json()["data"]["items"] == []
 
 
 # --- LLM verify (mock) ---
@@ -260,7 +263,7 @@ async def test_llm_verify_duplicate_with_patched_response(client: AsyncClient, p
 
     mock_result = {"is_duplicate": True, "confidence": 0.95, "reason": "Same DOI and title"}
 
-    with patch("app.services.llm_client.LLMClient.chat_json", new_callable=AsyncMock) as mock_chat:
+    with patch("app.services.llm.client.LLMClient.chat_json", new_callable=AsyncMock) as mock_chat:
         mock_chat.return_value = mock_result
 
         resp = await client.post(
@@ -323,7 +326,7 @@ async def test_run_dedup_nonexistent_project(client: AsyncClient):
 async def test_list_candidates_empty(client: AsyncClient, project_id: int):
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    assert resp.json()["data"] == []
+    assert resp.json()["data"]["items"] == []
 
 
 @pytest.mark.asyncio

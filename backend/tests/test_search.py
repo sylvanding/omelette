@@ -414,7 +414,7 @@ async def test_execute_search_api(client: AsyncClient):
 
         resp = await client.post(
             f"/api/v1/projects/{project_id}/search/execute",
-            params={"query": "machine learning"},
+            json={"query": "machine learning"},
         )
     assert resp.status_code == 200
     body = resp.json()
@@ -431,16 +431,16 @@ async def test_execute_search_no_query_no_keywords(client: AsyncClient):
 
     resp = await client.post(
         f"/api/v1/projects/{project_id}/search/execute",
-        params={"query": ""},
+        json={"query": ""},
     )
     assert resp.status_code == 400
-    assert "no keywords" in resp.json()["detail"].lower()
+    assert "no keywords" in resp.json()["message"].lower()
 
 
 @pytest.mark.asyncio
 async def test_execute_search_nonexistent_project(client: AsyncClient):
     resp = await client.post(
         "/api/v1/projects/99999/search/execute",
-        params={"query": "test"},
+        json={"query": "test"},
     )
     assert resp.status_code == 404

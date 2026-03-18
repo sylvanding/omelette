@@ -7,21 +7,18 @@ import logging
 import uuid
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.middleware.rate_limit import limiter
 from app.pipelines.chat.graph import create_chat_pipeline
-from app.pipelines.chat.stream_writer import (
-    format_done,
-    format_error,
-    format_finish,
-    format_start,
-)
+from app.pipelines.chat.stream_writer import format_done, format_finish, format_start
 from app.schemas.common import ApiResponse
 from app.schemas.conversation import ChatStreamRequest
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +80,8 @@ async def _stream_chat(
             "tool_mode": request.tool_mode,
             "conversation_id": request.conversation_id,
             "model": request.model or "",
+            "rag_top_k": request.rag_top_k,
+            "use_reranker": request.use_reranker,
         }
 
         async for event in pipeline.astream(
@@ -95,19 +94,21 @@ async def _stream_chat(
         yield format_finish()
     except Exception as e:
         logger.exception("Chat stream error")
-        yield format_error(str(e))
+        yield format_sse_error(str(e), code=500)
     finally:
         yield format_done()
 
 
-@router.post("/stream")
+@router.post("/stream", summary="Stream chat completion")
+@limiter.limit("30/minute")
 async def chat_stream(
-    request: ChatStreamRequest,
+    request: Request,
+    body: ChatStreamRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """Data Stream Protocol (Vercel AI SDK 5.0) chat endpoint."""
     return StreamingResponse(
-        _stream_chat(request, db),
+        _stream_chat(body, db),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -118,7 +119,7 @@ async def chat_stream(
     )
 
 
-@router.post("/complete", response_model=ApiResponse[CompletionResponse])
+@router.post("/complete", response_model=ApiResponse[CompletionResponse], summary="Autocomplete suggestion")
 async def complete(request: CompletionRequest):
     """Return a short text completion suggestion for autocomplete."""
     from app.services.completion_service import CompletionService

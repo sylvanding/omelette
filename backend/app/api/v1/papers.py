@@ -7,20 +7,21 @@ from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_project
+from app.api.deps import get_db, get_or_404, get_project
 from app.config import settings
 from app.models import Paper, Project
-from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
+from app.models.chunk import PaperChunk
+from app.schemas.chunk import ChunkRead
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
+from app.schemas.paper import PaperBatchDeleteRequest, PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
 router = APIRouter(tags=["papers"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[PaperRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[PaperRead]], summary="List papers with filters")
 async def list_papers(
     project_id: int,
-    page: int = 1,
-    page_size: int = 20,
+    pagination: PaginationParams = Depends(),
     status: str | None = None,
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
@@ -29,6 +30,7 @@ async def list_papers(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
+    page, page_size = pagination.page, pagination.page_size
     base = select(Paper).where(Paper.project_id == project_id)
     count_base = select(func.count(Paper.id)).where(Paper.project_id == project_id)
 
@@ -64,7 +66,7 @@ async def list_papers(
     )
 
 
-@router.post("", response_model=ApiResponse[PaperRead], status_code=201)
+@router.post("", response_model=ApiResponse[PaperRead], status_code=201, summary="Create paper")
 async def create_paper(
     project_id: int,
     body: PaperCreate,
@@ -78,7 +80,7 @@ async def create_paper(
     return ApiResponse(code=201, message="Paper created", data=PaperRead.model_validate(paper))
 
 
-@router.post("/bulk", response_model=ApiResponse[dict])
+@router.post("/bulk", response_model=ApiResponse[dict], summary="Bulk import papers")
 async def bulk_import_papers(
     project_id: int,
     body: PaperBulkImport,
@@ -102,20 +104,38 @@ async def bulk_import_papers(
     return ApiResponse(data={"created": created, "skipped": skipped, "total": len(body.papers)})
 
 
-@router.get("/{paper_id}", response_model=ApiResponse[PaperRead])
+@router.post("/batch-delete", response_model=ApiResponse[dict], summary="Batch delete papers")
+async def batch_delete_papers(
+    project_id: int,
+    body: PaperBatchDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Delete multiple papers at once."""
+    stmt = select(Paper).where(
+        Paper.project_id == project_id,
+        Paper.id.in_(body.paper_ids),
+    )
+    result = await db.execute(stmt)
+    papers = list(result.scalars().all())
+    for paper in papers:
+        await db.delete(paper)
+    await db.flush()
+    return ApiResponse(data={"deleted": len(papers), "requested": len(body.paper_ids)})
+
+
+@router.get("/{paper_id}", response_model=ApiResponse[PaperRead], summary="Get paper by ID")
 async def get_paper(
     project_id: int,
     paper_id: int,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     return ApiResponse(data=PaperRead.model_validate(paper))
 
 
-@router.put("/{paper_id}", response_model=ApiResponse[PaperRead])
+@router.put("/{paper_id}", response_model=ApiResponse[PaperRead], summary="Update paper")
 async def update_paper(
     project_id: int,
     paper_id: int,
@@ -123,9 +143,7 @@ async def update_paper(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(paper, key, value)
     await db.flush()
@@ -133,21 +151,19 @@ async def update_paper(
     return ApiResponse(data=PaperRead.model_validate(paper))
 
 
-@router.delete("/{paper_id}", response_model=ApiResponse)
+@router.delete("/{paper_id}", response_model=ApiResponse, summary="Delete paper")
 async def delete_paper(
     project_id: int,
     paper_id: int,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     await db.delete(paper)
     return ApiResponse(message="Paper deleted")
 
 
-@router.get("/{paper_id}/pdf")
+@router.get("/{paper_id}/pdf", summary="Serve PDF file")
 async def serve_pdf(
     project_id: int,
     paper_id: int,
@@ -155,9 +171,7 @@ async def serve_pdf(
     project: Project = Depends(get_project),
 ):
     """Serve the PDF file for a paper."""
-    paper = await db.get(Paper, paper_id)
-    if not paper or paper.project_id != project_id:
-        raise HTTPException(status_code=404, detail="Paper not found")
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
     if not paper.pdf_path or not Path(paper.pdf_path).exists():
         raise HTTPException(status_code=404, detail="PDF file not available")
 
@@ -174,7 +188,42 @@ async def serve_pdf(
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
 
 
-@router.get("/{paper_id}/citation-graph", response_model=ApiResponse)
+@router.get("/{paper_id}/chunks", response_model=ApiResponse[PaginatedData[ChunkRead]], summary="List paper chunks")
+async def list_paper_chunks(
+    project_id: int,
+    paper_id: int,
+    page: int = 1,
+    page_size: int = Query(default=50, ge=1, le=200),
+    chunk_type: str | None = Query(default=None, description="Filter by chunk type"),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """List chunks for a specific paper."""
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    base = select(PaperChunk).where(PaperChunk.paper_id == paper_id)
+    count_base = select(func.count(PaperChunk.id)).where(PaperChunk.paper_id == paper_id)
+
+    if chunk_type:
+        base = base.where(PaperChunk.chunk_type == chunk_type)
+        count_base = count_base.where(PaperChunk.chunk_type == chunk_type)
+
+    total = (await db.execute(count_base)).scalar() or 0
+    base = base.order_by(PaperChunk.chunk_index).offset((page - 1) * page_size).limit(page_size)
+    chunks = (await db.execute(base)).scalars().all()
+
+    return ApiResponse(
+        data=PaginatedData(
+            items=[ChunkRead.model_validate(c) for c in chunks],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
+
+
+@router.get("/{paper_id}/citation-graph", response_model=ApiResponse, summary="Get citation graph")
 async def get_citation_graph(
     project_id: int,
     paper_id: int,

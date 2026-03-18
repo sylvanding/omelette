@@ -151,7 +151,10 @@ async def test_download_pdf_success(tmp_path, monkeypatch):
         resp.raise_for_status = MagicMock()
         return resp
 
-    with patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls:
+    with (
+        patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls,
+        patch("app.services.url_validator.validate_url_safe", return_value="https://example.com/paper.pdf"),
+    ):
         mock_client = MagicMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -195,7 +198,10 @@ async def test_download_pdf_unpaywall_flow(tmp_path, monkeypatch):
             resp.status_code = 200
         return resp
 
-    with patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls:
+    with (
+        patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls,
+        patch("app.services.url_validator.validate_url_safe", side_effect=lambda url: url),
+    ):
         mock_client = MagicMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -226,7 +232,10 @@ async def test_download_pdf_not_pdf(tmp_path, monkeypatch):
         resp.raise_for_status = MagicMock()
         return resp
 
-    with patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls:
+    with (
+        patch("app.services.crawler_service.httpx.AsyncClient") as mock_client_cls,
+        patch("app.services.url_validator.validate_url_safe", side_effect=lambda url: url),
+    ):
         mock_client = MagicMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)

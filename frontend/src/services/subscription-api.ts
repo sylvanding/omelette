@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import type { PaginatedData } from '@/lib/api';
 
 export interface Subscription {
   id: number;
@@ -25,7 +26,9 @@ export interface SubscriptionCreate {
 
 export const subscriptionApi = {
   list: (projectId: number) =>
-    api.get<Subscription[]>(`/projects/${projectId}/subscriptions`).then(r => r.data),
+    api
+      .get<PaginatedData<Subscription>>(`/projects/${projectId}/subscriptions`)
+      .then(r => r.data),
   create: (projectId: number, data: SubscriptionCreate) =>
     api.post<Subscription>(`/projects/${projectId}/subscriptions`, data).then(r => r.data),
   update: (

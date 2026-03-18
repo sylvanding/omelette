@@ -1,6 +1,7 @@
 """End-to-end integration test simulating the full Omelette workflow."""
 
 import pytest
+from conftest import remove_paper_doi_unique_constraint
 from httpx import ASGITransport, AsyncClient
 
 from app.database import Base, engine
@@ -9,6 +10,7 @@ from app.main import app
 
 @pytest.fixture(autouse=True)
 async def setup_db():
+    remove_paper_doi_unique_constraint()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
