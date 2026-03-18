@@ -10,9 +10,11 @@ from app.services import embedding_service
 @pytest.fixture(autouse=True)
 def reset_embedding_cache():
     """Clear cached embedding model between tests."""
-    embedding_service._cached_embed_model = None
+    from app.services.gpu_model_manager import gpu_model_manager
+
+    gpu_model_manager.unload("embedding")
     yield
-    embedding_service._cached_embed_model = None
+    gpu_model_manager.unload("embedding")
 
 
 class TestGetEmbeddingModel:

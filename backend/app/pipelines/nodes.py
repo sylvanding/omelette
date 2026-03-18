@@ -287,43 +287,43 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
             Paper.pdf_path != "",
         )
         papers = (await db.execute(stmt)).scalars().all()
-        ocr = OCRService(use_gpu=True)
 
-        for paper in papers:
-            if state.get("cancelled"):
-                break
-            try:
-                result = await ocr.process_pdf_async(paper.pdf_path)
-                if result.get("error"):
-                    paper.status = PaperStatus.ERROR
-                    continue
+        with OCRService(use_gpu=True) as ocr:
+            for paper in papers:
+                if state.get("cancelled"):
+                    break
+                try:
+                    result = await ocr.process_pdf_async(paper.pdf_path)
+                    if result.get("error"):
+                        paper.status = PaperStatus.ERROR
+                        continue
 
-                if result.get("method") == "mineru":
-                    chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
-                else:
-                    pages = result.get("pages", [])
-                    chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+                    if result.get("method") == "mineru":
+                        chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
+                    else:
+                        pages = result.get("pages", [])
+                        chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
 
-                for chunk_data in chunks:
-                    db.add(
-                        PaperChunk(
-                            paper_id=paper.id,
-                            content=chunk_data["content"],
-                            page_number=chunk_data.get("page_number", 0),
-                            chunk_index=chunk_data["chunk_index"],
-                            chunk_type=chunk_data.get("chunk_type", "text"),
-                            section=chunk_data.get("section", ""),
-                            token_count=chunk_data.get("token_count", 0),
-                            has_formula=chunk_data.get("has_formula", False),
-                            figure_path=chunk_data.get("figure_path", ""),
+                    for chunk_data in chunks:
+                        db.add(
+                            PaperChunk(
+                                paper_id=paper.id,
+                                content=chunk_data["content"],
+                                page_number=chunk_data.get("page_number", 0),
+                                chunk_index=chunk_data["chunk_index"],
+                                chunk_type=chunk_data.get("chunk_type", "text"),
+                                section=chunk_data.get("section", ""),
+                                token_count=chunk_data.get("token_count", 0),
+                                has_formula=chunk_data.get("has_formula", False),
+                                figure_path=chunk_data.get("figure_path", ""),
+                            )
                         )
-                    )
 
-                paper.status = PaperStatus.OCR_COMPLETE
-                processed += 1
-            except Exception as e:
-                logger.warning("OCR failed for paper %d: %s", paper.id, e)
-                paper.status = PaperStatus.ERROR
+                    paper.status = PaperStatus.OCR_COMPLETE
+                    processed += 1
+                except Exception as e:
+                    logger.warning("OCR failed for paper %d: %s", paper.id, e)
+                    paper.status = PaperStatus.ERROR
         await db.commit()
 
     return {

@@ -106,6 +106,11 @@ class Settings(BaseSettings):
     mineru_api_url: str = "http://localhost:8010"
     mineru_backend: str = "pipeline"  # pipeline | hybrid-auto-engine | vlm-auto-engine
     mineru_timeout: int = 8000
+    mineru_auto_manage: bool = Field(default=True, description="Auto start/stop MinerU subprocess")
+    mineru_conda_env: str = Field(default="mineru", description="Conda env name for MinerU")
+    mineru_ttl_seconds: int = Field(default=600, ge=0, description="Stop MinerU after N seconds idle. 0=disable")
+    mineru_startup_timeout: int = Field(default=120, ge=10, le=600, description="MinerU startup timeout")
+    mineru_gpu_ids: str = Field(default="", description="GPU IDs for MinerU. Empty=inherit cuda_visible_devices")
 
     # Semantic Scholar API
     s2_api_base: str = "https://api.semanticscholar.org/graph/v1"
@@ -151,6 +156,10 @@ class Settings(BaseSettings):
 
     # GPU
     cuda_visible_devices: str = "6,7"
+    model_ttl_seconds: int = Field(
+        default=300, ge=0, description="Auto-unload GPU models after N seconds idle. 0=disable"
+    )
+    model_ttl_check_interval: int = Field(default=30, ge=5, le=300, description="TTL check interval in seconds")
     gpu_mode: GpuMode = Field(default=GpuMode.BALANCED, description="GPU preset: conservative/balanced/aggressive")
     embed_batch_size: int = Field(default=0, ge=0, le=128, description="Embedding batch size. 0=follow GPU_MODE")
     rerank_batch_size: int = Field(default=0, ge=0, le=128, description="Reranker internal top_n. 0=follow GPU_MODE")

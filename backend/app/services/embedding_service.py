@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_cached_embed_model: BaseEmbedding | None = None
 _env_injected = False
 
 
@@ -109,27 +108,32 @@ def get_embedding_model(
       - "local": HuggingFaceEmbedding with GPU auto-detection
       - "api":   OpenAIEmbedding (works with any OpenAI-compatible endpoint)
       - "mock":  Deterministic mock for tests
-    """
-    global _cached_embed_model
-    if _cached_embed_model is not None and not force_reload:
-        return _cached_embed_model
 
-    if force_reload and _cached_embed_model is not None:
-        _cached_embed_model = None
-        _cleanup_gpu_memory()
+    Local models are managed by :class:`GPUModelManager` which provides
+    TTL-based auto-unloading.
+    """
+    from app.services.gpu_model_manager import gpu_model_manager
 
     prov = provider or getattr(settings, "embedding_provider", "local")
     name = model_name or settings.embedding_model
 
     if prov == "mock":
-        model = _build_mock_embedding()
+        loader = _build_mock_embedding
+        device = "cpu"
     elif prov == "api":
-        model = _build_api_embedding(name)
+        loader = lambda: _build_api_embedding(name)  # noqa: E731
+        device = "cpu"
     else:
-        model = _build_local_embedding(name)
+        _, _, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
+        loader = lambda: _build_local_embedding(name)  # noqa: E731
 
-    _cached_embed_model = model
-    return model
+    return gpu_model_manager.acquire(
+        "embedding",
+        loader,
+        model_name=name,
+        device=device,
+        force_reload=force_reload,
+    )
 
 
 def _cleanup_gpu_memory() -> None:

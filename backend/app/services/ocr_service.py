@@ -31,6 +31,35 @@ class OCRService:
         self.output_dir = Path(settings.ocr_output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+    def close(self) -> None:
+        """Release PaddleOCR model and free GPU memory."""
+        if self._paddle_ocr is not None:
+            del self._paddle_ocr
+            self._paddle_ocr = None
+        if self._marker_converter is not None:
+            del self._marker_converter
+            self._marker_converter = None
+        import gc
+
+        gc.collect()
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                logger.info("OCRService: released GPU memory")
+        except ImportError:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def __del__(self):
+        self.close()
+
     def extract_text_native(self, pdf_path: str) -> list[dict]:
         """Extract text from native (non-scanned) PDF using pdfplumber."""
         pages = []
@@ -188,15 +217,26 @@ class OCRService:
             return None
 
         from app.services.mineru_client import MinerUClient
+        from app.services.mineru_process_manager import mineru_process_manager
+
+        if settings.mineru_auto_manage:
+            ok = await mineru_process_manager.ensure_running()
+            if not ok:
+                logger.info("MinerU auto-start failed, falling back to pdfplumber")
+                return None
 
         if self._mineru_client is None:
             self._mineru_client = MinerUClient()
 
-        if not await self._mineru_client.health_check():
+        if not settings.mineru_auto_manage and not await self._mineru_client.health_check():
             logger.info("MinerU service not available, skipping")
             return None
 
         result = await self._mineru_client.parse_pdf(pdf_path)
+
+        if settings.mineru_auto_manage:
+            mineru_process_manager.touch()
+
         if result.get("error"):
             logger.warning("MinerU failed for %s: %s", pdf_path, result["error"])
             return None

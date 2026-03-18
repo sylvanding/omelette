@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from app.config import settings
@@ -24,18 +23,15 @@ def _get_semaphore() -> asyncio.Semaphore:
     return _reranker_semaphore
 
 
-@lru_cache(maxsize=1)
-def _load_reranker(model_name: str):
-    """Load and cache a SentenceTransformerRerank by model name."""
+def _build_reranker(model_name: str):
+    """Build a SentenceTransformerRerank instance (heavy, runs on GPU)."""
     from llama_index.postprocessor.sbert_rerank import SentenceTransformerRerank
 
-    from app.services.embedding_service import _inject_hf_env
+    from app.services.embedding_service import _inject_hf_env, detect_gpu
 
     _inject_hf_env()
 
-    from app.services.embedding_service import detect_gpu
-
-    has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.rerank_gpu_id)
+    _has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.rerank_gpu_id)
     batch_size = settings.rerank_batch_size
     logger.info("Loading reranker model=%s device=%s top_n=%d", model_name, device, batch_size)
     return SentenceTransformerRerank(
@@ -47,9 +43,18 @@ def _load_reranker(model_name: str):
 
 
 def get_reranker(*, model_name: str | None = None):
-    """Return a cached reranker instance. top_n is controlled at call site."""
+    """Return a cached reranker via GPUModelManager (TTL-managed)."""
+    from app.services.embedding_service import detect_gpu
+    from app.services.gpu_model_manager import gpu_model_manager
+
     name = model_name or settings.reranker_model
-    return _load_reranker(name)
+    _, _, device = detect_gpu(pinned_gpu_id=settings.rerank_gpu_id)
+    return gpu_model_manager.acquire(
+        "reranker",
+        lambda: _build_reranker(name),
+        model_name=name,
+        device=device,
+    )
 
 
 async def rerank_nodes(

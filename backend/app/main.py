@@ -24,13 +24,20 @@ logger = logging.getLogger("omelette")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.services.gpu_model_manager import gpu_model_manager
+    from app.services.mineru_process_manager import mineru_process_manager
+
     logger.info("Starting Omelette v%s ...", settings.app_version)
     if settings.app_env == "production" and settings.app_secret_key == "change-me-to-a-random-secret-key":
         logger.warning("SECURITY: Using default secret key in production! Set APP_SECRET_KEY in .env")
     await init_db()
     logger.info("Database initialized")
+    await gpu_model_manager.start()
+    await mineru_process_manager.start()
     yield
     logger.info("Shutting down Omelette")
+    await mineru_process_manager.stop()
+    await gpu_model_manager.stop()
 
 
 app = FastAPI(

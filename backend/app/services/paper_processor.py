@@ -119,23 +119,23 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
 
             async def _ocr_one(paper: Paper, worker_id: int) -> tuple[Paper, dict | None]:
                 gpu_id = ocr_gpus[worker_id % len(ocr_gpus)] if use_gpu else 0
-                ocr = OCRService(use_gpu=use_gpu, gpu_id=gpu_id)
-                async with semaphore:
-                    try:
-                        t0 = time.monotonic()
-                        result = await ocr.process_pdf_async(paper.pdf_path)
-                        elapsed = time.monotonic() - t0
-                        logger.info(
-                            "OCR worker %d (gpu=%d) finished paper %d in %.1fs",
-                            worker_id,
-                            gpu_id,
-                            paper.id,
-                            elapsed,
-                        )
-                        return paper, result
-                    except Exception:
-                        logger.exception("OCR failed for paper %d (worker %d)", paper.id, worker_id)
-                        return paper, None
+                with OCRService(use_gpu=use_gpu, gpu_id=gpu_id) as ocr:
+                    async with semaphore:
+                        try:
+                            t0 = time.monotonic()
+                            result = await ocr.process_pdf_async(paper.pdf_path)
+                            elapsed = time.monotonic() - t0
+                            logger.info(
+                                "OCR worker %d (gpu=%d) finished paper %d in %.1fs",
+                                worker_id,
+                                gpu_id,
+                                paper.id,
+                                elapsed,
+                            )
+                            return paper, result
+                        except Exception:
+                            logger.exception("OCR failed for paper %d (worker %d)", paper.id, worker_id)
+                            return paper, None
 
             tasks = [_ocr_one(paper, i) for i, paper in enumerate(papers_to_ocr)]
             results = await asyncio.gather(*tasks)

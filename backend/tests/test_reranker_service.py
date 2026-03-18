@@ -5,34 +5,44 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _reset_reranker_cache():
+    from app.services.gpu_model_manager import gpu_model_manager
+
+    gpu_model_manager.unload("reranker")
+    yield
+    gpu_model_manager.unload("reranker")
+
+
 class TestGetReranker:
-    @patch("app.services.reranker_service._load_reranker")
-    def test_returns_cached_instance(self, mock_load):
-        mock_load.cache_clear()
+    @patch("app.services.reranker_service._build_reranker")
+    def test_returns_cached_instance(self, mock_build):
         from app.services.reranker_service import get_reranker
 
         sentinel = MagicMock()
-        mock_load.return_value = sentinel
+        mock_build.return_value = sentinel
         result = get_reranker()
         assert result is sentinel
-        mock_load.assert_called_once()
+        mock_build.assert_called_once()
 
-    @patch("app.services.reranker_service._load_reranker")
-    def test_uses_settings_model_name(self, mock_load):
-        mock_load.cache_clear()
-        from app.config import settings
+    @patch("app.services.reranker_service._build_reranker")
+    def test_caching_returns_same_instance(self, mock_build):
         from app.services.reranker_service import get_reranker
 
-        get_reranker()
-        mock_load.assert_called_with(settings.reranker_model)
+        sentinel = MagicMock()
+        mock_build.return_value = sentinel
+        r1 = get_reranker()
+        r2 = get_reranker()
+        assert r1 is r2
+        mock_build.assert_called_once()
 
-    @patch("app.services.reranker_service._load_reranker")
-    def test_custom_model_name(self, mock_load):
-        mock_load.cache_clear()
+    @patch("app.services.reranker_service._build_reranker")
+    def test_custom_model_name(self, mock_build):
         from app.services.reranker_service import get_reranker
 
+        mock_build.return_value = MagicMock()
         get_reranker(model_name="custom/reranker")
-        mock_load.assert_called_with("custom/reranker")
+        mock_build.assert_called_with("custom/reranker")
 
 
 class TestRerankNodes:

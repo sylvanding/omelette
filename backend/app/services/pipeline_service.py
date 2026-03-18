@@ -78,8 +78,8 @@ class PipelineService:
 
     async def _ocr(self, paper: Paper) -> dict:
         try:
-            ocr = OCRService(use_gpu=True)
-            result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
+            with OCRService(use_gpu=True) as ocr:
+                result = await asyncio.to_thread(ocr.process_pdf, paper.pdf_path)
 
             if result.get("error"):
                 paper.status = PaperStatus.ERROR
