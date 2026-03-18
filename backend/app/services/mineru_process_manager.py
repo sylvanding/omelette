@@ -46,14 +46,32 @@ class MinerUProcessManager:
             logger.info("MinerU process manager started (TTL=%ds)", ttl)
 
     async def stop(self) -> None:
-        """Cancel the watcher and kill the subprocess (if we own it)."""
+        """Cancel the watcher and kill all MinerU processes (owned + external)."""
         if self._cleanup_task is not None:
             self._cleanup_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
             self._cleanup_task = None
         await self._kill_process()
+        self.kill_external_by_port()
         logger.info("MinerU process manager stopped")
+
+    def stop_sync(self) -> None:
+        """Synchronous cleanup for atexit — kill subprocess and external MinerU."""
+        if self._process is not None and self._process.poll() is None:
+            pid = self._process.pid
+            try:
+                self._process.send_signal(signal.SIGTERM)
+                self._process.wait(timeout=5)
+            except (subprocess.TimeoutExpired, OSError, ProcessLookupError):
+                try:
+                    self._process.kill()
+                    self._process.wait(timeout=3)
+                except (OSError, ProcessLookupError):
+                    pass
+            logger.info("Sync cleanup: stopped MinerU subprocess pid=%d", pid)
+            self._process = None
+        self.kill_external_by_port()
 
     # -- public API -------------------------------------------------------
 
@@ -221,6 +239,77 @@ class MinerUProcessManager:
             pass
         finally:
             self._process = None
+
+    def kill_external_by_port(self) -> None:
+        """Find and kill the process listening on the MinerU port (sync)."""
+        import os
+
+        port = self._port
+        my_pid = os.getpid()
+        target_pid = self._find_pid_by_port(port)
+        if target_pid is None or target_pid == my_pid:
+            return
+        if not self._is_mineru_process(target_pid):
+            logger.info("Port %d held by non-MinerU process (pid=%d), skipping", port, target_pid)
+            return
+        try:
+            os.kill(target_pid, signal.SIGTERM)
+            logger.info("Sent SIGTERM to external MinerU pid=%d (port=%d)", target_pid, port)
+        except (OSError, ProcessLookupError) as exc:
+            logger.warning("Failed to kill external MinerU pid=%d: %s", target_pid, exc)
+
+    @staticmethod
+    def _find_pid_by_port(port: int) -> int | None:
+        """Find PID listening on a TCP port using /proc or lsof."""
+        import os
+
+        try:
+            with open("/proc/net/tcp") as f:
+                hex_port = f":{port:04X}"
+                for line in f:
+                    parts = line.strip().split()
+                    if len(parts) >= 10 and hex_port in parts[1] and parts[3] == "0A":
+                        inode = parts[9]
+                        for pid_dir in os.listdir("/proc"):
+                            if not pid_dir.isdigit():
+                                continue
+                            try:
+                                fd_dir = f"/proc/{pid_dir}/fd"
+                                for fd in os.listdir(fd_dir):
+                                    link = os.readlink(f"{fd_dir}/{fd}")
+                                    if f"socket:[{inode}]" in link:
+                                        return int(pid_dir)
+                            except (OSError, PermissionError):
+                                continue
+        except (OSError, PermissionError):
+            pass
+
+        import shutil
+
+        lsof_path = shutil.which("lsof")
+        if lsof_path:
+            try:
+                result = subprocess.run(
+                    [lsof_path, "-ti", f":{port}"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return int(result.stdout.strip().split("\n")[0])
+            except (subprocess.TimeoutExpired, ValueError, OSError):
+                pass
+        return None
+
+    @staticmethod
+    def _is_mineru_process(pid: int) -> bool:
+        """Check if a PID is a MinerU process by reading its cmdline."""
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                cmdline = f.read().decode(errors="replace").lower()
+                return "mineru" in cmdline
+        except (OSError, PermissionError):
+            return False
 
     async def _cleanup_loop(self) -> None:
         ttl = settings.mineru_ttl_seconds

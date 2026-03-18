@@ -154,6 +154,7 @@ class Settings(BaseSettings):
     # LangGraph
     langgraph_checkpoint_dir: str = ""
     pipeline_checkpoint_db: str = ""  # SQLite checkpoint DB path; defaults to {data_dir}/pipeline_checkpoints.db
+    pid_file: str = ""  # PID file path; defaults to {data_dir}/omelette.pid
 
     # GPU
     cuda_visible_devices: str = ""  # Empty = use all available GPUs
@@ -209,6 +210,8 @@ class Settings(BaseSettings):
             self.langgraph_checkpoint_dir = f"{self.data_dir}/langgraph_checkpoints"
         if not self.pipeline_checkpoint_db:
             self.pipeline_checkpoint_db = f"{self.data_dir}/pipeline_checkpoints.db"
+        if not self.pid_file:
+            self.pid_file = f"{self.data_dir}/omelette.pid"
 
     @property
     def cors_origin_list(self) -> list[str]:
