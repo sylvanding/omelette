@@ -51,4 +51,8 @@ export const subscriptionApi = {
     api.post<Record<string, unknown>>(`/projects/${projectId}/subscriptions/check-rss`, null, {
       params: { feed_url: feedUrl, since_days: sinceDays },
     }).then(r => r.data),
+  checkUpdates: (projectId: number, query?: string, sources?: string[], sinceDays?: number, maxResults?: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/subscriptions/check-updates`, null, {
+      params: { query, sources, since_days: sinceDays, max_results: maxResults },
+    }).then(r => r.data),
 };

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { apiUrl } from '@/lib/api-config';
 import {
   MessageSquare,
   Languages,
@@ -60,7 +61,7 @@ export function SelectionQA({
 
       try {
         const message = buildMessage(selectedText, question, action);
-        const res = await fetch('/api/v1/chat/stream', {
+        const res = await fetch(apiUrl('/chat/stream'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

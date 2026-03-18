@@ -592,7 +592,7 @@ function CitationGraphDialog({
   const { data, isLoading } = useQuery<GraphData>({
     queryKey: queryKeys.papers.citationGraph(projectId, paperId),
     queryFn: () =>
-      paperApi.getCitationGraph(projectId, paperId).then((r) => r as unknown as GraphData),
+      paperApi.getCitationGraph(projectId, paperId),
   });
 
   return (

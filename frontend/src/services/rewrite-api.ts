@@ -1,4 +1,5 @@
 import type { SSEEvent } from "@/types/chat";
+import { apiUrl } from "@/lib/api-config";
 
 export type RewriteStyle =
   | "simplify"
@@ -18,7 +19,7 @@ export async function* streamRewrite(
   request: RewriteRequest,
   signal?: AbortSignal,
 ): AsyncGenerator<SSEEvent> {
-  const response = await fetch("/api/v1/chat/rewrite", {
+  const response = await fetch(apiUrl("/chat/rewrite"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

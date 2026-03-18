@@ -38,7 +38,17 @@
     "confirmDeleteTitle": "Confirm Delete",
     "confirmDeleteDesc": "This action cannot be undone.",
     "saveSuccess": "Saved successfully",
-    "saveFailed": "Save failed"
+    "saveFailed": "Save failed",
+    "expand": "Expand",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
+  },
+  "app": {
+    "name": "Omelette"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
   },
   "error": {
     "boundary": {

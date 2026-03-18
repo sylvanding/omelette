@@ -13,8 +13,6 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@a2ui-sdk/react": "^0.4.0",
-    "@a2ui-sdk/types": "^0.4.0",
     "@ai-sdk/react": "^3.0.118",
     "@radix-ui/react-hover-card": "^1.1.15",
     "@tanstack/react-query": "^5.90.21",
@@ -36,7 +34,6 @@
     "react": "^19.2.0",
     "react-diff-viewer-continued": "^4.2.0",
     "react-dom": "^19.2.0",
-    "react-force-graph-2d": "^1.29.1",
     "react-i18next": "^16.5.7",
     "react-markdown": "^10.1.0",
     "react-pdf": "^10.4.1",

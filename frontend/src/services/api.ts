@@ -1,7 +1,9 @@
 import { api } from '@/lib/api';
 import type { PaginatedData } from '@/lib/api';
+import { apiUrl } from '@/lib/api-config';
 import type { Project, Paper, Keyword, Task } from '@/types';
 import type { PaginationParams, PaperListFilters } from '@/types/api';
+import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
 export const projectApi = {
   list: (page = 1, pageSize = 20) =>
@@ -18,6 +20,10 @@ export const projectApi = {
     api.get<Record<string, unknown>>(`/projects/${id}/export`).then(r => r.data),
   import: (data: Record<string, unknown>) =>
     api.post<Project>('/projects/import', data).then(r => r.data),
+  runPipeline: (projectId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/run`).then(r => r.data),
+  runPaperPipeline: (projectId: number, paperId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
 };
 
 export const paperApi = {
@@ -36,7 +42,7 @@ export const paperApi = {
   getChunks: (projectId: number, paperId: number, params?: PaginationParams & { chunk_type?: string }) =>
     api.get<PaginatedData<Record<string, unknown>>>(`/projects/${projectId}/papers/${paperId}/chunks`, { params }).then(r => r.data),
   getCitationGraph: (projectId: number, paperId: number, depth?: number, maxNodes?: number) =>
-    api.get<Record<string, unknown>>(`/projects/${projectId}/papers/${paperId}/citation-graph`, {
+    api.get<GraphData>(`/projects/${projectId}/papers/${paperId}/citation-graph`, {
       params: { depth, max_nodes: maxNodes },
     }).then(r => r.data),
 };
@@ -112,7 +118,7 @@ export const ragApi = {
     projectId: number,
     signal?: AbortSignal,
   ): AsyncGenerator<IndexSSEEvent> {
-    const response = await fetch(`/api/v1/projects/${projectId}/rag/index/stream`, {
+    const response = await fetch(apiUrl(`/projects/${projectId}/rag/index/stream`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal,
@@ -142,6 +148,21 @@ export const ragApi = {
   },
 };
 
+export interface WritingAssistRequest {
+  task: 'summarize' | 'cite' | 'review_outline' | 'gap_analysis';
+  text?: string;
+  paper_ids?: number[];
+  topic?: string;
+  style?: string;
+  language?: string;
+}
+
+export interface WritingAssistResponse {
+  content: string;
+  citations: Record<string, unknown>[];
+  suggestions: string[];
+}
+
 export const writingApi = {
   summarize: (projectId: number, paperIds: number[], language?: string) =>
     api.post<{ summaries: { title?: string; summary?: string }[] }>(`/projects/${projectId}/writing/summarize`, {
@@ -162,6 +183,8 @@ export const writingApi = {
     api.post<{ analysis: string }>(`/projects/${projectId}/writing/gap-analysis`, {
       research_topic: researchTopic,
     }).then(r => r.data),
+  assist: (projectId: number, request: WritingAssistRequest) =>
+    api.post<WritingAssistResponse>(`/projects/${projectId}/writing/assist`, request).then(r => r.data),
 };
 
 export const taskApi = {
@@ -211,6 +234,10 @@ export const dedupApi = {
     }).then(r => r.data),
   candidates: (projectId: number, params?: PaginationParams) =>
     api.get<PaginatedData<Record<string, unknown>>>(`/projects/${projectId}/dedup/candidates`, { params }).then(r => r.data),
+  verify: (projectId: number, paperAId: number, paperBId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/dedup/verify`, null, {
+      params: { paper_a_id: paperAId, paper_b_id: paperBId },
+    }).then(r => r.data),
 };
 
 export const crawlerApi = {

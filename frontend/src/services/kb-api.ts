@@ -15,7 +15,7 @@ export interface NewPaperData {
 export interface DedupConflictPair {
   conflict_id: string;
   old_paper: Record<string, unknown>;
-  new_paper: NewPaperData;
+  new_paper: Record<string, unknown>;
   reason: string;
   similarity: number | null;
 }

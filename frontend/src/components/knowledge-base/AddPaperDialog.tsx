@@ -110,7 +110,15 @@ export function AddPaperDialog({
     setSearchError(null);
     try {
       const res = await kbApi.searchAndAdd(projectId, query.trim(), sources, maxResults);
-      const papers = (res?.papers as unknown as SearchResult[]) ?? [];
+      const papers: SearchResult[] = (res?.papers ?? []).map((p) => ({
+        title: p.title,
+        abstract: p.abstract ?? undefined,
+        authors: typeof p.authors === 'string' ? undefined : (p.authors as { name: string }[] | undefined),
+        doi: p.doi ?? undefined,
+        year: p.year ?? undefined,
+        journal: p.journal ?? undefined,
+        source: p.source ?? undefined,
+      }));
       setSearchResults(papers);
       setSelected(new Set());
     } catch (err: unknown) {

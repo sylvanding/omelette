@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { paperApi } from '@/services/api';
+import { apiUrl } from '@/lib/api-config';
 import { Button } from '@/components/ui/button';
 
 const PDFReaderLayout = lazy(
@@ -48,7 +49,7 @@ export default function PDFReaderPage() {
     );
   }
 
-  const pdfUrl = `/api/v1/projects/${pid}/papers/${ppid}/pdf`;
+  const pdfUrl = apiUrl(`/projects/${pid}/papers/${ppid}/pdf`);
 
   return (
     <Suspense

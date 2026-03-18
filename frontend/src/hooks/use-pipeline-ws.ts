@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PipelineWSMessage } from '@/types/api';
+import { wsUrl } from '@/lib/api-config';
 
 interface UsePipelineWebSocketReturn {
   status: string | null;
@@ -34,8 +35,7 @@ export function usePipelineWebSocket(threadId: string | null): UsePipelineWebSoc
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${protocol}//${window.location.host}/api/v1/pipelines/${threadId}/ws`;
+    const url = wsUrl(`/pipelines/${threadId}/ws`);
 
     function connect() {
       const ws = new WebSocket(url);

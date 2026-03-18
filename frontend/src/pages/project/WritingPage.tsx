@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { apiUrl } from '@/lib/api-config';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
@@ -137,7 +138,7 @@ export default function WritingPage() {
 
     try {
       const res = await fetch(
-        `/api/v1/projects/${pid}/writing/review-draft/stream`,
+        apiUrl(`/projects/${pid}/writing/review-draft/stream`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

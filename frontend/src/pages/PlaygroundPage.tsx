@@ -17,9 +17,6 @@ import {
 } from '@/components/ui/popover';
 import ChatInput from '@/components/playground/ChatInput';
 import MessageBubbleV2 from '@/components/playground/MessageBubbleV2';
-import ChatHistorySidebar from '@/components/playground/ChatHistorySidebar';
-import { useSidebarCollapsed } from '@/components/playground/sidebar-utils';
-import { SidebarToggleButton } from '@/components/playground/SidebarToggleButton';
 import { conversationApi } from '@/services/chat-api';
 import { projectApi } from '@/services/api';
 import { useChatStream } from '@/hooks/use-chat-stream';
@@ -33,7 +30,6 @@ export default function PlaygroundPage() {
   const [toolModeOverride, setToolModeOverride] = useState<ToolMode | null>(null);
   const [selectedKBsOverride, setSelectedKBsOverride] = useState<number[] | null>(null);
   const [newConversationId, setNewConversationId] = useState<number | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
@@ -172,19 +168,10 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="flex h-full">
-      <ChatHistorySidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        currentConversationId={conversationId}
-        onSelectConversation={(id) => navigate(`/chat/${id}`)}
-        onNewChat={handleNewChat}
-      />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Top bar */}
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
         <div className="flex items-center gap-2">
-          <SidebarToggleButton collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
           <h1 className="text-lg font-semibold">{t('playground.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -269,7 +256,7 @@ export default function PlaygroundPage() {
                     disabled={isStreaming}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex items-start gap-3 rounded-xl border border-border/50 bg-gradient-to-br ${item.gradient} p-4 text-left transition-all hover:border-primary/30 hover:shadow-md`}
+                    className={`flex items-start gap-3 rounded-xl border border-border/50 bg-linear-to-br ${item.gradient} p-4 text-left transition-all hover:border-primary/30 hover:shadow-md`}
                   >
                     <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/60 dark:bg-white/10">
                       <item.icon className={`size-4 ${item.color}`} />
@@ -336,7 +323,6 @@ export default function PlaygroundPage() {
             {t('playground.disclaimer')}
           </p>
         </div>
-      </div>
       </div>
     </div>
   );

@@ -9,12 +9,14 @@ export interface SearchPipelineRequest {
 
 export interface UploadPipelineRequest {
   project_id: number;
-  file_paths?: string[];
+  pdf_paths: string[];
 }
 
 export interface ResolvedConflict {
-  paper_id: number;
-  action: 'keep' | 'replace' | 'skip';
+  conflict_id: string;
+  action: 'keep_old' | 'keep_new' | 'merge' | 'skip';
+  merged_paper?: Record<string, unknown>;
+  new_paper?: Record<string, unknown>;
 }
 
 export interface PipelineStatus {
