@@ -524,5 +524,5 @@ export function D3CitationGraph({ data, onNodeClick, width, height }: Props) {
 - [D3 Force Simulation](https://d3js.org/d3-force)
 - [D3 Force Link](https://d3js.org/d3-force/link)
 - [D3 Zoom](https://github.com/d3/d3-zoom)
-- [Omelette Phase 4 Tech Reference](docs/plans/2026-03-15-phase4-tech-reference.md) — d3-force basics
-- [Frontend Redesign Plan](docs/plans/2026-03-19-feat-frontend-complete-redesign-plan.md) — D3CitationGraph task
+- [Omelette Phase 4 Tech Reference](../plans/2026-03-15-phase4-tech-reference.md) — d3-force basics
+- [Frontend Redesign Plan](../plans/2026-03-19-feat-frontend-complete-redesign-plan.md) — D3CitationGraph task
