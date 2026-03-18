@@ -229,10 +229,11 @@ class TestMinerUParsing:
 class TestRAGIndexAndQuery:
     def test_build_index(self, client, e2e_project):
         r = client.post(f"/api/v1/projects/{e2e_project}/rag/index")
-        if r.status_code == 500:
-            error_detail = r.json().get("message", "")
-            pytest.skip(f"RAG index build returned 500 (likely first-time model loading): {error_detail[:200]}")
-        assert r.status_code == 200
+        if r.status_code == 500 and "CUDA out of memory" in r.text:
+            logger.warning("CUDA OOM on first attempt, retrying after 30s...")
+            time.sleep(30)
+            r = client.post(f"/api/v1/projects/{e2e_project}/rag/index")
+        assert r.status_code == 200, f"RAG index build failed ({r.status_code}): {r.text[:300]}"
         data = r.json()["data"]
         assert data.get("indexed", 0) >= 0
 
@@ -241,19 +242,26 @@ class TestRAGIndexAndQuery:
         assert r.status_code == 200
 
     def test_rag_query_with_real_llm(self, client, e2e_project):
-        r = client.post(
-            f"/api/v1/projects/{e2e_project}/rag/query",
-            json={
-                "question": "What are the main applications of virtual reality in biological research?",
-                "top_k": 5,
-                "use_reranker": False,
-                "include_sources": True,
-            },
+        for attempt in range(3):
+            r = client.post(
+                f"/api/v1/projects/{e2e_project}/rag/query",
+                json={
+                    "question": "What are the main applications of virtual reality in biological research?",
+                    "top_k": 5,
+                    "use_reranker": False,
+                    "include_sources": True,
+                },
+            )
+            assert r.status_code == 200, f"RAG query failed: {r.text}"
+            data = r.json()["data"]
+            assert "answer" in data
+            if len(data["answer"]) > 10:
+                break
+            logger.warning("RAG query attempt %d returned empty answer, retrying...", attempt + 1)
+            time.sleep(5)
+        assert len(data["answer"]) > 10, (
+            f"Answer too short after 3 attempts (sources={len(data.get('sources', []))}): '{data['answer']}'"
         )
-        assert r.status_code == 200, f"RAG query failed: {r.text}"
-        data = r.json()["data"]
-        assert "answer" in data
-        assert len(data["answer"]) > 10, "Answer too short, LLM may not have responded properly"
 
 
 class TestChatStream:

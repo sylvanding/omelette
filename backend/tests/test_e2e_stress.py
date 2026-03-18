@@ -119,9 +119,11 @@ class TestConcurrentRAGQueries:
     def test_build_index(self, client, stress_project):
         project_id, _ = stress_project
         r = client.post(f"/api/v1/projects/{project_id}/rag/index")
-        if r.status_code == 500:
-            pytest.skip(f"RAG index build returned 500: {r.text[:200]}")
-        assert r.status_code == 200
+        if r.status_code == 500 and "CUDA out of memory" in r.text:
+            logger.warning("CUDA OOM on first attempt, retrying after 30s...")
+            time.sleep(30)
+            r = client.post(f"/api/v1/projects/{project_id}/rag/index")
+        assert r.status_code == 200, f"RAG index build failed ({r.status_code}): {r.text[:300]}"
 
     def test_concurrent_rag_queries(self, client, stress_project):
         project_id, _ = stress_project

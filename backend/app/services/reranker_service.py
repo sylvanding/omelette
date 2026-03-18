@@ -33,15 +33,9 @@ def _load_reranker(model_name: str):
 
     _inject_hf_env()
 
-    has_gpu = False
-    try:
-        import torch
+    from app.services.embedding_service import detect_gpu
 
-        has_gpu = torch.cuda.is_available()
-    except ImportError:
-        pass
-
-    device = "cuda" if has_gpu else "cpu"
+    has_gpu, _count, device = detect_gpu()
     logger.info("Loading reranker model=%s device=%s", model_name, device)
     return SentenceTransformerRerank(
         model=model_name,

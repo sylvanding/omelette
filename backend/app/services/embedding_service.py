@@ -38,7 +38,11 @@ def _inject_hf_env() -> None:
 
 
 def detect_gpu() -> tuple[bool, int, str]:
-    """Detect GPU availability. Returns (has_gpu, device_count, device_string)."""
+    """Detect GPU availability and pick the device with the most free memory.
+
+    Returns (has_gpu, device_count, device_string) where device_string is
+    ``"cuda:N"`` (best device) or ``"cpu"``.
+    """
     try:
         import torch
 
@@ -46,17 +50,44 @@ def detect_gpu() -> tuple[bool, int, str]:
             count = torch.cuda.device_count()
             if count > 0:
                 devices_env = os.environ.get("CUDA_VISIBLE_DEVICES", settings.cuda_visible_devices)
+                best_device = _pick_best_gpu(count)
                 logger.info(
-                    "GPU detected: %d device(s), CUDA_VISIBLE_DEVICES=%s",
+                    "GPU detected: %d device(s), CUDA_VISIBLE_DEVICES=%s, selected=%s",
                     count,
                     devices_env,
+                    best_device,
                 )
-                return True, count, "cuda"
+                return True, count, best_device
         logger.info("No CUDA GPU available, using CPU")
         return False, 0, "cpu"
     except ImportError:
         logger.warning("torch not installed, GPU detection skipped")
         return False, 0, "cpu"
+
+
+def _pick_best_gpu(device_count: int) -> str:
+    """Select the CUDA device with the most free memory."""
+    if device_count <= 1:
+        return "cuda:0"
+    try:
+        import torch
+
+        best_idx = 0
+        best_free = 0
+        for idx in range(device_count):
+            free, _total = torch.cuda.mem_get_info(idx)
+            if free > best_free:
+                best_free = free
+                best_idx = idx
+        logger.info(
+            "GPU selection: device cuda:%d has %.1f GiB free (best of %d)",
+            best_idx,
+            best_free / (1024**3),
+            device_count,
+        )
+        return f"cuda:{best_idx}"
+    except Exception:
+        return "cuda:0"
 
 
 def get_embedding_model(
@@ -76,6 +107,10 @@ def get_embedding_model(
     if _cached_embed_model is not None and not force_reload:
         return _cached_embed_model
 
+    if force_reload and _cached_embed_model is not None:
+        _cached_embed_model = None
+        _cleanup_gpu_memory()
+
     prov = provider or getattr(settings, "embedding_provider", "local")
     name = model_name or settings.embedding_model
 
@@ -90,10 +125,26 @@ def get_embedding_model(
     return model
 
 
+def _cleanup_gpu_memory() -> None:
+    """Force garbage collection and release cached GPU memory."""
+    import gc
+
+    gc.collect()
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            logger.info("Cleared CUDA cache and ran GC")
+    except ImportError:
+        pass
+
+
 def _build_local_embedding(model_name: str) -> BaseEmbedding:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
     _inject_hf_env()
+    _cleanup_gpu_memory()
 
     has_gpu, _count, device = detect_gpu()
     logger.info("Loading local embedding model=%s device=%s", model_name, device)
@@ -101,7 +152,7 @@ def _build_local_embedding(model_name: str) -> BaseEmbedding:
     return HuggingFaceEmbedding(
         model_name=model_name,
         device=device,
-        embed_batch_size=32 if has_gpu else 8,
+        embed_batch_size=8,
     )
 
 

@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_or_404, get_project
 from app.config import settings
 from app.models import Paper, Project
+from app.models.chunk import PaperChunk
+from app.schemas.chunk import ChunkRead
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.paper import PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
@@ -164,6 +166,41 @@ async def serve_pdf(
         raise HTTPException(status_code=400, detail="Invalid PDF file")
 
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
+
+
+@router.get("/{paper_id}/chunks", response_model=ApiResponse[PaginatedData[ChunkRead]])
+async def list_paper_chunks(
+    project_id: int,
+    paper_id: int,
+    page: int = 1,
+    page_size: int = Query(default=50, ge=1, le=200),
+    chunk_type: str | None = Query(default=None, description="Filter by chunk type"),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """List chunks for a specific paper."""
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    base = select(PaperChunk).where(PaperChunk.paper_id == paper_id)
+    count_base = select(func.count(PaperChunk.id)).where(PaperChunk.paper_id == paper_id)
+
+    if chunk_type:
+        base = base.where(PaperChunk.chunk_type == chunk_type)
+        count_base = count_base.where(PaperChunk.chunk_type == chunk_type)
+
+    total = (await db.execute(count_base)).scalar() or 0
+    base = base.order_by(PaperChunk.chunk_index).offset((page - 1) * page_size).limit(page_size)
+    chunks = (await db.execute(base)).scalars().all()
+
+    return ApiResponse(
+        data=PaginatedData(
+            items=[ChunkRead.model_validate(c) for c in chunks],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
 
 
 @router.get("/{paper_id}/citation-graph", response_model=ApiResponse)

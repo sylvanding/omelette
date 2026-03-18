@@ -94,6 +94,15 @@ class RAGService:
         LlamaSettings.embed_model = self._embed_model
         return self._embed_model
 
+    def _reload_embed_model(self) -> BaseEmbedding:
+        """Force-reload the embedding model onto the best available GPU."""
+        from app.services.embedding_service import _cleanup_gpu_memory, get_embedding_model
+
+        _cleanup_gpu_memory()
+        self._embed_model = get_embedding_model(force_reload=True)
+        LlamaSettings.embed_model = self._embed_model
+        return self._embed_model
+
     def _get_vector_store(self, project_id: int):
         from llama_index.vector_stores.chroma import ChromaVectorStore
 
@@ -129,6 +138,9 @@ class RAGService:
         if on_progress:
             on_progress("loading_model", 0)
 
+        from app.services.embedding_service import _cleanup_gpu_memory
+
+        _cleanup_gpu_memory()
         index = self._get_index(project_id)
 
         if on_progress:

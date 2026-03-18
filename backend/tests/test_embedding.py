@@ -67,9 +67,9 @@ class TestDetectGpu:
         assert isinstance(has_gpu, bool)
         assert isinstance(count, int)
         assert isinstance(device, str)
-        assert device in ("cuda", "cpu")
+        assert device.startswith("cuda") or device == "cpu"
 
     def test_detect_gpu_no_raise(self):
         """detect_gpu never raises (handles missing torch)."""
         has_gpu, count, device = embedding_service.detect_gpu()
-        assert device in ("cuda", "cpu")
+        assert device.startswith("cuda") or device == "cpu"

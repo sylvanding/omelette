@@ -19,6 +19,7 @@ from app.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 
+
 router = APIRouter(prefix="/projects/{project_id}/rag", tags=["rag"])
 
 
@@ -95,7 +96,14 @@ async def build_index(
             }
         )
 
-    index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
+    try:
+        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
+    except RuntimeError as exc:
+        if "CUDA out of memory" not in str(exc):
+            raise
+        logger.warning("CUDA OOM during indexing, reloading model on best GPU and retrying")
+        rag._reload_embed_model()
+        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
 
     # Update paper status to INDEXED
     for paper in papers:
