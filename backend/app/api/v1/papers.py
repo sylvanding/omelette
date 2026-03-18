@@ -18,7 +18,7 @@ from app.schemas.paper import PaperBatchDeleteRequest, PaperBulkImport, PaperCre
 router = APIRouter(tags=["papers"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[PaperRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[PaperRead]], summary="List papers with filters")
 async def list_papers(
     project_id: int,
     pagination: PaginationParams = Depends(),
@@ -66,7 +66,7 @@ async def list_papers(
     )
 
 
-@router.post("", response_model=ApiResponse[PaperRead], status_code=201)
+@router.post("", response_model=ApiResponse[PaperRead], status_code=201, summary="Create paper")
 async def create_paper(
     project_id: int,
     body: PaperCreate,
@@ -80,7 +80,7 @@ async def create_paper(
     return ApiResponse(code=201, message="Paper created", data=PaperRead.model_validate(paper))
 
 
-@router.post("/bulk", response_model=ApiResponse[dict])
+@router.post("/bulk", response_model=ApiResponse[dict], summary="Bulk import papers")
 async def bulk_import_papers(
     project_id: int,
     body: PaperBulkImport,
@@ -104,7 +104,7 @@ async def bulk_import_papers(
     return ApiResponse(data={"created": created, "skipped": skipped, "total": len(body.papers)})
 
 
-@router.post("/batch-delete", response_model=ApiResponse[dict])
+@router.post("/batch-delete", response_model=ApiResponse[dict], summary="Batch delete papers")
 async def batch_delete_papers(
     project_id: int,
     body: PaperBatchDeleteRequest,
@@ -124,7 +124,7 @@ async def batch_delete_papers(
     return ApiResponse(data={"deleted": len(papers), "requested": len(body.paper_ids)})
 
 
-@router.get("/{paper_id}", response_model=ApiResponse[PaperRead])
+@router.get("/{paper_id}", response_model=ApiResponse[PaperRead], summary="Get paper by ID")
 async def get_paper(
     project_id: int,
     paper_id: int,
@@ -135,7 +135,7 @@ async def get_paper(
     return ApiResponse(data=PaperRead.model_validate(paper))
 
 
-@router.put("/{paper_id}", response_model=ApiResponse[PaperRead])
+@router.put("/{paper_id}", response_model=ApiResponse[PaperRead], summary="Update paper")
 async def update_paper(
     project_id: int,
     paper_id: int,
@@ -151,7 +151,7 @@ async def update_paper(
     return ApiResponse(data=PaperRead.model_validate(paper))
 
 
-@router.delete("/{paper_id}", response_model=ApiResponse)
+@router.delete("/{paper_id}", response_model=ApiResponse, summary="Delete paper")
 async def delete_paper(
     project_id: int,
     paper_id: int,
@@ -163,7 +163,7 @@ async def delete_paper(
     return ApiResponse(message="Paper deleted")
 
 
-@router.get("/{paper_id}/pdf")
+@router.get("/{paper_id}/pdf", summary="Serve PDF file")
 async def serve_pdf(
     project_id: int,
     paper_id: int,
@@ -188,7 +188,7 @@ async def serve_pdf(
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{paper.title[:80]}.pdf")
 
 
-@router.get("/{paper_id}/chunks", response_model=ApiResponse[PaginatedData[ChunkRead]])
+@router.get("/{paper_id}/chunks", response_model=ApiResponse[PaginatedData[ChunkRead]], summary="List paper chunks")
 async def list_paper_chunks(
     project_id: int,
     paper_id: int,
@@ -223,7 +223,7 @@ async def list_paper_chunks(
     )
 
 
-@router.get("/{paper_id}/citation-graph", response_model=ApiResponse)
+@router.get("/{paper_id}/citation-graph", response_model=ApiResponse, summary="Get citation graph")
 async def get_citation_graph(
     project_id: int,
     paper_id: int,

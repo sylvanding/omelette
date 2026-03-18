@@ -36,7 +36,7 @@ def _build_reranker(model_name: str):
     logger.info("Loading reranker model=%s device=%s top_n=%d", model_name, device, batch_size)
     return SentenceTransformerRerank(
         model=model_name,
-        top_n=batch_size,
+        top_n=batch_size,  # Oversample before rerank, then return top batch_size; aligns with RAG oversample_factor
         device=device,
         keep_retrieval_score=True,
     )

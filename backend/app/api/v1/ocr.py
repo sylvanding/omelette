@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/ocr", tags=["ocr"])
 
 
-@router.post("/process", response_model=ApiResponse[dict])
+@router.post("/process", response_model=ApiResponse[dict], summary="Run OCR on PDFs")
 @limiter.limit("5/minute")
 async def process_ocr(
     request: Request,
@@ -85,7 +85,7 @@ async def process_ocr(
     return ApiResponse(data={"processed": processed, "failed": failed, "total": len(papers)})
 
 
-@router.get("/stats", response_model=ApiResponse[dict])
+@router.get("/stats", response_model=ApiResponse[dict], summary="Get OCR statistics")
 async def ocr_stats(
     project_id: int,
     db: AsyncSession = Depends(get_db),

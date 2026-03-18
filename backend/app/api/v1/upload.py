@@ -6,12 +6,13 @@ import uuid
 from difflib import SequenceMatcher
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
 from app.config import settings
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.schemas.knowledge_base import DedupConflictPair, NewPaperData, UploadResult
@@ -25,8 +26,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["papers"])
 
 
-@router.post("/upload", response_model=ApiResponse[UploadResult])
+@router.post("/upload", response_model=ApiResponse[UploadResult], summary="Upload PDF files")
+@limiter.limit("5/minute")
 async def upload_pdfs(
+    request: Request,
     project_id: int,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
@@ -153,7 +156,7 @@ async def upload_pdfs(
     )
 
 
-@router.post("/process", response_model=ApiResponse[dict])
+@router.post("/process", response_model=ApiResponse[dict], summary="Trigger OCR and RAG indexing")
 async def process_papers(
     project_id: int,
     paper_ids: list[int] | None = Query(default=None),

@@ -156,7 +156,7 @@ class Settings(BaseSettings):
     pipeline_checkpoint_db: str = ""  # SQLite checkpoint DB path; defaults to {data_dir}/pipeline_checkpoints.db
 
     # GPU
-    cuda_visible_devices: str = "6,7"
+    cuda_visible_devices: str = ""  # Empty = use all available GPUs
     model_ttl_seconds: int = Field(
         default=300, ge=0, description="Auto-unload GPU models after N seconds idle. 0=disable"
     )

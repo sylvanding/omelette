@@ -32,7 +32,7 @@ class ProjectImportRequest(BaseModel):
     subscriptions: list[SubscriptionImportItem] = []
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]], summary="List all projects")
 async def list_projects(
     pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
@@ -90,7 +90,7 @@ async def list_projects(
     )
 
 
-@router.post("", response_model=ApiResponse[ProjectRead], status_code=201)
+@router.post("", response_model=ApiResponse[ProjectRead], status_code=201, summary="Create a project")
 async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)):
     project = Project(**body.model_dump())
     db.add(project)
@@ -111,7 +111,7 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
     )
 
 
-@router.get("/{project_id}", response_model=ApiResponse[ProjectRead])
+@router.get("/{project_id}", response_model=ApiResponse[ProjectRead], summary="Get project by ID")
 async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
     project = await get_or_404(db, Project, project_id, detail="Project not found")
     paper_count = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))).scalar() or 0
@@ -131,7 +131,7 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.put("/{project_id}", response_model=ApiResponse[ProjectRead])
+@router.put("/{project_id}", response_model=ApiResponse[ProjectRead], summary="Update project")
 async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession = Depends(get_db)):
     project = await get_or_404(db, Project, project_id, detail="Project not found")
     for key, value in body.model_dump(exclude_unset=True).items():
@@ -155,14 +155,14 @@ async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession 
     )
 
 
-@router.delete("/{project_id}", response_model=ApiResponse)
+@router.delete("/{project_id}", response_model=ApiResponse, summary="Delete project")
 async def delete_project(project_id: int, db: AsyncSession = Depends(get_db)):
     project = await get_or_404(db, Project, project_id, detail="Project not found")
     await db.delete(project)
     return ApiResponse(message="Project deleted")
 
 
-@router.get("/{project_id}/export", response_model=ApiResponse[dict])
+@router.get("/{project_id}/export", response_model=ApiResponse[dict], summary="Export project as JSON")
 async def export_project(project_id: int, db: AsyncSession = Depends(get_db)):
     """Export project data as JSON (papers, keywords, subscriptions)."""
     project = await get_or_404(db, Project, project_id, detail="Project not found")
@@ -209,7 +209,7 @@ async def export_project(project_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/import", response_model=ApiResponse[ProjectRead], status_code=201)
+@router.post("/import", response_model=ApiResponse[ProjectRead], status_code=201, summary="Import project from JSON")
 async def import_project(body: ProjectImportRequest, db: AsyncSession = Depends(get_db)):
     """Import a previously exported project."""
     project = Project(name=body.name, description=body.description, domain=body.domain)
@@ -252,7 +252,7 @@ async def import_project(body: ProjectImportRequest, db: AsyncSession = Depends(
     )
 
 
-@router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict])
+@router.post("/{project_id}/pipeline/run", response_model=ApiResponse[dict], summary="Run crawl-OCR-index pipeline")
 async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the crawl → OCR → index pipeline for all pending papers."""
     await get_or_404(db, Project, project_id, detail="Project not found")
@@ -261,7 +261,9 @@ async def run_pipeline(project_id: int, db: AsyncSession = Depends(get_db)):
     return ApiResponse(data=result)
 
 
-@router.post("/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict])
+@router.post(
+    "/{project_id}/pipeline/paper/{paper_id}", response_model=ApiResponse[dict], summary="Run pipeline for single paper"
+)
 async def run_paper_pipeline(project_id: int, paper_id: int, db: AsyncSession = Depends(get_db)):
     """Trigger the pipeline for a single paper."""
     await get_or_404(db, Project, project_id, detail="Project not found")

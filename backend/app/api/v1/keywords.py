@@ -14,7 +14,7 @@ from app.services.llm.client import LLMClient
 router = APIRouter(prefix="/projects/{project_id}/keywords", tags=["keywords"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[KeywordRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[KeywordRead]], summary="List keywords")
 async def list_keywords(
     project_id: int,
     pagination: KeywordPaginationParams = Depends(),
@@ -45,7 +45,7 @@ async def list_keywords(
     )
 
 
-@router.post("", response_model=ApiResponse[KeywordRead], status_code=201)
+@router.post("", response_model=ApiResponse[KeywordRead], status_code=201, summary="Create keyword")
 async def create_keyword(
     project_id: int,
     body: KeywordCreate,
@@ -59,7 +59,7 @@ async def create_keyword(
     return ApiResponse(code=201, message="Keyword created", data=KeywordRead.model_validate(keyword))
 
 
-@router.post("/bulk", response_model=ApiResponse[dict])
+@router.post("/bulk", response_model=ApiResponse[dict], summary="Bulk create keywords")
 async def bulk_create_keywords(
     project_id: int,
     keywords: list[KeywordCreate],
@@ -75,7 +75,7 @@ async def bulk_create_keywords(
     return ApiResponse(data={"created": created})
 
 
-@router.get("/search-formula", response_model=ApiResponse[dict])
+@router.get("/search-formula", response_model=ApiResponse[dict], summary="Generate boolean search formula")
 async def generate_search_formula(
     project_id: int,
     database: str = "wos",
@@ -89,7 +89,7 @@ async def generate_search_formula(
     return ApiResponse(data=result)
 
 
-@router.put("/{keyword_id}", response_model=ApiResponse[KeywordRead])
+@router.put("/{keyword_id}", response_model=ApiResponse[KeywordRead], summary="Update keyword")
 async def update_keyword(
     project_id: int,
     keyword_id: int,
@@ -105,7 +105,7 @@ async def update_keyword(
     return ApiResponse(data=KeywordRead.model_validate(keyword))
 
 
-@router.delete("/{keyword_id}", response_model=ApiResponse)
+@router.delete("/{keyword_id}", response_model=ApiResponse, summary="Delete keyword")
 async def delete_keyword(
     project_id: int,
     keyword_id: int,
@@ -117,7 +117,7 @@ async def delete_keyword(
     return ApiResponse(message="Keyword deleted")
 
 
-@router.post("/expand", response_model=ApiResponse[KeywordExpandResponse])
+@router.post("/expand", response_model=ApiResponse[KeywordExpandResponse], summary="Expand keywords with LLM")
 async def expand_keywords(
     project_id: int,
     body: KeywordExpandRequest,

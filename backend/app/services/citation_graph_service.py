@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 S2_FIELDS = "title,year,citationCount,externalIds,authors"
 
+# Error messages (extracted for maintainability)
+CITATION_NOT_FOUND = "无法获取引用数据：Semantic Scholar 未收录此论文"
+
 
 class CitationGraphService:
     """Build citation graph data from Semantic Scholar API."""
@@ -39,10 +42,7 @@ class CitationGraphService:
 
         s2_id = await self._resolve_s2_id(paper)
         if not s2_id:
-            raise HTTPException(
-                status_code=502,
-                detail="无法获取引用数据：Semantic Scholar 未收录此论文",
-            )
+            raise HTTPException(status_code=502, detail=CITATION_NOT_FOUND)
 
         local_source_ids = await self._get_local_source_ids(project_id)
 

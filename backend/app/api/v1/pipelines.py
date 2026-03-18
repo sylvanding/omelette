@@ -47,7 +47,7 @@ class ResumeRequest(BaseModel):
     resolved_conflicts: list[ResolvedConflict] = []
 
 
-@router.get("", response_model=ApiResponse[list[dict]])
+@router.get("", response_model=ApiResponse[list[dict]], summary="List pipelines")
 async def list_pipelines(
     status: str | None = None,
 ):
@@ -66,7 +66,7 @@ async def list_pipelines(
     return ApiResponse(data=data)
 
 
-@router.post("/search", response_model=ApiResponse[dict])
+@router.post("/search", response_model=ApiResponse[dict], summary="Start search pipeline")
 @limiter.limit("10/minute")
 async def start_search_pipeline(
     request: Request,
@@ -168,7 +168,7 @@ async def start_search_pipeline(
     )
 
 
-@router.post("/upload", response_model=ApiResponse[dict])
+@router.post("/upload", response_model=ApiResponse[dict], summary="Start upload pipeline")
 @limiter.limit("10/minute")
 async def start_upload_pipeline(
     request: Request,
@@ -273,7 +273,7 @@ async def start_upload_pipeline(
     )
 
 
-@router.get("/{thread_id}/status", response_model=ApiResponse[dict])
+@router.get("/{thread_id}/status", response_model=ApiResponse[dict], summary="Get pipeline status")
 async def get_pipeline_status(thread_id: str):
     """Get pipeline execution status."""
     task = _running_tasks.get(thread_id)
@@ -312,7 +312,7 @@ async def get_pipeline_status(thread_id: str):
     return ApiResponse(data=data)
 
 
-@router.post("/{thread_id}/resume", response_model=ApiResponse[dict])
+@router.post("/{thread_id}/resume", response_model=ApiResponse[dict], summary="Resume pipeline")
 async def resume_pipeline(thread_id: str, body: ResumeRequest):
     """Resume an interrupted pipeline with resolved conflicts."""
     from langgraph.types import Command
@@ -361,7 +361,7 @@ async def resume_pipeline(thread_id: str, body: ResumeRequest):
     return ApiResponse(data={"thread_id": thread_id, "status": "running"})
 
 
-@router.post("/{thread_id}/cancel", response_model=ApiResponse[dict])
+@router.post("/{thread_id}/cancel", response_model=ApiResponse[dict], summary="Cancel pipeline")
 async def cancel_pipeline(thread_id: str):
     """Cancel a running or interrupted pipeline."""
     task = _running_tasks.get(thread_id)

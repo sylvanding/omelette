@@ -18,10 +18,11 @@ from app.config import settings
 from app.prompts.rewrite import REWRITE_PROMPTS
 from app.services.llm.client import get_llm_client
 from app.services.user_settings_service import UserSettingsService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/chat", tags=["rewrite"])
+router = APIRouter(prefix="/chat", tags=["chat"])
 
 _rewrite_semaphore = asyncio.Semaphore(settings.rewrite_semaphore_limit)
 
@@ -72,9 +73,9 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
                         full_text += token
                         yield _sse("rewrite_delta", {"delta": token})
             except TimeoutError:
-                yield _sse(
-                    "error",
-                    {"code": "timeout", "message": f"Rewrite timed out after {settings.rewrite_timeout}s"},
+                yield format_sse_error(
+                    f"Rewrite timed out after {settings.rewrite_timeout}s",
+                    code=408,
                 )
                 return
 
@@ -85,10 +86,10 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
         return
     except (httpx.HTTPError, ValueError, RuntimeError) as e:
         logger.exception("Rewrite stream error")
-        yield _sse("error", {"code": "rewrite_error", "message": str(e)})
+        yield format_sse_error(str(e), code=500)
 
 
-@router.post("/rewrite")
+@router.post("/rewrite", summary="Stream excerpt rewrite")
 async def rewrite_stream(
     request: RewriteRequest,
     db: AsyncSession = Depends(get_db),

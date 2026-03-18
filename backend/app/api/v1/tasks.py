@@ -11,7 +11,7 @@ from app.schemas.common import ApiResponse, PaginatedData
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-@router.get("/{task_id}", response_model=ApiResponse[dict])
+@router.get("/{task_id}", response_model=ApiResponse[dict], summary="Get task by ID")
 async def get_task(task_id: int, db: AsyncSession = Depends(get_db)):
     task = await get_or_404(db, Task, task_id, detail="Task not found")
     return ApiResponse(
@@ -32,7 +32,7 @@ async def get_task(task_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[dict]])
+@router.get("", response_model=ApiResponse[PaginatedData[dict]], summary="List tasks")
 async def list_tasks(
     project_id: int | None = None,
     status: str | None = None,
@@ -72,7 +72,7 @@ async def list_tasks(
     )
 
 
-@router.post("/{task_id}/cancel", response_model=ApiResponse)
+@router.post("/{task_id}/cancel", response_model=ApiResponse, summary="Cancel task")
 async def cancel_task(task_id: int, db: AsyncSession = Depends(get_db)):
     task = await get_or_404(db, Task, task_id, detail="Task not found")
     if task.status in ("completed", "failed", "cancelled"):

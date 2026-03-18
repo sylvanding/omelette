@@ -19,7 +19,7 @@ from app.schemas.conversation import (
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-@router.get("", response_model=ApiResponse[PaginatedData[ConversationListSchema]])
+@router.get("", response_model=ApiResponse[PaginatedData[ConversationListSchema]], summary="List conversations")
 async def list_conversations(
     page: int = 1,
     page_size: int = 20,
@@ -94,7 +94,7 @@ async def list_conversations(
     )
 
 
-@router.post("", response_model=ApiResponse[ConversationSchema])
+@router.post("", response_model=ApiResponse[ConversationSchema], summary="Create conversation")
 async def create_conversation(
     body: ConversationCreateSchema,
     db: AsyncSession = Depends(get_db),
@@ -116,7 +116,7 @@ async def create_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.get("/{conversation_id}", response_model=ApiResponse[ConversationSchema])
+@router.get("/{conversation_id}", response_model=ApiResponse[ConversationSchema], summary="Get conversation")
 async def get_conversation(
     conversation_id: int,
     db: AsyncSession = Depends(get_db),
@@ -131,7 +131,7 @@ async def get_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.put("/{conversation_id}", response_model=ApiResponse[ConversationSchema])
+@router.put("/{conversation_id}", response_model=ApiResponse[ConversationSchema], summary="Update conversation")
 async def update_conversation(
     conversation_id: int,
     body: ConversationUpdateSchema,
@@ -153,7 +153,7 @@ async def update_conversation(
     return ApiResponse(data=ConversationSchema.model_validate(conv))
 
 
-@router.delete("/{conversation_id}", response_model=ApiResponse[dict])
+@router.delete("/{conversation_id}", response_model=ApiResponse[dict], summary="Delete conversation")
 async def delete_conversation(
     conversation_id: int,
     db: AsyncSession = Depends(get_db),

@@ -3,12 +3,12 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
 from app.models import Project, Subscription
-from app.schemas.common import ApiResponse
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
 from app.schemas.subscription import (
     SubscriptionCreate,
     SubscriptionRead,
@@ -20,13 +20,13 @@ from app.services.subscription_service import SubscriptionService
 router = APIRouter(prefix="/projects/{project_id}/subscriptions", tags=["subscriptions"])
 
 
-@router.get("/feeds", response_model=ApiResponse[list[dict]])
+@router.get("/feeds", response_model=ApiResponse[list[dict]], summary="List common RSS feeds")
 async def list_common_feeds():
     """Return common academic RSS feed templates."""
     return ApiResponse(data=SubscriptionService.get_common_feeds())
 
 
-@router.post("/check-rss", response_model=ApiResponse[dict])
+@router.post("/check-rss", response_model=ApiResponse[dict], summary="Check RSS feed for entries")
 async def check_rss(
     project_id: int,
     feed_url: str = Query(..., description="RSS/Atom feed URL"),
@@ -43,7 +43,7 @@ async def check_rss(
     return ApiResponse(data={"entries": entries, "count": len(entries)})
 
 
-@router.post("/check-updates", response_model=ApiResponse[dict])
+@router.post("/check-updates", response_model=ApiResponse[dict], summary="Check API for new papers")
 async def check_updates(
     project_id: int,
     query: str = Query(""),
@@ -59,19 +59,38 @@ async def check_updates(
     return ApiResponse(data=result)
 
 
-@router.get("", response_model=ApiResponse[list[SubscriptionRead]])
+@router.get("", response_model=ApiResponse[PaginatedData[SubscriptionRead]], summary="List subscriptions")
 async def list_subscriptions(
     project_id: int,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    """List all subscriptions for a project."""
-    result = await db.execute(select(Subscription).where(Subscription.project_id == project_id))
+    """List subscriptions for a project with pagination."""
+    page, page_size = pagination.page, pagination.page_size
+    count_stmt = select(func.count(Subscription.id)).where(Subscription.project_id == project_id)
+    total = (await db.execute(count_stmt)).scalar() or 0
+    stmt = (
+        select(Subscription)
+        .where(Subscription.project_id == project_id)
+        .order_by(Subscription.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(stmt)
     subs = result.scalars().all()
-    return ApiResponse(data=[SubscriptionRead.model_validate(s) for s in subs])
+    return ApiResponse(
+        data=PaginatedData(
+            items=[SubscriptionRead.model_validate(s) for s in subs],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
 
 
-@router.post("", response_model=ApiResponse[SubscriptionRead], status_code=201)
+@router.post("", response_model=ApiResponse[SubscriptionRead], status_code=201, summary="Create subscription")
 async def create_subscription(
     project_id: int,
     body: SubscriptionCreate,
@@ -86,7 +105,7 @@ async def create_subscription(
     return ApiResponse(code=201, message="Subscription created", data=SubscriptionRead.model_validate(sub))
 
 
-@router.get("/{sub_id}", response_model=ApiResponse[SubscriptionRead])
+@router.get("/{sub_id}", response_model=ApiResponse[SubscriptionRead], summary="Get subscription by ID")
 async def get_subscription(
     project_id: int,
     sub_id: int,
@@ -102,7 +121,7 @@ async def get_subscription(
     return ApiResponse(data=SubscriptionRead.model_validate(sub))
 
 
-@router.put("/{sub_id}", response_model=ApiResponse[SubscriptionRead])
+@router.put("/{sub_id}", response_model=ApiResponse[SubscriptionRead], summary="Update subscription")
 async def update_subscription(
     project_id: int,
     sub_id: int,
@@ -124,7 +143,7 @@ async def update_subscription(
     return ApiResponse(data=SubscriptionRead.model_validate(sub))
 
 
-@router.delete("/{sub_id}", response_model=ApiResponse[None])
+@router.delete("/{sub_id}", response_model=ApiResponse[None], summary="Delete subscription")
 async def delete_subscription(
     project_id: int,
     sub_id: int,
@@ -141,7 +160,9 @@ async def delete_subscription(
     return ApiResponse(message="Subscription deleted", data=None)
 
 
-@router.post("/{sub_id}/trigger", response_model=ApiResponse[SubscriptionRunResult])
+@router.post(
+    "/{sub_id}/trigger", response_model=ApiResponse[SubscriptionRunResult], summary="Trigger subscription update"
+)
 async def trigger_subscription(
     project_id: int,
     sub_id: int,

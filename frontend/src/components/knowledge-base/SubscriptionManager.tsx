@@ -123,7 +123,7 @@ export function SubscriptionManager({ projectId }: SubscriptionManagerProps) {
     invalidateKeys: [['subscriptions', projectId]],
   });
 
-  const subscriptions: Subscription[] = data ?? [];
+  const subscriptions: Subscription[] = data?.items ?? [];
 
   const resetForm = () => {
     setForm({

@@ -17,6 +17,7 @@ from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def get_rag_service(llm: LLMClient = Depends(get_llm)) -> RAGService:
     return RAGService(llm=llm)
 
 
-@router.post("/query", response_model=ApiResponse[RAGQueryResponse])
+@router.post("/query", response_model=ApiResponse[RAGQueryResponse], summary="RAG query over literature")
 async def rag_query(
     project_id: int,
     body: RAGQueryRequest,
@@ -59,7 +60,7 @@ async def rag_query(
     return ApiResponse(data=RAGQueryResponse(**result))
 
 
-@router.post("/index", response_model=ApiResponse[dict])
+@router.post("/index", response_model=ApiResponse[dict], summary="Build vector index")
 @limiter.limit("5/minute")
 async def build_index(
     request: Request,
@@ -122,7 +123,7 @@ async def build_index(
     )
 
 
-@router.post("/index/stream")
+@router.post("/index/stream", summary="Build index with SSE progress")
 async def build_index_stream(
     project_id: int,
     db: AsyncSession = Depends(get_db),
@@ -204,7 +205,7 @@ async def build_index_stream(
             )
         except Exception as exc:
             logger.exception("SSE index build failed")
-            yield _sse("error", {"message": str(exc)})
+            yield format_sse_error(str(exc), code=500)
 
     return StreamingResponse(
         _generate(),
@@ -217,7 +218,7 @@ async def build_index_stream(
     )
 
 
-@router.get("/stats", response_model=ApiResponse[dict])
+@router.get("/stats", response_model=ApiResponse[dict], summary="Get index statistics")
 async def index_stats(
     project_id: int,
     rag: RAGService = Depends(get_rag_service),
@@ -228,7 +229,7 @@ async def index_stats(
     return ApiResponse(data=stats)
 
 
-@router.delete("/index", response_model=ApiResponse[dict])
+@router.delete("/index", response_model=ApiResponse[dict], summary="Delete vector index")
 async def delete_index(
     project_id: int,
     rag: RAGService = Depends(get_rag_service),

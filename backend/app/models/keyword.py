@@ -17,7 +17,7 @@ class Keyword(Base):
     term_en: Mapped[str] = mapped_column(String(500), default="")
     level: Mapped[int] = mapped_column(Integer, default=1)  # 1=core, 2=sub-domain, 3=expanded
     category: Mapped[str] = mapped_column(String(100), default="")
-    parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("keywords.id"), default=None)
+    parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("keywords.id"), default=None, index=True)
     synonyms: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 

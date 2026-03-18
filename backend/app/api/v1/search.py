@@ -1,11 +1,12 @@
 """Literature search API endpoints — multi-source federated search."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
+from app.middleware.rate_limit import limiter
 from app.models import Keyword, Paper, Project
 from app.schemas.common import ApiResponse
 from app.services.search_service import SearchService
@@ -22,8 +23,10 @@ class SearchExecuteRequest(BaseModel):
     auto_import: bool = Field(default=False, description="Import results into project")
 
 
-@router.post("/execute", response_model=ApiResponse[dict])
+@router.post("/execute", response_model=ApiResponse[dict], summary="Execute federated search")
+@limiter.limit("10/minute")
 async def execute_search(
+    request: Request,
     project_id: int,
     body: SearchExecuteRequest,
     db: AsyncSession = Depends(get_db),
@@ -90,7 +93,7 @@ async def execute_search(
     return ApiResponse(data=results)
 
 
-@router.get("/sources", response_model=ApiResponse[list[dict]])
+@router.get("/sources", response_model=ApiResponse[list[dict]], summary="List search sources")
 async def list_search_sources(project: Project = Depends(get_project)):
     """Return available search sources and their status."""
     return ApiResponse(

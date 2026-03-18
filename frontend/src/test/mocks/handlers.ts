@@ -303,7 +303,15 @@ export const handlers = [
 
   // Subscriptions
   http.get(`${apiBase}/projects/:id/subscriptions`, () =>
-    HttpResponse.json(mockResponse(mockSubscriptionList)),
+    HttpResponse.json(
+      mockResponse({
+        items: mockSubscriptionList,
+        total: mockSubscriptionList.length,
+        page: 1,
+        page_size: 20,
+        total_pages: 1,
+      }),
+    ),
   ),
   http.post(`${apiBase}/projects/:id/subscriptions`, async ({ request, params }) => {
     const body = (await request.json()) as Record<string, unknown>;

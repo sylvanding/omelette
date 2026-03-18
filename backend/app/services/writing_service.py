@@ -19,6 +19,7 @@ from app.prompts.writing import (
 )
 from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +208,7 @@ Identify:
         papers = result.scalars().all()
 
         if not papers:
-            yield _sse("error", {"message": "知识库中暂无文献，请先添加文献后再生成综述"})
+            yield format_sse_error("知识库中暂无文献，请先添加文献后再生成综述", code=400)
             return
 
         yield _sse("progress", {"step": "outline", "message": "正在生成综述提纲..."})

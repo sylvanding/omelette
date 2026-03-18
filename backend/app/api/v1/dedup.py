@@ -4,13 +4,14 @@ import logging
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_llm, get_project
 from app.config import settings
+from app.middleware.rate_limit import limiter
 from app.models import Paper, PaperStatus, Project
-from app.schemas.common import ApiResponse
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
 from app.schemas.knowledge_base import AutoResolveRequest, ResolveConflictRequest
 from app.services.dedup_service import DedupService
 from app.services.llm.client import LLMClient
@@ -21,8 +22,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/projects/{project_id}/dedup", tags=["dedup"])
 
 
-@router.post("/run", response_model=ApiResponse[dict])
+@router.post("/run", response_model=ApiResponse[dict], summary="Run deduplication pipeline")
+@limiter.limit("5/minute")
 async def run_dedup(
+    request: Request,
     project_id: int,
     strategy: Literal["full", "doi_only", "title_only"] = "full",
     db: AsyncSession = Depends(get_db),
@@ -42,19 +45,33 @@ async def run_dedup(
     return ApiResponse(data=result)
 
 
-@router.get("/candidates", response_model=ApiResponse[list[dict]])
+@router.get("/candidates", response_model=ApiResponse[PaginatedData[dict]], summary="List dedup candidates")
 async def list_dedup_candidates(
     project_id: int,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    """List potential duplicate pairs for manual review."""
+    """List potential duplicate pairs for manual review with pagination."""
+    page, page_size = pagination.page, pagination.page_size
     service = DedupService(db)
     candidates = await service.find_llm_dedup_candidates(project_id)
-    return ApiResponse(data=candidates)
+    total = len(candidates)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = candidates[start:end]
+    return ApiResponse(
+        data=PaginatedData(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=(total + page_size - 1) // page_size if total else 1,
+        )
+    )
 
 
-@router.post("/verify", response_model=ApiResponse[dict])
+@router.post("/verify", response_model=ApiResponse[dict], summary="Verify duplicate with LLM")
 async def verify_duplicate(
     project_id: int,
     paper_a_id: int = Query(..., description="First paper ID"),
@@ -69,7 +86,7 @@ async def verify_duplicate(
     return ApiResponse(data=result)
 
 
-@router.post("/resolve", response_model=ApiResponse[dict])
+@router.post("/resolve", response_model=ApiResponse[dict], summary="Resolve upload conflict")
 async def resolve_conflict(
     project_id: int,
     body: ResolveConflictRequest,
@@ -142,7 +159,7 @@ async def resolve_conflict(
     raise HTTPException(status_code=400, detail=f"Invalid action: {body.action}")
 
 
-@router.post("/auto-resolve", response_model=ApiResponse[list[dict]])
+@router.post("/auto-resolve", response_model=ApiResponse[list[dict]], summary="Auto-resolve conflicts with LLM")
 async def auto_resolve_conflicts(
     project_id: int,
     body: AutoResolveRequest,

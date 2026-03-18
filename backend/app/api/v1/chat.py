@@ -15,14 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.middleware.rate_limit import limiter
 from app.pipelines.chat.graph import create_chat_pipeline
-from app.pipelines.chat.stream_writer import (
-    format_done,
-    format_error,
-    format_finish,
-    format_start,
-)
+from app.pipelines.chat.stream_writer import format_done, format_finish, format_start
 from app.schemas.common import ApiResponse
 from app.schemas.conversation import ChatStreamRequest
+from app.utils.sse import format_sse_error
 
 logger = logging.getLogger(__name__)
 
@@ -98,12 +94,12 @@ async def _stream_chat(
         yield format_finish()
     except Exception as e:
         logger.exception("Chat stream error")
-        yield format_error(str(e))
+        yield format_sse_error(str(e), code=500)
     finally:
         yield format_done()
 
 
-@router.post("/stream")
+@router.post("/stream", summary="Stream chat completion")
 @limiter.limit("30/minute")
 async def chat_stream(
     request: Request,
@@ -123,7 +119,7 @@ async def chat_stream(
     )
 
 
-@router.post("/complete", response_model=ApiResponse[CompletionResponse])
+@router.post("/complete", response_model=ApiResponse[CompletionResponse], summary="Autocomplete suggestion")
 async def complete(request: CompletionRequest):
     """Return a short text completion suggestion for autocomplete."""
     from app.services.completion_service import CompletionService

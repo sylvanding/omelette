@@ -44,7 +44,7 @@ def _get_gpu_memory() -> list[dict]:
         return []
 
 
-@router.get("/status")
+@router.get("/status", summary="Get GPU status")
 async def gpu_status():
     """Return loaded GPU models, MinerU status, and GPU memory usage."""
     from app.services.gpu_model_manager import gpu_model_manager
@@ -59,7 +59,7 @@ async def gpu_status():
     )
 
 
-@router.post("/unload")
+@router.post("/unload", summary="Unload GPU models")
 async def gpu_unload():
     """Immediately unload all GPU models and release VRAM."""
     from app.services.gpu_model_manager import gpu_model_manager
