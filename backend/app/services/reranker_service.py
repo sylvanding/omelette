@@ -35,11 +35,12 @@ def _load_reranker(model_name: str):
 
     from app.services.embedding_service import detect_gpu
 
-    has_gpu, _count, device = detect_gpu()
-    logger.info("Loading reranker model=%s device=%s", model_name, device)
+    has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.rerank_gpu_id)
+    batch_size = settings.rerank_batch_size
+    logger.info("Loading reranker model=%s device=%s top_n=%d", model_name, device, batch_size)
     return SentenceTransformerRerank(
         model=model_name,
-        top_n=50,
+        top_n=batch_size,
         device=device,
         keep_retrieval_score=True,
     )

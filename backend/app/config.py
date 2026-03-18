@@ -1,13 +1,42 @@
 """Application configuration using Pydantic Settings."""
 
 import os
+from enum import StrEnum
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+class GpuMode(StrEnum):
+    CONSERVATIVE = "conservative"
+    BALANCED = "balanced"
+    AGGRESSIVE = "aggressive"
+
+
+GPU_MODE_PRESETS: dict[GpuMode, dict[str, int]] = {
+    GpuMode.CONSERVATIVE: {
+        "ocr_parallel_limit": 1,
+        "embed_batch_size": 1,
+        "rerank_batch_size": 1,
+        "reranker_concurrency_limit": 1,
+    },
+    GpuMode.BALANCED: {
+        "ocr_parallel_limit": 0,
+        "embed_batch_size": 8,
+        "rerank_batch_size": 16,
+        "reranker_concurrency_limit": 1,
+    },
+    GpuMode.AGGRESSIVE: {
+        "ocr_parallel_limit": 0,
+        "embed_batch_size": 32,
+        "rerank_batch_size": 50,
+        "reranker_concurrency_limit": 2,
+    },
+}
 
 
 class Settings(BaseSettings):
@@ -107,7 +136,13 @@ class Settings(BaseSettings):
     langgraph_checkpoint_dir: str = ""
 
     # GPU
-    cuda_visible_devices: str = "5,6,7"
+    cuda_visible_devices: str = "6,7"
+    gpu_mode: GpuMode = Field(default=GpuMode.BALANCED, description="GPU preset: conservative/balanced/aggressive")
+    embed_batch_size: int = Field(default=0, ge=0, le=128, description="Embedding batch size. 0=follow GPU_MODE")
+    rerank_batch_size: int = Field(default=0, ge=0, le=128, description="Reranker internal top_n. 0=follow GPU_MODE")
+    embed_gpu_id: int = Field(default=-1, ge=-1, le=15, description="Pin embedding to GPU N. -1=auto select")
+    rerank_gpu_id: int = Field(default=-1, ge=-1, le=15, description="Pin reranker to GPU N. -1=auto select")
+    ocr_gpu_ids: str = Field(default="", description="Comma-separated GPU IDs for OCR. Empty=all")
 
     # Network Proxy
     http_proxy: str = ""
@@ -123,6 +158,20 @@ class Settings(BaseSettings):
     # Frontend
     frontend_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000,http://0.0.0.0:3000"
+
+    @model_validator(mode="after")
+    def _apply_gpu_mode_defaults(self) -> "Settings":
+        """Fill zero-valued GPU params from the active GPU_MODE preset."""
+        preset = GPU_MODE_PRESETS.get(self.gpu_mode, GPU_MODE_PRESETS[GpuMode.BALANCED])
+        if self.embed_batch_size == 0:
+            self.embed_batch_size = preset["embed_batch_size"]
+        if self.rerank_batch_size == 0:
+            self.rerank_batch_size = preset["rerank_batch_size"]
+        if self.ocr_parallel_limit == 0:
+            self.ocr_parallel_limit = preset["ocr_parallel_limit"]
+        if self.reranker_concurrency_limit == 1 and preset["reranker_concurrency_limit"] != 1:
+            self.reranker_concurrency_limit = preset["reranker_concurrency_limit"]
+        return self
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

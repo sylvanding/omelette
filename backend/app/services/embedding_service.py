@@ -37,11 +37,14 @@ def _inject_hf_env() -> None:
         logger.info("Using HuggingFace mirror: %s", settings.hf_endpoint)
 
 
-def detect_gpu() -> tuple[bool, int, str]:
-    """Detect GPU availability and pick the device with the most free memory.
+def detect_gpu(*, pinned_gpu_id: int = -1) -> tuple[bool, int, str]:
+    """Detect GPU availability and pick the best device.
+
+    Args:
+        pinned_gpu_id: If >= 0, skip auto-detection and return ``cuda:N``.
 
     Returns (has_gpu, device_count, device_string) where device_string is
-    ``"cuda:N"`` (best device) or ``"cpu"``.
+    ``"cuda:N"`` (best/pinned device) or ``"cpu"``.
     """
     try:
         import torch
@@ -49,6 +52,10 @@ def detect_gpu() -> tuple[bool, int, str]:
         if torch.cuda.is_available():
             count = torch.cuda.device_count()
             if count > 0:
+                if 0 <= pinned_gpu_id < count:
+                    device = f"cuda:{pinned_gpu_id}"
+                    logger.info("GPU pinned: %s (of %d device(s))", device, count)
+                    return True, count, device
                 devices_env = os.environ.get("CUDA_VISIBLE_DEVICES", settings.cuda_visible_devices)
                 best_device = _pick_best_gpu(count)
                 logger.info(
@@ -146,13 +153,14 @@ def _build_local_embedding(model_name: str) -> BaseEmbedding:
     _inject_hf_env()
     _cleanup_gpu_memory()
 
-    has_gpu, _count, device = detect_gpu()
-    logger.info("Loading local embedding model=%s device=%s", model_name, device)
+    has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
+    batch_size = settings.embed_batch_size
+    logger.info("Loading local embedding model=%s device=%s batch_size=%d", model_name, device, batch_size)
 
     return HuggingFaceEmbedding(
         model_name=model_name,
         device=device,
-        embed_batch_size=8,
+        embed_batch_size=batch_size,
     )
 
 

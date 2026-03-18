@@ -19,7 +19,7 @@ import time
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
+from app.config import GpuMode, settings
 from app.database import async_session_factory
 from app.models import Paper, PaperStatus
 from app.models.chunk import PaperChunk
@@ -41,12 +41,33 @@ def _detect_gpu_count() -> int:
     return 0
 
 
+def _parse_ocr_gpu_ids(gpu_count: int) -> list[int]:
+    """Parse OCR_GPU_IDS into a list of valid indices.
+
+    Empty string → all GPUs ``[0 .. gpu_count-1]``.
+    """
+    raw = settings.ocr_gpu_ids.strip()
+    if not raw or gpu_count == 0:
+        return list(range(max(gpu_count, 1)))
+    ids = []
+    for tok in raw.split(","):
+        tok = tok.strip()
+        if tok.isdigit():
+            idx = int(tok)
+            if idx < gpu_count:
+                ids.append(idx)
+    return ids or list(range(gpu_count))
+
+
 def _resolve_parallel_limit(gpu_count: int) -> int:
     """Determine how many OCR tasks may run concurrently."""
     configured = settings.ocr_parallel_limit
     if configured > 0:
         return configured
-    return max(gpu_count, 1)
+    base = max(gpu_count, 1)
+    if settings.gpu_mode == GpuMode.AGGRESSIVE:
+        return base * 2
+    return base
 
 
 async def process_papers_background(
@@ -94,9 +115,10 @@ async def _process_papers(project_id: int, paper_ids: list[int]) -> None:
 
         if papers_to_ocr:
             semaphore = asyncio.Semaphore(parallel_limit)
+            ocr_gpus = _parse_ocr_gpu_ids(gpu_count)
 
             async def _ocr_one(paper: Paper, worker_id: int) -> tuple[Paper, dict | None]:
-                gpu_id = worker_id % gpu_count if gpu_count > 0 else 0
+                gpu_id = ocr_gpus[worker_id % len(ocr_gpus)] if use_gpu else 0
                 ocr = OCRService(use_gpu=use_gpu, gpu_id=gpu_id)
                 async with semaphore:
                     try:
