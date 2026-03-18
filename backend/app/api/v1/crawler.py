@@ -1,5 +1,7 @@
 """PDF crawler API endpoints."""
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +17,7 @@ router = APIRouter(prefix="/projects/{project_id}/crawl", tags=["crawler"])
 @router.post("/start", response_model=ApiResponse[dict])
 async def start_crawl(
     project_id: int,
-    priority: str = "high",
+    priority: Literal["high", "low"] = "low",
     max_papers: int = 50,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),

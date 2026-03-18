@@ -7,28 +7,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_or_404
 from app.models import Keyword, Paper, Project, Subscription
-from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
+from app.schemas.project import (
+    KeywordImportItem,
+    PaperImportItem,
+    ProjectCreate,
+    ProjectRead,
+    ProjectUpdate,
+    SubscriptionImportItem,
+)
 from app.services.pipeline_service import PipelineService
 
 router = APIRouter(tags=["projects"])
 
 
 class ProjectImportRequest(BaseModel):
+    """Request body for project import."""
+
     name: str
     description: str = ""
     domain: str = ""
-    papers: list[dict] = []
-    keywords: list[dict] = []
-    subscriptions: list[dict] = []
+    papers: list[PaperImportItem] = []
+    keywords: list[KeywordImportItem] = []
+    subscriptions: list[SubscriptionImportItem] = []
 
 
 @router.get("", response_model=ApiResponse[PaginatedData[ProjectRead]])
 async def list_projects(
-    page: int = 1,
-    page_size: int = 20,
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
+    page, page_size = pagination.page, pagination.page_size
     total_stmt = select(func.count(Project.id))
     total = (await db.execute(total_stmt)).scalar() or 0
 
@@ -212,13 +221,13 @@ async def import_project(body: ProjectImportRequest, db: AsyncSession = Depends(
     sub_cols = {c.name for c in Subscription.__table__.columns} - {"id", "project_id", "created_at", "updated_at"}
 
     for pd in body.papers:
-        db.add(Paper(project_id=project.id, **{k: v for k, v in pd.items() if k in paper_cols}))
+        db.add(Paper(project_id=project.id, **{k: v for k, v in pd.model_dump().items() if k in paper_cols}))
 
     for kd in body.keywords:
-        db.add(Keyword(project_id=project.id, **{k: v for k, v in kd.items() if k in kw_cols}))
+        db.add(Keyword(project_id=project.id, **{k: v for k, v in kd.model_dump().items() if k in kw_cols}))
 
     for sd in body.subscriptions:
-        db.add(Subscription(project_id=project.id, **{k: v for k, v in sd.items() if k in sub_cols}))
+        db.add(Subscription(project_id=project.id, **{k: v for k, v in sd.model_dump().items() if k in sub_cols}))
 
     await db.flush()
     await db.refresh(project)

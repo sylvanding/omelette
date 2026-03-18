@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_router
 from app.config import settings
-from app.database import init_db
+from app.database import engine, init_db
 from app.middleware.auth import ApiKeyMiddleware
 from app.middleware.rate_limit import setup_rate_limiting
 from app.schemas.common import ApiResponse
@@ -24,6 +24,9 @@ logger = logging.getLogger("omelette")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from pathlib import Path
+
+    from app.pipelines.graphs import set_checkpointer
     from app.services.gpu_model_manager import gpu_model_manager
     from app.services.mineru_process_manager import mineru_process_manager
 
@@ -32,12 +35,36 @@ async def lifespan(app: FastAPI):
         logger.warning("SECURITY: Using default secret key in production! Set APP_SECRET_KEY in .env")
     await init_db()
     logger.info("Database initialized")
+
+    # Pipeline checkpoint persistence (AsyncSqliteSaver)
+    checkpoint_cm = None
+    try:
+        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+        db_path = settings.pipeline_checkpoint_db
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        cm = AsyncSqliteSaver.from_conn_string(db_path)
+        saver = await cm.__aenter__()
+        checkpoint_cm = cm  # Only set after successful enter
+        set_checkpointer(saver)
+        logger.info("Pipeline checkpoint DB: %s", db_path)
+    except Exception as e:
+        logger.warning("AsyncSqliteSaver unavailable, using MemorySaver: %s", e)
+        set_checkpointer(None)
+
     await gpu_model_manager.start()
     await mineru_process_manager.start()
     yield
     logger.info("Shutting down Omelette")
     await mineru_process_manager.stop()
     await gpu_model_manager.stop()
+    if checkpoint_cm is not None:
+        try:
+            await checkpoint_cm.__aexit__(None, None, None)
+        except Exception as e:
+            logger.warning("Checkpoint saver teardown: %s", e)
+        set_checkpointer(None)
+    await engine.dispose()
 
 
 app = FastAPI(

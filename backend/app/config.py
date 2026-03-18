@@ -153,6 +153,7 @@ class Settings(BaseSettings):
 
     # LangGraph
     langgraph_checkpoint_dir: str = ""
+    pipeline_checkpoint_db: str = ""  # SQLite checkpoint DB path; defaults to {data_dir}/pipeline_checkpoints.db
 
     # GPU
     cuda_visible_devices: str = "6,7"
@@ -206,6 +207,8 @@ class Settings(BaseSettings):
             self.chroma_db_dir = f"{self.data_dir}/chroma_db"
         if not self.langgraph_checkpoint_dir:
             self.langgraph_checkpoint_dir = f"{self.data_dir}/langgraph_checkpoints"
+        if not self.pipeline_checkpoint_db:
+            self.pipeline_checkpoint_db = f"{self.data_dir}/pipeline_checkpoints.db"
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/projects/{project_id}/dedup", tags=["dedup"])
 @router.post("/run", response_model=ApiResponse[dict])
 async def run_dedup(
     project_id: int,
-    strategy: str = "full",
+    strategy: Literal["full", "doi_only", "title_only"] = "full",
     db: AsyncSession = Depends(get_db),
     llm: LLMClient = Depends(get_llm),
     project: Project = Depends(get_project),

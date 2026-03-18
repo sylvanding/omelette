@@ -6,6 +6,41 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class PaperImportItem(BaseModel):
+    """Schema for a single paper in project import."""
+
+    title: str = ""
+    abstract: str = ""
+    doi: str | None = None
+    authors: list | None = None
+    year: int | None = None
+    journal: str = ""
+    source: str = ""
+    pdf_url: str = ""
+    status: str = ""
+    citation_count: int = 0
+
+
+class KeywordImportItem(BaseModel):
+    """Schema for a single keyword in project import."""
+
+    term: str = Field(..., min_length=1)
+    term_en: str = ""
+    level: int = 1
+    category: str = ""
+    synonyms: str = ""
+
+
+class SubscriptionImportItem(BaseModel):
+    """Schema for a single subscription in project import."""
+
+    name: str = Field(..., min_length=1)
+    query: str = ""
+    sources: list[str] = Field(default_factory=list)
+    frequency: str = "weekly"
+    max_results: int = 50
+
+
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     description: str = ""

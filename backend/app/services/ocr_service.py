@@ -10,11 +10,13 @@ Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
 import json
 import logging
 import re
+import tempfile
 from pathlib import Path
 
 import pdfplumber
 
 from app.config import settings
+from app.services.gpu_utils import release_gpu_memory
 
 logger = logging.getLogger(__name__)
 
@@ -39,17 +41,7 @@ class OCRService:
         if self._marker_converter is not None:
             del self._marker_converter
             self._marker_converter = None
-        import gc
-
-        gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                logger.info("OCRService: released GPU memory")
-        except ImportError:
-            pass
+        release_gpu_memory(caller="OCRService")
 
     def __enter__(self):
         return self
@@ -179,7 +171,7 @@ class OCRService:
                     for page_num in range(len(pdf_doc)):
                         page = pdf_doc[page_num]
                         pix = page.get_pixmap(dpi=150)
-                        img_path = f"/tmp/omelette_ocr_page_{page_num}.png"
+                        img_path = str(Path(tempfile.gettempdir()) / f"omelette_ocr_page_{page_num}.png")
                         pix.save(img_path)
                         page_result = ocr.ocr(img_path, cls=False)
                         result.append(page_result[0] if page_result else [])

@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -20,7 +20,10 @@ class PaperStatus(StrEnum):
 
 class Paper(Base):
     __tablename__ = "papers"
-    __table_args__ = (Index("ix_paper_project_status", "project_id", "status"),)
+    __table_args__ = (
+        Index("ix_paper_project_status", "project_id", "status"),
+        UniqueConstraint("project_id", "doi", name="uq_paper_project_doi"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, ForeignKey("projects.id"), nullable=False, index=True)

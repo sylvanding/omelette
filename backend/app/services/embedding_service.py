@@ -71,6 +71,24 @@ def detect_gpu(*, pinned_gpu_id: int = -1) -> tuple[bool, int, str]:
         return False, 0, "cpu"
 
 
+def _make_api_loader(model_name: str):
+    """Return a callable that builds API embedding (avoids lambda for ruff E731)."""
+
+    def _load() -> BaseEmbedding:
+        return _build_api_embedding(model_name)
+
+    return _load
+
+
+def _make_local_loader(model_name: str):
+    """Return a callable that builds local embedding (avoids lambda for ruff E731)."""
+
+    def _load() -> BaseEmbedding:
+        return _build_local_embedding(model_name)
+
+    return _load
+
+
 def _pick_best_gpu(device_count: int) -> str:
     """Select the CUDA device with the most free memory."""
     if device_count <= 1:
@@ -121,11 +139,11 @@ def get_embedding_model(
         loader = _build_mock_embedding
         device = "cpu"
     elif prov == "api":
-        loader = lambda: _build_api_embedding(name)  # noqa: E731
+        loader = _make_api_loader(name)
         device = "cpu"
     else:
         _, _, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
-        loader = lambda: _build_local_embedding(name)  # noqa: E731
+        loader = _make_local_loader(name)
 
     return gpu_model_manager.acquire(
         "embedding",
@@ -138,17 +156,9 @@ def get_embedding_model(
 
 def _cleanup_gpu_memory() -> None:
     """Force garbage collection and release cached GPU memory."""
-    import gc
+    from app.services.gpu_utils import release_gpu_memory
 
-    gc.collect()
-    try:
-        import torch
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            logger.info("Cleared CUDA cache and ran GC")
-    except ImportError:
-        pass
+    release_gpu_memory(caller="embedding_service")
 
 
 def _build_local_embedding(model_name: str) -> BaseEmbedding:

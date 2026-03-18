@@ -1,6 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
-from app.schemas.common import ApiResponse, PaginatedData, PaginationParams, TaskResponse
+from app.schemas.common import ApiResponse, KeywordPaginationParams, PaginatedData, PaginationParams, TaskResponse
 from app.schemas.conversation import ChatStreamRequest, ConversationCreateSchema, ConversationUpdateSchema
 from app.schemas.keyword import (
     KeywordCreate,
@@ -16,6 +16,7 @@ from app.schemas.subscription import SubscriptionCreate, SubscriptionRead, Subsc
 
 __all__ = [
     "ApiResponse",
+    "KeywordPaginationParams",
     "PaginatedData",
     "PaginationParams",
     "TaskResponse",

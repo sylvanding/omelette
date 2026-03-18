@@ -1,6 +1,7 @@
 """Literature search API endpoints — multi-source federated search."""
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,17 +13,27 @@ from app.services.search_service import SearchService
 router = APIRouter(prefix="/projects/{project_id}/search", tags=["search"])
 
 
+class SearchExecuteRequest(BaseModel):
+    """Request body for federated search execution."""
+
+    query: str = Field(default="", description="Search query; if empty, built from project keywords")
+    sources: list[str] | None = Field(default=None, description="Search sources to use")
+    max_results: int = Field(default=100, ge=1, le=500, description="Maximum results per source")
+    auto_import: bool = Field(default=False, description="Import results into project")
+
+
 @router.post("/execute", response_model=ApiResponse[dict])
 async def execute_search(
     project_id: int,
-    query: str = "",
-    sources: list[str] | None = None,
-    max_results: int = 100,
-    auto_import: bool = False,
+    body: SearchExecuteRequest,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
     """Execute federated search. If auto_import=True, import results to project."""
+    query = body.query
+    sources = body.sources
+    max_results = body.max_results
+    auto_import = body.auto_import
 
     # If no query, build from project keywords
     if not query:
@@ -38,7 +49,7 @@ async def execute_search(
         )
 
     service = SearchService()
-    results = await service.search(query, sources, max_results)
+    results = await service.search(query, sources=sources, max_results=max_results)
 
     # Optionally auto-import results
     if auto_import and results["papers"]:

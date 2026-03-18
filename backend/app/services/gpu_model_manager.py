@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import gc
 import logging
 import threading
 import time
@@ -17,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import settings
+from app.services.gpu_utils import release_gpu_memory
 
 logger = logging.getLogger(__name__)
 
@@ -137,14 +137,7 @@ class GPUModelManager:
     def _do_unload(self, name: str, entry: _ModelEntry) -> None:
         logger.info("Unloading GPU model %r", name)
         del entry.model
-        gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
+        release_gpu_memory(caller=f"gpu_model_manager:{name}")
 
     async def _cleanup_loop(self) -> None:
         """Periodically check for idle models and unload them."""

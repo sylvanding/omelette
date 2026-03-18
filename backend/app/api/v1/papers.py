@@ -12,7 +12,7 @@ from app.config import settings
 from app.models import Paper, Project
 from app.models.chunk import PaperChunk
 from app.schemas.chunk import ChunkRead
-from app.schemas.common import ApiResponse, PaginatedData
+from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
 from app.schemas.paper import PaperBatchDeleteRequest, PaperBulkImport, PaperCreate, PaperRead, PaperUpdate
 
 router = APIRouter(tags=["papers"])
@@ -21,8 +21,7 @@ router = APIRouter(tags=["papers"])
 @router.get("", response_model=ApiResponse[PaginatedData[PaperRead]])
 async def list_papers(
     project_id: int,
-    page: int = 1,
-    page_size: int = 20,
+    pagination: PaginationParams = Depends(),
     status: str | None = None,
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
@@ -31,6 +30,7 @@ async def list_papers(
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
+    page, page_size = pagination.page, pagination.page_size
     base = select(Paper).where(Paper.project_id == project_id)
     count_base = select(func.count(Paper.id)).where(Paper.project_id == project_id)
 

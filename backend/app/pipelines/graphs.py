@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
@@ -23,16 +24,22 @@ from app.pipelines.state import PipelineState
 logger = logging.getLogger(__name__)
 
 _memory_saver = MemorySaver()
+_checkpoint_saver: BaseCheckpointSaver | None = None
+
+
+def set_checkpointer(saver: BaseCheckpointSaver | None) -> None:
+    """Set the persistent checkpointer (called from lifespan). None restores MemorySaver fallback."""
+    global _checkpoint_saver
+    _checkpoint_saver = saver
 
 
 def _get_checkpointer():
     """Return a checkpointer for pipeline state persistence.
 
-    AsyncSqliteSaver.from_conn_string returns an async context manager,
-    not a direct BaseCheckpointSaver instance. Use MemorySaver which is
-    sufficient for single-process deployments with in-memory task tracking.
+    Uses AsyncSqliteSaver when available (set via set_checkpointer in lifespan),
+    otherwise falls back to MemorySaver for single-process in-memory persistence.
     """
-    return _memory_saver
+    return _checkpoint_saver if _checkpoint_saver is not None else _memory_saver
 
 
 def _route_after_dedup(state: PipelineState) -> str:

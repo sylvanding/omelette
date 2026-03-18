@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_llm, get_or_404, get_project
 from app.models import Keyword, Project
-from app.schemas.common import ApiResponse, PaginatedData
+from app.schemas.common import ApiResponse, KeywordPaginationParams, PaginatedData
 from app.schemas.keyword import KeywordCreate, KeywordExpandRequest, KeywordExpandResponse, KeywordRead, KeywordUpdate
 from app.services.keyword_service import KeywordService
 from app.services.llm.client import LLMClient
@@ -17,12 +17,12 @@ router = APIRouter(prefix="/projects/{project_id}/keywords", tags=["keywords"])
 @router.get("", response_model=ApiResponse[PaginatedData[KeywordRead]])
 async def list_keywords(
     project_id: int,
-    page: int = 1,
-    page_size: int = 50,
+    pagination: KeywordPaginationParams = Depends(),
     level: int | None = None,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
+    page, page_size = pagination.page, pagination.page_size
     base = select(Keyword).where(Keyword.project_id == project_id)
     if level is not None:
         base = base.where(Keyword.level == level)
