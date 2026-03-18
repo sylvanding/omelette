@@ -441,7 +441,7 @@ class TestDedupAPI:
     async def test_list_candidates_empty(self, client: AsyncClient, project_id: int):
         resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
         assert resp.status_code == 200
-        assert resp.json()["data"] == []
+        assert resp.json()["data"]["items"] == []
 
     @pytest.mark.asyncio
     async def test_list_candidates_with_similar_titles(self, client: AsyncClient, project_id: int):
@@ -455,7 +455,7 @@ class TestDedupAPI:
         )
         resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
         assert resp.status_code == 200
-        candidates = resp.json()["data"]
+        candidates = resp.json()["data"]["items"]
         assert len(candidates) >= 1
         assert "paper_a_id" in candidates[0]
         assert "paper_b_id" in candidates[0]

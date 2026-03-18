@@ -190,7 +190,8 @@ async def test_find_llm_dedup_candidates(client: AsyncClient, project_id: int):
 
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    candidates = resp.json()["data"]
+    data = resp.json()["data"]
+    candidates = data["items"]
     assert len(candidates) >= 1
     assert "paper_a_id" in candidates[0]
     assert "paper_b_id" in candidates[0]
@@ -212,7 +213,7 @@ async def test_find_llm_candidates_empty_when_no_similar(client: AsyncClient, pr
 
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    assert resp.json()["data"] == []
+    assert resp.json()["data"]["items"] == []
 
 
 # --- LLM verify (mock) ---
@@ -323,7 +324,7 @@ async def test_run_dedup_nonexistent_project(client: AsyncClient):
 async def test_list_candidates_empty(client: AsyncClient, project_id: int):
     resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
     assert resp.status_code == 200
-    assert resp.json()["data"] == []
+    assert resp.json()["data"]["items"] == []
 
 
 @pytest.mark.asyncio

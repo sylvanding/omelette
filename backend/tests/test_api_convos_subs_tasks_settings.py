@@ -192,7 +192,9 @@ class TestSubscriptionsAPI:
     async def test_list_subscriptions_empty(self, client, project):
         resp = await client.get(f"/api/v1/projects/{project.id}/subscriptions")
         assert resp.status_code == 200
-        assert resp.json()["data"] == []
+        data = resp.json()["data"]
+        assert data["items"] == []
+        assert data["total"] == 0
 
     @pytest.mark.asyncio
     async def test_create_subscription_api_type(self, client, project):

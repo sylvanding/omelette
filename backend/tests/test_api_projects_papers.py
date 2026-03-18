@@ -346,6 +346,28 @@ class TestPapersAPI:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
+    async def test_get_nonexistent_paper_404(self, client: AsyncClient, project_id: int):
+        """Request non-existent paper returns 404."""
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/99999")
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_list_paper_chunks_empty(self, client: AsyncClient, project_id: int):
+        """Get chunks for paper with no chunks returns empty list."""
+        create_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Paper Without Chunks", "abstract": "A"},
+        )
+        paper_id = create_resp.json()["data"]["id"]
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/{paper_id}/chunks")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 200
+        assert body["data"]["items"] == []
+        assert body["data"]["total"] == 0
+
+    @pytest.mark.asyncio
     async def test_get_paper_wrong_project(self, client: AsyncClient, project_id: int):
         other_resp = await client.post("/api/v1/projects", json={"name": "Other Project"})
         other_project_id = other_resp.json()["data"]["id"]
