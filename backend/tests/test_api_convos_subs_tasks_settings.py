@@ -315,7 +315,10 @@ class TestSubscriptionsAPI:
         mock_resp.text = mock_rss
         mock_resp.raise_for_status = MagicMock()
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
+        with (
+            patch("app.services.url_validator.validate_url_safe", return_value="https://example.com/feed.xml"),
+            patch("httpx.AsyncClient") as mock_client_cls,
+        ):
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -585,10 +588,7 @@ class TestPipelinesAPI:
             )
             thread_id = start_resp.json()["data"]["thread_id"]
 
-            import asyncio
-
-            await asyncio.sleep(1)
-
+            # Get status immediately before pipeline completes and removes itself
             status_resp = await client.get(f"/api/v1/pipelines/{thread_id}/status")
             assert status_resp.status_code == 200
             data = status_resp.json()["data"]
@@ -611,8 +611,15 @@ class TestPipelinesAPI:
     @pytest.mark.asyncio
     async def test_resume_pipeline_not_interrupted(self, client, project):
         """Resume returns 400 when pipeline is completed, not interrupted."""
+
+        async def slow_search(*args, **kwargs):
+            import asyncio
+
+            await asyncio.sleep(3)
+            return {"papers": [], "total": 0}
+
         with patch("app.services.search_service.SearchService.search", new_callable=AsyncMock) as mock_search:
-            mock_search.return_value = {"papers": [], "total": 0}
+            mock_search.side_effect = slow_search
 
             start_resp = await client.post(
                 "/api/v1/pipelines/search",
@@ -626,7 +633,7 @@ class TestPipelinesAPI:
 
             import asyncio
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
 
             resp = await client.post(
                 f"/api/v1/pipelines/{thread_id}/resume",

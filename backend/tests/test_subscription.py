@@ -6,8 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.database import Base, engine
+from app.database import Base, async_session_factory, engine
 from app.main import app
+from app.models import Project
 from app.services.subscription_service import SubscriptionService
 
 
@@ -18,6 +19,16 @@ async def setup_db():
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture
+async def project(setup_db):
+    async with async_session_factory() as db:
+        p = Project(name="Test Project", description="For subscription tests")
+        db.add(p)
+        await db.commit()
+        await db.refresh(p)
+        return p
 
 
 @pytest.fixture
@@ -88,7 +99,10 @@ class TestSubscriptionService:
         mock_resp.text = mock_rss_xml
         mock_resp.raise_for_status = MagicMock()
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
+        with (
+            patch("app.services.url_validator.validate_url_safe", return_value="https://example.com/feed.xml"),
+            patch("httpx.AsyncClient") as mock_client_cls,
+        ):
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -108,7 +122,10 @@ class TestSubscriptionService:
         mock_resp.text = mock_rss_xml
         mock_resp.raise_for_status = MagicMock()
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
+        with (
+            patch("app.services.url_validator.validate_url_safe", return_value="https://example.com/feed.xml"),
+            patch("httpx.AsyncClient") as mock_client_cls,
+        ):
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -135,12 +152,15 @@ class TestSubscriptionAPI:
         assert len(body["data"]) >= 4
 
     @pytest.mark.asyncio
-    async def test_check_rss_mock(self, client, mock_rss_xml):
+    async def test_check_rss_mock(self, client, project, mock_rss_xml):
         mock_resp = MagicMock()
         mock_resp.text = mock_rss_xml
         mock_resp.raise_for_status = MagicMock()
 
-        with patch("httpx.AsyncClient") as mock_client_cls:
+        with (
+            patch("app.services.url_validator.validate_url_safe", return_value="https://example.com/feed.xml"),
+            patch("httpx.AsyncClient") as mock_client_cls,
+        ):
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -148,7 +168,7 @@ class TestSubscriptionAPI:
             mock_client_cls.return_value = mock_client
 
             resp = await client.post(
-                "/api/v1/projects/1/subscriptions/check-rss",
+                f"/api/v1/projects/{project.id}/subscriptions/check-rss",
                 params={"feed_url": "https://example.com/feed.xml", "since_days": 7},
             )
             assert resp.status_code == 200

@@ -4,6 +4,7 @@ import os
 import tempfile
 
 import pytest
+from sqlalchemy import UniqueConstraint
 
 _test_data_dir = tempfile.mkdtemp(prefix="omelette_test_")
 _test_db_path = os.path.join(_test_data_dir, "test_omelette.db")
@@ -21,6 +22,18 @@ real_llm = pytest.mark.skipif(
 )
 
 
+def remove_paper_doi_unique_constraint():
+    """Remove (project_id, doi) unique constraint so tests can insert duplicate DOIs for dedup."""
+    from app.database import Base
+
+    table = Base.metadata.tables.get("papers")
+    if table is not None:
+        for c in list(table.constraints):
+            if isinstance(c, UniqueConstraint) and getattr(c, "name", None) == "uq_paper_project_doi":
+                table.constraints.discard(c)
+                break
+
+
 # ---------------------------------------------------------------------------
 # Shared fixtures (for tests that need DB + HTTP client)
 # Tests with local fixtures of the same name will use their own (no override).
@@ -32,6 +45,7 @@ async def setup_db():
     """Create tables before each test, drop after. Request explicitly or use local override."""
     from app.database import Base, engine
 
+    remove_paper_doi_unique_constraint()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield

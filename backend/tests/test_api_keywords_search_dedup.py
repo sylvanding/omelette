@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from conftest import real_llm
+from conftest import real_llm, remove_paper_doi_unique_constraint
 from httpx import ASGITransport, AsyncClient
 
 from app.database import Base, engine
@@ -14,6 +14,7 @@ from app.main import app
 
 @pytest.fixture(autouse=True)
 async def setup_db():
+    remove_paper_doi_unique_constraint()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -283,7 +284,7 @@ class TestSearchAPI:
 
             resp = await client.post(
                 f"/api/v1/projects/{project_id}/search/execute",
-                params={"query": "machine learning"},
+                json={"query": "machine learning"},
             )
         assert resp.status_code == 200
         body = resp.json()
@@ -309,7 +310,7 @@ class TestSearchAPI:
 
             resp = await client.post(
                 f"/api/v1/projects/{project_id}/search/execute",
-                params={"query": ""},
+                json={"query": ""},
             )
         assert resp.status_code == 200
         assert resp.json()["data"]["total"] == 1
@@ -318,7 +319,7 @@ class TestSearchAPI:
     async def test_execute_search_no_query_no_keywords(self, client: AsyncClient, project_id: int):
         resp = await client.post(
             f"/api/v1/projects/{project_id}/search/execute",
-            params={"query": ""},
+            json={"query": ""},
         )
         assert resp.status_code == 400
         assert "no keywords" in resp.json()["message"].lower()
@@ -337,7 +338,7 @@ class TestSearchAPI:
 
             resp = await client.post(
                 f"/api/v1/projects/{project_id}/search/execute",
-                params={"query": "test", "sources": ["semantic_scholar", "arxiv"]},
+                json={"query": "test", "sources": ["semantic_scholar", "arxiv"]},
             )
         assert resp.status_code == 200
         body = resp.json()
@@ -361,7 +362,7 @@ class TestSearchAPI:
     async def test_search_nonexistent_project(self, client: AsyncClient):
         resp = await client.post(
             "/api/v1/projects/99999/search/execute",
-            params={"query": "test"},
+            json={"query": "test"},
         )
         assert resp.status_code == 404
 

@@ -51,7 +51,7 @@ def test_acquire_force_reload(manager):
     m1 = manager.acquire("test", loader)
     assert m1 == "model_1"
 
-    with patch("app.services.gpu_model_manager.gc"):
+    with patch("app.services.gpu_utils.gc"):
         m2 = manager.acquire("test", loader, force_reload=True)
     assert m2 == "model_2"
     assert len(calls) == 2
@@ -61,7 +61,7 @@ def test_unload_removes_model(manager):
     manager.acquire("test", lambda: "m")
     assert manager.is_loaded("test")
 
-    with patch("app.services.gpu_model_manager.gc"):
+    with patch("app.services.gpu_utils.gc"):
         manager.unload("test")
     assert not manager.is_loaded("test")
 
@@ -71,7 +71,7 @@ def test_unload_all(manager):
     manager.acquire("b", lambda: "m2")
     assert len(manager.loaded_model_names) == 2
 
-    with patch("app.services.gpu_model_manager.gc"):
+    with patch("app.services.gpu_utils.gc"):
         manager.unload_all()
     assert len(manager.loaded_model_names) == 0
 
@@ -110,7 +110,7 @@ async def test_ttl_expires_unloads(manager):
     manager.acquire("test", lambda: "m")
     assert manager.is_loaded("test")
 
-    with patch("app.services.gpu_model_manager.gc"):
+    with patch("app.services.gpu_utils.gc"):
         await manager.start()
         await asyncio.sleep(3.5)
         await manager.stop()
@@ -122,7 +122,7 @@ async def test_ttl_expires_unloads(manager):
 async def test_acquire_resets_ttl(manager):
     manager.acquire("test", lambda: "m")
 
-    with patch("app.services.gpu_model_manager.gc"):
+    with patch("app.services.gpu_utils.gc"):
         await manager.start()
         await asyncio.sleep(1.5)
         manager.acquire("test", lambda: "m2")

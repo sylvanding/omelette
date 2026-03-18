@@ -416,10 +416,7 @@ async def test_pipeline_search_api(test_client, project, monkeypatch):
 
         thread_id = data["thread_id"]
 
-        import asyncio
-
-        await asyncio.sleep(1)
-
+        # Get status immediately before pipeline completes and removes itself
         resp2 = await client.get(f"/api/v1/pipelines/{thread_id}/status")
         assert resp2.status_code == 200
 
