@@ -19,18 +19,26 @@ alwaysApply: false
 
 ## Architecture
 - All endpoints return `ApiResponse[T]` from `app/schemas/common.py`
-- LLM calls through `app/services/llm/client.py` (LangChain `BaseChatModel`), never import provider SDKs directly
-- Pipeline orchestration via `app/pipelines/` (LangGraph `StateGraph`)
-- RAG via `app/services/rag_service.py` (LlamaIndex `VectorStoreIndex`)
+- LLM calls through `app/services/llm_client.py` (LangChain `BaseChatModel`), never import provider SDKs directly
+- LLM prompts centralized in `app/prompts/` (chat, dedup, keyword, rag, rewrite, writing, completion)
+- Pipeline orchestration via `app/pipelines/` (LangGraph `StateGraph`) with persistent `AsyncSqliteSaver` checkpointer
+- RAG via `app/services/rag_service.py` (LlamaIndex `VectorStoreIndex`) with reranker
+- GPU resource management via `app/services/gpu_model_manager.py` (TTL auto-unload, `GPU_MODE` presets)
+- MinerU subprocess management via `app/services/mineru_process_manager.py` (auto start/stop with TTL)
+- GPU monitoring API: `app/api/v1/gpu.py` — `GET /gpu/status`, `POST /gpu/unload`
+- SSRF protection via `app/services/url_validator.py` — validate all user-provided URLs
 - MCP server at `app/mcp_server.py`, mounted at `/mcp`
-- DB migrations via Alembic (`alembic/`), auto-upgrade on startup
+- DB migrations via Alembic (`alembic/`), run `alembic upgrade head` before startup
 - Async SQLAlchemy + `AsyncSession` for all DB operations
 - Business logic in `app/services/`, thin controllers in `app/api/v1/`
 - Pydantic v2 schemas in `app/schemas/` mirror every API request/response
+- Project-scoped endpoints must use `Depends(get_project)` for authorization
+- Exit cleanup: `atexit` + `SIGHUP` handlers + optional `scripts/gpu_watchdog.py` daemon
 
 ## Async Rules
 - Never call sync I/O or CPU-heavy functions directly in async code
-- Wrap blocking calls with `asyncio.to_thread()` (LlamaIndex, PaddleOCR, etc.)
+- Wrap blocking calls with `asyncio.to_thread()` (LlamaIndex, PaddleOCR, socket, subprocess, fitz, etc.)
+- Services must not call `db.commit()` — `get_session()` manages transactions
 - See `docs/solutions/performance-issues/blocking-sync-calls-asyncio-to-thread.md`
 
 ## Testing
@@ -38,4 +46,4 @@ alwaysApply: false
 - Mock LLM via `LLM_PROVIDER=mock` env var
 - Test DB uses `tempfile.mkdtemp()` — never relative paths
 - Every service has a corresponding `tests/test_<module>.py`
-- 178 tests and growing
+- 526 tests and growing

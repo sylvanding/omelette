@@ -11,15 +11,17 @@ Omelette is a **chat-centric scientific literature assistant** with a ChatGPT-st
 1. Chat Playground — SSE streaming, knowledge base selection, tool modes (QA, citation, outline, gap)
 2. Multi-LLM — LangChain abstraction: OpenAI, Anthropic, Aliyun, Volcengine, Ollama, mock
 3. RAG Knowledge Base — LlamaIndex + ChromaDB + GPU-aware HuggingFace embeddings
-4. LangGraph Pipeline — search/upload workflows with HITL interrupt/resume + checkpointing
+4. LangGraph Pipeline — search/upload workflows with HITL interrupt/resume + persistent checkpointing
 5. Keyword Management — three-level hierarchy + LLM expansion + search formula
 6. Multi-Source Search — Semantic Scholar, OpenAlex, arXiv, Crossref
 7. Deduplication — DOI + title similarity + LLM verification + HITL conflict resolution
 8. Subscription Management — CRUD API + RSS/API incremental updates
-9. PDF Crawler — Unpaywall + multi-channel fallback
-10. OCR Processing — pdfplumber (native) + PaddleOCR (scanned, GPU)
+9. PDF Crawler — Unpaywall + multi-channel fallback + SSRF protection
+10. OCR Processing — MinerU (auto-managed subprocess) + pdfplumber (native) + PaddleOCR (scanned, GPU)
 11. Writing Assistant — summarize, cite, outline, gap analysis
 12. MCP Server — tools, resources, prompts for AI IDE integration
+13. GPU Resource Management — TTL auto-unload, GPU_MODE presets, monitoring API, exit cleanup watchdog
+14. Centralized Prompts — all LLM prompts in `app/prompts/` module
 
 ## Stack
 - Backend: FastAPI + SQLAlchemy async + SQLite + Alembic + Pydantic v2

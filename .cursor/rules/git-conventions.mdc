@@ -13,7 +13,7 @@ alwaysApply: true
 ```
 
 - Types: feat, fix, docs, style, refactor, test, chore, ci, perf, build, revert
-- Scopes: backend, frontend, docs, ci, config, keywords, search, dedup, crawler, ocr, rag, writing, chat, pipelines, mcp, i18n
+- Scopes: backend, frontend, docs, ci, config, keywords, search, dedup, crawler, ocr, rag, writing, chat, pipelines, mcp, i18n, gpu, mineru, prompts, security
 - Description in English, imperative mood, lowercase, no period
 - Body explains *why* not *what*
 

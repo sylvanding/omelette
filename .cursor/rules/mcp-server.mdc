@@ -14,6 +14,7 @@ alwaysApply: false
 ## Tools
 - Annotate with `@mcp.tool()`, return structured dicts
 - Validate inputs (int conversion, path safety)
+- For external URLs (DOIs, feed URLs), use `app.services.url_validator.validate_url_safe()` for SSRF protection
 - Use `async_session_factory()` for DB access (not `Depends`)
 
 ## Resources

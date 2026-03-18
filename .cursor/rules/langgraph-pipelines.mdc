@@ -26,4 +26,6 @@ alwaysApply: false
 ## Graphs
 - Define graphs in `graphs.py` using `StateGraph(PipelineState)`
 - Use `add_conditional_edges` for branching (e.g. has_conflicts → hitl_dedup)
-- Compile with `MemorySaver()` checkpointer
+- Production: `AsyncSqliteSaver` checkpointer (set via `set_checkpointer()` in lifespan, path from `settings.pipeline_checkpoint_db`)
+- Tests: `MemorySaver()` for in-memory test isolation
+- Cancellation state managed via `app/pipelines/cancellation.py` (shared module, avoids reverse dependency on API layer)
