@@ -6,16 +6,18 @@ description: Create distinctive, production-grade frontend interfaces with high 
 # Frontend Design for Omelette
 
 ## Stack
-React 18 + TypeScript + TailwindCSS v4 + shadcn/ui + Radix + Framer Motion + lucide-react
+React 18 + TypeScript + TailwindCSS v4 + shadcn/ui + Radix + lucide-react + D3.js
 
 ## Design Direction: Scientific Editorial
 Omelette is a scientific literature assistant. The UI should feel like a **modern research tool** — clean, information-dense but not cluttered, with editorial precision.
 
 - **Tone**: Refined academic + modern SaaS. Think Notion meets Google Scholar.
-- **Color**: Neutral base (slate/zinc) with warm accent (amber/orange — the "omelette" brand). Dark mode support.
+- **Color**: Purple/blue primary (`#6C5CE7` style, OKLCH tokens), neutral base (slate). Dark mode with sidebar-specific tokens.
 - **Typography**: `Inter` for body (legibility), monospace for metadata. Use font-weight variation for hierarchy, not color.
 - **Spacing**: Generous whitespace between sections, tight within cards. 4px grid system.
-- **Motion**: Subtle — `framer-motion` for page transitions and list staggering. No gratuitous bouncing.
+- **Motion**: CSS transitions preferred. Framer Motion only in PlaygroundPage chat animations.
+- **Layout**: `PageLayout` for page structure, `DualSidebar` for navigation (context-aware panels), `DataTable` for tabular data.
+- **API URLs**: Always use `apiUrl()` / `wsUrl()` from `@/lib/api-config.ts`.
 
 ## Component Patterns
 
