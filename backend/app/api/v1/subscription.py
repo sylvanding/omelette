@@ -31,11 +31,15 @@ async def check_rss(
     project_id: int,
     feed_url: str = Query(..., description="RSS/Atom feed URL"),
     since_days: int = Query(7, ge=1, le=365),
+    project: Project = Depends(get_project),
 ):
     """Check an RSS feed for new entries since the given number of days."""
     service = SubscriptionService()
     since = datetime.now() - timedelta(days=since_days)
-    entries = await service.check_rss_feed(feed_url, since)
+    try:
+        entries = await service.check_rss_feed(feed_url, since)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return ApiResponse(data={"entries": entries, "count": len(entries)})
 
 
@@ -47,6 +51,7 @@ async def check_updates(
     since_days: int = Query(7, ge=1, le=365),
     max_results: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
 ):
     """Check for new papers via API search (incremental update)."""
     service = SubscriptionService()

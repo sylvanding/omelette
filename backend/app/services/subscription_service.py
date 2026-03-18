@@ -21,6 +21,13 @@ class SubscriptionService:
 
     async def check_rss_feed(self, feed_url: str, since: datetime | None = None) -> list[dict]:
         """Parse an RSS/Atom feed and return new entries since the given date."""
+        from app.services.url_validator import validate_url_safe
+
+        try:
+            await asyncio.to_thread(validate_url_safe, feed_url)
+        except ValueError as e:
+            raise ValueError(f"Feed URL blocked (SSRF): {e}") from e
+
         proxy = settings.http_proxy or None
         async with httpx.AsyncClient(proxy=proxy, timeout=30.0) as client:
             resp = await client.get(feed_url)

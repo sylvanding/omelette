@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 def _is_cancelled(state: PipelineState) -> bool:
     """Check if pipeline has been cancelled via the API."""
-    from app.api.v1.pipelines import _cancelled
+    from app.pipelines.cancellation import is_cancelled
 
     thread_id = state.get("thread_id", "")
-    return _cancelled.get(thread_id, False) or state.get("cancelled", False)
+    return is_cancelled(thread_id) or state.get("cancelled", False)
 
 
 async def search_node(state: PipelineState) -> dict[str, Any]:
@@ -174,9 +174,12 @@ async def apply_resolution_node(state: PipelineState) -> dict[str, Any]:
 
     for res in resolved:
         action = res.get("action", "skip")
-        new_paper = res.get("new_paper", {})
+        new_paper = res.get("new_paper") or {}
+        merged_paper = res.get("merged_paper") or {}
         if action == "keep_new" and new_paper:
             clean_papers.append(new_paper)
+        elif action == "merge" and merged_paper:
+            clean_papers.append(merged_paper)
 
     return {"papers": clean_papers, "stage": "resolved"}
 

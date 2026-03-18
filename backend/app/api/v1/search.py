@@ -80,7 +80,7 @@ async def execute_search(
 
 
 @router.get("/sources", response_model=ApiResponse[list[dict]])
-async def list_search_sources():
+async def list_search_sources(project: Project = Depends(get_project)):
     """Return available search sources and their status."""
     return ApiResponse(
         data=[

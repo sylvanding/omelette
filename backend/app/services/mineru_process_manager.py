@@ -190,7 +190,8 @@ class MinerUProcessManager:
         interval = 2.0
         while time.monotonic() < deadline:
             if self._process is not None and self._process.poll() is not None:
-                stderr = (self._process.stderr.read() or b"").decode(errors="replace")[:500]
+                stderr_data = await asyncio.to_thread(self._process.stderr.read)
+                stderr = (stderr_data or b"").decode(errors="replace")[:500]
                 logger.warning("MinerU process exited early (code=%s): %s", self._process.returncode, stderr)
                 return False
             if await self._health_check():
@@ -211,11 +212,11 @@ class MinerUProcessManager:
         try:
             self._process.send_signal(signal.SIGTERM)
             try:
-                self._process.wait(timeout=10)
+                await asyncio.to_thread(self._process.wait, 10)
             except subprocess.TimeoutExpired:
                 logger.warning("MinerU pid=%d did not exit after SIGTERM, sending SIGKILL", pid)
                 self._process.kill()
-                self._process.wait(timeout=5)
+                await asyncio.to_thread(self._process.wait, 5)
         except (OSError, ProcessLookupError):
             pass
         finally:

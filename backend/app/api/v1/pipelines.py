@@ -13,6 +13,7 @@ from app.api.deps import get_db, get_project_or_404
 from app.config import settings
 from app.middleware.rate_limit import limiter
 from app.models.task import Task, TaskStatus, TaskType
+from app.pipelines.cancellation import clear_cancelled, mark_cancelled
 from app.schemas.common import ApiResponse
 from app.websocket.manager import pipeline_manager
 
@@ -21,7 +22,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
 
 _running_tasks: dict[str, dict] = {}
-_cancelled: dict[str, bool] = {}
 
 
 class SearchPipelineRequest(BaseModel):
@@ -40,6 +40,7 @@ class ResolvedConflict(BaseModel):
     conflict_id: str
     action: Literal["keep_old", "keep_new", "merge", "skip"]
     merged_paper: dict | None = None
+    new_paper: dict | None = None
 
 
 class ResumeRequest(BaseModel):
@@ -148,6 +149,11 @@ async def start_search_pipeline(
             _running_tasks[thread_id]["status"] = "failed"
             _running_tasks[thread_id]["error"] = str(e)
             await pipeline_manager.broadcast_to_room(thread_id, {"type": "error", "message": str(e)})
+        finally:
+            s = _running_tasks.get(thread_id, {}).get("status")
+            if s in ("completed", "failed", "cancelled"):
+                clear_cancelled(thread_id)
+                _running_tasks.pop(thread_id, None)
 
     task_ref = asyncio.create_task(_run())
     _running_tasks[thread_id]["asyncio_task"] = task_ref
@@ -343,6 +349,11 @@ async def resume_pipeline(thread_id: str, body: ResumeRequest):
             logger.error("Pipeline resume %s failed: %s", thread_id, e)
             task["status"] = "failed"
             task["error"] = str(e)
+        finally:
+            s = task.get("status")
+            if s in ("completed", "failed", "cancelled"):
+                clear_cancelled(thread_id)
+                _running_tasks.pop(thread_id, None)
 
     task_ref = asyncio.create_task(_resume())
     task["asyncio_task"] = task_ref
@@ -359,12 +370,16 @@ async def cancel_pipeline(thread_id: str):
     if task["status"] in ("completed", "failed"):
         raise HTTPException(status_code=400, detail=f"Pipeline already {task['status']}")
 
-    _cancelled[thread_id] = True
+    mark_cancelled(thread_id)
     task["status"] = "cancelled"
 
     asyncio_task = task.get("asyncio_task")
     if asyncio_task and not asyncio_task.done():
         asyncio_task.cancel()
+    else:
+        # Interrupted pipeline: no running task, cleanup here to avoid leak
+        clear_cancelled(thread_id)
+        _running_tasks.pop(thread_id, None)
 
     await pipeline_manager.broadcast_to_room(thread_id, {"type": "status", "status": "cancelled"})
     return ApiResponse(data={"thread_id": thread_id, "status": "cancelled"})

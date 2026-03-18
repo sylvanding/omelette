@@ -1,5 +1,6 @@
 """PDF crawler service — download papers via Unpaywall, arXiv, and direct URLs."""
 
+import asyncio
 import hashlib
 import logging
 from pathlib import Path
@@ -83,7 +84,7 @@ class CrawlerService:
         from app.services.url_validator import validate_url_safe
 
         try:
-            validate_url_safe(url)
+            await asyncio.to_thread(validate_url_safe, url)
         except ValueError as e:
             return {"success": False, "error": f"URL blocked: {e}"}
 
@@ -101,7 +102,7 @@ class CrawlerService:
                 if not pdf_url:
                     return {"success": False, "error": "No open access PDF found"}
                 try:
-                    validate_url_safe(pdf_url)
+                    await asyncio.to_thread(validate_url_safe, pdf_url)
                 except ValueError as e:
                     return {"success": False, "error": f"Resolved URL blocked: {e}"}
                 url = pdf_url
@@ -143,8 +144,6 @@ class CrawlerService:
 
     async def batch_download(self, papers: list[Paper], max_concurrent: int = 5) -> dict:
         """Download PDFs for multiple papers with concurrency control."""
-        import asyncio
-
         semaphore = asyncio.Semaphore(max_concurrent)
         results = {"success": 0, "failed": 0, "skipped": 0, "details": []}
 

@@ -11,9 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_db, get_llm
+from app.api.deps import get_db, get_llm, get_project
 from app.middleware.rate_limit import limiter
-from app.models import Paper, PaperStatus
+from app.models import Paper, PaperStatus, Project
 from app.schemas.common import ApiResponse
 from app.services.llm.client import LLMClient
 from app.services.rag_service import RAGService
@@ -46,6 +46,7 @@ async def rag_query(
     project_id: int,
     body: RAGQueryRequest,
     rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
 ):
     """Answer a question using RAG over the project's indexed literature."""
     result = await rag.query(
@@ -126,6 +127,7 @@ async def build_index_stream(
     project_id: int,
     db: AsyncSession = Depends(get_db),
     rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
 ):
     """SSE streaming rebuild — sends progress events so the UI stays responsive."""
 
@@ -216,14 +218,22 @@ async def build_index_stream(
 
 
 @router.get("/stats", response_model=ApiResponse[dict])
-async def index_stats(project_id: int, rag: RAGService = Depends(get_rag_service)):
+async def index_stats(
+    project_id: int,
+    rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
+):
     """Return indexing statistics."""
     stats = await rag.get_stats(project_id=project_id)
     return ApiResponse(data=stats)
 
 
 @router.delete("/index", response_model=ApiResponse[dict])
-async def delete_index(project_id: int, rag: RAGService = Depends(get_rag_service)):
+async def delete_index(
+    project_id: int,
+    rag: RAGService = Depends(get_rag_service),
+    project: Project = Depends(get_project),
+):
     """Delete the vector index for the project."""
     result = await rag.delete_index(project_id=project_id)
     return ApiResponse(data=result)

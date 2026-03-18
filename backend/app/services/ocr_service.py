@@ -174,17 +174,16 @@ class OCRService:
             else:
                 import fitz
 
-                pdf_doc = fitz.open(pdf_path)
                 result = []
-                for page_num in range(len(pdf_doc)):
-                    page = pdf_doc[page_num]
-                    pix = page.get_pixmap(dpi=150)
-                    img_path = f"/tmp/omelette_ocr_page_{page_num}.png"
-                    pix.save(img_path)
-                    page_result = ocr.ocr(img_path, cls=False)
-                    result.append(page_result[0] if page_result else [])
-                    Path(img_path).unlink(missing_ok=True)
-                pdf_doc.close()
+                with fitz.open(pdf_path) as pdf_doc:
+                    for page_num in range(len(pdf_doc)):
+                        page = pdf_doc[page_num]
+                        pix = page.get_pixmap(dpi=150)
+                        img_path = f"/tmp/omelette_ocr_page_{page_num}.png"
+                        pix.save(img_path)
+                        page_result = ocr.ocr(img_path, cls=False)
+                        result.append(page_result[0] if page_result else [])
+                        Path(img_path).unlink(missing_ok=True)
 
             for i, page_result in enumerate(result):
                 text_lines = []
