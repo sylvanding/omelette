@@ -319,3 +319,65 @@ async def test_stream_endpoint_persists_conversation(client):
     assert len(messages) == 2
     assert messages[0]["role"] == "user"
     assert messages[1]["role"] == "assistant"
+
+
+def _parse_sse_event_types(text: str) -> tuple[list[str], str | None]:
+    """Parse SSE text into event types and any error text."""
+    lines = [line for line in text.split("\n") if line.startswith("data: ")]
+    event_types = []
+    error_text = None
+    for line in lines:
+        payload = line.removeprefix("data: ").strip()
+        if payload == "[DONE]":
+            event_types.append("[DONE]")
+            continue
+        try:
+            parsed = json.loads(payload)
+            etype = parsed.get("type", "unknown")
+            event_types.append(etype)
+            if etype == "error":
+                error_text = parsed.get("errorText", "")
+        except json.JSONDecodeError:
+            pass
+    return event_types, error_text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool_mode", ["citation_lookup", "review_outline", "gap_analysis"])
+async def test_stream_tool_mode(client, tool_mode):
+    """Each tool_mode should produce a valid SSE event sequence without errors."""
+    resp = await client.post(
+        "/api/v1/chat/stream",
+        json={
+            "message": "Analyze deep learning applications in biology",
+            "knowledge_base_ids": [],
+            "tool_mode": tool_mode,
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/event-stream")
+
+    event_types, error_text = _parse_sse_event_types(resp.text)
+    assert error_text is None, f"Stream returned error for mode {tool_mode}: {error_text}"
+    assert "start" in event_types, f"Missing 'start' event for {tool_mode}"
+    assert "text-delta" in event_types, f"Missing 'text-delta' event for {tool_mode}"
+    assert "finish" in event_types, f"Missing 'finish' event for {tool_mode}"
+    assert "[DONE]" in event_types, f"Missing '[DONE]' event for {tool_mode}"
+
+
+@pytest.mark.asyncio
+async def test_stream_qa_mode_explicit(client):
+    """Explicit tool_mode='qa' should work the same as default."""
+    resp = await client.post(
+        "/api/v1/chat/stream",
+        json={
+            "message": "What is machine learning?",
+            "knowledge_base_ids": [],
+            "tool_mode": "qa",
+        },
+    )
+    assert resp.status_code == 200
+    event_types, error_text = _parse_sse_event_types(resp.text)
+    assert error_text is None
+    assert "start" in event_types
+    assert "text-delta" in event_types

@@ -180,7 +180,7 @@ async def start_upload_pipeline(
     safe_paths: list[str] = []
     for p in body.pdf_paths:
         resolved = _Path(p).resolve()
-        if not str(resolved).startswith(str(allowed_root)):
+        if not resolved.is_relative_to(allowed_root):
             raise HTTPException(status_code=400, detail=f"Path not within allowed directory: {p}")
         safe_paths.append(str(resolved))
 

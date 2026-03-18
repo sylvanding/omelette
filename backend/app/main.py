@@ -24,7 +24,7 @@ logger = logging.getLogger("omelette")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Omelette v0.1.0 ...")
+    logger.info("Starting Omelette v%s ...", settings.app_version)
     if settings.app_env == "production" and settings.app_secret_key == "change-me-to-a-random-secret-key":
         logger.warning("SECURITY: Using default secret key in production! Set APP_SECRET_KEY in .env")
     await init_db()
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Omelette API",
     description="Scientific Literature Lifecycle Management System / 科研文献全生命周期管理系统",
-    version="0.1.0",
+    version=settings.app_version,
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -114,7 +114,7 @@ async def root():
     return ApiResponse(
         data={
             "name": "Omelette",
-            "version": "0.1.0",
+            "version": settings.app_version,
             "description": "Scientific Literature Lifecycle Management System",
             "docs": "/docs",
         }

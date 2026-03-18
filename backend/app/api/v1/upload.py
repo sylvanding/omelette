@@ -24,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["papers"])
 
-MAX_FILE_SIZE_MB = 50
-TITLE_SIMILARITY_THRESHOLD = 0.85
-
 
 @router.post("/upload", response_model=ApiResponse[UploadResult])
 async def upload_pdfs(
@@ -41,7 +38,7 @@ async def upload_pdfs(
     project_pdf_dir = pdf_dir / str(project_id)
     project_pdf_dir.mkdir(parents=True, exist_ok=True)
 
-    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
     papers: list[NewPaperData] = []
     conflicts: list[DedupConflictPair] = []
     new_paper_objects: list[Paper] = []
@@ -66,7 +63,7 @@ async def upload_pdfs(
             if len(content) > max_bytes:
                 raise HTTPException(
                     status_code=413,
-                    detail=f"File {upload_file.filename} exceeds {MAX_FILE_SIZE_MB}MB limit",
+                    detail=f"File {upload_file.filename} exceeds {settings.max_upload_size_mb}MB limit",
                 )
 
             safe_filename = Path(upload_file.filename or "upload.pdf").name.replace("..", "")
@@ -98,7 +95,7 @@ async def upload_pdfs(
                 norm_new = DedupService.normalize_title(metadata.title)
                 if norm_existing and norm_new:
                     sim = SequenceMatcher(None, norm_existing, norm_new).ratio()
-                    if sim >= TITLE_SIMILARITY_THRESHOLD:
+                    if sim >= settings.title_similarity_threshold:
                         conflict_id = f"{existing.id}:{saved_name}"
                         conflicts.append(
                             DedupConflictPair(

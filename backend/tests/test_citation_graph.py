@@ -121,22 +121,26 @@ class TestCitationGraphService:
         assert "center_id" in graph
         assert len(graph["nodes"]) >= 1
 
-    async def test_graph_empty_when_no_s2_id(self, project_with_paper):
+    async def test_graph_raises_502_when_no_s2_id(self, project_with_paper):
+        from fastapi import HTTPException
+
         from app.services.citation_graph_service import CitationGraphService
 
         info = project_with_paper
 
         async with async_session_factory() as session:
             svc = CitationGraphService(session)
-            with patch.object(
-                svc,
-                "_resolve_s2_id",
-                AsyncMock(return_value=None),
+            with (
+                patch.object(
+                    svc,
+                    "_resolve_s2_id",
+                    AsyncMock(return_value=None),
+                ),
+                pytest.raises(HTTPException) as exc_info,
             ):
-                graph = await svc.get_citation_graph(info["paper_id"], info["project_id"])
+                await svc.get_citation_graph(info["paper_id"], info["project_id"])
 
-        assert graph["nodes"] == []
-        assert graph["edges"] == []
+        assert exc_info.value.status_code == 502
 
 
 class TestCitationGraphAPI:

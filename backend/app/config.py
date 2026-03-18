@@ -107,9 +107,23 @@ class Settings(BaseSettings):
     mineru_backend: str = "pipeline"  # pipeline | hybrid-auto-engine | vlm-auto-engine
     mineru_timeout: int = 8000
 
+    # Semantic Scholar API
+    s2_api_base: str = "https://api.semanticscholar.org/graph/v1"
+    s2_timeout: int = Field(default=15, ge=1, le=60)
+    s2_max_per_request: int = Field(default=50, ge=1, le=100)
+
+    # Upload
+    title_similarity_threshold: float = Field(default=0.85, ge=0.0, le=1.0)
+
+    # Rewrite
+    rewrite_timeout: float = Field(default=30.0, ge=5.0, le=120.0)
+
     # Dedup thresholds
     dedup_title_hard_threshold: float = 0.90
     dedup_title_llm_threshold: float = 0.80
+
+    # App
+    app_version: str = "0.1.0"
 
     # Concurrency limits
     max_upload_size_mb: int = Field(default=50, ge=1, le=500)

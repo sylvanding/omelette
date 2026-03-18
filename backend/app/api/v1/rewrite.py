@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Literal
 
+import httpx
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator, model_validator
@@ -23,8 +24,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["rewrite"])
 
 _rewrite_semaphore = asyncio.Semaphore(settings.rewrite_semaphore_limit)
-
-REWRITE_TIMEOUT = 30.0
 
 
 class RewriteRequest(BaseModel):
@@ -68,12 +67,15 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
 
             full_text = ""
             try:
-                async with asyncio.timeout(REWRITE_TIMEOUT):
+                async with asyncio.timeout(settings.rewrite_timeout):
                     async for token in llm.chat_stream(messages, temperature=0.3, task_type="rewrite"):
                         full_text += token
                         yield _sse("rewrite_delta", {"delta": token})
             except TimeoutError:
-                yield _sse("error", {"code": "timeout", "message": "Rewrite timed out after 30s"})
+                yield _sse(
+                    "error",
+                    {"code": "timeout", "message": f"Rewrite timed out after {settings.rewrite_timeout}s"},
+                )
                 return
 
             yield _sse("rewrite_end", {"full_text": full_text})
@@ -81,7 +83,7 @@ async def _stream_rewrite(request: RewriteRequest, db: AsyncSession):
     except asyncio.CancelledError:
         logger.info("Rewrite stream cancelled by client")
         return
-    except Exception as e:
+    except (httpx.HTTPError, ValueError, RuntimeError) as e:
         logger.exception("Rewrite stream error")
         yield _sse("error", {"code": "rewrite_error", "message": str(e)})
 
