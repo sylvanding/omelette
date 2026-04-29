@@ -100,7 +100,7 @@
         "Test: verify a single PDF failure doesn't crash the entire batch"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/pipelines/nodes.py lines 294-330. Replace sequential for loop with asyncio.gather(*[process_one(p) for p in papers], return_exceptions=True). Use GPU semaphore from config."
     },
     {

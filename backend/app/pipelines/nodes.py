@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from app.config import settings
 from app.pipelines.state import PipelineState
+
+if TYPE_CHECKING:
+    from app.services.ocr_service import OCRService
 
 logger = logging.getLogger(__name__)
 
@@ -269,6 +274,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
 
     Uses MinerU (if available) for deep parsing with formula/table/figure
     recognition, falling back to pdfplumber + PaddleOCR.
+
+    Processes multiple papers concurrently using asyncio.gather with a
+    GPU semaphore to limit parallelism.
     """
     if _is_cancelled(state):
         return {"stage": "cancelled", "cancelled": True}
@@ -281,7 +289,6 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
     from app.services.ocr_service import OCRService
 
     project_id = state["project_id"]
-    processed = 0
 
     async with async_session_factory() as db:
         stmt = select(Paper).where(
@@ -291,27 +298,27 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
         )
         papers = (await db.execute(stmt)).scalars().all()
 
-        with OCRService(use_gpu=True) as ocr:
-            for paper in papers:
-                if state.get("cancelled"):
-                    break
-                try:
-                    result = await ocr.process_pdf_async(
-                        paper.pdf_path,
-                        project_id=project_id,
-                        paper_id=paper.id,
-                    )
-                    if result.get("error"):
-                        paper.status = PaperStatus.ERROR
-                        continue
+        if not papers:
+            return {"progress": 80, "stage": "ocr", "result": {"ocr_processed": 0}}
 
-                    if result.get("method") == "mineru":
-                        chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
-                    else:
-                        pages = result.get("pages", [])
-                        chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+        parallel_limit = settings.ocr_parallel_limit if settings.ocr_parallel_limit > 0 else len(papers)
+        semaphore = asyncio.Semaphore(parallel_limit)
 
-                    for chunk_data in chunks:
+        async with OCRService(use_gpu=True) as ocr:
+            results = await asyncio.gather(
+                *[_process_paper_ocr(paper, ocr, semaphore, state) for paper in papers],
+                return_exceptions=True,
+            )
+
+            processed = 0
+            for paper, result in zip(papers, results):
+                if isinstance(result, Exception):
+                    logger.warning("OCR failed for paper %d: %s", paper.id, result)
+                    paper.status = PaperStatus.ERROR
+                elif result.get("error"):
+                    paper.status = PaperStatus.ERROR
+                else:
+                    for chunk_data in result["chunks"]:
                         db.add(
                             PaperChunk(
                                 paper_id=paper.id,
@@ -325,12 +332,9 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
                                 figure_path=chunk_data.get("figure_path", ""),
                             )
                         )
-
                     paper.status = PaperStatus.OCR_COMPLETE
                     processed += 1
-                except Exception as e:
-                    logger.warning("OCR failed for paper %d: %s", paper.id, e)
-                    paper.status = PaperStatus.ERROR
+
         await db.commit()
 
     return {
@@ -338,6 +342,34 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
         "stage": "ocr",
         "result": {"ocr_processed": processed},
     }
+
+
+async def _process_paper_ocr(
+    paper: Any,
+    ocr: OCRService,
+    semaphore: asyncio.Semaphore,
+    state: PipelineState,
+) -> dict:
+    """Process a single paper through OCR, gated by a concurrency semaphore."""
+    async with semaphore:
+        if state.get("cancelled"):
+            return {"error": "cancelled", "chunks": []}
+
+        result = await ocr.process_pdf_async(
+            paper.pdf_path,
+            project_id=state["project_id"],
+            paper_id=paper.id,
+        )
+        if result.get("error"):
+            return {"error": result["error"], "chunks": []}
+
+        if result.get("method") == "mineru":
+            chunks = ocr.chunk_mineru_markdown(result["md_content"], chunk_size=1024, overlap=100)
+        else:
+            pages = result.get("pages", [])
+            chunks = ocr.chunk_text(pages, chunk_size=1024, overlap=100)
+
+        return {"chunks": chunks}
 
 
 async def index_node(state: PipelineState) -> dict[str, Any]:

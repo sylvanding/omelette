@@ -288,3 +288,16 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - Pre-commit ruff-format hook may reformat files — need to re-add after hook runs
   - All 40 tests pass (6 new for image extraction + 1 for MinerU return_images), lint clean
 ---
+
+## [2026-04-30 01:40] - OPT-006
+- Parallelized LangGraph OCR node with asyncio.gather and semaphore-based concurrency control
+- Files changed:
+  - `backend/app/pipelines/nodes.py` — replaced sequential for loop with `asyncio.gather(*[_process_paper_ocr(...) for paper in papers], return_exceptions=True)`; added `asyncio.Semaphore(settings.ocr_parallel_limit)` for GPU concurrency limiting; extracted `_process_paper_ocr()` helper function
+  - `backend/tests/test_nodes.py` (new) — 9 tests: no papers early exit, single paper success, parallel processing, single failure doesn't crash batch, parallel limit enforcement, cancelled state, OCR error marks paper ERROR, unit tests for _process_paper_ocr
+- **Learnings for future iterations:**
+  - When patching a class used as a context manager, use `patch(..., side_effect=lambda *a, **kw: mock_instance)` instead of `return_value=mock_instance` — the class is called (`OCRService(...)`) before being used with `async with`
+  - `asyncio.gather(return_exceptions=True)` catches exceptions from `async with` blocks that don't suppress them via `__aexit__` returning `True`
+  - `settings.ocr_parallel_limit` of 0 means auto (use number of papers as limit); positive value sets explicit concurrency cap
+  - The `_process_paper_ocr()` helper isolates per-paper processing logic — useful pattern for any gather-based parallelization
+  - Paper paths sort alphabetically: "bad" < "good" — verify sorted assertions match expected order
+---
