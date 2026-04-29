@@ -3,6 +3,7 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
 ---
 
 ## Codebase Patterns
+- Token-based chunking uses tiktoken cl100k_base — `_get_tiktoken_encoder()` in ocr_service.py lazy-initializes for all chunk sizing
 - UI components in `src/components/ui/` use radix-ui primitives via `radix-ui` package (follow `select.tsx`, `popover.tsx` patterns)
 - API service layer in `src/services/api.ts` — axios interceptor unwraps `response.data`, use raw `fetch` for blob downloads
 - Backend endpoints in `backend/app/api/v1/` — use `ApiResponse<T>` wrapper, `FileResponse`/`Response` for file downloads
@@ -205,4 +206,29 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The `usePapersColumns` hook pattern works well for injecting callbacks into column cells
   - PostgreSQL `overlap()` is used for array containment in quality_tags filter — comma-separated tags match any
   - Alembic migration chain was broken (prior migration file missing) — had to set `down_revision = None`
+---
+
+---
+## [2026-04-30 00:50] - Core Optimization Phase
+- New PRD written with 10 optimization tasks (OPT-001 to OPT-010)
+- Branch: ralph/core-optimization
+- Focus: RAG pipeline chunking, dedup, search, multimodal, workflow parallelization
+- Previous work (US-008 to US-015) all verified with 30/30 E2E tests passing
+- Backend papers.py similar papers endpoint numpy bug fixed
+- E2E test suite at /tmp/e2e-report.json: 30 passed, 0 failed
+---
+
+## [2026-04-30 01:00] - OPT-001
+- Replaced character-based chunk sizing with token-based sizing using tiktoken (cl100k_base)
+- Files changed:
+  - `backend/pyproject.toml` — added tiktoken>=0.9.0 dependency
+  - `backend/app/services/ocr_service.py` — rewrote chunk_text(), _flush_text_chunk(), chunk_mineru_markdown(), and extract_text_marker() to use tiktoken for all sizing/counting
+  - `backend/tests/test_ocr.py` — already had 5 token-based chunking tests (all passing)
+- **Learnings for future iterations:**
+  - tiktoken is already installed on the conda env, no install needed
+  - `_get_tiktoken_encoder()` lazy-initializes to avoid import overhead when chunking isn't used
+  - Default chunk_size changed from 1024 (chars) to 512 (tokens), overlap from 100 to 50
+  - For overlap: encode current chunk, slice last N tokens, decode back — this correctly handles multi-byte characters
+  - marker-pdf fallback now splits by token boundaries instead of fixed 2000-char windows
+- All 14 OCR tests pass, lint clean
 ---
