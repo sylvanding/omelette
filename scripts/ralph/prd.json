@@ -60,7 +60,7 @@
         "Test: simulate network error and verify error boundary catches it"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Check if react-error-boundary package is already installed. If not, add it."
     },
     {
