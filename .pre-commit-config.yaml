@@ -23,6 +23,25 @@ repos:
       - id: ruff-format
         types_or: [python, pyi]
 
+  - repo: local
+    hooks:
+      - id: frontend-eslint
+        name: ESLint frontend
+        entry: bash -c 'cd frontend && npx eslint --max-warnings 0 --cache --cache-location .eslintcache "${@#frontend/}"' --
+        language: system
+        types: [file]
+        files: ^frontend/src/.*\.(ts|tsx)$
+        pass_filenames: true
+        require_serial: true
+      - id: frontend-tsc
+        name: TypeScript check
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        types: [file]
+        files: ^frontend/src/.*\.(ts|tsx)$
+        pass_filenames: false
+        require_serial: true
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.0.0
     hooks:
