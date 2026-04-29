@@ -143,7 +143,7 @@
         "Test: verify no papers are incorrectly deduplicated"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/services/search_service.py. Add _dedup_results() method after gather. Group by DOI, then fingerprint match for no-DOI papers."
     },
     {
@@ -159,7 +159,7 @@
         "Test: verify uploading the same PDF twice returns a conflict error"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/models/paper.py, backend/app/api/v1/upload.py. Use hashlib.sha256 on file content. Add UniqueConstraint on content_hash. Add Alembic migration."
     }
   ]

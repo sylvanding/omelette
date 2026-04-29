@@ -326,3 +326,33 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - Section weights map both "introduction" and "intro", "methods" and "methodology" to handle variation in section naming
   - All 6 new tests pass, lint clean, 66 total tests in related test files pass
 ---
+
+## [2026-04-30 02:05] - OPT-009
+- Added cross-source deduplication to federated search results
+- Files changed:
+  - `backend/app/services/search_service.py` — added `_title_fingerprint()`, `_paper_completeness_score()`, `_dedup_results()` methods; wired dedup into `search()` after gather
+  - `backend/tests/test_search.py` — added 8 tests: title fingerprint normalization, empty fingerprint, completeness scoring, DOI dedup with best-metadata selection, title fingerprint dedup for no-DOI papers, no false dedup on different papers, empty input, and integration test verifying same paper from 2 providers appears once
+- **Learnings for future iterations:**
+  - `_title_fingerprint()` normalizes by lowercasing, stripping punctuation, and collapsing whitespace — simple but effective for academic paper titles
+  - `_paper_completeness_score()` weights abstract (2pts) and author count higher than simple fields — this ensures the version with richer metadata wins
+  - Two-phase dedup: first by DOI (exact match, case-insensitive), then by title fingerprint for papers without DOI
+  - The `pre-commit` ruff-format hook may reorder imports alphabetically — staged changes may need re-add after hook runs
+  - All 22 search tests pass, lint clean
+---
+
+## [2026-04-30 02:15] - OPT-010
+- Verified PDF content hash upload-time deduplication was already implemented in upload.py (SHA-256 hash computation, per-project duplicate detection with 409 response, hash stored on Paper model)
+- Alembic migration (c1d2e3f4a5b6) already existed to add content_hash column
+- Fixed test_upload.py which had 4 broken tests:
+  - Mock pattern: `extract_metadata` is async — must use `AsyncMock(return_value=NewPaperData(...))` not `mock.return_value = AsyncMock(...)`
+  - Cross-project test used wrong URL paths (`/upload` instead of `/papers/upload`)
+  - DB verification query needs `async_session_factory()` not raw `conn.execute()` for ORM queries
+  - Error response uses `message` field (custom ApiResponse wrapper), not FastAPI's default `detail`
+  - Added `process_papers_background` mock to prevent background task race condition
+- **Learnings for future iterations:**
+  - The backend uses a custom `ApiResponse` wrapper — HTTPException errors return `{"code": N, "message": "...", "data": None}` not `{"detail": "..."}`
+  - Async endpoint functions must be mocked with `AsyncMock(return_value=...)` — using `mock.return_value = AsyncMock(...)` returns the AsyncMock itself when awaited
+  - For ORM queries after API calls in tests, use `async_session_factory()` — raw `AsyncConnection.execute()` doesn't properly handle ORM entity queries
+  - `process_papers_background` runs asynchronously after upload — must mock it to prevent fake PDF processing from interfering with test assertions
+  - All 4 upload tests pass, lint clean
+---

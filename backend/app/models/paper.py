@@ -29,6 +29,7 @@ class Paper(Base):
     __tablename__ = "papers"
     __table_args__ = (
         Index("ix_paper_project_status", "project_id", "status"),
+        Index("ix_paper_content_hash", "content_hash"),
         UniqueConstraint("project_id", "doi", name="uq_paper_project_doi"),
     )
 
@@ -53,6 +54,7 @@ class Paper(Base):
     rating: Mapped[int] = mapped_column(Integer, default=0)
     quality_tags: Mapped[list | None] = mapped_column(JSON, default=None)
     extra_metadata: Mapped[dict | None] = mapped_column(JSON, default=None)
+    content_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
