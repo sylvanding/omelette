@@ -36,7 +36,7 @@
         "Test: verify notes are scoped to the correct paper (notes from paper A don't appear on paper B)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: add 'notes' field already exists on Paper model (Text column). Consider adding a separate PaperNote model with id, paper_id, content, section, order, created_at, updated_at for richer structure. Frontend: add markdown editor component (use react-markdown + KaTeX for rendering, react-simplemde-editor or similar for editing). Add Notes tab to PDFReaderPage or Paper detail panel. Auto-save via debounced API call."
     },
     {
