@@ -399,3 +399,32 @@ export const evidenceConsensusApi = {
       { question, top_k: topK },
     ).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Contradiction Detection API
+// ---------------------------------------------------------------------------
+
+export interface ContradictionPair {
+  paper_a_id: number;
+  paper_a_title: string;
+  paper_b_id: number;
+  paper_b_title: string;
+  claim: string;
+  position_a: string;
+  position_b: string;
+  confidence: number;
+  topic: string;
+}
+
+export interface ContradictionResult {
+  contradictions: ContradictionPair[];
+  topics: string[];
+  total_contradictions: number;
+}
+
+export const contradictionsApi = {
+  detect: (projectId: number) =>
+    api.post<ContradictionResult>(
+      `/projects/${projectId}/analysis/contradictions`,
+    ).then(r => r.data),
+};

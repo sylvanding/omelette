@@ -105,6 +105,35 @@ MOCK_RESPONSES: dict[str, str] = {
             ]
         }
     ),
+    "contradiction_detection": json.dumps(
+        {
+            "contradictions": [
+                {
+                    "paper_a_id": 1,
+                    "paper_a_title": "Deep Learning for Microscopy",
+                    "paper_b_id": 2,
+                    "paper_b_title": "Limitations of AI in Imaging",
+                    "claim": "Deep learning improves microscopy resolution",
+                    "position_a": "AI methods achieve 2x resolution improvement over traditional approaches",
+                    "position_b": "Neural reconstruction introduces artifacts that degrade image fidelity",
+                    "confidence": 0.88,
+                    "topic": "Resolution Enhancement",
+                },
+                {
+                    "paper_a_id": 1,
+                    "paper_a_title": "Deep Learning for Microscopy",
+                    "paper_b_id": 3,
+                    "paper_b_title": "Hybrid Imaging Methods",
+                    "claim": "Pure AI methods are sufficient for all samples",
+                    "position_a": "Deep learning alone achieves superior results across all test cases",
+                    "position_b": "Results vary significantly by specimen type, requiring hybrid approaches",
+                    "confidence": 0.71,
+                    "topic": "Method Applicability",
+                },
+            ],
+            "topics": ["Resolution Enhancement", "Method Applicability"],
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 

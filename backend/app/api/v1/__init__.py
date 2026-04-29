@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     activities,
+    analysis,
     chat,
     conversations,
     crawler,
@@ -45,3 +46,4 @@ api_router.include_router(chat.router)
 api_router.include_router(rewrite.router)
 api_router.include_router(pipelines.router)
 api_router.include_router(gpu.router)
+api_router.include_router(analysis.router, prefix="/projects/{project_id}/analysis")
