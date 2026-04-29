@@ -56,21 +56,24 @@ async def execute_search(
 
     # Optionally auto-import results
     if auto_import and results["papers"]:
+        # Batch check existing DOIs in a single query
+        all_dois = {p["doi"] for p in results["papers"] if p.get("doi")}
+        existing_dois: set[str] = set()
+        if all_dois:
+            rows = await db.execute(
+                select(Paper.doi).where(
+                    Paper.project_id == project_id,
+                    Paper.doi.in_(all_dois),
+                )
+            )
+            existing_dois = {row[0] for row in rows}
+
         imported = 0
         for paper_data in results["papers"]:
             if not paper_data.get("title"):
                 continue
-            if paper_data.get("doi"):
-                existing = (
-                    await db.execute(
-                        select(Paper).where(
-                            Paper.project_id == project_id,
-                            Paper.doi == paper_data["doi"],
-                        )
-                    )
-                ).scalar_one_or_none()
-                if existing:
-                    continue
+            if paper_data.get("doi") and paper_data["doi"] in existing_dois:
+                continue
             paper = Paper(
                 project_id=project_id,
                 doi=paper_data.get("doi", ""),

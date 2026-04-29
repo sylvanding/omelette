@@ -223,3 +223,507 @@ class TestOCRAPI:
         body = resp.json()
         assert body["data"]["processed"] == 0
         assert body["data"]["total"] == 0
+
+
+class TestTokenBasedChunking:
+    """Tests for token-based chunking (OPT-001)."""
+
+    def _make_service(self):
+        from app.services.ocr_service import OCRService
+
+        return OCRService()
+
+    def test_chunk_text_uses_token_based_sizing(self):
+        """512-token chunk should hold ~400-600 English words."""
+        service = self._make_service()
+        # ~550 words, should fit in 512 tokens
+        words = "research " * 550
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        for c in chunks:
+            assert isinstance(c["token_count"], int)
+            assert c["token_count"] > 0
+
+    def test_chunk_text_chinese_token_count(self):
+        """Chinese text should have accurate tiktoken count."""
+        service = self._make_service()
+        text = "这是一段中文测试文本。" * 50
+        pages = [{"page_number": 1, "text": text, "tables": [], "has_text": True, "char_count": len(text)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        # token_count should not be word-count (which would be 1 for Chinese without spaces)
+        for c in chunks:
+            assert c["token_count"] >= 1
+
+    def test_token_count_matches_tiktoken(self):
+        """chunk token_count should match actual tiktoken encode length."""
+        service = self._make_service()
+        words = "test word " * 100
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        # Verify token_count matches tiktoken for first chunk
+        import tiktoken
+
+        enc = tiktoken.get_encoding("cl100k_base")
+        actual_tokens = len(enc.encode(chunks[0]["content"]))
+        assert chunks[0]["token_count"] == actual_tokens
+
+    def test_chunk_mineru_markdown_token_based(self):
+        """MinerU markdown chunking should use token-based sizing."""
+        service = self._make_service()
+        md = "## Introduction\n\n" + "Lorem ipsum dolor sit amet. " * 200
+        chunks = service.chunk_mineru_markdown(md, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        for c in chunks:
+            assert "token_count" in c
+            assert isinstance(c["token_count"], int)
+
+    def test_overlap_preserves_tokens(self):
+        """Overlap should include last N tokens from previous chunk."""
+        service = self._make_service()
+        # Small chunk size to force splitting
+        words = "word " * 300
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=20)
+        if len(chunks) >= 2:
+            # Each subsequent chunk should start with overlap content
+            import tiktoken
+
+            enc = tiktoken.get_encoding("cl100k_base")
+            overlap_tokens = enc.encode(chunks[0]["content"])[-20:]
+            overlap_text = enc.decode(overlap_tokens)
+            assert overlap_text.strip() in chunks[1]["content"] or chunks[1]["content"].startswith(
+                overlap_text.strip().split()[0] if overlap_text.strip() else ""
+            )
+
+
+class TestSentenceAwareChunking:
+    """Tests for sentence-aware paragraph splitting (OPT-002)."""
+
+    def _make_service(self):
+        from app.services.ocr_service import OCRService
+
+        return OCRService()
+
+    def test_long_paragraph_split_at_sentence_boundaries(self):
+        """A long paragraph should be split into multiple chunks at sentence boundaries."""
+        service = self._make_service()
+        # Create a long paragraph with clear sentence boundaries
+        sentence = "The research methodology involves multiple experimental phases. "
+        paragraph = sentence * 100  # Many sentences, ~5000 chars, ~800 tokens
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=200, overlap=20)
+        assert len(chunks) > 1, "Long paragraph should be split into multiple chunks"
+
+    def test_split_chunks_have_complete_sentences(self):
+        """Each split chunk should end with a complete sentence."""
+        service = self._make_service()
+        sentence = "The results show significant improvement. "
+        paragraph = sentence * 100  # Long paragraph
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        # Chunks should end with sentence-ending punctuation (period, overlap, or period)
+        for chunk in chunks:
+            content = chunk["content"].strip()
+            # Either the chunk ends with a period or it contains overlap that ends with one
+            assert content.endswith(".") or "." in content[-30:] or content.endswith("..."), (
+                f"Chunk should end with complete sentence: {content[-50:]!r}"
+            )
+
+    def test_chinese_sentence_boundaries(self):
+        """Chinese paragraph should be split at Chinese sentence boundaries."""
+        service = self._make_service()
+        # Chinese sentences ending with 。
+        sentence = "这是一个中文测试句子。"
+        paragraph = sentence * 50  # Many Chinese sentences
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        assert len(chunks) > 1, "Long Chinese paragraph should be split"
+
+    def test_no_chunk_exceeds_token_limit_for_long_paragraphs(self):
+        """No chunk should exceed the token limit even for very long paragraphs."""
+        service = self._make_service()
+        sentence = "This is a test sentence with some additional words to make it longer. "
+        paragraph = sentence * 200  # Very long paragraph
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        for chunk in chunks:
+            assert chunk["token_count"] <= 120, (
+                f"Chunk exceeds token limit: {chunk['token_count']} tokens, content: {chunk['content'][:80]!r}"
+            )
+
+    def test_flush_text_chunk_sentence_split(self):
+        """_flush_text_chunk should also split long paragraphs at sentence boundaries."""
+        service = self._make_service()
+        sentence = "The analysis reveals important patterns. "
+        paragraph = sentence * 100  # Long paragraph
+        chunks = service._flush_text_chunk(
+            text=paragraph,
+            section="Test Section",
+            page_number=1,
+            start_index=0,
+            chunk_size=100,
+            overlap=10,
+        )
+        assert len(chunks) > 1, "Long paragraph should be split in _flush_text_chunk"
+        for chunk in chunks:
+            assert "section" in chunk
+            assert chunk["section"] == "Test Section"
+            assert "token_count" in chunk
+
+    def test_overlap_includes_full_sentences(self):
+        """Overlap between chunks should include complete sentence endings."""
+        service = self._make_service()
+        sentence = "Important finding number. "
+        paragraph = sentence * 150
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=50, overlap=15)
+        if len(chunks) >= 2:
+            import tiktoken
+
+            enc = tiktoken.get_encoding("cl100k_base")
+            # The overlap should end at a sentence boundary
+            overlap_tokens = enc.encode(chunks[0]["content"])[-15:]
+            overlap_text = enc.decode(overlap_tokens).strip()
+            # Overlap text should end with a period (complete sentence end)
+            assert "." in overlap_text or len(overlap_text) == 0
+
+    def test_short_paragraphs_not_split(self):
+        """Short paragraphs that fit within chunk_size should not be artificially split."""
+        service = self._make_service()
+        paragraph = "This is a short paragraph. It has two sentences."
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        # Should be a single chunk since the paragraph is short
+        assert len(chunks) == 1
+        assert chunks[0]["content"] == paragraph
+
+    def test_flush_text_chunk_preserves_section_metadata(self):
+        """Sentence-split chunks should all carry the correct section metadata."""
+        service = self._make_service()
+        paragraph = "Long sentence one. " * 80
+        chunks = service._flush_text_chunk(
+            text=paragraph,
+            section="Methods",
+            page_number=3,
+            start_index=5,
+            chunk_size=100,
+            overlap=10,
+        )
+        for chunk in chunks:
+            assert chunk["section"] == "Methods"
+            assert chunk["page_number"] == 3
+
+
+class TestInMemoryOCR:
+    """Tests for in-memory PaddleOCR processing (OPT-004)."""
+
+    def test_ocr_passes_numpy_array_not_file_path(self):
+        """extract_text_ocr should pass a numpy array to PaddleOCR, not a file path."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])  # Only 'ocr' attribute, no 'predict'
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            # Create a mock PDF document with one page
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (100 * 100 * 3)  # 100x100 RGB
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("text", 0.9)]]]
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                # Verify ocr.ocr was called with a numpy array, not a string path
+                call_args = mock_ocr.ocr.call_args
+                assert call_args is not None
+                first_arg = call_args[0][0]
+                assert not isinstance(first_arg, str), "OCR should receive numpy array, not file path"
+                import numpy as np
+
+                assert isinstance(first_arg, np.ndarray)
+                assert first_arg.shape == (100, 100, 3)
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_no_temp_files_created(self):
+        """extract_text_ocr should not create any temporary files in /tmp."""
+        import glob as _glob
+
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (50 * 50 * 3)
+            mock_pix.height = 50
+            mock_pix.width = 50
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 2
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("hello", 0.95)]]]
+
+            # Capture temp files before
+            before_files = set(_glob.glob("/tmp/omelette_ocr_*"))
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                after_files = set(_glob.glob("/tmp/omelette_ocr_*"))
+                assert after_files == before_files, "No temporary OCR files should be created"
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_rgba_image_strips_alpha_channel(self):
+        """RGBA images should have alpha channel stripped before passing to OCR."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (100 * 100 * 4)  # RGBA
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 4  # 4 channels = RGBA
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("text", 0.9)]]]
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                call_args = mock_ocr.ocr.call_args
+                first_arg = call_args[0][0]
+                # Should be RGB (3 channels), not RGBA (4 channels)
+                assert first_arg.shape == (100, 100, 3)
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_empty_result_when_no_text_found(self):
+        """OCR should return empty text when no text is detected."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\xff" * (100 * 100 * 3)
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = []  # No text found
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                pages = service.extract_text_ocr(pdf_path)
+                assert len(pages) == 1
+                assert pages[0]["text"] == ""
+                assert pages[0]["has_text"] is False
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+
+class TestMinerUImageExtraction:
+    """Tests for MinerU image extraction and figure saving (OPT-005)."""
+
+    def test_save_mineru_images_extracts_and_saves_images(self, tmp_path):
+        """Images from content_list should be decoded from base64 and saved."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        # Create a small fake PNG and base64 encode it
+        test_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 10
+        b64_data = base64.b64encode(test_bytes).decode()
+
+        content_list = [
+            {
+                "type": "image",
+                "image_path": "fig1.png",
+                "image_body": b64_data,
+            }
+        ]
+        md_content = "# Test\n\n![Figure 1](fig1.png)\n\nSome text."
+        figures_dir = tmp_path / "project_1" / "paper_42"
+
+        updated_md, path_mapping = service._save_mineru_images(content_list, figures_dir, md_content)
+
+        # Image should be saved
+        saved_file = figures_dir / "figure_001.png"
+        assert saved_file.exists()
+        assert saved_file.read_bytes() == test_bytes
+
+        # Path mapping should be created
+        assert "fig1.png" in path_mapping
+        assert str(saved_file) == path_mapping["fig1.png"]
+
+        # Markdown should reference the saved path
+        assert str(saved_file) in updated_md
+
+    def test_save_mineru_images_no_content_list(self, tmp_path):
+        """Empty content_list should return unchanged md_content."""
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        md_content = "# Test\n\nNo images here."
+        figures_dir = tmp_path / "project_1" / "paper_1"
+
+        updated_md, mapping = service._save_mineru_images([], figures_dir, md_content)
+        assert updated_md == md_content
+        assert mapping == {}
+
+    def test_save_mineru_images_ignores_non_image_entries(self, tmp_path):
+        """Non-image entries (text, table, etc.) should be ignored."""
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        content_list = [
+            {"type": "text", "content": "Some text"},
+            {"type": "table", "content": "| col |"},
+            {"type": "image", "image_path": "ok.png", "image_body": ""},  # empty body
+        ]
+        md_content = "# Test"
+        figures_dir = tmp_path / "test"
+        figures_dir.mkdir(parents=True)
+
+        updated_md, mapping = service._save_mineru_images(content_list, figures_dir, md_content)
+        assert updated_md == md_content
+        assert mapping == {}
+
+    def test_save_mineru_images_multiple_images(self, tmp_path):
+        """Multiple images should be saved with sequential numbering."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        b64_1 = base64.b64encode(b"image1data").decode()
+        b64_2 = base64.b64encode(b"image2data").decode()
+
+        content_list = [
+            {"type": "image", "image_path": "first.png", "image_body": b64_1},
+            {"type": "image", "image_path": "second.png", "image_body": b64_2},
+        ]
+        figures_dir = tmp_path / "project_2" / "paper_99"
+
+        _, mapping = service._save_mineru_images(content_list, figures_dir, "")
+
+        assert (figures_dir / "figure_001.png").exists()
+        assert (figures_dir / "figure_002.png").exists()
+        assert len(mapping) == 2
+
+    def test_save_mineru_images_creates_directory(self, tmp_path):
+        """Figures directory should be created if it doesn't exist."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        b64_data = base64.b64encode(b"test").decode()
+        content_list = [{"type": "image", "image_path": "x.png", "image_body": b64_data}]
+        figures_dir = tmp_path / "new" / "nested" / "dir"
+
+        service._save_mineru_images(content_list, figures_dir, "")
+        assert figures_dir.exists()
+        assert (figures_dir / "figure_001.png").exists()
+
+    def test_process_pdf_async_passes_project_and_paper_id(self):
+        """process_pdf_async should forward project_id/paper_id to _extract_with_mineru."""
+        import asyncio
+
+        from app.services.ocr_service import OCRService
+
+        mineru_result = {
+            "md_content": "# Title\n\nText with enough content to pass validation.",
+            "content_list": [],
+            "backend": "pipeline",
+            "version": "1.0",
+        }
+
+        captured_kwargs = {}
+
+        async def mock_extract(self, pdf_path, *, project_id=None, paper_id=None):
+            captured_kwargs["project_id"] = project_id
+            captured_kwargs["paper_id"] = paper_id
+            return mineru_result
+
+        with (
+            patch("app.services.ocr_service.settings") as mock_settings,
+            patch.object(OCRService, "_extract_with_mineru", mock_extract),
+        ):
+            mock_settings.pdf_parser = "mineru"
+
+            service = OCRService()
+            asyncio.get_event_loop().run_until_complete(
+                service.process_pdf_async("test.pdf", project_id=7, paper_id=42)
+            )
+
+        assert captured_kwargs["project_id"] == 7
+        assert captured_kwargs["paper_id"] == 42

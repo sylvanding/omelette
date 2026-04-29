@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 import unicodedata
 from difflib import SequenceMatcher
 
@@ -14,6 +15,99 @@ from app.services.llm.client import LLMClient
 
 logger = logging.getLogger(__name__)
 
+# Common English stop words — removing these from titles improves fingerprint grouping accuracy
+_ENGLISH_STOP_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "from",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "may",
+        "might",
+        "shall",
+        "can",
+        "need",
+        "must",
+        "that",
+        "this",
+        "these",
+        "those",
+        "it",
+        "its",
+        "as",
+        "if",
+        "when",
+        "than",
+        "then",
+        "so",
+        "no",
+        "not",
+        "only",
+        "also",
+        "into",
+        "over",
+        "such",
+        "their",
+        "they",
+        "them",
+        "we",
+        "our",
+        "you",
+        "your",
+        "he",
+        "she",
+        "his",
+        "her",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "about",
+        "between",
+        "through",
+        "during",
+        "before",
+        "after",
+        "above",
+        "below",
+        "up",
+        "down",
+        "out",
+        "off",
+        "new",
+        "using",
+        "based",
+    }
+)
+
 
 def _status_priority():
     """Order by status: indexed > ocr_complete > pdf_downloaded > metadata_only > pending."""
@@ -25,6 +119,63 @@ def _status_priority():
         (Paper.status == PaperStatus.PENDING, 1),
         else_=0,
     ).desc()
+
+
+def title_fingerprint(title: str) -> frozenset[str]:
+    """Create a content-word fingerprint from a title for fast pre-grouping.
+
+    Normalizes the title, removes stop words, and returns a frozenset of
+    remaining tokens. Papers with similar titles produce similar fingerprints.
+    """
+    normalized = DedupService.normalize_title(title)
+    if not normalized:
+        return frozenset()
+    tokens = set(normalized.split()) - _ENGLISH_STOP_WORDS
+    return frozenset(tokens)
+
+
+def _group_by_fingerprint(papers: list[Paper]) -> dict[frozenset[str], list[Paper]]:
+    """Group papers by their title fingerprint for efficient pairwise comparison.
+
+    Uses exact fingerprint matching as the primary grouping, then also creates
+    sub-groups by omitting one content word at a time. This ensures papers that
+    differ by a single content word (e.g., "ML for X" vs "ML for X Y") are
+    still compared, while keeping total comparisons far below O(N^2).
+    """
+    # Primary: exact fingerprint groups
+    groups: dict[frozenset[str], list[Paper]] = {}
+    for paper in papers:
+        fp = title_fingerprint(paper.title)
+        if not fp:
+            continue
+        groups.setdefault(fp, []).append(paper)
+
+    # Secondary: for fingerprints with 2-5 words, also group by (N-1)-word subsets
+    # This catches papers that differ by exactly one content word
+    fp_to_papers: dict[frozenset[str], list[Paper]] = {}
+    for fp, fp_papers in groups.items():
+        for paper in fp_papers:
+            fp_to_papers.setdefault(fp, []).append(paper)
+
+    for fp, fp_papers in list(groups.items()):
+        if 2 <= len(fp) <= 5:
+            for paper in fp_papers:
+                for omitted in fp:
+                    sub_fp = frozenset(fp - {omitted})
+                    if sub_fp:
+                        groups.setdefault(sub_fp, []).append(paper)
+
+    # Merge papers within each group (deduplicate by paper ID)
+    merged: dict[frozenset[str], list[Paper]] = {}
+    for fp, group_papers in groups.items():
+        seen: dict[int, Paper] = {}
+        for paper in group_papers:
+            if paper.id not in seen:
+                seen[paper.id] = paper
+        if len(seen) > 1:
+            merged[fp] = list(seen.values())
+
+    return merged
 
 
 class DedupService:
@@ -109,84 +260,118 @@ class DedupService:
         return title
 
     async def title_similarity_dedup(self, project_id: int, threshold: float = 0.90) -> dict:
-        """Stage 2: Find papers with very similar titles (no DOI or different DOI)."""
+        """Stage 2: Find papers with very similar titles (no DOI or different DOI).
+
+        Uses token-fingerprint pre-grouping to reduce O(N^2) comparisons to
+        only within groups with shared content words.
+        """
         stmt = select(Paper).where(Paper.project_id == project_id).order_by(Paper.id)
         result = await self.db.execute(stmt)
         papers = list(result.scalars().all())
+
+        start = time.monotonic()
+        groups = _group_by_fingerprint(papers)
+        total_comparisons = sum(len(g) * (len(g) - 1) // 2 for g in groups.values())
+        logger.info(
+            "title_similarity_dedup: %d papers → %d fingerprint groups, %d pairwise comparisons",
+            len(papers),
+            len(groups),
+            total_comparisons,
+        )
 
         removed_count = 0
         duplicates_info = []
         removed_ids: set[int] = set()
 
-        for i in range(len(papers)):
-            if papers[i].id in removed_ids:
-                continue
-            for j in range(i + 1, len(papers)):
-                if papers[j].id in removed_ids:
+        for group in groups.values():
+            for i in range(len(group)):
+                if group[i].id in removed_ids:
                     continue
+                for j in range(i + 1, len(group)):
+                    if group[j].id in removed_ids:
+                        continue
 
-                norm_a = self.normalize_title(papers[i].title)
-                norm_b = self.normalize_title(papers[j].title)
+                    norm_a = self.normalize_title(group[i].title)
+                    norm_b = self.normalize_title(group[j].title)
 
-                if not norm_a or not norm_b:
-                    continue
+                    if not norm_a or not norm_b:
+                        continue
 
-                similarity = 1.0 if norm_a == norm_b else SequenceMatcher(None, norm_a, norm_b).ratio()
+                    similarity = 1.0 if norm_a == norm_b else SequenceMatcher(None, norm_a, norm_b).ratio()
 
-                if similarity >= threshold:
-                    keep, remove = (
-                        (papers[i], papers[j])
-                        if papers[i].citation_count >= papers[j].citation_count
-                        else (papers[j], papers[i])
-                    )
+                    if similarity >= threshold:
+                        keep, remove = (
+                            (group[i], group[j])
+                            if group[i].citation_count >= group[j].citation_count
+                            else (group[j], group[i])
+                        )
 
-                    duplicates_info.append(
-                        {
-                            "kept_id": keep.id,
-                            "removed_id": remove.id,
-                            "similarity": round(similarity, 3),
-                            "title_a": keep.title[:100],
-                            "title_b": remove.title[:100],
-                            "reason": "title_similarity",
-                        }
-                    )
-                    await self.db.delete(remove)
-                    removed_ids.add(remove.id)
-                    removed_count += 1
+                        duplicates_info.append(
+                            {
+                                "kept_id": keep.id,
+                                "removed_id": remove.id,
+                                "similarity": round(similarity, 3),
+                                "title_a": keep.title[:100],
+                                "title_b": remove.title[:100],
+                                "reason": "title_similarity",
+                            }
+                        )
+                        await self.db.delete(remove)
+                        removed_ids.add(remove.id)
+                        removed_count += 1
 
+        elapsed = time.monotonic() - start
+        logger.info("title_similarity_dedup: removed %d duplicates in %.3fs", removed_count, elapsed)
         await self.db.flush()
         return {"removed": removed_count, "duplicates": duplicates_info}
 
     async def find_llm_dedup_candidates(self, project_id: int, threshold: float = 0.80) -> list[dict]:
-        """Stage 3: Find candidate pairs for LLM-based verification (similarity 0.80-0.90)."""
+        """Stage 3: Find candidate pairs for LLM-based verification (similarity 0.80-0.90).
+
+        Uses token-fingerprint pre-grouping to reduce O(N^2) comparisons to
+        only within groups with shared content words.
+        """
         stmt = select(Paper).where(Paper.project_id == project_id).order_by(Paper.id)
         result = await self.db.execute(stmt)
         papers = list(result.scalars().all())
 
+        start = time.monotonic()
+        groups = _group_by_fingerprint(papers)
+        total_comparisons = sum(len(g) * (len(g) - 1) // 2 for g in groups.values())
+        logger.info(
+            "find_llm_dedup_candidates: %d papers → %d fingerprint groups, %d pairwise comparisons",
+            len(papers),
+            len(groups),
+            total_comparisons,
+        )
+
         candidates = []
-        for i in range(len(papers)):
-            for j in range(i + 1, len(papers)):
-                norm_a = self.normalize_title(papers[i].title)
-                norm_b = self.normalize_title(papers[j].title)
+        for group in groups.values():
+            for i in range(len(group)):
+                for j in range(i + 1, len(group)):
+                    norm_a = self.normalize_title(group[i].title)
+                    norm_b = self.normalize_title(group[j].title)
 
-                if not norm_a or not norm_b:
-                    continue
+                    if not norm_a or not norm_b:
+                        continue
 
-                similarity = SequenceMatcher(None, norm_a, norm_b).ratio()
+                    similarity = SequenceMatcher(None, norm_a, norm_b).ratio()
 
-                if threshold <= similarity < 0.90:
-                    candidates.append(
-                        {
-                            "paper_a_id": papers[i].id,
-                            "paper_b_id": papers[j].id,
-                            "title_a": papers[i].title,
-                            "title_b": papers[j].title,
-                            "doi_a": papers[i].doi,
-                            "doi_b": papers[j].doi,
-                            "similarity": round(similarity, 3),
-                        }
-                    )
+                    if threshold <= similarity < 0.90:
+                        candidates.append(
+                            {
+                                "paper_a_id": group[i].id,
+                                "paper_b_id": group[j].id,
+                                "title_a": group[i].title,
+                                "title_b": group[j].title,
+                                "doi_a": group[i].doi,
+                                "doi_b": group[j].doi,
+                                "similarity": round(similarity, 3),
+                            }
+                        )
 
+        elapsed = time.monotonic() - start
+        logger.info("find_llm_dedup_candidates: found %d candidates in %.3fs", len(candidates), elapsed)
         return candidates
 
     async def llm_verify_duplicate(self, paper_a_id: int, paper_b_id: int) -> dict:

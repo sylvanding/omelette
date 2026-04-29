@@ -370,12 +370,25 @@ async def get_similar_papers(
     """Return papers semantically similar to the given paper using ChromaDB embeddings."""
     import asyncio
     import logging
+    import statistics
 
     import numpy as np
 
     from app.services.rag_service import RAGService
 
     logger = logging.getLogger(__name__)
+
+    _section_weights: dict[str, float] = {
+        "abstract": 3.0,
+        "introduction": 2.0,
+        "intro": 2.0,
+        "conclusion": 2.5,
+        "methods": 1.0,
+        "methodology": 1.0,
+        "results": 1.5,
+        "discussion": 2.0,
+        "references": 0.0,
+    }
 
     await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
 
@@ -393,10 +406,20 @@ async def get_similar_papers(
         return ApiResponse(data=[])
 
     chunk_embeddings = chunk_result.get("embeddings")
+    chunk_metadatas = chunk_result.get("metadatas", [])
     if not chunk_embeddings:
         return ApiResponse(data=[])
 
-    paper_vector = np.mean(chunk_embeddings, axis=0).tolist()
+    # Weighted paper vector: important sections contribute more
+    def _chunk_weight(meta: dict) -> float:
+        section = (meta.get("section") or "").lower().strip()
+        return _section_weights.get(section, 1.0)
+
+    weights = [_chunk_weight(m) for m in chunk_metadatas]
+    if sum(weights) == 0:
+        paper_vector = np.mean(chunk_embeddings, axis=0).tolist()
+    else:
+        paper_vector = np.average(chunk_embeddings, axis=0, weights=weights).tolist()
 
     query_result = await asyncio.to_thread(
         collection.query,
@@ -414,14 +437,18 @@ async def get_similar_papers(
         pid = meta.get("paper_id")
         if pid is None:
             continue
+        # Skip zero-weight sections (e.g. references) from candidate scoring
+        section = (meta.get("section") or "").lower().strip()
+        if _section_weights.get(section, 1.0) == 0:
+            continue
         if pid not in paper_scores:
             paper_scores[pid] = []
         paper_scores[pid].append(dist)
 
     aggregated = []
     for pid, dists in paper_scores.items():
-        avg_dist = sum(dists) / len(dists)
-        similarity = round(max(0, (1 - avg_dist) * 100), 1)
+        median_dist = statistics.median(dists)
+        similarity = round(max(0, (1 - median_dist) * 100), 1)
         aggregated.append((pid, similarity))
 
     aggregated.sort(key=lambda x: x[1], reverse=True)

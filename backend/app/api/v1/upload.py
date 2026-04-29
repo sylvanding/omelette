@@ -1,6 +1,7 @@
 """PDF upload API endpoints."""
 
 import asyncio
+import hashlib
 import logging
 import uuid
 from difflib import SequenceMatcher
@@ -69,6 +70,16 @@ async def upload_pdfs(
                     detail=f"File {upload_file.filename} exceeds {settings.max_upload_size_mb}MB limit",
                 )
 
+            content_hash = hashlib.sha256(content).hexdigest()
+
+            # Check for exact content duplicate
+            existing_by_hash = next((p for p in existing_papers if p.content_hash == content_hash), None)
+            if existing_by_hash:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Duplicate PDF: same content as existing paper '{existing_by_hash.title}' (id={existing_by_hash.id})",
+                )
+
             safe_filename = Path(upload_file.filename or "upload.pdf").name.replace("..", "")
             saved_name = f"{uuid.uuid4().hex}_{safe_filename}"
             saved_path = project_pdf_dir / saved_name
@@ -129,6 +140,7 @@ async def upload_pdfs(
                     tags=[],
                     notes="",
                     citation_count=0,
+                    content_hash=content_hash,
                 )
                 db.add(paper)
                 new_paper_objects.append(paper)

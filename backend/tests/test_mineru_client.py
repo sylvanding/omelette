@@ -149,6 +149,47 @@ class TestMinerUClientUnit:
             assert result["backend"] == "pipeline"
             assert result["version"] == "2.7.6"
 
+    @pytest.mark.asyncio
+    async def test_parse_pdf_return_images_parameter(self, tmp_path):
+        """return_images=True should send 'true' in the API request data."""
+        pdf = tmp_path / "test.pdf"
+        pdf.write_bytes(b"%PDF-1.4 fake content")
+
+        captured_data = {}
+
+        async def capture_post(*args, **kwargs):
+            captured_data["data"] = kwargs.get("data", {})
+            mock_resp = MagicMock()
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = {
+                "backend": "pipeline",
+                "version": "1.0",
+                "results": {
+                    "test.pdf": {
+                        "md_content": "# Title",
+                        "content_list": [{"type": "image", "image_body": "abc123"}],
+                    }
+                },
+            }
+            return mock_resp
+
+        mock_client = AsyncMock()
+        mock_client.post = capture_post
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_client):
+            client = MinerUClient(base_url="http://fake:8010")
+            await client.parse_pdf(pdf, return_images=True)
+            assert captured_data["data"].get("return_images") == "true"
+
+        # Verify default is false
+        captured_data.clear()
+        with patch("httpx.AsyncClient", return_value=mock_client):
+            client = MinerUClient(base_url="http://fake:8010")
+            await client.parse_pdf(pdf)
+            assert captured_data["data"].get("return_images") == "false"
+
 
 # ---------------------------------------------------------------------------
 # E2E tests (require running MinerU service)

@@ -7,16 +7,24 @@ Supports two extraction tiers:
 Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
 """
 
+import base64
 import json
 import logging
 import re
-import tempfile
 from pathlib import Path
 
 import pdfplumber
 
 from app.config import settings
 from app.services.gpu_utils import release_gpu_memory
+
+
+def _get_tiktoken_encoder():
+    """Lazy-initialize tiktoken encoder (cl100k_base, used by OpenAI/ChromaDB)."""
+    import tiktoken
+
+    return tiktoken.get_encoding("cl100k_base")
+
 
 logger = logging.getLogger(__name__)
 
@@ -109,13 +117,19 @@ class OCRService:
 
             if len(pages) == 1 and pages[0]["char_count"] > 5000:
                 full_text = pages[0]["text"]
+                enc = _get_tiktoken_encoder()
+                tokens = enc.encode(full_text)
+                token_limit = 512
                 pages = []
-                for j in range(0, len(full_text), 2000):
-                    chunk = full_text[j : j + 2000].strip()
+                page_num = 0
+                for j in range(0, len(tokens), token_limit):
+                    chunk_tokens = tokens[j : j + token_limit]
+                    chunk = enc.decode(chunk_tokens).strip()
                     if chunk:
+                        page_num += 1
                         pages.append(
                             {
-                                "page_number": j // 2000 + 1,
+                                "page_number": page_num,
                                 "text": chunk,
                                 "has_text": True,
                                 "char_count": len(chunk),
@@ -165,17 +179,18 @@ class OCRService:
                 result = ocr.predict(pdf_path)
             else:
                 import fitz
+                import numpy as np
 
                 result = []
                 with fitz.open(pdf_path) as pdf_doc:
                     for page_num in range(len(pdf_doc)):
                         page = pdf_doc[page_num]
                         pix = page.get_pixmap(dpi=150)
-                        img_path = str(Path(tempfile.gettempdir()) / f"omelette_ocr_page_{page_num}.png")
-                        pix.save(img_path)
-                        page_result = ocr.ocr(img_path, cls=False)
+                        img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
+                        if pix.n == 4:
+                            img_array = img_array[:, :, :3]
+                        page_result = ocr.ocr(img_array, cls=False)
                         result.append(page_result[0] if page_result else [])
-                        Path(img_path).unlink(missing_ok=True)
 
             for i, page_result in enumerate(result):
                 text_lines = []
@@ -202,7 +217,61 @@ class OCRService:
 
         return pages
 
-    async def _extract_with_mineru(self, pdf_path: str) -> dict | None:
+    def _save_mineru_images(
+        self,
+        content_list: list[dict],
+        figures_dir: Path,
+        md_content: str,
+    ) -> tuple[str, dict[str, str]]:
+        """Extract and save images from MinerU content_list.
+
+        Returns (updated_md_content, {old_path: new_path} mapping).
+        """
+        if not content_list or not figures_dir:
+            return md_content, {}
+
+        figures_dir.mkdir(parents=True, exist_ok=True)
+        path_mapping: dict[str, str] = {}
+        image_counter = 0
+
+        for item in content_list:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type", "")
+            if item_type not in ("image", "img"):
+                continue
+
+            image_body = item.get("image_body", "")
+            if not image_body:
+                continue
+
+            image_counter += 1
+            filename = f"figure_{image_counter:03d}.png"
+            save_path = figures_dir / filename
+
+            try:
+                img_bytes = base64.b64decode(image_body)
+                save_path.write_bytes(img_bytes)
+
+                old_path = item.get("image_path", f"figure_{image_counter}")
+                path_mapping[old_path] = str(save_path)
+                logger.info("Saved MinerU figure: %s (%d bytes)", save_path, len(img_bytes))
+            except Exception as e:
+                logger.warning("Failed to save MinerU figure %d: %s", image_counter, e)
+
+        if path_mapping:
+            for old_path, new_path in path_mapping.items():
+                md_content = md_content.replace(old_path, new_path)
+
+        return md_content, path_mapping
+
+    async def _extract_with_mineru(
+        self,
+        pdf_path: str,
+        *,
+        project_id: int | None = None,
+        paper_id: int | None = None,
+    ) -> dict | None:
         """Try MinerU API. Returns result dict or None if unavailable/failed."""
         if settings.pdf_parser == "pdfplumber":
             return None
@@ -223,7 +292,7 @@ class OCRService:
             logger.info("MinerU service not available, skipping")
             return None
 
-        result = await self._mineru_client.parse_pdf(pdf_path)
+        result = await self._mineru_client.parse_pdf(pdf_path, return_images=True)
 
         if settings.mineru_auto_manage:
             mineru_process_manager.touch()
@@ -237,10 +306,19 @@ class OCRService:
             logger.info("MinerU returned insufficient content for %s", pdf_path)
             return None
 
+        # Extract and save figures if project/paper context is available
+        figures_dir = None
+        if project_id is not None and paper_id is not None:
+            figures_dir = Path(settings.figures_dir) / f"project_{project_id}" / f"paper_{paper_id}"
+
+        content_list = result.get("content_list", [])
+        if figures_dir and content_list:
+            md_content, _ = self._save_mineru_images(content_list, figures_dir, md_content)
+
         return {
             "method": "mineru",
             "md_content": md_content,
-            "content_list": result.get("content_list", []),
+            "content_list": content_list,
             "backend": result.get("backend", ""),
             "version": result.get("version", ""),
             "total_chars": len(md_content),
@@ -304,7 +382,14 @@ class OCRService:
             "pages_with_text": 0,
         }
 
-    async def process_pdf_async(self, pdf_path: str, force_ocr: bool = False) -> dict:
+    async def process_pdf_async(
+        self,
+        pdf_path: str,
+        force_ocr: bool = False,
+        *,
+        project_id: int | None = None,
+        paper_id: int | None = None,
+    ) -> dict:
         """Process a PDF with MinerU priority, falling back to pdfplumber/PaddleOCR.
 
         Returns either:
@@ -312,7 +397,7 @@ class OCRService:
           - Legacy result: {"method": "native"|"paddleocr"|"failed", "pages": [...], ...}
         """
         if not force_ocr and settings.pdf_parser != "pdfplumber":
-            mineru_result = await self._extract_with_mineru(pdf_path)
+            mineru_result = await self._extract_with_mineru(pdf_path, project_id=project_id, paper_id=paper_id)
             if mineru_result:
                 return mineru_result
 
@@ -326,7 +411,7 @@ class OCRService:
         output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2))
         return output_path
 
-    def chunk_mineru_markdown(self, md_content: str, chunk_size: int = 1024, overlap: int = 100) -> list[dict]:
+    def chunk_mineru_markdown(self, md_content: str, chunk_size: int = 512, overlap: int = 50) -> list[dict]:
         """Parse MinerU Markdown output into typed chunks (text/table/figure_caption).
 
         MinerU outputs Markdown with:
@@ -383,7 +468,7 @@ class OCRService:
                         "chunk_type": "table",
                         "section": current_section,
                         "has_formula": "$" in table_text,
-                        "token_count": len(table_text.split()),
+                        "token_count": len(_get_tiktoken_encoder().encode(table_text)),
                     }
                 )
                 chunk_index += 1
@@ -412,7 +497,7 @@ class OCRService:
                             "section": current_section,
                             "figure_path": figure_path,
                             "has_formula": "$" in caption,
-                            "token_count": len(caption.split()),
+                            "token_count": len(_get_tiktoken_encoder().encode(caption)),
                         }
                     )
                     chunk_index += 1
@@ -429,6 +514,14 @@ class OCRService:
 
         return chunks
 
+    def _split_sentences(self, text: str) -> list[str]:
+        """Split text at sentence boundaries (English and Chinese punctuation).
+
+        Handles both English (punctuation + whitespace) and Chinese (no whitespace) patterns.
+        """
+        sentences = re.split(r"(?<=[.。!！？])\s*|(?<=[\n])\s+", text.strip())
+        return [s for s in sentences if s.strip()]
+
     def _flush_text_chunk(
         self,
         text: str,
@@ -438,14 +531,22 @@ class OCRService:
         chunk_size: int,
         overlap: int,
     ) -> list[dict]:
-        """Split accumulated text into sized chunks, preserving paragraph boundaries."""
+        """Split accumulated text into token-sized chunks, preserving paragraph and sentence boundaries."""
         chunks: list[dict] = []
         paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
         current = ""
         idx = start_index
+        enc = _get_tiktoken_encoder()
 
         for para in paragraphs:
-            if len(current) + len(para) > chunk_size and current:
+            para_tokens = enc.encode(para)
+            current_tokens = enc.encode(current) if current else []
+            if len(current_tokens) + len(para_tokens) <= chunk_size:
+                current += "\n\n" + para if current else para
+                continue
+
+            # Paragraph doesn't fit — flush current chunk if any
+            if current_tokens:
                 has_formula = "$" in current
                 chunks.append(
                     {
@@ -455,18 +556,71 @@ class OCRService:
                         "chunk_type": "text",
                         "section": section,
                         "has_formula": has_formula,
-                        "token_count": len(current.split()),
+                        "token_count": len(current_tokens),
                     }
                 )
-                words = current.split()
-                overlap_text = " ".join(words[-overlap:]) if len(words) > overlap else ""
-                current = overlap_text + " " + para
+                overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                overlap_text = enc.decode(overlap_tokens)
                 idx += 1
+                prefix = overlap_text
             else:
-                current += "\n\n" + para if current else para
+                prefix = ""
+
+            # Split oversized paragraph at sentence boundaries
+            if len(para_tokens) > chunk_size:
+                sentences = self._split_sentences(para)
+                if sentences and max(len(enc.encode(s)) for s in sentences) > chunk_size:
+                    # Individual sentences still too large — token-based fallback
+                    chunk_acc: list[int] = []
+                    for token in para_tokens:
+                        chunk_acc.append(token)
+                        if len(chunk_acc) >= chunk_size:
+                            chunk_text = enc.decode(chunk_acc).strip()
+                            if chunk_text:
+                                chunks.append(
+                                    {
+                                        "content": chunk_text,
+                                        "page_number": page_number,
+                                        "chunk_index": idx,
+                                        "chunk_type": "text",
+                                        "section": section,
+                                        "has_formula": "$" in chunk_text,
+                                        "token_count": len(chunk_acc),
+                                    }
+                                )
+                                idx += 1
+                            chunk_acc = []
+                    current = enc.decode(chunk_acc) if chunk_acc else ""
+                    continue
+
+                current = prefix + " " + sentences[0] if prefix else sentences[0]
+                for sentence in sentences[1:] if sentences else []:
+                    sent_tokens = enc.encode(sentence)
+                    current_tokens = enc.encode(current) if current else []
+                    if len(current_tokens) + len(sent_tokens) > chunk_size and current_tokens:
+                        has_formula = "$" in current
+                        chunks.append(
+                            {
+                                "content": current.strip(),
+                                "page_number": page_number,
+                                "chunk_index": idx,
+                                "chunk_type": "text",
+                                "section": section,
+                                "has_formula": has_formula,
+                                "token_count": len(current_tokens),
+                            }
+                        )
+                        overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                        current = enc.decode(overlap_tokens) + " " + sentence
+                        idx += 1
+                    else:
+                        current += " " + sentence if current else sentence
+            else:
+                current = prefix + " " + para if prefix else para
 
         if current.strip():
             has_formula = "$" in current
+            final_tokens = enc.encode(current)
             chunks.append(
                 {
                     "content": current.strip(),
@@ -475,18 +629,19 @@ class OCRService:
                     "chunk_type": "text",
                     "section": section,
                     "has_formula": has_formula,
-                    "token_count": len(current.split()),
+                    "token_count": len(final_tokens),
                 }
             )
 
         return chunks
 
-    def chunk_text(self, pages: list[dict], chunk_size: int = 1024, overlap: int = 100) -> list[dict]:
-        """Split extracted text into chunks for RAG indexing."""
+    def chunk_text(self, pages: list[dict], chunk_size: int = 512, overlap: int = 50) -> list[dict]:
+        """Split extracted text into token-sized chunks for RAG indexing."""
         chunks = []
         current_chunk = ""
         current_page = 0
         chunk_index = 0
+        enc = _get_tiktoken_encoder()
 
         for page in pages:
             text = page.get("text", "")
@@ -496,32 +651,89 @@ class OCRService:
             paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
 
             for para in paragraphs:
-                if len(current_chunk) + len(para) > chunk_size and current_chunk:
+                para_tokens = enc.encode(para)
+                current_tokens = enc.encode(current_chunk) if current_chunk else []
+                if len(current_tokens) + len(para_tokens) <= chunk_size:
+                    current_chunk += "\n\n" + para if current_chunk else para
+                    current_page = page["page_number"]
+                    continue
+
+                # Paragraph doesn't fit — flush current chunk if any
+                if current_tokens:
                     chunks.append(
                         {
                             "content": current_chunk.strip(),
                             "page_number": current_page,
                             "chunk_index": chunk_index,
                             "chunk_type": "text",
-                            "token_count": len(current_chunk.split()),
+                            "token_count": len(current_tokens),
                         }
                     )
-                    words = current_chunk.split()
-                    overlap_text = " ".join(words[-overlap:]) if len(words) > overlap else ""
-                    current_chunk = overlap_text + " " + para
+                    overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                    overlap_text = enc.decode(overlap_tokens)
                     chunk_index += 1
+                    prefix = overlap_text
                 else:
-                    current_chunk += "\n\n" + para if current_chunk else para
-                    current_page = page["page_number"]
+                    prefix = ""
+
+                # Split oversized paragraph at sentence boundaries
+                if len(para_tokens) > chunk_size:
+                    sentences = self._split_sentences(para)
+                    if sentences and max(len(enc.encode(s)) for s in sentences) > chunk_size:
+                        # Individual sentences still too large — token-based fallback
+                        chunk_acc: list[int] = []
+                        for token in para_tokens:
+                            chunk_acc.append(token)
+                            if len(chunk_acc) >= chunk_size:
+                                chunk_text = enc.decode(chunk_acc).strip()
+                                if chunk_text:
+                                    chunks.append(
+                                        {
+                                            "content": chunk_text,
+                                            "page_number": page["page_number"],
+                                            "chunk_index": chunk_index,
+                                            "chunk_type": "text",
+                                            "token_count": len(chunk_acc),
+                                        }
+                                    )
+                                    chunk_index += 1
+                                chunk_acc = []
+                        current_chunk = enc.decode(chunk_acc) if chunk_acc else ""
+                        continue
+
+                    current_chunk = prefix + " " + sentences[0] if prefix else sentences[0]
+                    for sentence in sentences[1:] if sentences else []:
+                        sent_tokens = enc.encode(sentence)
+                        current_tokens = enc.encode(current_chunk) if current_chunk else []
+                        if len(current_tokens) + len(sent_tokens) > chunk_size and current_tokens:
+                            chunks.append(
+                                {
+                                    "content": current_chunk.strip(),
+                                    "page_number": current_page,
+                                    "chunk_index": chunk_index,
+                                    "chunk_type": "text",
+                                    "token_count": len(current_tokens),
+                                }
+                            )
+                            overlap_tokens = (
+                                current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                            )
+                            current_chunk = enc.decode(overlap_tokens) + " " + sentence
+                            chunk_index += 1
+                        else:
+                            current_chunk += " " + sentence if current_chunk else sentence
+                else:
+                    current_chunk = prefix + " " + para if prefix else para
 
         if current_chunk.strip():
+            final_tokens = enc.encode(current_chunk)
             chunks.append(
                 {
                     "content": current_chunk.strip(),
                     "page_number": current_page,
                     "chunk_index": chunk_index,
                     "chunk_type": "text",
-                    "token_count": len(current_chunk.split()),
+                    "token_count": len(final_tokens),
                 }
             )
 
@@ -537,7 +749,7 @@ class OCRService:
                                 "page_number": page["page_number"],
                                 "chunk_index": chunk_index,
                                 "chunk_type": "table",
-                                "token_count": len(table_text.split()),
+                                "token_count": len(enc.encode(table_text)),
                             }
                         )
 

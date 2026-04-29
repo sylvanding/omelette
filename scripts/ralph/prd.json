@@ -1,154 +1,166 @@
 {
-  "project": "Omelette",
-  "branchName": "ralph/new-features",
-  "description": "Eight new user-facing features for Omelette (Scientific Literature Lifecycle Management System) — identified through competitive analysis of open-source research tools including Paperlib (2.1k stars), Amadeus, Arxie, ScholarAIO, and ScholiumAI. Each feature addresses a real gap in omelette's current capabilities and fills needs that competing tools already serve.",
+  "project": "Omelette - Core Optimization",
+  "branchName": "ralph/core-optimization",
+  "description": "Optimize the core RAG pipeline, deduplication, and search workflows based on comprehensive codebase analysis and 2025-2026 industry best practices. Focus areas: chunking quality, dedup performance, similar paper matching, image/multimodal processing, and workflow parallelization.",
   "userStories": [
     {
-      "id": "US-008",
-      "title": "Add bibliography export (BibTeX, RIS, EndNote) for paper collections",
-      "description": "As a researcher, I need to export my paper library in standard citation formats (BibTeX, RIS, EndNote XML) so I can import them into Zotero, Mendeley, LaTeX, or Word. Competitors like Paperlib and LitOrganizer support this; omelette currently has no export capability.",
+      "id": "OPT-001",
+      "title": "Replace character-based chunk sizing with token-based sizing",
+      "description": "As a researcher, I need my paper chunks to be sized by tokens (not characters) so that embeddings are consistent across languages and the RAG pipeline performs optimally. Currently chunk_size=1024 counts characters via len(), but token_count uses len(text.split()) (word count) -- these metrics are inconsistent and unreliable for CJK languages.",
       "acceptanceCriteria": [
-        "Project papers page has an 'Export' dropdown button with BibTeX, RIS, and EndNote XML options",
-        "Export respects current page filters (search, tags, status) — only filtered papers are exported",
-        "BibTeX export produces valid .bib entries with DOI, title, authors, year, journal, abstract fields",
-        "RIS export produces valid .ris format (TY, TI, AU, PY, AB, DO, ER tags)",
-        "EndNote export produces valid .xml with proper schema",
-        "Export downloads as a file automatically (not displayed on screen)",
-        "Test: export a project with 3 papers and verify BibTeX output is parseable by a BibTeX parser",
-        "Test: export respects filter — apply a tag filter and verify only matching papers appear in export"
+        "Use tiktoken (cl100k_base) for accurate token counting in all chunking functions",
+        "Default chunk_size is 512 tokens (not 1024 characters)",
+        "Default overlap is 50 tokens (not 100 words)",
+        "Token count in chunk metadata accurately reflects tiktoken count",
+        "chunk_mineru_markdown() uses token-based splitting",
+        "chunk_text() uses token-based splitting",
+        "marker-pdf fallback splits at token boundaries, not character boundaries",
+        "Test: verify a Chinese paragraph chunk has correct token count",
+        "Test: verify a 512-token English chunk has ~400-600 words",
+        "Test: verify overlap preserves last N tokens from previous chunk"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Backend: add new endpoint GET /projects/{id}/export?format=bibtex|ris|endnote. Create a new export_service.py with format generators. Frontend: add Export dropdown to PapersPage toolbar. Use blob download for file delivery. No new database models needed — all data exists in Paper model."
+      "notes": "Files: backend/app/services/ocr_service.py lines 329-544. Add tiktoken dependency to backend requirements.txt or pyproject.toml. Change chunk_size default from 1024 to 512 tokens. Replace len(text) with len(enc.encode(text)) for size checks. Replace len(text.split()) with len(enc.encode(text)) for token_count. For overlap: encode text, take last N tokens, decode back."
     },
     {
-      "id": "US-009",
-      "title": "Add paper notes and annotations system",
-      "description": "As a researcher, I need to write and organize personal notes per paper so I can capture insights, questions, and connections while reading. Competitors like Paperlib, Amadeus, and PaperArxiv all support per-paper markdown notes with LaTeX and diagram rendering.",
+      "id": "OPT-002",
+      "title": "Add sentence-aware paragraph splitting to chunking",
+      "description": "As a researcher, I need chunks to respect sentence boundaries so that RAG retrieval returns complete thoughts, not mid-sentence fragments. Currently _flush_text_chunk() splits on paragraph boundaries only -- long paragraphs are never subdivided, creating oversized chunks.",
       "acceptanceCriteria": [
-        "Each paper has a Notes tab in the paper detail/PDF reader view",
-        "Notes editor supports markdown with LaTeX math rendering (KaTeX or MathJax)",
-        "Notes are auto-saved with debounce (save after 2 seconds of inactivity)",
-        "Notes support section headers for organization (e.g., '## Summary', '## Questions', '## Key Findings')",
-        "Notes page in sidebar lists all papers that have notes for quick navigation",
-        "Test: write a note with markdown formatting and LaTeX, refresh the page, verify it persists",
-        "Test: verify auto-save indicator shows 'Saving...' then 'Saved' state",
-        "Test: verify notes are scoped to the correct paper (notes from paper A don't appear on paper B)"
+        "_flush_text_chunk() splits long paragraphs at sentence boundaries (sentence-ending punctuation)",
+        "No chunk exceeds token limit (512) even for very long paragraphs",
+        "Sentence splitting preserves the full sentence -- never cuts mid-sentence",
+        "Fallback path (chunk_text) also respects sentence boundaries",
+        "Test: verify a 2000-character paragraph is split into multiple chunks at sentence boundaries",
+        "Test: verify each split chunk starts and ends with complete sentences",
+        "Test: verify overlap includes full sentences at the boundary"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Backend: add 'notes' field already exists on Paper model (Text column). Consider adding a separate PaperNote model with id, paper_id, content, section, order, created_at, updated_at for richer structure. Frontend: add markdown editor component (use react-markdown + KaTeX for rendering, react-simplemde-editor or similar for editing). Add Notes tab to PDFReaderPage or Paper detail panel. Auto-save via debounced API call."
+      "notes": "Add sentence splitting regex: r'(?<=[.。!?])\\s+' for English/Chinese. In _flush_text_chunk, if a single paragraph exceeds chunk_size, split it into sentences first, then accumulate sentences into chunks."
     },
     {
-      "id": "US-010",
-      "title": "Add reading progress tracker with reading analytics dashboard",
-      "description": "As a researcher, I need to track my reading progress across papers and see analytics on my reading habits so I can prioritize and measure my literature review progress. Competitors like Amadeus offer read/unread tracking and reading history with timestamps.",
+      "id": "OPT-003",
+      "title": "Optimize dedup from O(N^2) to O(N) with token fingerprint pre-grouping",
+      "description": "As a researcher with 1000+ papers, I need deduplication to complete in seconds, not minutes. Currently title_similarity_dedup and find_llm_dedup_candidates do O(N^2) pairwise SequenceMatcher comparisons -- for 1000 papers, that is ~500K comparisons.",
       "acceptanceCriteria": [
-        "Each paper has a reading status: Unread, Reading, Read, Archived",
-        "Status can be changed via a dropdown or keyboard shortcut in the papers list",
-        "Papers list can be filtered by reading status",
-        "Dashboard view shows: total papers, papers by status (pie chart), papers read per week (bar chart), top journals read",
-        "Reading status persists across sessions in the database",
-        "Test: mark 5 papers as 'Read', verify dashboard shows 5 read papers",
-        "Test: filter papers list by 'Reading' status, verify only matching papers appear",
-        "Test: change a paper from 'Unread' to 'Read' and refresh the page, verify status persists"
+        "title_similarity_dedup uses token-based fingerprint pre-grouping to reduce comparisons",
+        "find_llm_dedup_candidates uses the same fingerprint optimization",
+        "For 1000 papers, comparisons drop from ~500K to ~10K or fewer",
+        "Dedup results are identical to before",
+        "Performance improvement is measurable (timing logs added)",
+        "Test: verify dedup finds same duplicates on a project with known duplicates",
+        "Test: verify 1000 papers complete in under 5 seconds"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Backend: add 'reading_status' (String) and 'read_at' (DateTime) fields to Paper model. Add GET /projects/{id}/analytics endpoint returning aggregated stats. Frontend: add reading status badge to paper rows, status filter dropdown, new Analytics sub-route under project with charts (use recharts). Keyboard shortcut: 'r' to cycle status on selected paper."
+      "notes": "Files: backend/app/services/dedup_service.py. Create title_fingerprint() function: normalize, remove stop words, sort tokens, create frozenset hash. Group papers by fingerprint. Only run SequenceMatcher within fingerprint groups. Add timing logs."
     },
     {
-      "id": "US-011",
-      "title": "Add AI paper comparison view for selected papers",
-      "description": "As a researcher, I need to compare multiple papers side-by-side across dimensions (method, dataset, results, limitations) so I can quickly identify differences, contradictions, and complementarity. Competitors like Arxie support contradiction detection and evidence comparison.",
+      "id": "OPT-004",
+      "title": "Eliminate PaddleOCR disk I/O by using in-memory image processing",
+      "description": "As a researcher processing scanned PDFs, I need OCR to be fast. Currently PaddleOCR writes each page as a PNG to /tmp/ then reads it back -- unnecessary disk I/O. PaddleOCR accepts PIL Image objects or numpy arrays directly.",
       "acceptanceCriteria": [
-        "Users can select 2-5 papers from the papers list via checkboxes and click 'Compare'",
-        "Comparison view shows a table with papers as columns and comparison dimensions as rows",
-        "Dimensions include: Research Question, Method, Dataset, Key Results, Limitations, Year, Citation Count",
-        "An AI-generated summary section highlights key differences, contradictions, and complementary findings",
-        "Comparison can be regenerated with different prompts (e.g., 'Compare methods only')",
-        "Test: select 3 papers, verify comparison table renders all 5 dimensions for each paper",
-        "Test: verify AI summary contains citations back to the original papers",
-        "Test: verify selecting more than 5 papers disables the Compare button with a tooltip"
+        "extract_text_ocr() passes PIL Image to PaddleOCR directly without writing to /tmp",
+        "No temporary PNG files created during OCR",
+        "OCR results are identical to before",
+        "Test: verify a scanned PDF is OCR'd correctly without temp files",
+        "Test: verify /tmp has no leftover OCR files after processing"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Backend: add POST /projects/{id}/papers/compare endpoint accepting paper_ids and optional focus dimension. Uses existing LLM provider to generate comparison from paper abstracts + OCR content. Frontend: add checkbox selection to PapersPage table, Compare button appears when 2-5 selected, new comparison dialog or full-page view with table layout. Reuse existing LLM infrastructure from writing_service.py."
+      "notes": "Files: backend/app/services/ocr_service.py lines 156-203. Replace page.get_pixmap() -> PNG file -> ocr.ocr(file) with page.get_pixmap() -> Image.frombytes() -> ocr.ocr(image). Remove all os.remove(temp_file) calls."
     },
     {
-      "id": "US-012",
-      "title": "Add research topic timeline view showing paper chronology",
-      "description": "As a researcher, I need to visualize papers on a chronological timeline so I can see how a research topic evolved, identify foundational papers, and track the progression of ideas over time. Competitors like Arxie support citation timeline tracing.",
+      "id": "OPT-005",
+      "title": "Enable MinerU image extraction and store figure metadata",
+      "description": "As a researcher, I need figures from papers to be extracted and indexed. Currently MinerU's return_images is hardcoded to 'false', so all figure/image content is discarded.",
       "acceptanceCriteria": [
-        "Project has a 'Timeline' tab showing all papers sorted chronologically by year/publication date",
-        "Each paper appears as a node on a horizontal timeline, sized by citation count",
-        "Papers from the same year are grouped and can be expanded to show details",
-        "Hovering a paper shows a tooltip with title, authors, journal, citation count, and a one-line AI summary",
-        "Clicking a paper navigates to its detail/PDF reader view",
-        "Timeline can be filtered by tags or search query",
-        "Test: create a project with papers from 2019-2024, verify timeline renders all years correctly",
-        "Test: filter by a tag, verify only matching papers appear on timeline",
-        "Test: verify timeline is scrollable and handles 50+ papers without performance issues"
+        "MinerU client sets return_images='true' in API payload",
+        "Extracted images are saved to project's figure storage directory",
+        "Figure paths are stored in chunk metadata (figure_path field already exists)",
+        "Test: verify a PDF processed with MinerU has figure files saved",
+        "Test: verify figure_path in chunk metadata points to a valid file"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Frontend-only feature using existing paper data (year, citation_count fields). Create new TimelineView component with a custom horizontal timeline. Use d3 or a lightweight timeline library. AI summary on hover can be generated on-demand or pre-cached. Group papers by year, sort by citation count within each year."
+      "notes": "Files: backend/app/services/mineru_client.py line 63. Change 'return_images': 'false' to 'true'. Save images to /data0/djx/omelette/figures/{project_id}/paper_{paper_id}/."
     },
     {
-      "id": "US-013",
-      "title": "Add paper rating and quality scoring system",
-      "description": "As a researcher, I need to rate papers (1-5 stars) and assign custom quality tags (e.g., 'seminal', 'controversial', 'survey') so I can prioritize high-quality papers and filter my library by perceived importance. Competitors like Paperlib support rating, flagging, and tagging.",
+      "id": "OPT-006",
+      "title": "Parallelize LangGraph OCR node with asyncio.gather",
+      "description": "As a researcher uploading multiple PDFs, I want the LangGraph pipeline to process papers in parallel. Currently ocr_node processes papers sequentially with a for loop.",
       "acceptanceCriteria": [
-        "Each paper in the list view has a 5-star rating component (click to rate, hover to preview)",
-        "Rating is saved immediately to the database",
-        "Papers list can be sorted by rating (highest first)",
-        "Users can add custom quality tags from a predefined set (Seminal, Survey, Controversial, Replication, Methodology) plus custom tags",
-        "Papers can be filtered by quality tags",
-        "Rating and tags are visible as columns in the papers table",
-        "Test: rate a paper 4 stars, refresh page, verify rating persists",
-        "Test: add a quality tag 'Seminal' to a paper, filter by that tag, verify only matching papers appear",
-        "Test: sort papers by rating descending, verify highest-rated papers appear first"
+        "ocr_node processes multiple papers concurrently using asyncio.gather",
+        "GPU semaphore limits parallelism to available GPUs",
+        "OCR results are identical to sequential processing",
+        "Processing time for N papers scales as O(N/GPU_COUNT) instead of O(N)",
+        "Test: verify 3 PDFs process in parallel",
+        "Test: verify a single PDF failure doesn't crash the entire batch"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Backend: add 'rating' (Integer, 0-5) and 'quality_tags' (JSON array) fields to Paper model. Add query params for sort=rating and filter by quality_tags. Frontend: add star rating component (can use shadcn/ui or build custom), quality tag dropdown/badges. Update PapersPage table to include rating column and tag filters. Sort and filter integration with existing paperApi.list params."
+      "notes": "Files: backend/app/pipelines/nodes.py lines 294-330. Replace sequential for loop with asyncio.gather(*[process_one(p) for p in papers], return_exceptions=True). Use GPU semaphore from config."
     },
     {
-      "id": "US-014",
-      "title": "Add related paper recommendations based on semantic similarity",
-      "description": "As a researcher reading a paper, I need to discover semantically related papers in my library so I don't miss relevant work I've already collected. This leverages the existing ChromaDB vector store that already holds paper embeddings for RAG queries.",
+      "id": "OPT-007",
+      "title": "Batch DOI check for search import instead of N separate queries",
+      "description": "As a researcher running discovery searches, I need search import to be fast. Currently the system does N separate DB queries to check if each DOI exists.",
       "acceptanceCriteria": [
-        "Paper detail/PDF reader view shows a 'Related Papers' section listing 5-10 most similar papers from the same project",
-        "Each related paper shows title, authors, year, and a similarity score (0-100%)",
-        "Similarity is computed using existing ChromaDB embeddings (cosine similarity)",
-        "Clicking a related paper navigates to its detail view",
-        "Related papers section has a 'Find more like this' action that triggers a broader semantic search across all projects",
-        "Test: verify related papers for a given paper are semantically similar (not random)",
-        "Test: verify clicking a related paper navigates correctly",
-        "Test: verify 'Find more like this' returns papers from outside the current project"
+        "Search import fetches all existing DOIs in a single SQL query",
+        "Results are filtered in Python to identify new papers",
+        "Test: verify a search with 50 results checks DOIs in 1 query instead of 50",
+        "Test: verify import results match before"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Backend: add GET /projects/{id}/papers/{paper_id}/similar?limit=10 endpoint. Use existing embedding_service.py and ChromaDB to query similar vectors. Frontend: add RelatedPapers card component to PDFReaderPage or paper detail panel. Display similarity score as a percentage badge. 'Find more like this' reuses the semantic search from knowledge bases."
+      "notes": "Files: backend/app/api/v1/search.py lines 58-73. Replace per-result DOI check with single batch query: select(Paper.doi).where(Paper.doi.in_(all_dois))."
     },
     {
-      "id": "US-015",
-      "title": "Add project activity feed and change log",
-      "description": "As a researcher working across multiple sessions, I need an activity feed showing recent actions (papers added, notes written, status changes, RAG indexing) so I can quickly pick up where I left off. This provides a 'what happened since I was last here' overview that no competitor currently offers.",
+      "id": "OPT-008",
+      "title": "Add weighted chunk averaging for similar paper matching",
+      "description": "As a researcher, I need similar paper recommendations to be more accurate. Currently all chunks are averaged equally, giving references section the same weight as abstract and conclusion.",
       "acceptanceCriteria": [
-        "Project detail page has an 'Activity' tab showing a chronological feed of recent actions",
-        "Activity types include: paper_added, paper_deleted, note_updated, status_changed, rag_indexed, writing_generated, search_executed, keyword_added",
-        "Each activity entry shows: action type icon, description, timestamp, and a link to the relevant paper/page",
-        "Feed is paginated (show 20 entries, load more on scroll)",
-        "Activity feed highlights entries since the user's last visit (e.g., '5 new activities since yesterday')",
-        "Activity data is stored in the database with a new activity_log table",
-        "Test: add a paper, update a note, change a status — verify all three appear in the activity feed",
-        "Test: verify pagination loads older entries correctly",
-        "Test: verify 'since last visit' highlighting works (clear last_visited, add activities, verify they're highlighted)"
+        "Similar paper endpoint uses weighted averaging: abstract=3x, intro=2x, conclusion=2.5x, methods=1x, results=1.5x, discussion=2x, references=0x",
+        "Median distance used instead of mean for robustness against outlier chunks",
+        "Test: verify abstract-heavy papers rank higher for similar-paper queries",
+        "Test: verify API response format is unchanged"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Backend: create new ActivityLog model (id, project_id, action_type, entity_type, entity_id, description, created_at). Add event hooks in existing services to write activity entries (paper_service, rag_service, writing_service, etc.). Add GET /projects/{id}/activity?limit=20&cursor= endpoint. Frontend: add ActivityFeed component with grouped timeline entries (group by date). Use intersection observer for infinite scroll. Add 'last_visited' tracking to user_settings model."
+      "notes": "Files: backend/app/api/v1/papers.py lines 362-456. Add SECTION_WEIGHTS dict. Use statistics.median instead of mean for distance aggregation. Fetch section info from chunk metadata."
+    },
+    {
+      "id": "OPT-009",
+      "title": "Add cross-source deduplication to federated search results",
+      "description": "As a researcher running discovery searches, I need the same paper to appear only once in results. Currently the federated search concatenates results from 4 providers without any cross-source dedup.",
+      "acceptanceCriteria": [
+        "Search results are deduplicated across providers using DOI matching",
+        "Papers without DOI are deduplicated using normalized title matching",
+        "When duplicates found, the version with most complete metadata is kept",
+        "Test: verify a known paper found by 3 providers appears only once",
+        "Test: verify no papers are incorrectly deduplicated"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Files: backend/app/services/search_service.py. Add _dedup_results() method after gather. Group by DOI, then fingerprint match for no-DOI papers."
+    },
+    {
+      "id": "OPT-010",
+      "title": "Add PDF content hash for upload-time deduplication",
+      "description": "As a researcher, I need to prevent uploading the exact same PDF twice with different filenames. Currently no content dedup check exists.",
+      "acceptanceCriteria": [
+        "Upload endpoint computes SHA-256 hash of PDF content",
+        "Hash is stored in a new content_hash column on Paper model",
+        "Upload checks for existing papers with same content_hash",
+        "Duplicate upload is rejected with a clear error message",
+        "Alembic migration adds content_hash column",
+        "Test: verify uploading the same PDF twice returns a conflict error"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Files: backend/app/models/paper.py, backend/app/api/v1/upload.py. Use hashlib.sha256 on file content. Add UniqueConstraint on content_hash. Add Alembic migration."
     }
   ]
 }

@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     pdf_dir: str = ""
     ocr_output_dir: str = ""
     chroma_db_dir: str = ""
+    figures_dir: str = ""
 
     # LLM: Default Provider
     llm_provider: str = "mock"
@@ -206,6 +207,8 @@ class Settings(BaseSettings):
             self.ocr_output_dir = f"{self.data_dir}/ocr_output"
         if not self.chroma_db_dir:
             self.chroma_db_dir = f"{self.data_dir}/chroma_db"
+        if not self.figures_dir:
+            self.figures_dir = f"{self.data_dir}/figures"
         if not self.langgraph_checkpoint_dir:
             self.langgraph_checkpoint_dir = f"{self.data_dir}/langgraph_checkpoints"
         if not self.pipeline_checkpoint_db:

@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.database import Base, engine
 from app.main import app
-from app.services.dedup_service import DedupService
+from app.services.dedup_service import DedupService, _group_by_fingerprint, title_fingerprint
 
 # --- Fixtures ---
 
@@ -60,6 +60,76 @@ def test_normalize_title_unicode_normalization():
 
 def test_normalize_title_empty_after_strip():
     assert DedupService.normalize_title("---!!!") == ""
+
+
+# --- Unit tests: title_fingerprint ---
+
+
+def test_title_fingerprint_removes_stop_words():
+    """Stop words are removed, leaving only content words."""
+    fp = title_fingerprint("A Study of Deep Learning Methods")
+    assert "deep" in fp
+    assert "learning" in fp
+    assert "methods" in fp
+    assert "a" not in fp
+    assert "of" not in fp
+
+
+def test_title_fingerprint_similar_titles_match():
+    """Similar titles produce identical fingerprints."""
+    fp1 = title_fingerprint("Deep Learning for Image Recognition")
+    fp2 = title_fingerprint("Deep Learning in Image Recognition")
+    assert fp1 == fp2
+
+
+def test_title_fingerprint_different_titles_diverge():
+    """Unrelated titles produce disjoint fingerprints."""
+    fp1 = title_fingerprint("Deep Learning for Image Recognition")
+    fp2 = title_fingerprint("Quantum Computing in Cryptography")
+    assert len(fp1 & fp2) == 0
+
+
+def test_title_fingerprint_empty_title():
+    """Empty or stop-word-only titles return empty fingerprint."""
+    assert title_fingerprint("") == frozenset()
+    assert title_fingerprint("The and or but") == frozenset()
+
+
+def test_title_fingerprint_case_insensitive():
+    fp1 = title_fingerprint("Deep Learning")
+    fp2 = title_fingerprint("deep learning")
+    assert fp1 == fp2
+
+
+def test_group_by_fingerprint_groups_similar_titles():
+    """Papers with same or nearly-same content words are grouped together."""
+    from unittest.mock import MagicMock
+
+    papers = [
+        MagicMock(title="Deep Learning for Image Recognition", id=1),
+        MagicMock(title="Deep Learning in Image Recognition", id=2),
+        MagicMock(title="Deep Learning Methods for Images", id=3),
+        MagicMock(title="Quantum Computing Basics", id=4),
+        MagicMock(title="Quantum Computing Advanced", id=5),
+    ]
+    groups = _group_by_fingerprint(papers)
+    # Should have groups for deep-learning papers and quantum-computing papers
+    assert len(groups) >= 2
+    for group in groups.values():
+        assert len(group) >= 2
+
+
+def test_group_by_fingerprint_excludes_unique_papers():
+    """Papers with unique fingerprints are not in any group."""
+    from unittest.mock import MagicMock
+
+    papers = [
+        MagicMock(title="Deep Learning", id=1),
+        MagicMock(title="Quantum Computing", id=2),
+        MagicMock(title="Biology Research", id=3),
+    ]
+    groups = _group_by_fingerprint(papers)
+    assert len(groups) == 0
 
 
 # --- Integration tests: DOI hard dedup ---
@@ -363,3 +433,102 @@ async def test_verify_nonexistent_project(client: AsyncClient):
         params={"paper_a_id": 1, "paper_b_id": 2},
     )
     assert resp.status_code == 404
+
+
+# --- Fingerprint optimization: dedup correctness ---
+
+
+@pytest.mark.asyncio
+async def test_title_similarity_dedup_fingerprint_finds_known_duplicates(client: AsyncClient, project_id: int):
+    """Fingerprint-based dedup finds the same duplicates as brute-force would."""
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Deep Learning for Image Recognition"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Deep Learning in Image Recognition"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Quantum Computing Basics"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "A Totally Different Paper About Biology"},
+    )
+
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/dedup/run",
+        params={"strategy": "title_only"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    # The two similar deep learning titles should be deduped
+    assert data["removed"] == 1
+    assert len(data["duplicates"]) == 1
+    assert data["duplicates"][0]["reason"] == "title_similarity"
+
+
+@pytest.mark.asyncio
+async def test_llm_candidates_fingerprint_finds_similar_pairs(client: AsyncClient, project_id: int):
+    """Fingerprint-based candidate finding identifies similar-title pairs."""
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Machine Learning"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Machine Learning Methods"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Deep Learning for Vision"},
+    )
+    await client.post(
+        f"/api/v1/projects/{project_id}/papers",
+        json={"title": "Deep Learning in Vision"},
+    )
+
+    resp = await client.get(f"/api/v1/projects/{project_id}/dedup/candidates")
+    assert resp.status_code == 200
+    candidates = resp.json()["data"]["items"]
+    # Should find at least the ML pair and the deep learning pair
+    assert len(candidates) >= 2
+
+
+# --- Performance test: 1000 papers under 5 seconds ---
+
+
+@pytest.mark.asyncio
+async def test_dedup_performance_with_many_papers(client: AsyncClient, project_id: int):
+    """1000 papers should complete title similarity dedup in under 5 seconds."""
+    import time
+
+    # Create 1000 papers with varied titles — most unique, some duplicate clusters
+    titles = []
+    for i in range(950):
+        titles.append(f"Unique Research Topic Number {i}")
+    # Add 10 clusters of 5 similar titles each (50 papers total)
+    for cluster in range(10):
+        base = f"Cluster Topic {cluster}"
+        for variant in range(5):
+            titles.append(f"{base} Variant {variant}")
+
+    assert len(titles) == 1000
+
+    for title in titles:
+        await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": title},
+        )
+
+    start = time.monotonic()
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/dedup/run",
+        params={"strategy": "title_only"},
+    )
+    elapsed = time.monotonic() - start
+
+    assert resp.status_code == 200
+    assert elapsed < 5.0, f"Title dedup took {elapsed:.2f}s, expected under 5s"
