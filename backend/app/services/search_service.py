@@ -357,6 +357,36 @@ class CrossrefProvider(SearchProvider):
         return papers
 
 
+def _title_fingerprint(title: str) -> str:
+    """Normalize a title to a comparable fingerprint for dedup matching."""
+    if not title:
+        return ""
+    t = title.lower().strip()
+    t = re.sub(r"[^a-z0-9\s]", "", t)
+    t = re.sub(r"\s+", " ", t)
+    return t.strip()
+
+
+def _paper_completeness_score(paper: StandardizedPaper) -> int:
+    """Score a paper by metadata completeness — higher = more complete."""
+    score = 0
+    if paper.doi:
+        score += 1
+    if paper.title:
+        score += 1
+    if paper.abstract:
+        score += 2
+    if paper.authors:
+        score += len(paper.authors)
+    if paper.year:
+        score += 1
+    if paper.journal:
+        score += 1
+    if paper.pdf_url:
+        score += 1
+    return score
+
+
 class SearchService:
     def __init__(self):
         self.providers: dict[str, SearchProvider] = {
@@ -365,6 +395,49 @@ class SearchService:
             "arxiv": ArXivProvider(),
             "crossref": CrossrefProvider(),
         }
+
+    def _dedup_results(self, papers: list[StandardizedPaper]) -> list[StandardizedPaper]:
+        """Deduplicate search results across providers.
+
+        Groups by DOI first, then by normalized title fingerprint for papers
+        without DOI. Keeps the version with the most complete metadata.
+        """
+        # Phase 1: Group by DOI
+        doi_groups: dict[str, list[StandardizedPaper]] = {}
+        no_doi: list[StandardizedPaper] = []
+        for paper in papers:
+            if paper.doi:
+                doi_groups.setdefault(paper.doi.lower(), []).append(paper)
+            else:
+                no_doi.append(paper)
+
+        # Keep best version from each DOI group
+        deduped: list[StandardizedPaper] = []
+        for group in doi_groups.values():
+            best = max(group, key=_paper_completeness_score)
+            deduped.append(best)
+
+        # Phase 2: Fingerprint-match papers without DOI
+        fp_groups: dict[str, list[StandardizedPaper]] = {}
+        for paper in no_doi:
+            fp = _title_fingerprint(paper.title)
+            if fp:
+                fp_groups.setdefault(fp, []).append(paper)
+            else:
+                # No title at all — keep as-is
+                deduped.append(paper)
+
+        for group in fp_groups.values():
+            best = max(group, key=_paper_completeness_score)
+            deduped.append(best)
+
+        logger.info(
+            "Cross-source dedup: %d input -> %d output (%d removed)",
+            len(papers),
+            len(deduped),
+            len(papers) - len(deduped),
+        )
+        return deduped
 
     async def search(self, query: str, sources: list[str] | None = None, max_results: int = 100) -> dict:
         """Run federated search across selected sources."""
@@ -387,6 +460,9 @@ class SearchService:
             else:
                 source_stats[source] = {"count": len(result)}
                 all_papers.extend(result)
+
+        # Cross-source deduplication
+        all_papers = self._dedup_results(all_papers)
 
         return {
             "papers": [p.to_dict() for p in all_papers],
