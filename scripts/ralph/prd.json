@@ -15,7 +15,7 @@
         "Test: modifying a file with an ESLint error should fail pre-commit"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Backend already has ruff hooks. Add frontend hooks to .pre-commit-config.yaml"
     },
     {
@@ -74,7 +74,7 @@
         "Screen reader can navigate sidebar properly"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Use axe-core or eslint-plugin-jsx-a11y for automated checks"
     }
   ]
