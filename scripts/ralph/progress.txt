@@ -93,3 +93,27 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - The LLM prompt should instruct the model to return both contradiction pairs AND topic groupings in the same response
   - When adding task types to mock_adapter.py, ensure the JSON structure matches exactly what the service expects
 ---
+
+## [2026-04-30 08:20] - FEAT-004
+- Implemented iterative visual discovery with prior/derivative/similarity graph modes
+- Backend: Added `mode` parameter to `get_citation_graph()` supporting "all", "prior", "derivative", "similarity"
+- Backend: Added `_get_similarity_graph()` method that computes cosine similarity from ChromaDB embeddings
+- Backend: Prior Works mode returns only references (type: "cites"), Derivative Works only citations (type: "cited_by")
+- Backend: Added 5 new tests covering all modes and API mode parameter
+- Frontend: Added mode toggle buttons (All, Prior Works, Derivative, Similarity) with icons
+- Frontend: Updated CitationGraphDialog with mode state and onNodeClick for iterative seed switching
+- Frontend: Edge types now visually distinct (cites=blue, cited_by=orange, similar=purple with thickness)
+- Files changed:
+  - backend/app/services/citation_graph_service.py (modified)
+  - backend/app/api/v1/papers.py (modified)
+  - backend/tests/test_citation_graph.py (modified)
+  - frontend/src/components/citation-graph/CitationGraphView.tsx (modified)
+  - frontend/src/components/citation-graph/CitationGraphDialog.tsx (modified)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/lib/query-keys.ts (modified)
+- **Learnings for future iterations:**
+  - Edge types now use "cites" (seed→ref), "cited_by" (cite→seed), "similar" (embedding match) — must be consistent across service and frontend
+  - Similarity graph uses paper_id as node ID (not S2 ID) since similarity is computed within project — frontend handles both ID formats
+  - When ChromaDB is unavailable, similarity mode returns empty graph gracefully rather than erroring
+  - Query keys must include mode parameter to avoid stale cache when switching between modes
+---

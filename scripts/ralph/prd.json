@@ -70,7 +70,7 @@
         "Tests: verify similarity edges connect related papers"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Enhance citation_graph_service.py for both directions + similarity edges from ChromaDB. Frontend: toggle modes in CitationGraphView."
     },
     {
