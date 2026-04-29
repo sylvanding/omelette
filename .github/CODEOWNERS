@@ -1,0 +1,11 @@
+# Default owners for everything in the repo
+* @sylvanding
+
+# Backend
+/backend/ @sylvanding
+
+# Frontend
+/frontend/ @sylvanding
+
+# CI/CD
+.github/workflows/ @sylvanding

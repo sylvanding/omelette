@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+.claude
+.env
+*.md
+docs/
+e2e/
+tests/
+node_modules/
+frontend/node_modules/
+data/
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
