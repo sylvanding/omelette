@@ -185,11 +185,14 @@ async def test_pipeline_path_dot_dot_rejected(test_client, project):
 
 async def test_pipeline_list_includes_started(test_client, project, monkeypatch):
     """After starting a pipeline, GET /pipelines should list it."""
+    import asyncio
+
     from app.api.v1 import pipelines
 
     pipelines._running_tasks.clear()
 
     async def mock_search(self, query="", sources=None, max_results=100):
+        await asyncio.sleep(5)
         return {"papers": [], "total": 0}
 
     from app.services import search_service
@@ -205,8 +208,6 @@ async def test_pipeline_list_includes_started(test_client, project, monkeypatch)
         },
     )
     assert resp.status_code == 200
-
-    import asyncio
 
     await asyncio.sleep(0.5)
 
