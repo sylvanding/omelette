@@ -427,6 +427,13 @@
     "custom": "Custom prompt",
     "customPlaceholder": "Enter custom rewrite instructions..."
   },
+  "notes": {
+    "tab": "Notes",
+    "qa": "Q&A",
+    "edit": "Edit",
+    "preview": "Preview",
+    "placeholder": "Write your notes here... Markdown and LaTeX are supported."
+  },
   "subscriptions": {
     "title": "Subscriptions",
     "newSubscription": "New Subscription",

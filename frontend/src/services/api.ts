@@ -45,6 +45,8 @@ export const paperApi = {
     api.get<GraphData>(`/projects/${projectId}/papers/${paperId}/citation-graph`, {
       params: { depth, max_nodes: maxNodes },
     }).then(r => r.data),
+  update: (projectId: number, paperId: number, data: Partial<Paper>) =>
+    api.put<Paper>(`/projects/${projectId}/papers/${paperId}`, data).then(r => r.data),
 };
 
 export type ExportFormat = 'bibtex' | 'ris' | 'endnote';

@@ -105,6 +105,18 @@ export const handlers = [
       mockResponse({ imported: body.papers?.length ?? 0 }),
     );
   }),
+  http.put(`${apiBase}/projects/:id/papers/:paperId`, async ({ request, params }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json(
+      mockResponse({
+        ...mockPaper,
+        id: Number(params.paperId),
+        project_id: Number(params.id),
+        ...body,
+        updated_at: new Date().toISOString(),
+      }),
+    );
+  }),
   http.post(`${apiBase}/projects/:id/papers/upload`, async ({ request }) => {
     const formData = await request.formData();
     const files = formData.getAll('files');

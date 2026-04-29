@@ -427,6 +427,13 @@
     "custom": "自定义指令",
     "customPlaceholder": "输入自定义重写指令..."
   },
+  "notes": {
+    "tab": "笔记",
+    "qa": "问答",
+    "edit": "编辑",
+    "preview": "预览",
+    "placeholder": "在此撰写笔记…支持 Markdown 和 LaTeX 数学公式。"
+  },
   "subscriptions": {
     "title": "订阅",
     "newSubscription": "新建订阅",
