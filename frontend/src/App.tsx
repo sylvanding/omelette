@@ -28,38 +28,44 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Suspense fallback={<LoadingState className="h-screen" />}>
-            <Routes>
-              <Route path="/" element={<AppShell />}>
-                <Route index element={<PlaygroundPage key="playground" />} />
-                <Route path="chat/:conversationId" element={<PlaygroundPage key="playground" />} />
-                <Route path="knowledge-bases" element={<KnowledgeBasesPage />} />
-                <Route path="history" element={<ChatHistoryPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="projects/:projectId" element={<ProjectDetail />}>
-                  <Route index element={<PapersPage />} />
-                  <Route path="papers" element={<PapersPage />} />
-                  <Route path="papers/:paperId/read" element={<PDFReaderPage />} />
-                  <Route path="discovery" element={<DiscoveryPage />} />
-                  <Route path="writing" element={<WritingPage />} />
-                  <Route path="keywords" element={<Navigate to="../discovery" replace />} />
-                  <Route path="search" element={<Navigate to="../discovery" replace />} />
-                  <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
-                  <Route path="rag" element={<Navigate to="/" replace />} />
-                  <Route path="tasks" element={<Navigate to="/tasks" replace />} />
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<PlaygroundPage key="playground" />} />
+            <Route path="chat/:conversationId" element={<PlaygroundPage key="playground" />} />
+            <Route path="knowledge-bases" element={
+              <ErrorBoundary><Suspense fallback={<LoadingState />}><KnowledgeBasesPage /></Suspense></ErrorBoundary>
+            } />
+            <Route path="history" element={
+              <ErrorBoundary><Suspense fallback={<LoadingState />}><ChatHistoryPage /></Suspense></ErrorBoundary>
+            } />
+            <Route path="settings" element={
+              <ErrorBoundary><Suspense fallback={<LoadingState />}><SettingsPage /></Suspense></ErrorBoundary>
+            } />
+            <Route path="tasks" element={
+              <ErrorBoundary><Suspense fallback={<LoadingState />}><TasksPage /></Suspense></ErrorBoundary>
+            } />
+            <Route path="projects/:projectId" element={
+              <ErrorBoundary><Suspense fallback={<LoadingState />}><ProjectDetail /></Suspense></ErrorBoundary>
+            }>
+              <Route index element={<PapersPage />} />
+              <Route path="papers" element={<PapersPage />} />
+              <Route path="papers/:paperId/read" element={<PDFReaderPage />} />
+              <Route path="discovery" element={<DiscoveryPage />} />
+              <Route path="writing" element={<WritingPage />} />
+              <Route path="keywords" element={<Navigate to="../discovery" replace />} />
+              <Route path="search" element={<Navigate to="../discovery" replace />} />
+              <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
+              <Route path="rag" element={<Navigate to="/" replace />} />
+              <Route path="tasks" element={<Navigate to="/tasks" replace />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
         <Toaster richColors position="top-right" />
-      </QueryClientProvider>
-    </ErrorBoundary>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

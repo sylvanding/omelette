@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useCallback } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { SelectionQA } from './SelectionQA';
 
@@ -21,6 +22,7 @@ export default function PDFReaderLayout({
   projectId,
   onBack,
 }: PDFReaderLayoutProps) {
+  const { t } = useTranslation();
   const [selectedText, setSelectedText] = useState('');
   const [selectedPage, setSelectedPage] = useState(1);
 
@@ -33,7 +35,7 @@ export default function PDFReaderLayout({
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border bg-background px-4 py-2">
-        <Button size="icon" variant="ghost" onClick={onBack} className="size-8">
+        <Button size="icon" variant="ghost" onClick={onBack} className="size-8" aria-label={t('pdf.back', 'Back')}>
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="line-clamp-1 flex-1 text-sm font-medium">{paperTitle}</h1>

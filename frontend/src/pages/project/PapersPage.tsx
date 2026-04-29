@@ -1,35 +1,11 @@
-import { lazy, Suspense, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { toast } from 'sonner';
-import {
-  Search,
-  Trash2,
-  FileDown,
-  Plus,
-  FileText,
-  RefreshCw,
-  Loader2,
-  Zap,
-  GitBranch,
-  X,
-  BookOpenText,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { FileText } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
-import type { DataTableColumn } from '@/components/ui/data-table';
 import { paperApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
@@ -40,9 +16,11 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DedupConflictPanel } from '@/components/knowledge-base/DedupConflictPanel';
 import PageLayout from '@/components/layout/PageLayout';
-
-const CitationGraphView = lazy(() => import('@/components/citation-graph/CitationGraphView'));
-import type { GraphData } from '@/components/citation-graph/CitationGraphView';
+import { PapersFilterBar } from './papers/PapersFilterBar';
+import { PapersToolbar } from './papers/PapersToolbar';
+import { usePapersColumns } from './papers/papers-columns';
+import { PaperStatusBanner } from './PaperStatusBanner';
+import { CitationGraphDialog } from './CitationGraphDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -50,25 +28,7 @@ export default function PapersPage() {
   const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
 
-  const STATUS_OPTIONS: { value: PaperStatus | ''; label: string }[] = [
-    { value: '', label: t('papers.statuses.all') },
-    { value: 'pending', label: t('papers.statuses.pending') },
-    { value: 'metadata_only', label: t('papers.statuses.metadata_only') },
-    { value: 'pdf_downloaded', label: t('papers.statuses.pdf_downloaded') },
-    { value: 'ocr_complete', label: t('papers.statuses.ocr_complete') },
-    { value: 'indexed', label: t('papers.statuses.indexed') },
-    { value: 'error', label: t('papers.statuses.error') },
-  ];
-
-  const SORT_OPTIONS = [
-    { value: 'created_at', label: t('papers.sortBy.created_at') },
-    { value: 'year', label: t('papers.sortBy.year') },
-    { value: 'citation_count', label: t('papers.sortBy.citation_count') },
-    { value: 'title', label: t('papers.sortBy.title') },
-  ];
-
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const pid = Number(projectId!);
 
   const [search, setSearch] = useState('');
@@ -224,116 +184,12 @@ export default function PapersPage() {
 
   const needsProcessing = statusCounts.processing > 0 || statusCounts.error > 0;
 
-  const getStatusBadgeVariant = (status: PaperStatus): 'success' | 'info' | 'destructive' | 'warning' => {
-    if (status === 'indexed') return 'success';
-    if (PROCESSING_STATUSES.includes(status)) return 'info';
-    if (status === 'error') return 'destructive';
-    return 'warning';
-  };
-
-  const columns: DataTableColumn<Paper>[] = [
-    {
-      id: 'title',
-      header: t('common.title'),
-      accessorKey: 'title',
-      sortable: true,
-      cell: ({ row }) => (
-        <span className="line-clamp-2 font-medium text-foreground">{row.title}</span>
-      ),
-    },
-    {
-      id: 'journal',
-      header: t('papers.journal'),
-      accessorKey: 'journal',
-      cell: ({ value }) => (value != null ? String(value) : '—'),
-    },
-    {
-      id: 'year',
-      header: t('common.year'),
-      accessorKey: 'year',
-      sortable: true,
-      cell: ({ value }) => (value != null ? String(value) : '—'),
-    },
-    {
-      id: 'citation_count',
-      header: t('papers.citations'),
-      accessorKey: 'citation_count',
-      sortable: true,
-    },
-    {
-      id: 'status',
-      header: t('common.status'),
-      accessorKey: 'status',
-      cell: ({ row }) => (
-        <Badge variant={getStatusBadgeVariant(row.status)} className="gap-1">
-          {PROCESSING_STATUSES.includes(row.status) && (
-            <Loader2 className="size-3 animate-spin" />
-          )}
-          {t(`papers.statuses.${row.status}`, row.status)}
-        </Badge>
-      ),
-    },
-    {
-      id: 'actions',
-      header: t('common.actions'),
-      accessorFn: () => null,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => navigate(`/projects/${pid}/papers/${row.id}/read`)}
-            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            title={t('papers.readPdf', 'Read PDF')}
-          >
-            <BookOpenText className="size-4" />
-          </button>
-          <button
-            onClick={() => setGraphPaperId(row.id)}
-            className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            title={t('papers.citationGraph.title', 'Citation graph')}
-          >
-            <GitBranch className="size-4" />
-          </button>
-          {row.pdf_url && (
-            <a
-              href={row.pdf_url}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              title={t('papers.downloadPdf')}
-            >
-              <FileDown className="size-4" />
-            </a>
-          )}
-          {row.status === 'error' && (
-            <button
-              onClick={() => handleRetry(row.id)}
-              className="rounded p-1.5 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
-              title={t('papers.retry')}
-            >
-              <RefreshCw className="size-4" />
-            </button>
-          )}
-          <ConfirmDialog
-            trigger={
-              <button
-                disabled={deleteMutation.isPending}
-                className="rounded p-1.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
-                title={t('common.delete')}
-              >
-                <Trash2 className="size-4" />
-              </button>
-            }
-            title={t('common.confirmDeleteTitle')}
-            description={t('papers.confirmDelete')}
-            confirmText={t('common.delete')}
-            cancelText={t('common.cancel')}
-            onConfirm={() => deleteMutation.mutate(row.id)}
-            destructive
-          />
-        </div>
-      ),
-    },
-  ];
+  const columns = usePapersColumns({
+    pid,
+    deleteMutation,
+    handleRetry,
+    setGraphPaperId,
+  });
 
   const subtitle = projectData && (
     <span className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm text-muted-foreground">
@@ -344,38 +200,14 @@ export default function PapersPage() {
   );
 
   const pageAction = (
-    <div className="flex gap-2">
-      {selectedRows.size > 0 && (
-        <ConfirmDialog
-          trigger={
-            <Button
-              variant="destructive"
-              disabled={batchDeleteMutation.isPending}
-              className="gap-1.5"
-            >
-              <Trash2 className="size-4" />
-              {t('common.delete')} ({selectedRows.size})
-            </Button>
-          }
-          title={t('common.confirmDeleteTitle')}
-          description={t('common.confirmDeleteDesc')}
-          confirmText={t('common.delete')}
-          cancelText={t('common.cancel')}
-          onConfirm={handleBatchDelete}
-          destructive
-        />
-      )}
-      {needsProcessing && (
-        <Button variant="outline" onClick={handleProcessAll} className="gap-1.5">
-          <Zap className="size-4" />
-          {t('papers.processAll')}
-        </Button>
-      )}
-      <Button onClick={() => setShowAddPaper(true)} className="gap-1.5">
-        <Plus className="size-4" />
-        {t('papers.addPaper')}
-      </Button>
-    </div>
+    <PapersToolbar
+      selectedRows={selectedRows}
+      needsProcessing={needsProcessing}
+      isBatchDeleting={batchDeleteMutation.isPending}
+      onBatchDelete={handleBatchDelete}
+      onProcessAll={handleProcessAll}
+      onAddPaper={() => setShowAddPaper(true)}
+    />
   );
 
   return (
@@ -385,20 +217,12 @@ export default function PapersPage() {
       action={pageAction}
     >
       <div className="space-y-4">
-        {/* Processing progress banner */}
         {statusCounts.processing > 0 && (
-          <div className="flex items-center gap-3 rounded-lg border border-blue-500/30 bg-blue-500/5 px-4 py-3">
-            <Loader2 className="size-4 animate-spin text-blue-600 dark:text-blue-400" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                {t('papers.processingBanner', {
-                  processing: statusCounts.processing,
-                  indexed: statusCounts.indexed,
-                  total: statusCounts.total,
-                })}
-              </p>
-            </div>
-          </div>
+          <PaperStatusBanner
+            processing={statusCounts.processing}
+            indexed={statusCounts.indexed}
+            total={statusCounts.total}
+          />
         )}
 
         {conflicts.length > 0 && (
@@ -410,61 +234,18 @@ export default function PapersPage() {
           />
         )}
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={t('papers.searchPlaceholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select
-              value={status || '__all__'}
-              onValueChange={(v) => setStatus(v === '__all__' ? '' : (v as PaperStatus))}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder={t('papers.statuses.all')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">{t('papers.statuses.all')}</SelectItem>
-                {STATUS_OPTIONS.filter((o) => o.value).map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="number"
-              placeholder={t('common.year')}
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="w-24"
-            />
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
-            >
-              {order === 'asc' ? t('common.asc') : t('common.desc')}
-            </Button>
-          </div>
-        </div>
+        <PapersFilterBar
+          search={search}
+          status={status}
+          year={year}
+          sortBy={sortBy}
+          order={order}
+          onSearchChange={setSearch}
+          onStatusChange={setStatus}
+          onYearChange={setYear}
+          onSortChange={setSortBy}
+          onOrderChange={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
+        />
 
         {isLoading ? (
           <LoadingState message={t('common.loading')} />
@@ -575,53 +356,5 @@ export default function PapersPage() {
         />
       </div>
     </PageLayout>
-  );
-}
-
-function CitationGraphDialog({
-  projectId,
-  paperId,
-  onClose,
-}: {
-  projectId: number;
-  paperId: number;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-
-  const { data, isLoading } = useQuery<GraphData>({
-    queryKey: queryKeys.papers.citationGraph(projectId, paperId),
-    queryFn: () =>
-      paperApi.getCitationGraph(projectId, paperId),
-  });
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="relative h-[80vh] w-[90vw] max-w-6xl rounded-xl border border-border bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold">
-            {t('papers.citationGraph.title', 'Citation graph')}
-          </h2>
-          <Button size="icon" variant="ghost" onClick={onClose}>
-            <X className="size-5" />
-          </Button>
-        </div>
-        <div className="h-[calc(100%-56px)]">
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center">
-                <Loader2 className="size-8 animate-spin text-muted-foreground" />
-              </div>
-            }
-          >
-            <CitationGraphView
-              data={data ?? { nodes: [], edges: [], center_id: null }}
-              isLoading={isLoading}
-              projectId={projectId}
-            />
-          </Suspense>
-        </div>
-      </div>
-    </div>
   );
 }

@@ -19,7 +19,7 @@ export default function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label={t('nav.mobile', 'Mobile navigation')} className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-border bg-background pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive =
             item.path === '/'
@@ -44,6 +44,7 @@ export default function MobileBottomNav() {
         <button
           onClick={() => setMenuOpen(true)}
           className="flex flex-col items-center gap-0.5 px-3 py-2 text-[10px] text-muted-foreground transition-colors"
+          aria-label={t('nav.more')}
         >
           <Menu className="size-5" />
           <span>{t('nav.more')}</span>

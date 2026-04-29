@@ -39,7 +39,7 @@ export default function ProjectDetail() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Link to="/knowledge-bases">
-                <Button variant="ghost" size="icon" className="mb-2 size-8">
+                <Button variant="ghost" size="icon" className="mb-2 size-8" aria-label={t('project.backToKB', 'Back to knowledge bases')}>
                   <ArrowLeft className="size-4" />
                 </Button>
               </Link>

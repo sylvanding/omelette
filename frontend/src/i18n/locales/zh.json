@@ -64,7 +64,8 @@
     "tasks": "任务",
     "settings": "设置",
     "home": "Omelette 首页",
-    "more": "更多"
+    "more": "更多",
+    "mobile": "移动导航"
   },
   "discovery": {
     "title": "发现"
@@ -107,6 +108,9 @@
       "gap_analysisDesc": "分析研究领域空白"
     },
     "citations": "引用来源",
+    "citation": {
+      "toggleExpand": "切换文献详情: {{title}}"
+    },
     "attach": "附加文件",
     "send": "发送",
     "loading": {
@@ -292,6 +296,11 @@
     "abstract": "摘要：",
     "authors": "作者：",
     "downloadPdf": "下载 PDF",
+    "readPdf": "阅读 PDF",
+    "citationGraph": {
+      "title": "引用关系图",
+      "close": "关闭引用关系图"
+    },
     "runOcr": "运行 OCR",
     "ocrSuccess": "OCR 已启动",
     "ocrFailed": "OCR 失败",

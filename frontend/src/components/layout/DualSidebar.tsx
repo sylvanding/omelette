@@ -187,9 +187,9 @@ function NavItem({
   );
 
   const element = to ? (
-    <Link to={to} className={classes}>{content}</Link>
+    <Link to={to} className={classes} aria-label={label}>{content}</Link>
   ) : (
-    <button onClick={onClick} className={classes}>{content}</button>
+    <button onClick={onClick} className={classes} aria-label={label}>{content}</button>
   );
 
   if (expanded) return element;
@@ -252,6 +252,7 @@ function ChatHistoryList() {
           variant="outline"
           className="w-full gap-1.5 text-xs h-7"
           onClick={() => navigate('/', { replace: true })}
+          aria-label={t('playground.newChat')}
         >
           <Plus className="size-3.5" />
           {t('playground.newChat')}
@@ -263,6 +264,7 @@ function ChatHistoryList() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('history.searchPlaceholder')}
             className="h-7 pl-7 text-xs"
+            aria-label={t('history.searchPlaceholder')}
           />
         </div>
       </div>
@@ -296,6 +298,7 @@ function ChatHistoryList() {
                       ? 'bg-sidebar-primary/15 text-sidebar-primary'
                       : 'hover:bg-sidebar-accent/50',
                   )}
+                  aria-label={`Open chat: ${conv.title}`}
                 >
                   <span className="truncate text-xs font-medium">{conv.title}</span>
                   <div className="flex items-center gap-1">

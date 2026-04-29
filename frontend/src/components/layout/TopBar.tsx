@@ -35,10 +35,10 @@ export default function TopBar({ className }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+        <button aria-label="Notifications" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
           <Bell className="size-4" />
         </button>
-        <button className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+        <button aria-label="Help" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
           <HelpCircle className="size-4" />
         </button>
         <div className="ml-2 flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">

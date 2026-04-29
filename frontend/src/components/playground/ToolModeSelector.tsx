@@ -34,13 +34,15 @@ export default function ToolModeSelector({ value, onChange }: ToolModeSelectorPr
             'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
             'bg-muted text-foreground hover:bg-muted/80',
           )}
+          aria-label={t('playground.toolMode.selector', 'Select tool mode')}
+          aria-expanded={open}
         >
           <current.icon className="size-3.5" />
           {t(current.labelKey)}
           <ChevronDown className={cn('size-3 text-muted-foreground transition-transform', open && 'rotate-180')} />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-60 p-1" align="start" sideOffset={6}>
+      <PopoverContent className="w-60 p-1" align="start" sideOffset={6} role="menu">
         {modes.map((mode) => (
           <button
             key={mode.value}
@@ -52,6 +54,8 @@ export default function ToolModeSelector({ value, onChange }: ToolModeSelectorPr
               'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors',
               value === mode.value ? 'bg-accent' : 'hover:bg-accent/50',
             )}
+            role="menuitem"
+            aria-label={t(mode.labelKey)}
           >
             <mode.icon className="size-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1">

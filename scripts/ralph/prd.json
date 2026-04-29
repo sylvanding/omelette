@@ -1,0 +1,112 @@
+{
+  "project": "Omelette",
+  "branchName": "ralph/remaining-improvements",
+  "description": "Comprehensive project improvements for open-source readiness - remaining items after initial cleanup",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add frontend pre-commit hooks for ESLint and TypeScript",
+      "description": "As a developer, I need automatic linting and type checking before commits so I don't break the build.",
+      "acceptanceCriteria": [
+        "Add pre-commit hook that runs ESLint on staged .ts/.tsx files",
+        "Add pre-commit hook that runs tsc --noEmit on TypeScript files",
+        "Hooks use cached results for speed",
+        "Hooks don't block commits for warnings, only errors",
+        "Test: modifying a file with an ESLint error should fail pre-commit"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Backend already has ruff hooks. Add frontend hooks to .pre-commit-config.yaml"
+    },
+    {
+      "id": "US-002",
+      "title": "Add frontend unit tests for remaining components",
+      "description": "As a developer, I need test coverage above 80% so I can refactor with confidence.",
+      "acceptanceCriteria": [
+        "Add tests for MessageBubble component",
+        "Add tests for CitationCard component",
+        "Add tests for PDFViewer component",
+        "Add tests for CitationGraphView component",
+        "Run vitest run --coverage and verify >80% coverage",
+        "All tests pass on CI"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "76 tests passing. MessageBubble, CitationCard, PDFViewer, CitationGraphView, NodeDetailPanel, useTheme, useSidebar all tested."
+    },
+    {
+      "id": "US-003",
+      "title": "Add Docker health check and multi-arch support",
+      "description": "As a deployer, I need Docker health checks so I can monitor container health automatically.",
+      "acceptanceCriteria": [
+        "Add HEALTHCHECK to frontend/Dockerfile (curl localhost:80)",
+        "Add HEALTHCHECK to backend/Dockerfile (curl localhost:8000/health)",
+        "Update docker-compose.yml to use health checks",
+        "Add restart policies based on health check status",
+        "docker compose up --build succeeds and both services are healthy"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Backend already has /health endpoint. Frontend nginx needs health check endpoint."
+    },
+    {
+      "id": "US-004",
+      "title": "Add error boundaries and loading states to frontend",
+      "description": "As a user, I need graceful error handling so I never see a blank screen when something breaks.",
+      "acceptanceCriteria": [
+        "Add ErrorBoundary component wrapping all page routes",
+        "Add loading skeletons for all data-fetching pages",
+        "Error boundary shows retry button and friendly message",
+        "Test: simulate network error and verify error boundary catches it"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Check if react-error-boundary package is already installed. If not, add it."
+    },
+    {
+      "id": "US-005",
+      "title": "Add accessibility improvements (ARIA labels, keyboard navigation)",
+      "description": "As a user relying on assistive technology, I need proper ARIA labels and keyboard shortcuts.",
+      "acceptanceCriteria": [
+        "All interactive elements have aria-label or aria-labelledby",
+        "Keyboard navigation works for all major flows (tab, enter, escape)",
+        "Color contrast meets WCAG AA standards",
+        "Screen reader can navigate sidebar properly"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Use axe-core or eslint-plugin-jsx-a11y for automated checks"
+    },
+    {
+      "id": "US-006",
+      "title": "Add aria-labels to interactive elements lacking accessibility support",
+      "description": "As a user relying on assistive technology, I need all interactive elements to have proper ARIA labels.",
+      "acceptanceCriteria": [
+        "CitationCard action buttons (toggle, copy, link) have aria-labels",
+        "AddPaperDialog action buttons have aria-labels",
+        "MobileMenuSheet and MobileBottomNav have aria-labels",
+        "ToolModeSelector has aria-labels",
+        "PapersPage action buttons have aria-labels",
+        "All icon-only buttons have aria-label or aria-labelledby"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "All icon-only buttons now have aria-labels. Most components already had them; added to MobileBottomNav More button, ProjectDetail back button, and PDFReaderLayout back button."
+    },
+    {
+      "id": "US-007",
+      "title": "Split large page components into sub-components",
+      "description": "As a maintainer, I need large files split for easier navigation and code review.",
+      "acceptanceCriteria": [
+        "PapersPage.tsx (627 lines) split into toolbar, table, bulk actions sub-components",
+        "WritingPage.tsx (560 lines) split into editor, sidebar, toolbar sub-components",
+        "AddPaperDialog.tsx (542 lines) split into upload form, search form, step components",
+        "SubscriptionManager.tsx (460 lines) split into list, form, dialog components",
+        "Each extracted component has focused responsibility (<400 lines)"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Focus on PapersPage.tsx and WritingPage.tsx first. Ensure existing tests still pass after refactoring."
+    }
+  ]
+}

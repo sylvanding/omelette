@@ -71,8 +71,8 @@ export default function PDFViewer({ url, onTextSelect }: PDFViewerProps) {
 
   const zoomIn = () => setScale((s) => Math.min(s + ZOOM_STEP, MAX_SCALE));
   const zoomOut = () => setScale((s) => Math.max(s - ZOOM_STEP, MIN_SCALE));
-  const prevPage = () => setCurrentPage((p) => Math.max(p - 1, 1));
-  const nextPage = () => setCurrentPage((p) => Math.min(p + 1, numPages));
+  const prevPage = useCallback(() => setCurrentPage((p) => Math.max(p - 1, 1)), []);
+  const nextPage = useCallback(() => setCurrentPage((p) => Math.min(p + 1, numPages)), [numPages]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -81,7 +81,7 @@ export default function PDFViewer({ url, onTextSelect }: PDFViewerProps) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  });
+  }, [prevPage, nextPage]);
 
   if (loadError) {
     return (
@@ -103,24 +103,24 @@ export default function PDFViewer({ url, onTextSelect }: PDFViewerProps) {
       {/* Toolbar */}
       <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-1.5">
         <div className="flex items-center gap-1">
-          <Button size="icon" variant="ghost" onClick={zoomOut} className="size-7">
+          <Button size="icon" variant="ghost" onClick={zoomOut} className="size-7" aria-label={t('pdf.zoomOut', 'Zoom out')}>
             <ZoomOut className="size-3.5" />
           </Button>
-          <span className="min-w-12 text-center text-xs text-muted-foreground">
+          <span className="min-w-12 text-center text-xs text-muted-foreground" aria-live="polite">
             {Math.round(scale * 100)}%
           </span>
-          <Button size="icon" variant="ghost" onClick={zoomIn} className="size-7">
+          <Button size="icon" variant="ghost" onClick={zoomIn} className="size-7" aria-label={t('pdf.zoomIn', 'Zoom in')}>
             <ZoomIn className="size-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-1">
-          <Button size="icon" variant="ghost" onClick={prevPage} disabled={currentPage <= 1} className="size-7">
+          <Button size="icon" variant="ghost" onClick={prevPage} disabled={currentPage <= 1} className="size-7" aria-label={t('pdf.previousPage', 'Previous page')}>
             <ChevronLeft className="size-3.5" />
           </Button>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground" aria-live="polite">
             {currentPage} / {numPages || '?'}
           </span>
-          <Button size="icon" variant="ghost" onClick={nextPage} disabled={currentPage >= numPages} className="size-7">
+          <Button size="icon" variant="ghost" onClick={nextPage} disabled={currentPage >= numPages} className="size-7" aria-label={t('pdf.nextPage', 'Next page')}>
             <ChevronRight className="size-3.5" />
           </Button>
         </div>
