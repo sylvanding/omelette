@@ -69,3 +69,14 @@ export interface Task {
   total: number;
   created_at: string;
 }
+
+export interface ActivityLog {
+  id: number;
+  project_id: number;
+  action: string;
+  entity_type: string;
+  entity_id: number;
+  actor: string;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}

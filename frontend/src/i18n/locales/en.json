@@ -278,6 +278,7 @@
     "writing": "Writing",
     "tasks": "Tasks",
     "timeline": "Timeline",
+    "activity": "Activity",
     "backToKB": "Back to Knowledge Bases",
     "notFound": "Project not found",
     "noDesc": "No description",
@@ -504,5 +505,27 @@
     "totalFound": "{{count}} found",
     "active": "Active",
     "inactive": "Inactive"
+  },
+  "activity": {
+    "title": "Project Activity",
+    "empty": "No activity yet",
+    "emptyHint": "Changes to papers, keywords, and tasks will appear here.",
+    "filterAll": "All actions",
+    "loadMore": "Load more",
+    "actions": {
+      "paper_created": "Paper added",
+      "paper_deleted": "Paper deleted",
+      "paper_updated": "Paper updated",
+      "rating_changed": "Rating changed",
+      "tag_added": "Tag added",
+      "tag_removed": "Tag removed",
+      "keyword_added": "Keyword added",
+      "search_executed": "Search executed",
+      "rag_indexed": "RAG indexed",
+      "task_completed": "Task completed",
+      "note_updated": "Note updated",
+      "status_changed": "Status changed",
+      "writing_generated": "Writing generated"
+    }
   }
 }

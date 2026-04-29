@@ -13,6 +13,7 @@ import {
   mockSubscription,
   mockSubscriptionList,
   mockTaskList,
+  mockActivityLogList,
 } from '@/test/fixtures';
 
 const apiBase = '/api/v1';
@@ -491,4 +492,9 @@ export const handlers = [
       }),
     );
   }),
+
+  // Activities
+  http.get(`${apiBase}/projects/:id/activities`, () =>
+    HttpResponse.json(mockResponse(mockActivityLogList)),
+  ),
 ];

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    activities,
     chat,
     conversations,
     crawler,
@@ -28,6 +29,7 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(projects.router, prefix="/projects")
 api_router.include_router(papers.router, prefix="/projects/{project_id}/papers")
 api_router.include_router(upload.router, prefix="/projects/{project_id}/papers")
+api_router.include_router(activities.router, prefix="/projects/{project_id}/activities")
 api_router.include_router(keywords.router)
 api_router.include_router(search.router)
 api_router.include_router(dedup.router)

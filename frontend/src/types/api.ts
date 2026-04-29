@@ -80,3 +80,8 @@ export interface PaperComparisonResponse {
   dimensions: PaperComparisonDimension[];
   summary: string;
 }
+
+export interface ActivityListFilters extends PaginationParams {
+  action?: string;
+  entity_type?: string;
+}

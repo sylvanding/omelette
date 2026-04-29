@@ -12,6 +12,9 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
 - `usePapersColumns` hook in `papers-columns.tsx` accepts callbacks for inline actions (rating change, delete, etc.)
 - Backend quality_tags filter uses PostgreSQL `overlap()` for array matching — pass comma-separated tags in query param
 - Alembic migration chain may be broken — set `down_revision = None` if prior migration files are missing
+- New model files go in `backend/app/models/` with `Mapped[T]` + `mapped_column` pattern, register in `models/__init__.py` and add relationship on `Project`
+- New API routers in `backend/app/api/v1/` — register in `api/v1/__init__.py` with `include_router`
+- radix-ui SelectItem cannot have empty string value — use `"all"` or similar placeholder instead of `""`
 
 ## [2026-04-29 21:40] - US-008
 - Implemented bibliography export (BibTeX, RIS, EndNote) for paper collections
@@ -148,6 +151,35 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The `get_or_404` call validates paper exists before querying ChromaDB — prevents 404 vs empty result confusion
   - `screen.getByText()` fails when text is split across child elements — use partial match or `textContent` assertion
   - Authors truncation with "et al." requires `slice(0, 3)` before `join()`, not just appending after join
+---
+
+## [2026-04-29 23:05] - US-015
+- Implemented project activity feed and change log
+- Files changed:
+  - `backend/app/models/activity_log.py` (new) — ActivityLog model with project_id, action, entity_type, entity_id, actor, details, created_at
+  - `backend/app/models/__init__.py` — registered ActivityLog in exports
+  - `backend/app/models/project.py` — added activity_logs relationship with cascade delete
+  - `backend/app/schemas/activity_log.py` (new) — Pydantic ActivityRead schema
+  - `backend/app/api/v1/activities.py` (new) — GET /projects/{id}/activities endpoint with pagination and filters
+  - `backend/app/api/v1/__init__.py` — registered activities router
+  - `backend/alembic/versions/a1b2c3d4e5f6_*.py` (new) — migration for activity_logs table
+  - `frontend/src/types/index.ts` — added ActivityLog interface
+  - `frontend/src/types/api.ts` — added ActivityListFilters type
+  - `frontend/src/services/api.ts` — added activityApi.list method
+  - `frontend/src/lib/query-keys.ts` — added activities query keys
+  - `frontend/src/pages/project/ActivityFeedPage.tsx` (new) — activity feed page with date grouping, action filter, load more pagination
+  - `frontend/src/pages/ProjectDetail.tsx` — added Activity nav item with Activity icon
+  - `frontend/src/App.tsx` — added /activity route
+  - `frontend/src/i18n/locales/en.json` — added activity feed keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+  - `frontend/src/test/fixtures/index.ts` — added mockActivityLog fixtures
+  - `frontend/src/test/mocks/handlers.ts` — added activities endpoint mock
+  - `frontend/src/pages/project/__tests__/ActivityFeedPage.test.tsx` (new) — 5 component tests
+- **Learnings for future iterations:**
+  - radix-ui SelectItem cannot have empty string value — use "all" as placeholder and translate in onValueChange handler
+  - Activity feed groups entries by date using `toLocaleDateString()` — "Today" and "Yesterday" are special-cased
+  - The `useInfiniteQuery` pattern works well for paginated activity feeds with getNextPageParam
+  - When writing tests, use `getAllByText` for text that appears in multiple activity items
 ---
 
 ## [2026-04-29 22:35] - US-013

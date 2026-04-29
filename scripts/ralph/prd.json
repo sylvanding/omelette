@@ -147,7 +147,7 @@
         "Test: verify 'since last visit' highlighting works (clear last_visited, add activities, verify they're highlighted)"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: create new ActivityLog model (id, project_id, action_type, entity_type, entity_id, description, created_at). Add event hooks in existing services to write activity entries (paper_service, rag_service, writing_service, etc.). Add GET /projects/{id}/activity?limit=20&cursor= endpoint. Frontend: add ActivityFeed component with grouped timeline entries (group by date). Use intersection observer for infinite scroll. Add 'last_visited' tracking to user_settings model."
     }
   ]

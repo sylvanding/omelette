@@ -1,8 +1,8 @@
 import { api } from '@/lib/api';
 import type { PaginatedData } from '@/lib/api';
 import { apiUrl } from '@/lib/api-config';
-import type { Project, Paper, Keyword, Task } from '@/types';
-import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse } from '@/types/api';
+import type { Project, Paper, Keyword, Task, ActivityLog } from '@/types';
+import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse, ActivityListFilters } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
 export const projectApi = {
@@ -317,4 +317,9 @@ export const crawlerApi = {
     }).then(r => r.data),
   stats: (projectId: number) =>
     api.get<Record<string, unknown>>(`/projects/${projectId}/crawl/stats`).then(r => r.data),
+};
+
+export const activityApi = {
+  list: (projectId: number, params?: ActivityListFilters) =>
+    api.get<PaginatedData<ActivityLog>>(`/projects/${projectId}/activities`, { params }).then(r => r.data),
 };

@@ -1,4 +1,4 @@
-import type { PaperListFilters, PaginationParams } from '@/types/api';
+import type { PaperListFilters, PaginationParams, ActivityListFilters } from '@/types/api';
 
 export const queryKeys = {
   projects: {
@@ -52,5 +52,9 @@ export const queryKeys = {
   },
   gpu: {
     status: () => ['gpu-status'] as const,
+  },
+  activities: {
+    list: (projectId: number, filters?: ActivityListFilters) =>
+      ['activities', projectId, filters] as const,
   },
 } as const;

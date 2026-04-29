@@ -278,6 +278,7 @@
     "writing": "写作",
     "tasks": "任务",
     "timeline": "时间线",
+    "activity": "动态",
     "backToKB": "返回知识库",
     "notFound": "项目不存在",
     "noDesc": "暂无描述",
@@ -504,5 +505,27 @@
     "totalFound": "已找到 {{count}} 篇",
     "active": "启用",
     "inactive": "停用"
+  },
+  "activity": {
+    "title": "项目动态",
+    "empty": "暂无动态",
+    "emptyHint": "论文、关键词和任务的变更将在此处显示。",
+    "filterAll": "全部操作",
+    "loadMore": "加载更多",
+    "actions": {
+      "paper_created": "添加论文",
+      "paper_deleted": "删除论文",
+      "paper_updated": "更新论文",
+      "rating_changed": "评分变更",
+      "tag_added": "添加标签",
+      "tag_removed": "移除标签",
+      "keyword_added": "添加关键词",
+      "search_executed": "执行检索",
+      "rag_indexed": "RAG 索引",
+      "task_completed": "任务完成",
+      "note_updated": "更新笔记",
+      "status_changed": "状态变更",
+      "writing_generated": "生成写作"
+    }
   }
 }
