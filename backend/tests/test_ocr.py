@@ -587,3 +587,143 @@ class TestInMemoryOCR:
                 assert pages[0]["has_text"] is False
             finally:
                 Path(pdf_path).unlink(missing_ok=True)
+
+
+class TestMinerUImageExtraction:
+    """Tests for MinerU image extraction and figure saving (OPT-005)."""
+
+    def test_save_mineru_images_extracts_and_saves_images(self, tmp_path):
+        """Images from content_list should be decoded from base64 and saved."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        # Create a small fake PNG and base64 encode it
+        test_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 10
+        b64_data = base64.b64encode(test_bytes).decode()
+
+        content_list = [
+            {
+                "type": "image",
+                "image_path": "fig1.png",
+                "image_body": b64_data,
+            }
+        ]
+        md_content = "# Test\n\n![Figure 1](fig1.png)\n\nSome text."
+        figures_dir = tmp_path / "project_1" / "paper_42"
+
+        updated_md, path_mapping = service._save_mineru_images(content_list, figures_dir, md_content)
+
+        # Image should be saved
+        saved_file = figures_dir / "figure_001.png"
+        assert saved_file.exists()
+        assert saved_file.read_bytes() == test_bytes
+
+        # Path mapping should be created
+        assert "fig1.png" in path_mapping
+        assert str(saved_file) == path_mapping["fig1.png"]
+
+        # Markdown should reference the saved path
+        assert str(saved_file) in updated_md
+
+    def test_save_mineru_images_no_content_list(self, tmp_path):
+        """Empty content_list should return unchanged md_content."""
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        md_content = "# Test\n\nNo images here."
+        figures_dir = tmp_path / "project_1" / "paper_1"
+
+        updated_md, mapping = service._save_mineru_images([], figures_dir, md_content)
+        assert updated_md == md_content
+        assert mapping == {}
+
+    def test_save_mineru_images_ignores_non_image_entries(self, tmp_path):
+        """Non-image entries (text, table, etc.) should be ignored."""
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        content_list = [
+            {"type": "text", "content": "Some text"},
+            {"type": "table", "content": "| col |"},
+            {"type": "image", "image_path": "ok.png", "image_body": ""},  # empty body
+        ]
+        md_content = "# Test"
+        figures_dir = tmp_path / "test"
+        figures_dir.mkdir(parents=True)
+
+        updated_md, mapping = service._save_mineru_images(content_list, figures_dir, md_content)
+        assert updated_md == md_content
+        assert mapping == {}
+
+    def test_save_mineru_images_multiple_images(self, tmp_path):
+        """Multiple images should be saved with sequential numbering."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        b64_1 = base64.b64encode(b"image1data").decode()
+        b64_2 = base64.b64encode(b"image2data").decode()
+
+        content_list = [
+            {"type": "image", "image_path": "first.png", "image_body": b64_1},
+            {"type": "image", "image_path": "second.png", "image_body": b64_2},
+        ]
+        figures_dir = tmp_path / "project_2" / "paper_99"
+
+        _, mapping = service._save_mineru_images(content_list, figures_dir, "")
+
+        assert (figures_dir / "figure_001.png").exists()
+        assert (figures_dir / "figure_002.png").exists()
+        assert len(mapping) == 2
+
+    def test_save_mineru_images_creates_directory(self, tmp_path):
+        """Figures directory should be created if it doesn't exist."""
+        import base64
+
+        from app.services.ocr_service import OCRService
+
+        service = OCRService()
+        b64_data = base64.b64encode(b"test").decode()
+        content_list = [{"type": "image", "image_path": "x.png", "image_body": b64_data}]
+        figures_dir = tmp_path / "new" / "nested" / "dir"
+
+        service._save_mineru_images(content_list, figures_dir, "")
+        assert figures_dir.exists()
+        assert (figures_dir / "figure_001.png").exists()
+
+    def test_process_pdf_async_passes_project_and_paper_id(self):
+        """process_pdf_async should forward project_id/paper_id to _extract_with_mineru."""
+        import asyncio
+
+        from app.services.ocr_service import OCRService
+
+        mineru_result = {
+            "md_content": "# Title\n\nText with enough content to pass validation.",
+            "content_list": [],
+            "backend": "pipeline",
+            "version": "1.0",
+        }
+
+        captured_kwargs = {}
+
+        async def mock_extract(self, pdf_path, *, project_id=None, paper_id=None):
+            captured_kwargs["project_id"] = project_id
+            captured_kwargs["paper_id"] = paper_id
+            return mineru_result
+
+        with (
+            patch("app.services.ocr_service.settings") as mock_settings,
+            patch.object(OCRService, "_extract_with_mineru", mock_extract),
+        ):
+            mock_settings.pdf_parser = "mineru"
+
+            service = OCRService()
+            asyncio.get_event_loop().run_until_complete(
+                service.process_pdf_async("test.pdf", project_id=7, paper_id=42)
+            )
+
+        assert captured_kwargs["project_id"] == 7
+        assert captured_kwargs["paper_id"] == 42

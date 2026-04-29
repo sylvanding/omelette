@@ -7,6 +7,7 @@ Supports two extraction tiers:
 Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
 """
 
+import base64
 import json
 import logging
 import re
@@ -216,7 +217,61 @@ class OCRService:
 
         return pages
 
-    async def _extract_with_mineru(self, pdf_path: str) -> dict | None:
+    def _save_mineru_images(
+        self,
+        content_list: list[dict],
+        figures_dir: Path,
+        md_content: str,
+    ) -> tuple[str, dict[str, str]]:
+        """Extract and save images from MinerU content_list.
+
+        Returns (updated_md_content, {old_path: new_path} mapping).
+        """
+        if not content_list or not figures_dir:
+            return md_content, {}
+
+        figures_dir.mkdir(parents=True, exist_ok=True)
+        path_mapping: dict[str, str] = {}
+        image_counter = 0
+
+        for item in content_list:
+            if not isinstance(item, dict):
+                continue
+            item_type = item.get("type", "")
+            if item_type not in ("image", "img"):
+                continue
+
+            image_body = item.get("image_body", "")
+            if not image_body:
+                continue
+
+            image_counter += 1
+            filename = f"figure_{image_counter:03d}.png"
+            save_path = figures_dir / filename
+
+            try:
+                img_bytes = base64.b64decode(image_body)
+                save_path.write_bytes(img_bytes)
+
+                old_path = item.get("image_path", f"figure_{image_counter}")
+                path_mapping[old_path] = str(save_path)
+                logger.info("Saved MinerU figure: %s (%d bytes)", save_path, len(img_bytes))
+            except Exception as e:
+                logger.warning("Failed to save MinerU figure %d: %s", image_counter, e)
+
+        if path_mapping:
+            for old_path, new_path in path_mapping.items():
+                md_content = md_content.replace(old_path, new_path)
+
+        return md_content, path_mapping
+
+    async def _extract_with_mineru(
+        self,
+        pdf_path: str,
+        *,
+        project_id: int | None = None,
+        paper_id: int | None = None,
+    ) -> dict | None:
         """Try MinerU API. Returns result dict or None if unavailable/failed."""
         if settings.pdf_parser == "pdfplumber":
             return None
@@ -237,7 +292,7 @@ class OCRService:
             logger.info("MinerU service not available, skipping")
             return None
 
-        result = await self._mineru_client.parse_pdf(pdf_path)
+        result = await self._mineru_client.parse_pdf(pdf_path, return_images=True)
 
         if settings.mineru_auto_manage:
             mineru_process_manager.touch()
@@ -251,10 +306,19 @@ class OCRService:
             logger.info("MinerU returned insufficient content for %s", pdf_path)
             return None
 
+        # Extract and save figures if project/paper context is available
+        figures_dir = None
+        if project_id is not None and paper_id is not None:
+            figures_dir = Path(settings.figures_dir) / f"project_{project_id}" / f"paper_{paper_id}"
+
+        content_list = result.get("content_list", [])
+        if figures_dir and content_list:
+            md_content, _ = self._save_mineru_images(content_list, figures_dir, md_content)
+
         return {
             "method": "mineru",
             "md_content": md_content,
-            "content_list": result.get("content_list", []),
+            "content_list": content_list,
             "backend": result.get("backend", ""),
             "version": result.get("version", ""),
             "total_chars": len(md_content),
@@ -318,7 +382,14 @@ class OCRService:
             "pages_with_text": 0,
         }
 
-    async def process_pdf_async(self, pdf_path: str, force_ocr: bool = False) -> dict:
+    async def process_pdf_async(
+        self,
+        pdf_path: str,
+        force_ocr: bool = False,
+        *,
+        project_id: int | None = None,
+        paper_id: int | None = None,
+    ) -> dict:
         """Process a PDF with MinerU priority, falling back to pdfplumber/PaddleOCR.
 
         Returns either:
@@ -326,7 +397,7 @@ class OCRService:
           - Legacy result: {"method": "native"|"paddleocr"|"failed", "pages": [...], ...}
         """
         if not force_ocr and settings.pdf_parser != "pdfplumber":
-            mineru_result = await self._extract_with_mineru(pdf_path)
+            mineru_result = await self._extract_with_mineru(pdf_path, project_id=project_id, paper_id=paper_id)
             if mineru_result:
                 return mineru_result
 

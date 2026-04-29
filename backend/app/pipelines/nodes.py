@@ -296,7 +296,11 @@ async def ocr_node(state: PipelineState) -> dict[str, Any]:
                 if state.get("cancelled"):
                     break
                 try:
-                    result = await ocr.process_pdf_async(paper.pdf_path)
+                    result = await ocr.process_pdf_async(
+                        paper.pdf_path,
+                        project_id=project_id,
+                        paper_id=paper.id,
+                    )
                     if result.get("error"):
                         paper.status = PaperStatus.ERROR
                         continue
