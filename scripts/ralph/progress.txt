@@ -23,3 +23,14 @@
   - Test utils export `render` from @testing-library/react separately
   - window.matchMedia not available in jsdom - must mock with Object.defineProperty
 ---
+
+## 2026-04-29 20:55 - US-006
+- Added aria-labels to remaining icon-only buttons
+- Files changed: MobileBottomNav.tsx (More button + nav element), ProjectDetail.tsx (back button), PDFReaderLayout.tsx (back button)
+- CitationCard, PapersPage, NodeDetailPanel, CitationGraphDialog already had aria-labels from previous work
+- All 76 tests passing, lint and typecheck clean
+- **Learnings for future iterations:**
+  - Most aria-labels were already in place from US-005 work
+  - When adding aria-labels, use t() for i18n support with fallback strings
+  - The `<nav>` element should also have `aria-label` for landmark navigation
+---

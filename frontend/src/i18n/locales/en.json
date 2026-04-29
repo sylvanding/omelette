@@ -64,7 +64,8 @@
     "tasks": "Tasks",
     "settings": "Settings",
     "home": "Omelette Home",
-    "more": "More"
+    "more": "More",
+    "mobile": "Mobile navigation"
   },
   "discovery": {
     "title": "Discovery"
@@ -107,6 +108,9 @@
       "gap_analysisDesc": "Analyze research field gaps"
     },
     "citations": "Citations",
+    "citation": {
+      "toggleExpand": "Toggle citation details: {{title}}"
+    },
     "attach": "Attach file",
     "send": "Send",
     "loading": {
@@ -292,6 +296,11 @@
     "abstract": "Abstract:",
     "authors": "Authors:",
     "downloadPdf": "Download PDF",
+    "readPdf": "Read PDF",
+    "citationGraph": {
+      "title": "Citation graph",
+      "close": "Close citation graph"
+    },
     "runOcr": "Run OCR",
     "ocrSuccess": "OCR started",
     "ocrFailed": "OCR failed",

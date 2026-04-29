@@ -90,8 +90,8 @@
         "All icon-only buttons have aria-label or aria-labelledby"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": "Survey found 25+ click handlers without aria-label. Check: CitationCard, NodeDetailPanel (done), AddPaperDialog, ToolModeSelector, MobileBottomNav, MobileMenuSheet, PapersPage"
+      "passes": true,
+      "notes": "All icon-only buttons now have aria-labels. Most components already had them; added to MobileBottomNav More button, ProjectDetail back button, and PDFReaderLayout back button."
     },
     {
       "id": "US-007",

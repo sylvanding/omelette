@@ -283,6 +283,7 @@ export default function PapersPage() {
             onClick={() => navigate(`/projects/${pid}/papers/${row.id}/read`)}
             className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
             title={t('papers.readPdf', 'Read PDF')}
+            aria-label={t('papers.readPdf', 'Read PDF')}
           >
             <BookOpenText className="size-4" />
           </button>
@@ -290,6 +291,7 @@ export default function PapersPage() {
             onClick={() => setGraphPaperId(row.id)}
             className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
             title={t('papers.citationGraph.title', 'Citation graph')}
+            aria-label={t('papers.citationGraph.title', 'Citation graph')}
           >
             <GitBranch className="size-4" />
           </button>
@@ -300,6 +302,7 @@ export default function PapersPage() {
               rel="noreferrer"
               className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
               title={t('papers.downloadPdf')}
+              aria-label={t('papers.downloadPdf')}
             >
               <FileDown className="size-4" />
             </a>
@@ -309,6 +312,7 @@ export default function PapersPage() {
               onClick={() => handleRetry(row.id)}
               className="rounded p-1.5 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
               title={t('papers.retry')}
+              aria-label={t('papers.retry')}
             >
               <RefreshCw className="size-4" />
             </button>
@@ -319,6 +323,7 @@ export default function PapersPage() {
                 disabled={deleteMutation.isPending}
                 className="rounded p-1.5 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
                 title={t('common.delete')}
+                aria-label={t('common.delete')}
               >
                 <Trash2 className="size-4" />
               </button>
@@ -602,7 +607,7 @@ function CitationGraphDialog({
           <h2 className="text-lg font-semibold">
             {t('papers.citationGraph.title', 'Citation graph')}
           </h2>
-          <Button size="icon" variant="ghost" onClick={onClose}>
+          <Button size="icon" variant="ghost" onClick={onClose} aria-label={t('papers.citationGraph.close', 'Close citation graph')}>
             <X className="size-5" />
           </Button>
         </div>

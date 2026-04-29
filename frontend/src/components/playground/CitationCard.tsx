@@ -88,6 +88,7 @@ function CitationCard({
         onClick={onToggle}
         className="flex w-full items-center gap-2 px-3 py-2 text-left"
         aria-expanded={isExpanded}
+        aria-label={t("playground.citation.toggleExpand", { title: citation.paper_title })}
       >
         <Badge
           variant="outline"
@@ -145,6 +146,11 @@ function CitationCard({
                           setShowFullExcerpt(!showFullExcerpt);
                         }}
                         className="text-[10px] text-primary hover:underline"
+                        aria-label={
+                          showFullExcerpt
+                            ? t("common.collapse", "Collapse excerpt")
+                            : t("common.expandAll", "Show full excerpt")
+                        }
                       >
                         {showFullExcerpt
                           ? t("common.collapse")
