@@ -48,9 +48,9 @@ export const paperApi = {
     api.post<{ created: number; skipped: number; total: number }>(`/projects/${projectId}/papers/bulk`, { papers }).then(r => r.data),
   getChunks: (projectId: number, paperId: number, params?: PaginationParams & { chunk_type?: string }) =>
     api.get<PaginatedData<Record<string, unknown>>>(`/projects/${projectId}/papers/${paperId}/chunks`, { params }).then(r => r.data),
-  getCitationGraph: (projectId: number, paperId: number, depth?: number, maxNodes?: number) =>
+  getCitationGraph: (projectId: number, paperId: number, options?: { depth?: number; maxNodes?: number; mode?: string }) =>
     api.get<GraphData>(`/projects/${projectId}/papers/${paperId}/citation-graph`, {
-      params: { depth, max_nodes: maxNodes },
+      params: { depth: options?.depth, max_nodes: options?.maxNodes, mode: options?.mode },
     }).then(r => r.data),
   update: (projectId: number, paperId: number, data: Partial<Paper>) =>
     api.put<Paper>(`/projects/${projectId}/papers/${paperId}`, data).then(r => r.data),

@@ -249,14 +249,24 @@ async def get_citation_graph(
     paper_id: int,
     depth: int = Query(1, ge=1, le=2),
     max_nodes: int = Query(50, ge=10, le=200),
+    mode: str = Query("all", pattern="^(all|prior|derivative|similarity)$"),
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
 ):
-    """Get citation relationship graph for a paper via Semantic Scholar."""
+    """Get citation relationship graph for a paper via Semantic Scholar.
+
+    Modes: all (default), prior (references), derivative (citations), similarity (embeddings).
+    """
     from app.services.citation_graph_service import CitationGraphService
 
     svc = CitationGraphService(db)
-    graph = await svc.get_citation_graph(paper_id, project_id, depth=depth, max_nodes=max_nodes)
+    graph = await svc.get_citation_graph(
+        paper_id,
+        project_id,
+        depth=depth,
+        max_nodes=max_nodes,
+        mode=mode,  # type: ignore[arg-type]
+    )
     return ApiResponse(data=graph)
 
 

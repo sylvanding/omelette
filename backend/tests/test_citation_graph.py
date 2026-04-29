@@ -182,3 +182,120 @@ class TestCitationGraphAPI:
     async def test_pdf_serve_not_found(self, client: AsyncClient):
         resp = await client.get("/api/v1/projects/1/papers/99999/pdf")
         assert resp.status_code in (404, 500)
+
+
+class TestCitationGraphModes:
+    """Tests for prior/derivative/similarity graph modes."""
+
+    async def test_prior_works_mode_returns_only_references(self, project_with_paper):
+        from app.services.citation_graph_service import CitationGraphService
+
+        info = project_with_paper
+
+        def mock_fetch(url, limit):
+            if "citations" in url:
+                return MOCK_S2_CITATIONS["data"]
+            if "references" in url:
+                return MOCK_S2_REFERENCES["data"]
+            return []
+
+        mock_fetch_list = AsyncMock(side_effect=mock_fetch)
+
+        async with async_session_factory() as session:
+            svc = CitationGraphService(session)
+            with (
+                patch.object(svc, "_fetch_s2_list", mock_fetch_list),
+                patch.object(svc, "_resolve_s2_id", AsyncMock(return_value="abc123")),
+            ):
+                graph = await svc.get_citation_graph(info["paper_id"], info["project_id"], mode="prior")
+
+        assert graph["mode"] == "prior"
+        assert all(e["type"] == "cites" for e in graph["edges"])
+        assert len(graph["edges"]) >= 1
+
+    async def test_derivative_works_mode_returns_only_citations(self, project_with_paper):
+        from app.services.citation_graph_service import CitationGraphService
+
+        info = project_with_paper
+
+        def mock_fetch(url, limit):
+            if "citations" in url:
+                return MOCK_S2_CITATIONS["data"]
+            if "references" in url:
+                return MOCK_S2_REFERENCES["data"]
+            return []
+
+        mock_fetch_list = AsyncMock(side_effect=mock_fetch)
+
+        async with async_session_factory() as session:
+            svc = CitationGraphService(session)
+            with (
+                patch.object(svc, "_fetch_s2_list", mock_fetch_list),
+                patch.object(svc, "_resolve_s2_id", AsyncMock(return_value="abc123")),
+            ):
+                graph = await svc.get_citation_graph(info["paper_id"], info["project_id"], mode="derivative")
+
+        assert graph["mode"] == "derivative"
+        assert all(e["type"] == "cited_by" for e in graph["edges"])
+        assert len(graph["edges"]) >= 1
+
+    async def test_all_mode_returns_both_types(self, project_with_paper):
+        from app.services.citation_graph_service import CitationGraphService
+
+        info = project_with_paper
+
+        def mock_fetch(url, limit):
+            if "citations" in url:
+                return MOCK_S2_CITATIONS["data"]
+            if "references" in url:
+                return MOCK_S2_REFERENCES["data"]
+            return []
+
+        mock_fetch_list = AsyncMock(side_effect=mock_fetch)
+
+        async with async_session_factory() as session:
+            svc = CitationGraphService(session)
+            with (
+                patch.object(svc, "_fetch_s2_list", mock_fetch_list),
+                patch.object(svc, "_resolve_s2_id", AsyncMock(return_value="abc123")),
+            ):
+                graph = await svc.get_citation_graph(info["paper_id"], info["project_id"], mode="all")
+
+        assert graph["mode"] == "all"
+        edge_types = {e["type"] for e in graph["edges"]}
+        assert "cites" in edge_types
+        assert "cited_by" in edge_types
+
+    async def test_similarity_mode_returns_empty_without_chroma(self, project_with_paper):
+        from app.services.citation_graph_service import CitationGraphService
+
+        info = project_with_paper
+
+        async with async_session_factory() as session:
+            svc = CitationGraphService(session)
+            graph = await svc.get_citation_graph(info["paper_id"], info["project_id"], mode="similarity")
+
+        assert graph["mode"] == "similarity"
+        assert graph["nodes"] == []
+
+    @pytest.mark.asyncio
+    async def test_api_endpoint_with_mode(self, client: AsyncClient, project_with_paper):
+        info = project_with_paper
+        mock_graph = {
+            "nodes": [{"id": "abc123", "title": "Test", "year": 2017, "citation_count": 100, "is_local": True}],
+            "edges": [],
+            "center_id": "abc123",
+            "mode": "prior",
+        }
+
+        with patch("app.services.citation_graph_service.CitationGraphService") as mock_cls:
+            instance = mock_cls.return_value
+            instance.get_citation_graph = AsyncMock(return_value=mock_graph)
+
+            resp = await client.get(
+                f"/api/v1/projects/{info['project_id']}/papers/{info['paper_id']}/citation-graph",
+                params={"mode": "prior"},
+            )
+            assert resp.status_code == 200
+            data = resp.json()["data"]
+            assert data["mode"] == "prior"

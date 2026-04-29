@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { X, Loader2 } from 'lucide-react';
@@ -7,7 +7,7 @@ import { paperApi } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 
 const CitationGraphView = lazy(() => import('@/components/citation-graph/CitationGraphView'));
-import type { GraphData } from '@/components/citation-graph/CitationGraphView';
+import type { GraphData, GraphMode } from '@/components/citation-graph/CitationGraphView';
 
 interface CitationGraphDialogProps {
   projectId: number;
@@ -21,10 +21,12 @@ export function CitationGraphDialog({
   onClose,
 }: CitationGraphDialogProps) {
   const { t } = useTranslation();
+  const [mode, setMode] = useState<GraphMode>('all');
+  const [activePaperId, setActivePaperId] = useState(paperId);
 
   const { data, isLoading } = useQuery<GraphData>({
-    queryKey: queryKeys.papers.citationGraph(projectId, paperId),
-    queryFn: () => paperApi.getCitationGraph(projectId, paperId),
+    queryKey: queryKeys.papers.citationGraph(projectId, activePaperId, mode),
+    queryFn: () => paperApi.getCitationGraph(projectId, activePaperId, { mode }),
   });
 
   return (
@@ -55,6 +57,11 @@ export function CitationGraphDialog({
               data={data ?? { nodes: [], edges: [], center_id: null }}
               isLoading={isLoading}
               projectId={projectId}
+              mode={mode}
+              onModeChange={setMode}
+              onNodeClick={(newPaperId) => {
+                if (newPaperId) setActivePaperId(newPaperId);
+              }}
             />
           </Suspense>
         </div>

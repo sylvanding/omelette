@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 from fastapi import HTTPException
@@ -20,6 +20,8 @@ S2_FIELDS = "title,year,citationCount,externalIds,authors"
 # Error messages (extracted for maintainability)
 CITATION_NOT_FOUND = "无法获取引用数据：Semantic Scholar 未收录此论文"
 
+GraphMode = Literal["all", "prior", "derivative", "similarity"]
+
 
 class CitationGraphService:
     """Build citation graph data from Semantic Scholar API."""
@@ -34,11 +36,22 @@ class CitationGraphService:
         *,
         depth: int = 1,
         max_nodes: int = 50,
+        mode: GraphMode = "all",
     ) -> dict[str, Any]:
-        """Return {nodes, edges, center_id} for a paper's citation network."""
+        """Return {nodes, edges, center_id, mode} for a paper's citation network.
+
+        Modes:
+            all: Both prior works (references) and derivative works (citations).
+            prior: Only prior works — papers cited by the seed paper.
+            derivative: Only derivative works — papers citing the seed paper.
+            similarity: All project papers connected by embedding cosine similarity.
+        """
         paper = await self._db.get(Paper, paper_id)
         if not paper or paper.project_id != project_id:
             raise HTTPException(status_code=404, detail="Paper not found")
+
+        if mode == "similarity":
+            return await self._get_similarity_graph(paper, project_id, max_nodes)
 
         s2_id = await self._resolve_s2_id(paper)
         if not s2_id:
@@ -60,35 +73,151 @@ class CitationGraphService:
         }
         nodes[s2_id] = center_node
 
-        citations = await self._fetch_s2_list(f"{settings.s2_api_base}/paper/{s2_id}/citations", max_nodes // 2)
-        for item in citations:
-            cited_paper = item.get("citingPaper", {})
-            cid = cited_paper.get("paperId")
-            if not cid or cid in nodes:
-                continue
-            nodes[cid] = self._make_node(cited_paper, local_source_ids)
-            edges.append({"source": cid, "target": s2_id, "type": "cites"})
-            if len(nodes) >= max_nodes:
-                break
-
-        if len(nodes) < max_nodes:
-            references = await self._fetch_s2_list(
-                f"{settings.s2_api_base}/paper/{s2_id}/references", max_nodes - len(nodes)
-            )
-            for item in references:
-                ref_paper = item.get("citedPaper", {})
-                rid = ref_paper.get("paperId")
-                if not rid or rid in nodes:
+        if mode in ("all", "derivative"):
+            citations = await self._fetch_s2_list(f"{settings.s2_api_base}/paper/{s2_id}/citations", max_nodes // 2)
+            for item in citations:
+                cited_paper = item.get("citingPaper", {})
+                cid = cited_paper.get("paperId")
+                if not cid or cid in nodes:
                     continue
-                nodes[rid] = self._make_node(ref_paper, local_source_ids)
-                edges.append({"source": s2_id, "target": rid, "type": "cites"})
+                nodes[cid] = self._make_node(cited_paper, local_source_ids)
+                edges.append({"source": cid, "target": s2_id, "type": "cited_by"})
                 if len(nodes) >= max_nodes:
                     break
+
+        if mode in ("all", "prior"):
+            remaining = max_nodes - len(nodes)
+            if remaining > 0:
+                references = await self._fetch_s2_list(f"{settings.s2_api_base}/paper/{s2_id}/references", remaining)
+                for item in references:
+                    ref_paper = item.get("citedPaper", {})
+                    rid = ref_paper.get("paperId")
+                    if not rid or rid in nodes:
+                        continue
+                    nodes[rid] = self._make_node(ref_paper, local_source_ids)
+                    edges.append({"source": s2_id, "target": rid, "type": "cites"})
+                    if len(nodes) >= max_nodes:
+                        break
 
         return {
             "nodes": list(nodes.values()),
             "edges": edges,
             "center_id": s2_id,
+            "mode": mode,
+        }
+
+    async def _get_similarity_graph(self, paper: Paper, project_id: int, max_nodes: int) -> dict[str, Any]:
+        """Build a graph of project papers connected by embedding cosine similarity."""
+        try:
+            from app.services.rag_service import RAGService
+
+            rag = RAGService(llm=None)
+            collection = rag._get_collection(project_id)
+        except Exception:
+            logger.debug("ChromaDB unavailable for similarity graph", exc_info=True)
+            return {"nodes": [], "edges": [], "center_id": str(paper.id), "mode": "similarity"}
+
+        all_papers_result = await self._db.execute(
+            select(Paper)
+            .where(
+                Paper.project_id == project_id,
+                Paper.id != paper.id,
+            )
+            .limit(max_nodes - 1)
+        )
+        other_papers = list(all_papers_result.scalars().all())
+
+        seed_s2_id = paper.source_id if paper.source == "semantic_scholar" else None
+
+        nodes: list[dict] = []
+        edges: list[dict] = []
+
+        seed_embedding = None
+        try:
+            seed_ids = [f"paper_{paper.id}_chunk_0"]
+            result = collection.get(ids=seed_ids, include=["embeddings"])
+            if result["embeddings"] and len(result["embeddings"]) > 0:
+                import numpy as np
+
+                seed_embedding = np.mean(result["embeddings"], axis=0)
+        except Exception:
+            logger.debug("No embedding found for seed paper %d", paper.id)
+
+        if seed_embedding is None:
+            return {
+                "nodes": [],
+                "edges": [],
+                "center_id": str(paper.id),
+                "mode": "similarity",
+            }
+
+        import numpy as np
+
+        local_source_ids = await self._get_local_source_ids(project_id)
+
+        center_node = {
+            "id": str(paper.id),
+            "title": paper.title,
+            "year": paper.year,
+            "citation_count": paper.citation_count or 0,
+            "is_local": True,
+            "s2_id": seed_s2_id or "",
+            "paper_id": paper.id,
+        }
+        nodes.append(center_node)
+
+        for other in other_papers:
+            try:
+                chunk_ids = [f"paper_{other.id}_chunk_0"]
+                result = collection.get(ids=chunk_ids, include=["embeddings"])
+                if not result["embeddings"] or len(result["embeddings"]) == 0:
+                    continue
+                other_embedding = np.mean(result["embeddings"], axis=0)
+
+                norm_a = np.linalg.norm(seed_embedding)
+                norm_b = np.linalg.norm(other_embedding)
+                if norm_a == 0 or norm_b == 0:
+                    continue
+                similarity = float(np.dot(seed_embedding, other_embedding) / (norm_a * norm_b))
+
+                if similarity < 0.5:
+                    continue
+
+                other_s2_id = other.source_id if other.source == "semantic_scholar" else None
+                nodes.append(
+                    {
+                        "id": str(other.id),
+                        "title": other.title,
+                        "year": other.year,
+                        "citation_count": other.citation_count or 0,
+                        "is_local": str(other.id) in local_source_ids or True,
+                        "s2_id": other_s2_id or "",
+                        "paper_id": other.id,
+                    }
+                )
+                edges.append(
+                    {
+                        "source": str(paper.id),
+                        "target": str(other.id),
+                        "type": "similar",
+                        "similarity": round(similarity, 3),
+                    }
+                )
+            except Exception:
+                logger.debug("Failed to compute similarity for paper %d", other.id, exc_info=True)
+
+        edges.sort(key=lambda e: e["similarity"], reverse=True)
+        edges = edges[: max_nodes - 1]
+        connected_ids = {paper.id}
+        for e in edges:
+            connected_ids.add(int(e["target"]))
+        nodes = [n for n in nodes if n["paper_id"] in connected_ids]
+
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "center_id": str(paper.id),
+            "mode": "similarity",
         }
 
     async def _resolve_s2_id(self, paper: Paper) -> str | None:
