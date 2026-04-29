@@ -366,3 +366,36 @@ export const augmentedReadingApi = {
       `/projects/${projectId}/papers/${paperId}/definitions`,
     ).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Evidence Consensus API
+// ---------------------------------------------------------------------------
+
+export interface EvidencePaperFinding {
+  paper_id: number;
+  paper_title: string;
+  stance: 'support' | 'contradict' | 'mixed';
+  finding: string;
+  source_quote: string;
+  confidence: number;
+}
+
+export interface EvidenceConsensusResult {
+  support_count: number;
+  contradict_count: number;
+  mixed_count: number;
+  total_papers: number;
+  support_percentage: number;
+  contradict_percentage: number;
+  mixed_percentage: number;
+  papers: EvidencePaperFinding[];
+  overall_confidence: number;
+}
+
+export const evidenceConsensusApi = {
+  analyze: (projectId: number, question: string, topK?: number) =>
+    api.post<EvidenceConsensusResult>(
+      `/projects/${projectId}/rag/evidence-consensus`,
+      { question, top_k: topK },
+    ).then(r => r.data),
+};

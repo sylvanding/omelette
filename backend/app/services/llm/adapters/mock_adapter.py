@@ -75,6 +75,36 @@ MOCK_RESPONSES: dict[str, str] = {
             ]
         }
     ),
+    "evidence_consensus": json.dumps(
+        {
+            "papers": [
+                {
+                    "paper_id": 1,
+                    "paper_title": "Deep Learning for Microscopy",
+                    "stance": "support",
+                    "finding": "Deep learning methods significantly improve microscopy resolution by 2x.",
+                    "source_quote": "Our method achieves 2x resolution improvement over traditional approaches",
+                    "confidence": 0.85,
+                },
+                {
+                    "paper_id": 2,
+                    "paper_title": "Limitations of AI in Imaging",
+                    "stance": "contradict",
+                    "finding": "AI-based approaches introduce artifacts that limit practical resolution gains.",
+                    "source_quote": "Neural reconstruction introduces systematic artifacts that degrade image fidelity",
+                    "confidence": 0.72,
+                },
+                {
+                    "paper_id": 3,
+                    "paper_title": "Hybrid Imaging Methods",
+                    "stance": "mixed",
+                    "finding": "Combining traditional and AI methods shows promise but results vary by sample type.",
+                    "source_quote": "Hybrid approaches demonstrate variable success depending on specimen characteristics",
+                    "confidence": 0.65,
+                },
+            ]
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 
