@@ -41,4 +41,28 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - The `get_or_404` helper validates paper existence — no need to use the returned value if not needed
   - Frontend Slider component wasn't available in shadcn/ui — used native `<input type="range">` instead
   - Always check for component existence before importing from `@/components/ui/`
+
+---
+
+## [2026-04-30 07:45] - FEAT-002
+- Implemented evidence consensus visualization for research questions
+- Backend: Created `evidence_consensus_service.py` with stance classification (support/contradict/mixed)
+- Backend: Added POST /projects/{id}/rag/evidence-consensus endpoint in rag.py with Pydantic schemas
+- Backend: Added mock LLM response for `evidence_consensus` task type
+- Backend: Added 5 tests covering structured data, findings, confidence bounds, percentage sums, empty retrieval
+- Frontend: Created EvidenceConsensus component with recharts bar chart, paper findings, and stance badges
+- Frontend: Added typed API integration in services/api.ts
+- Files changed:
+  - backend/app/services/evidence_consensus_service.py (new)
+  - backend/app/api/v1/rag.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_evidence_consensus.py (new)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/components/evidence/EvidenceConsensus.tsx (new)
+- **Learnings for future iterations:**
+  - RAG endpoints that depend on ChromaDB retrieval need mocked `retrieve_only` in tests
+  - Pre-commit hooks (ruff, ruff-format) may reformat newly created Python files — re-stage after first commit attempt
+  - Percentage rounding across 3 categories can sum to 99.9 — allow 1% tolerance in tests
+  - Recharts is already available in the project for charting needs
+  - The rag.py file uses inline Pydantic schemas (not separate schema files) for request/response models
 ---

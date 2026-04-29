@@ -36,7 +36,7 @@
         "Tests: verify confidence scores bounded [0,1]"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Add evidence_consensus_service.py. Pipeline: RAG retrieval, LLM classifies stance, extract one-line findings. Frontend: new component in src/components/evidence/."
     },
     {
