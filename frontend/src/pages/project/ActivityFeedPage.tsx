@@ -207,11 +207,11 @@ function ActivityItem({ activity, onClick, t }: ActivityItemProps) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{title}</p>
-        {activity.details?.title && (
+        {activity.details?.title != null ? (
           <p className="truncate text-xs text-muted-foreground">
             {String(activity.details.title)}
           </p>
-        )}
+        ) : null}
       </div>
       <time className="shrink-0 text-xs text-muted-foreground">{time}</time>
     </button>
