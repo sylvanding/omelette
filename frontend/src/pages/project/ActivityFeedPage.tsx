@@ -209,7 +209,7 @@ function ActivityItem({ activity, onClick, t }: ActivityItemProps) {
         <p className="text-sm font-medium">{title}</p>
         {activity.details?.title && (
           <p className="truncate text-xs text-muted-foreground">
-            {activity.details.title as string}
+            {String(activity.details.title)}
           </p>
         )}
       </div>
@@ -220,7 +220,7 @@ function ActivityItem({ activity, onClick, t }: ActivityItemProps) {
 
 function getActivityTitle(activity: ActivityLog, t: (key: string, params?: Record<string, unknown>) => string): string {
   const actionKey = `activity.actions.${activity.action}`;
-  const translated = t(actionKey, activity.action);
+  const translated = t(actionKey, { defaultValue: activity.action });
   if (translated !== activity.action) return translated;
 
   const title = activity.details?.title as string | undefined;

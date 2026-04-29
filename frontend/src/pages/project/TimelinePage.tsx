@@ -36,6 +36,7 @@ export default function TimelinePage() {
   const [status, setStatus] = useState<PaperStatus | ''>('');
   const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
   const [year, setYear] = useState('');
+  const [qualityTag, setQualityTag] = useState('');
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
 
   const filters = useMemo(
@@ -115,12 +116,14 @@ export default function TimelinePage() {
         status={status}
         readingStatus={readingStatus}
         year={year}
+        qualityTag={qualityTag}
         sortBy="year"
         order="desc"
         onSearchChange={setSearch}
         onStatusChange={setStatus}
         onReadingStatusChange={setReadingStatus}
         onYearChange={setYear}
+        onQualityTagChange={setQualityTag}
         onSortChange={() => {}}
         onOrderChange={() => {}}
       />

@@ -44,7 +44,7 @@ describe('TimelinePage', () => {
     });
 
     // Click the year group header button to expand
-    const yearButton = container.querySelector('.rounded-lg.border.bg-card button');
+    const yearButton = container.querySelector('.rounded-lg.border.bg-card button') as HTMLElement | null;
     if (yearButton) {
       yearButton.click();
     }

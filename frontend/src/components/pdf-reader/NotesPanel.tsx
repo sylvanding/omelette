@@ -4,7 +4,8 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
-import { useDebouncedSave, SaveStatus } from '@/hooks/useDebouncedSave';
+import { useDebouncedSave } from '@/hooks/useDebouncedSave';
+import type { SaveStatus } from '@/hooks/useDebouncedSave';
 import 'katex/dist/katex.min.css';
 import { useTranslation } from 'react-i18next';
 
