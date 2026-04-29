@@ -84,7 +84,7 @@
         "Test: verify figure_path in chunk metadata points to a valid file"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/services/mineru_client.py line 63. Change 'return_images': 'false' to 'true'. Save images to /data0/djx/omelette/figures/{project_id}/paper_{paper_id}/."
     },
     {

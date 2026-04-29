@@ -272,3 +272,19 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - RGBA images (4 channels) need alpha stripped to RGB (3 channels) before passing to PaddleOCR
   - All 26 OCR tests pass, lint clean
 ---
+
+## [2026-04-30 01:30] - OPT-005
+- Enabled MinerU image extraction and store figure metadata
+- Files changed:
+  - `backend/app/services/mineru_client.py` — added `return_images` parameter to `parse_pdf()`, default `False` for backward compatibility; passes `return_images` to MinerU API
+  - `backend/app/services/ocr_service.py` — added `_save_mineru_images()` helper that decodes base64 images from `content_list` and saves to figures directory; updated `_extract_with_mineru()` to accept `project_id`/`paper_id` and extract figures; updated `process_pdf_async()` to forward project/paper context
+  - `backend/app/config.py` — added `figures_dir` setting with default `{data_dir}/figures`
+  - `backend/app/pipelines/nodes.py` — `ocr_node` passes `project_id` and `paper.id` to `process_pdf_async()`
+  - `backend/tests/test_mineru_client.py` — added test for `return_images` parameter in API request
+  - `backend/tests/test_ocr.py` — added TestMinerUImageExtraction class with 6 tests: image extraction/saving, empty content list, non-image filtering, multiple images, directory creation, async parameter forwarding
+- **Learnings for future iterations:**
+  - MinerU `content_list` entries with `type: "image"` contain `image_body` (base64) and `image_path` — need to match the old path back to markdown references
+  - The `chunk_mineru_markdown()` method already handles `figure_path` in chunk metadata from `![...](...)` markdown image refs — updating the markdown content after saving images ensures chunks get correct paths
+  - Pre-commit ruff-format hook may reformat files — need to re-add after hook runs
+  - All 40 tests pass (6 new for image extraction + 1 for MinerU return_images), lint clean
+---
