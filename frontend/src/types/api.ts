@@ -3,6 +3,7 @@
  */
 
 export type PaperStatus = 'pending' | 'metadata_only' | 'pdf_downloaded' | 'ocr_complete' | 'indexed' | 'error';
+export type ReadingStatus = 'unread' | 'reading' | 'read' | 'archived';
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type SubscriptionFrequency = 'daily' | 'weekly' | 'monthly';
 export type RewriteStyle = 'simplify' | 'academic' | 'translate_en' | 'translate_zh' | 'custom';
@@ -15,6 +16,7 @@ export interface PaginationParams {
 export interface PaperListFilters extends PaginationParams {
   q?: string;
   status?: PaperStatus;
+  reading_status?: ReadingStatus;
   year?: number;
   sort_by?: string;
   order?: 'asc' | 'desc';

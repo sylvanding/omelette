@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { paperApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
-import type { Paper, PaperStatus } from '@/types';
+import type { Paper, PaperStatus, ReadingStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -33,6 +33,7 @@ export default function PapersPage() {
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PaperStatus | ''>('');
+  const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
   const [year, setYear] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -50,11 +51,12 @@ export default function PapersPage() {
       page_size: pageSize,
       q: search || undefined,
       status: status || undefined,
+      reading_status: readingStatus || undefined,
       year: year ? Number(year) : undefined,
       sort_by: sortBy,
       order,
     }),
-    [page, pageSize, search, status, year, sortBy, order],
+    [page, pageSize, search, status, readingStatus, year, sortBy, order],
   );
 
   const { data: projectData } = useQuery({
@@ -244,11 +246,13 @@ export default function PapersPage() {
         <PapersFilterBar
           search={search}
           status={status}
+          readingStatus={readingStatus}
           year={year}
           sortBy={sortBy}
           order={order}
           onSearchChange={setSearch}
           onStatusChange={setStatus}
+          onReadingStatusChange={setReadingStatus}
           onYearChange={setYear}
           onSortChange={setSortBy}
           onOrderChange={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}

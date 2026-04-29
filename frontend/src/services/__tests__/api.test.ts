@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mocks/server';
 import { projectApi, paperApi } from '../api';
+import type { ReadingAnalytics } from '../api';
 
 describe('projectApi', () => {
   it('should fetch project list and return typed data', async () => {
@@ -48,5 +49,24 @@ describe('paperApi.update', () => {
     expect(result.project_id).toBe(2);
     expect(result.title).toBe('Updated Title');
     expect(result.notes).toBe('New notes');
+  });
+});
+
+describe('paperApi.getAnalytics', () => {
+  it('returns reading analytics data', async () => {
+    const result = await paperApi.getAnalytics(1);
+
+    expect(result).toHaveProperty('total');
+    expect(result).toHaveProperty('by_status');
+    expect(result).toHaveProperty('read_by_week');
+    expect(result).toHaveProperty('top_journals');
+  });
+
+  it('returns typed analytics data', async () => {
+    const result: ReadingAnalytics = await paperApi.getAnalytics(1);
+
+    expect(typeof result.total).toBe('number');
+    expect(result.by_status).toHaveProperty('unread');
+    expect(Array.isArray(result.top_journals)).toBe(true);
   });
 });

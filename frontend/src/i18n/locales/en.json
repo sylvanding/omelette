@@ -332,7 +332,26 @@
     "export": "Export",
     "exportFormat": "Export format",
     "exportSuccess": "Export downloaded successfully",
-    "exportFailed": "Export failed, please try again"
+    "exportFailed": "Export failed, please try again",
+    "readingStatuses": {
+      "unread": "Unread",
+      "reading": "Reading",
+      "read": "Read",
+      "archived": "Archived"
+    },
+    "readingStatus": "Reading Status",
+    "readingStatusFilter": "Filter by reading status"
+  },
+  "analytics": {
+    "title": "Reading Analytics",
+    "totalPapers": "Total Papers",
+    "readingProgress": "Reading Progress",
+    "weeklyReads": "Papers Read per Week",
+    "topJournals": "Top Journals",
+    "noData": "No data available",
+    "noReadData": "No papers have been marked as read yet",
+    "noJournalData": "No journal data available",
+    "loadFailed": "Failed to load analytics data"
   },
   "keywords": {
     "title": "Keywords",

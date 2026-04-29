@@ -23,6 +23,7 @@ async def list_papers(
     project_id: int,
     pagination: PaginationParams = Depends(),
     status: str | None = None,
+    reading_status: str | None = None,
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
     sort_by: str = "created_at",
@@ -37,6 +38,9 @@ async def list_papers(
     if status:
         base = base.where(Paper.status == status)
         count_base = count_base.where(Paper.status == status)
+    if reading_status:
+        base = base.where(Paper.reading_status == reading_status)
+        count_base = count_base.where(Paper.reading_status == reading_status)
     if year:
         base = base.where(Paper.year == year)
         count_base = count_base.where(Paper.year == year)
@@ -47,7 +51,7 @@ async def list_papers(
 
     total = (await db.execute(count_base)).scalar() or 0
 
-    allowed_sort = {"id", "title", "year", "created_at", "updated_at", "citation_count", "source"}
+    allowed_sort = {"id", "title", "year", "created_at", "updated_at", "citation_count", "source", "reading_status"}
     sort_col = getattr(Paper, sort_by) if sort_by in allowed_sort else Paper.created_at
     base = base.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
 
@@ -274,4 +278,41 @@ async def export_papers(
         content=content,
         media_type=FORMAT_MIME_TYPES[format],
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
+async def get_reading_analytics(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return aggregated reading analytics for all papers in the project."""
+    base = select(Paper).where(Paper.project_id == project_id)
+    papers = (await db.execute(base)).scalars().all()
+
+    total = len(papers)
+    status_counts: dict[str, int] = {"unread": 0, "reading": 0, "read": 0, "archived": 0}
+    for p in papers:
+        status_counts[p.reading_status] = status_counts.get(p.reading_status, 0) + 1
+
+    read_papers = [p for p in papers if p.reading_status == "read" and p.read_at]
+    read_by_week: dict[str, int] = {}
+    for p in read_papers:
+        week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
+        read_by_week[week] = read_by_week.get(week, 0) + 1
+
+    journal_counts: dict[str, int] = {}
+    for p in papers:
+        if p.journal:
+            journal_counts[p.journal] = journal_counts.get(p.journal, 0) + 1
+    top_journals = sorted(journal_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    return ApiResponse(
+        data={
+            "total": total,
+            "by_status": status_counts,
+            "read_by_week": dict(sorted(read_by_week.items())),
+            "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
+        }
     )

@@ -26,6 +26,13 @@ export const projectApi = {
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
 };
 
+export interface ReadingAnalytics {
+  total: number;
+  by_status: Record<string, number>;
+  read_by_week: Record<string, number>;
+  top_journals: Array<{ journal: string; count: number }>;
+}
+
 export const paperApi = {
   list: (projectId: number, params?: PaperListFilters) =>
     api.get<PaginatedData<Paper>>(`/projects/${projectId}/papers`, { params }).then(r => r.data),
@@ -47,6 +54,8 @@ export const paperApi = {
     }).then(r => r.data),
   update: (projectId: number, paperId: number, data: Partial<Paper>) =>
     api.put<Paper>(`/projects/${projectId}/papers/${paperId}`, data).then(r => r.data),
+  getAnalytics: (projectId: number) =>
+    api.get<ReadingAnalytics>(`/projects/${projectId}/papers/analytics`).then(r => r.data),
 };
 
 export type ExportFormat = 'bibtex' | 'ris' | 'endnote';

@@ -9,16 +9,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { PaperStatus } from '@/types';
+import type { PaperStatus, ReadingStatus } from '@/types';
 
 interface PapersFilterBarProps {
   search: string;
   status: PaperStatus | '';
+  readingStatus: ReadingStatus | '';
   year: string;
   sortBy: string;
   order: 'asc' | 'desc';
   onSearchChange: (value: string) => void;
   onStatusChange: (value: PaperStatus | '') => void;
+  onReadingStatusChange: (value: ReadingStatus | '') => void;
   onYearChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onOrderChange: () => void;
@@ -27,11 +29,13 @@ interface PapersFilterBarProps {
 export function PapersFilterBar({
   search,
   status,
+  readingStatus,
   year,
   sortBy,
   order,
   onSearchChange,
   onStatusChange,
+  onReadingStatusChange,
   onYearChange,
   onSortChange,
   onOrderChange,
@@ -90,6 +94,21 @@ export function PapersFilterBar({
           onChange={(e) => onYearChange(e.target.value)}
           className="w-24"
         />
+        <Select
+          value={readingStatus || '__all__'}
+          onValueChange={(v) => onReadingStatusChange(v === '__all__' ? '' : (v as ReadingStatus))}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder={t('papers.readingStatuses.unread')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{t('papers.readingStatuses.all', 'All')}</SelectItem>
+            <SelectItem value="unread">{t('papers.readingStatuses.unread')}</SelectItem>
+            <SelectItem value="reading">{t('papers.readingStatuses.reading')}</SelectItem>
+            <SelectItem value="read">{t('papers.readingStatuses.read')}</SelectItem>
+            <SelectItem value="archived">{t('papers.readingStatuses.archived')}</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger className="w-[140px]">
             <SelectValue />

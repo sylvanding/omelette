@@ -15,6 +15,8 @@ export const queryKeys = {
       ['citation-graph', projectId, paperId] as const,
     chunks: (projectId: number, paperId: number, params?: PaginationParams) =>
       ['chunks', projectId, paperId, params] as const,
+    analytics: (projectId: number) =>
+      ['paper-analytics', projectId] as const,
   },
   keywords: {
     list: (projectId: number, level?: number) =>

@@ -57,6 +57,8 @@ export const mockPaper: Paper = {
   status: 'indexed',
   tags: ['test'],
   notes: '',
+  reading_status: 'unread',
+  read_at: null,
   created_at: now,
   updated_at: now,
 };

@@ -31,6 +31,8 @@ export interface Paper {
   status: PaperStatus;
   tags: string[] | null;
   notes: string;
+  reading_status: ReadingStatus;
+  read_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +43,7 @@ export interface Author {
 }
 
 export type PaperStatus = 'pending' | 'metadata_only' | 'pdf_downloaded' | 'ocr_complete' | 'indexed' | 'error';
+export type ReadingStatus = 'unread' | 'reading' | 'read' | 'archived';
 
 export interface Keyword {
   id: number;

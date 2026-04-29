@@ -383,4 +383,16 @@ export const handlers = [
   http.post(`${apiBase}/projects/:id/rag/index`, () =>
     HttpResponse.json(mockResponse({ status: 'started' })),
   ),
+
+  // Paper analytics
+  http.get(`${apiBase}/projects/:id/papers/analytics`, () =>
+    HttpResponse.json(
+      mockResponse({
+        total: 1,
+        by_status: { unread: 1, reading: 0, read: 0, archived: 0 },
+        read_by_week: {},
+        top_journals: [{ journal: 'Test Journal', count: 1 }],
+      }),
+    ),
+  ),
 ];

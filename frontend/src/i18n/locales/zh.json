@@ -332,7 +332,26 @@
     "export": "导出",
     "exportFormat": "导出格式",
     "exportSuccess": "导出下载成功",
-    "exportFailed": "导出失败，请重试"
+    "exportFailed": "导出失败，请重试",
+    "readingStatuses": {
+      "unread": "未读",
+      "reading": "阅读中",
+      "read": "已读",
+      "archived": "已归档"
+    },
+    "readingStatus": "阅读状态",
+    "readingStatusFilter": "按阅读状态筛选"
+  },
+  "analytics": {
+    "title": "阅读分析",
+    "totalPapers": "论文总数",
+    "readingProgress": "阅读进度",
+    "weeklyReads": "每周阅读数",
+    "topJournals": "热门期刊",
+    "noData": "暂无数据",
+    "noReadData": "暂无已读论文",
+    "noJournalData": "暂无期刊数据",
+    "loadFailed": "加载分析数据失败"
   },
   "keywords": {
     "title": "关键词",
