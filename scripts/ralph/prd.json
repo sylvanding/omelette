@@ -52,7 +52,7 @@
         "Tests: verify no false positives on agreeing papers"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Add contradiction_service.py. Extract claims via LLM, group by embedding similarity, compare positions. Cache per project."
     },
     {

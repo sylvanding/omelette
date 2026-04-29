@@ -7,11 +7,14 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
 - LLM calls use `llm.chat_json()` for JSON responses and `task_type` for mock routing
 - New services go in `app/services/` with constructor taking `LLMClient`
 - Each route module exports `router = APIRouter(tags=["..."])` — mounted via `__init__.py`
+- New route modules need BOTH an import AND `api_router.include_router()` call in `__init__.py`
+- Router prefix is set in `include_router()` call in `__init__.py`, not on the `APIRouter()` constructor
 - Frontend API calls use axios instance from `@/lib/api` that unwraps `response.data`
 - Mock responses live in `app/services/llm/adapters/mock_adapter.py` — add task_type entries
 - Test fixtures use `client` (AsyncClient), `project_id`, and `setup_db` from conftest.py
 - Frontend uses `@tanstack/react-query` for data fetching with `useQuery`
 - shadcn/ui components may not exist for everything — use native HTML elements when missing (e.g., `<input type="range">` instead of missing Slider)
+- Endpoint tests that query DB should use `app.dependency_overrides[get_db]` for mock session injection
 
 ---
 
@@ -65,4 +68,28 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - Percentage rounding across 3 categories can sum to 99.9 — allow 1% tolerance in tests
   - Recharts is already available in the project for charting needs
   - The rag.py file uses inline Pydantic schemas (not separate schema files) for request/response models
+---
+
+## [2026-04-30 08:00] - FEAT-003
+- Implemented multi-document contradiction detection
+- Backend: Created contradiction_service.py with detect_contradictions() method that uses LLM to identify conflicting claims across papers
+- Backend: Created analysis.py router with POST /projects/{id}/analysis/contradictions endpoint
+- Backend: Registered analysis router in __init__.py with prefix /projects/{project_id}/analysis
+- Backend: Added mock LLM response for contradiction_detection task type
+- Backend: Added 8 tests (6 unit tests for service edge cases + 2 API endpoint tests)
+- Frontend: Created ContradictionReport component with summary cards, topic filter badges, and contradiction detail cards
+- Frontend: Added typed API integration (ContradictionPair, ContradictionResult, contradictionsApi) to services/api.ts
+- Files changed:
+  - backend/app/services/contradiction_service.py (new)
+  - backend/app/api/v1/analysis.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_contradiction_detection.py (new)
+  - frontend/src/components/contradiction/ContradictionReport.tsx (new)
+  - frontend/src/services/api.ts (modified)
+- **Learnings for future iterations:**
+  - New route modules should be registered in __init__.py with both an import and include_router call with appropriate prefix
+  - Tests for endpoints that query the DB should use app.dependency_overrides for get_db to inject mock sessions
+  - The LLM prompt should instruct the model to return both contradiction pairs AND topic groupings in the same response
+  - When adding task types to mock_adapter.py, ensure the JSON structure matches exactly what the service expects
 ---
