@@ -46,7 +46,7 @@
         "docker compose up --build succeeds and both services are healthy"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Backend already has /health endpoint. Frontend nginx needs health check endpoint."
     },
     {

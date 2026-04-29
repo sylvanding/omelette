@@ -1,0 +1,6 @@
+## 2026-04-29 - US-003
+- Implemented Docker health checks for both services
+- Files changed: Dockerfile, frontend/Dockerfile, docker-compose.yml
+- Backend: python urllib check to /api/v1/settings/health
+- Frontend: wget check to localhost:80
+- docker-compose.yml: frontend depends on backend condition: service_healthy
