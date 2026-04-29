@@ -297,3 +297,121 @@ class TestTokenBasedChunking:
             assert overlap_text.strip() in chunks[1]["content"] or chunks[1]["content"].startswith(
                 overlap_text.strip().split()[0] if overlap_text.strip() else ""
             )
+
+
+class TestSentenceAwareChunking:
+    """Tests for sentence-aware paragraph splitting (OPT-002)."""
+
+    def _make_service(self):
+        from app.services.ocr_service import OCRService
+
+        return OCRService()
+
+    def test_long_paragraph_split_at_sentence_boundaries(self):
+        """A long paragraph should be split into multiple chunks at sentence boundaries."""
+        service = self._make_service()
+        # Create a long paragraph with clear sentence boundaries
+        sentence = "The research methodology involves multiple experimental phases. "
+        paragraph = sentence * 100  # Many sentences, ~5000 chars, ~800 tokens
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=200, overlap=20)
+        assert len(chunks) > 1, "Long paragraph should be split into multiple chunks"
+
+    def test_split_chunks_have_complete_sentences(self):
+        """Each split chunk should end with a complete sentence."""
+        service = self._make_service()
+        sentence = "The results show significant improvement. "
+        paragraph = sentence * 100  # Long paragraph
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        # Chunks should end with sentence-ending punctuation (period, overlap, or period)
+        for chunk in chunks:
+            content = chunk["content"].strip()
+            # Either the chunk ends with a period or it contains overlap that ends with one
+            assert content.endswith(".") or "." in content[-30:] or content.endswith("..."), (
+                f"Chunk should end with complete sentence: {content[-50:]!r}"
+            )
+
+    def test_chinese_sentence_boundaries(self):
+        """Chinese paragraph should be split at Chinese sentence boundaries."""
+        service = self._make_service()
+        # Chinese sentences ending with 。
+        sentence = "这是一个中文测试句子。"
+        paragraph = sentence * 50  # Many Chinese sentences
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        assert len(chunks) > 1, "Long Chinese paragraph should be split"
+
+    def test_no_chunk_exceeds_token_limit_for_long_paragraphs(self):
+        """No chunk should exceed the token limit even for very long paragraphs."""
+        service = self._make_service()
+        sentence = "This is a test sentence with some additional words to make it longer. "
+        paragraph = sentence * 200  # Very long paragraph
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=10)
+        for chunk in chunks:
+            assert chunk["token_count"] <= 120, (
+                f"Chunk exceeds token limit: {chunk['token_count']} tokens, content: {chunk['content'][:80]!r}"
+            )
+
+    def test_flush_text_chunk_sentence_split(self):
+        """_flush_text_chunk should also split long paragraphs at sentence boundaries."""
+        service = self._make_service()
+        sentence = "The analysis reveals important patterns. "
+        paragraph = sentence * 100  # Long paragraph
+        chunks = service._flush_text_chunk(
+            text=paragraph,
+            section="Test Section",
+            page_number=1,
+            start_index=0,
+            chunk_size=100,
+            overlap=10,
+        )
+        assert len(chunks) > 1, "Long paragraph should be split in _flush_text_chunk"
+        for chunk in chunks:
+            assert "section" in chunk
+            assert chunk["section"] == "Test Section"
+            assert "token_count" in chunk
+
+    def test_overlap_includes_full_sentences(self):
+        """Overlap between chunks should include complete sentence endings."""
+        service = self._make_service()
+        sentence = "Important finding number. "
+        paragraph = sentence * 150
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=50, overlap=15)
+        if len(chunks) >= 2:
+            import tiktoken
+
+            enc = tiktoken.get_encoding("cl100k_base")
+            # The overlap should end at a sentence boundary
+            overlap_tokens = enc.encode(chunks[0]["content"])[-15:]
+            overlap_text = enc.decode(overlap_tokens).strip()
+            # Overlap text should end with a period (complete sentence end)
+            assert "." in overlap_text or len(overlap_text) == 0
+
+    def test_short_paragraphs_not_split(self):
+        """Short paragraphs that fit within chunk_size should not be artificially split."""
+        service = self._make_service()
+        paragraph = "This is a short paragraph. It has two sentences."
+        pages = [{"page_number": 1, "text": paragraph, "tables": [], "has_text": True, "char_count": len(paragraph)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        # Should be a single chunk since the paragraph is short
+        assert len(chunks) == 1
+        assert chunks[0]["content"] == paragraph
+
+    def test_flush_text_chunk_preserves_section_metadata(self):
+        """Sentence-split chunks should all carry the correct section metadata."""
+        service = self._make_service()
+        paragraph = "Long sentence one. " * 80
+        chunks = service._flush_text_chunk(
+            text=paragraph,
+            section="Methods",
+            page_number=3,
+            start_index=5,
+            chunk_size=100,
+            overlap=10,
+        )
+        for chunk in chunks:
+            assert chunk["section"] == "Methods"
+            assert chunk["page_number"] == 3

@@ -443,6 +443,14 @@ class OCRService:
 
         return chunks
 
+    def _split_sentences(self, text: str) -> list[str]:
+        """Split text at sentence boundaries (English and Chinese punctuation).
+
+        Handles both English (punctuation + whitespace) and Chinese (no whitespace) patterns.
+        """
+        sentences = re.split(r"(?<=[.。!！？])\s*|(?<=[\n])\s+", text.strip())
+        return [s for s in sentences if s.strip()]
+
     def _flush_text_chunk(
         self,
         text: str,
@@ -452,7 +460,7 @@ class OCRService:
         chunk_size: int,
         overlap: int,
     ) -> list[dict]:
-        """Split accumulated text into token-sized chunks, preserving paragraph boundaries."""
+        """Split accumulated text into token-sized chunks, preserving paragraph and sentence boundaries."""
         chunks: list[dict] = []
         paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
         current = ""
@@ -462,7 +470,12 @@ class OCRService:
         for para in paragraphs:
             para_tokens = enc.encode(para)
             current_tokens = enc.encode(current) if current else []
-            if len(current_tokens) + len(para_tokens) > chunk_size and current_tokens:
+            if len(current_tokens) + len(para_tokens) <= chunk_size:
+                current += "\n\n" + para if current else para
+                continue
+
+            # Paragraph doesn't fit — flush current chunk if any
+            if current_tokens:
                 has_formula = "$" in current
                 chunks.append(
                     {
@@ -477,10 +490,62 @@ class OCRService:
                 )
                 overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
                 overlap_text = enc.decode(overlap_tokens)
-                current = overlap_text + " " + para
                 idx += 1
+                prefix = overlap_text
             else:
-                current += "\n\n" + para if current else para
+                prefix = ""
+
+            # Split oversized paragraph at sentence boundaries
+            if len(para_tokens) > chunk_size:
+                sentences = self._split_sentences(para)
+                if sentences and max(len(enc.encode(s)) for s in sentences) > chunk_size:
+                    # Individual sentences still too large — token-based fallback
+                    chunk_acc: list[int] = []
+                    for token in para_tokens:
+                        chunk_acc.append(token)
+                        if len(chunk_acc) >= chunk_size:
+                            chunk_text = enc.decode(chunk_acc).strip()
+                            if chunk_text:
+                                chunks.append(
+                                    {
+                                        "content": chunk_text,
+                                        "page_number": page_number,
+                                        "chunk_index": idx,
+                                        "chunk_type": "text",
+                                        "section": section,
+                                        "has_formula": "$" in chunk_text,
+                                        "token_count": len(chunk_acc),
+                                    }
+                                )
+                                idx += 1
+                            chunk_acc = []
+                    current = enc.decode(chunk_acc) if chunk_acc else ""
+                    continue
+
+                current = prefix + " " + sentences[0] if prefix else sentences[0]
+                for sentence in sentences[1:] if sentences else []:
+                    sent_tokens = enc.encode(sentence)
+                    current_tokens = enc.encode(current) if current else []
+                    if len(current_tokens) + len(sent_tokens) > chunk_size and current_tokens:
+                        has_formula = "$" in current
+                        chunks.append(
+                            {
+                                "content": current.strip(),
+                                "page_number": page_number,
+                                "chunk_index": idx,
+                                "chunk_type": "text",
+                                "section": section,
+                                "has_formula": has_formula,
+                                "token_count": len(current_tokens),
+                            }
+                        )
+                        overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                        current = enc.decode(overlap_tokens) + " " + sentence
+                        idx += 1
+                    else:
+                        current += " " + sentence if current else sentence
+            else:
+                current = prefix + " " + para if prefix else para
 
         if current.strip():
             has_formula = "$" in current
@@ -517,7 +582,13 @@ class OCRService:
             for para in paragraphs:
                 para_tokens = enc.encode(para)
                 current_tokens = enc.encode(current_chunk) if current_chunk else []
-                if len(current_tokens) + len(para_tokens) > chunk_size and current_tokens:
+                if len(current_tokens) + len(para_tokens) <= chunk_size:
+                    current_chunk += "\n\n" + para if current_chunk else para
+                    current_page = page["page_number"]
+                    continue
+
+                # Paragraph doesn't fit — flush current chunk if any
+                if current_tokens:
                     chunks.append(
                         {
                             "content": current_chunk.strip(),
@@ -529,11 +600,59 @@ class OCRService:
                     )
                     overlap_tokens = current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
                     overlap_text = enc.decode(overlap_tokens)
-                    current_chunk = overlap_text + " " + para
                     chunk_index += 1
+                    prefix = overlap_text
                 else:
-                    current_chunk += "\n\n" + para if current_chunk else para
-                    current_page = page["page_number"]
+                    prefix = ""
+
+                # Split oversized paragraph at sentence boundaries
+                if len(para_tokens) > chunk_size:
+                    sentences = self._split_sentences(para)
+                    if sentences and max(len(enc.encode(s)) for s in sentences) > chunk_size:
+                        # Individual sentences still too large — token-based fallback
+                        chunk_acc: list[int] = []
+                        for token in para_tokens:
+                            chunk_acc.append(token)
+                            if len(chunk_acc) >= chunk_size:
+                                chunk_text = enc.decode(chunk_acc).strip()
+                                if chunk_text:
+                                    chunks.append(
+                                        {
+                                            "content": chunk_text,
+                                            "page_number": page["page_number"],
+                                            "chunk_index": chunk_index,
+                                            "chunk_type": "text",
+                                            "token_count": len(chunk_acc),
+                                        }
+                                    )
+                                    chunk_index += 1
+                                chunk_acc = []
+                        current_chunk = enc.decode(chunk_acc) if chunk_acc else ""
+                        continue
+
+                    current_chunk = prefix + " " + sentences[0] if prefix else sentences[0]
+                    for sentence in sentences[1:] if sentences else []:
+                        sent_tokens = enc.encode(sentence)
+                        current_tokens = enc.encode(current_chunk) if current_chunk else []
+                        if len(current_tokens) + len(sent_tokens) > chunk_size and current_tokens:
+                            chunks.append(
+                                {
+                                    "content": current_chunk.strip(),
+                                    "page_number": current_page,
+                                    "chunk_index": chunk_index,
+                                    "chunk_type": "text",
+                                    "token_count": len(current_tokens),
+                                }
+                            )
+                            overlap_tokens = (
+                                current_tokens[-overlap:] if len(current_tokens) > overlap else current_tokens
+                            )
+                            current_chunk = enc.decode(overlap_tokens) + " " + sentence
+                            chunk_index += 1
+                        else:
+                            current_chunk += " " + sentence if current_chunk else sentence
+                else:
+                    current_chunk = prefix + " " + para if prefix else para
 
         if current_chunk.strip():
             final_tokens = enc.encode(current_chunk)
