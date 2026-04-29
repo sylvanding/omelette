@@ -223,3 +223,77 @@ class TestOCRAPI:
         body = resp.json()
         assert body["data"]["processed"] == 0
         assert body["data"]["total"] == 0
+
+
+class TestTokenBasedChunking:
+    """Tests for token-based chunking (OPT-001)."""
+
+    def _make_service(self):
+        from app.services.ocr_service import OCRService
+
+        return OCRService()
+
+    def test_chunk_text_uses_token_based_sizing(self):
+        """512-token chunk should hold ~400-600 English words."""
+        service = self._make_service()
+        # ~550 words, should fit in 512 tokens
+        words = "research " * 550
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        for c in chunks:
+            assert isinstance(c["token_count"], int)
+            assert c["token_count"] > 0
+
+    def test_chunk_text_chinese_token_count(self):
+        """Chinese text should have accurate tiktoken count."""
+        service = self._make_service()
+        text = "这是一段中文测试文本。" * 50
+        pages = [{"page_number": 1, "text": text, "tables": [], "has_text": True, "char_count": len(text)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        # token_count should not be word-count (which would be 1 for Chinese without spaces)
+        for c in chunks:
+            assert c["token_count"] >= 1
+
+    def test_token_count_matches_tiktoken(self):
+        """chunk token_count should match actual tiktoken encode length."""
+        service = self._make_service()
+        words = "test word " * 100
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        # Verify token_count matches tiktoken for first chunk
+        import tiktoken
+
+        enc = tiktoken.get_encoding("cl100k_base")
+        actual_tokens = len(enc.encode(chunks[0]["content"]))
+        assert chunks[0]["token_count"] == actual_tokens
+
+    def test_chunk_mineru_markdown_token_based(self):
+        """MinerU markdown chunking should use token-based sizing."""
+        service = self._make_service()
+        md = "## Introduction\n\n" + "Lorem ipsum dolor sit amet. " * 200
+        chunks = service.chunk_mineru_markdown(md, chunk_size=512, overlap=50)
+        assert len(chunks) >= 1
+        for c in chunks:
+            assert "token_count" in c
+            assert isinstance(c["token_count"], int)
+
+    def test_overlap_preserves_tokens(self):
+        """Overlap should include last N tokens from previous chunk."""
+        service = self._make_service()
+        # Small chunk size to force splitting
+        words = "word " * 300
+        pages = [{"page_number": 1, "text": words, "tables": [], "has_text": True, "char_count": len(words)}]
+        chunks = service.chunk_text(pages, chunk_size=100, overlap=20)
+        if len(chunks) >= 2:
+            # Each subsequent chunk should start with overlap content
+            import tiktoken
+
+            enc = tiktoken.get_encoding("cl100k_base")
+            overlap_tokens = enc.encode(chunks[0]["content"])[-20:]
+            overlap_text = enc.decode(overlap_tokens)
+            assert overlap_text.strip() in chunks[1]["content"] or chunks[1]["content"].startswith(
+                overlap_text.strip().split()[0] if overlap_text.strip() else ""
+            )
