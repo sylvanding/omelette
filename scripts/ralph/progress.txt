@@ -313,3 +313,16 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The `insert` from SQLAlchemy needs to be imported inline when used in tests that don't import it at module level
   - All 14 search tests pass, lint clean
 ---
+
+## [2026-04-30 01:55] - OPT-008
+- Added weighted chunk averaging for similar paper matching
+- Files changed:
+  - `backend/app/api/v1/papers.py` — added `_section_weights` dict (abstract=3x, intro=2x, conclusion=2.5x, methods=1x, methodology=1x, results=1.5x, discussion=2x, references=0x); replaced `np.mean()` with `np.average()` using section-weighted embeddings for paper vector; replaced `sum(dists)/len(dists)` with `statistics.median()` for per-paper distance aggregation; reference-section chunks excluded from candidate scoring
+  - `backend/tests/test_similar_papers.py` (new) — 6 tests: weighted paper vector computation, median distance aggregation, references exclusion, zero-weight fallback to uniform mean, section name variations (intro/methodology), API response format unchanged
+- **Learnings for future iterations:**
+  - The `from ... import X` inside function bodies means patching must target the source module (`app.services.rag_service.RAGService`), not the importing module
+  - ChromaDB query results return nested lists (`metadatas: [[...]]`, `distances: [[...]]`) — the endpoint extracts `[0]` to get per-query results, so mocks must match this format
+  - Using `statistics.median` instead of mean protects against outlier chunks (e.g. a single dissimilar chunk doesn't drag down the whole paper score)
+  - Section weights map both "introduction" and "intro", "methods" and "methodology" to handle variation in section naming
+  - All 6 new tests pass, lint clean, 66 total tests in related test files pass
+---

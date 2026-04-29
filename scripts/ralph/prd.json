@@ -128,7 +128,7 @@
         "Test: verify API response format is unchanged"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/api/v1/papers.py lines 362-456. Add SECTION_WEIGHTS dict. Use statistics.median instead of mean for distance aggregation. Fetch section info from chunk metadata."
     },
     {
