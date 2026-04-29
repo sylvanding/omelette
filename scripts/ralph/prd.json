@@ -114,7 +114,7 @@
         "Test: verify import results match before"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/api/v1/search.py lines 58-73. Replace per-result DOI check with single batch query: select(Paper.doi).where(Paper.doi.in_(all_dois))."
     },
     {

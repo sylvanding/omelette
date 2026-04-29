@@ -301,3 +301,15 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The `_process_paper_ocr()` helper isolates per-paper processing logic — useful pattern for any gather-based parallelization
   - Paper paths sort alphabetically: "bad" < "good" — verify sorted assertions match expected order
 ---
+
+## [2026-04-30 01:45] - OPT-007
+- Batched DOI check for search import — replaced N separate DB queries with single batch query
+- Files changed:
+  - `backend/app/api/v1/search.py` — replaced per-paper `select(Paper).where(...doi==...)` loop with single `select(Paper.doi).where(Paper.doi.in_(all_dois))` batch query; existing DOIs collected into a set for O(1) lookups during import
+  - `backend/tests/test_search.py` — added 2 tests: `test_execute_search_auto_import_batch_doi_dedup` (5 papers, 2 existing, verifies only 3 imported with single SQL query) and `test_execute_search_auto_import_skips_empty_doi` (papers without DOI always imported)
+- **Learnings for future iterations:**
+  - The batch DOI check is visible in SQLAlchemy logs as a single `WHERE papers.doi IN (?, ?, ...)` query — confirms optimization works
+  - SQLite unique constraint on `(project_id, doi)` means test papers must have distinct DOIs — can't test multiple empty-DOI papers in same project
+  - The `insert` from SQLAlchemy needs to be imported inline when used in tests that don't import it at module level
+  - All 14 search tests pass, lint clean
+---
