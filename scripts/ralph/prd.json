@@ -54,7 +54,7 @@
         "Test: change a paper from 'Unread' to 'Read' and refresh the page, verify status persists"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: add 'reading_status' (String) and 'read_at' (DateTime) fields to Paper model. Add GET /projects/{id}/analytics endpoint returning aggregated stats. Frontend: add reading status badge to paper rows, status filter dropdown, new Analytics sub-route under project with charts (use recharts). Keyboard shortcut: 'r' to cycle status on selected paper."
     },
     {

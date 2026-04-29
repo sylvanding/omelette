@@ -55,3 +55,32 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - When using vi.useFakeTimers() in component tests, wrap in beforeEach/afterEach to avoid cross-test pollution
   - PDFReaderPage already fetches paper via react-query — pass data down rather than re-fetching
 ---
+
+## [2026-04-29 22:10] - US-010
+- Implemented reading progress tracker with reading analytics dashboard
+- Files changed:
+  - `backend/app/models/paper.py` — added ReadingStatus enum, reading_status and read_at columns
+  - `backend/app/schemas/paper.py` — updated PaperRead and PaperUpdate schemas
+  - `backend/app/api/v1/papers.py` — added reading_status filter, sort, and analytics endpoint
+  - `backend/alembic/versions/eed9e0cebcb5_*.py` (new) — migration for new columns
+  - `frontend/src/types/index.ts` — added ReadingStatus type, reading_status/read_at to Paper
+  - `frontend/src/types/api.ts` — added ReadingStatus type and reading_status to PaperListFilters
+  - `frontend/src/services/api.ts` — added paperApi.getAnalytics and ReadingAnalytics interface
+  - `frontend/src/lib/query-keys.ts` — added papers.analytics query key
+  - `frontend/src/pages/project/AnalyticsPage.tsx` (new) — dashboard with recharts pie/bar charts
+  - `frontend/src/pages/project/PapersPage.tsx` — added readingStatus filter state
+  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added reading status dropdown
+  - `frontend/src/pages/project/papers/papers-columns.tsx` — added reading status column
+  - `frontend/src/App.tsx` — added /analytics route
+  - `frontend/src/i18n/locales/en.json` — added reading/analytics keys
+  - `frontend/src/i18n/locales/zh.json` — added reading/analytics keys
+  - `frontend/src/pages/__tests__/AnalyticsPage.test.tsx` (new) — 5 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 analytics API tests
+  - `frontend/src/test/fixtures/index.ts` — added reading fields to mockPaper
+  - `frontend/src/test/mocks/handlers.ts` — added analytics endpoint handler
+- **Learnings for future iterations:**
+  - recharts was not installed — had to `npm install recharts`; use ResponsiveContainer for fluid sizing
+  - The axios interceptor unwraps `response.data` so analytics API returns typed data directly
+  - Badge variants use `success`/`info`/`destructive`/`warning` pattern — for custom colors use className directly
+  - The papers list endpoint `sort_by` parameter needed `reading_status` added to the allowed_sort set
+---
