@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -238,3 +238,40 @@ async def get_citation_graph(
     svc = CitationGraphService(db)
     graph = await svc.get_citation_graph(paper_id, project_id, depth=depth, max_nodes=max_nodes)
     return ApiResponse(data=graph)
+
+
+@router.post("/export", summary="Export papers as bibliography format")
+async def export_papers(
+    project_id: int,
+    format: str = Query(default="bibtex", description="Export format: bibtex, ris, or endnote"),
+    status: str | None = Query(default=None),
+    year: int | None = Query(default=None),
+    q: str | None = Query(default=None, description="Search title/abstract"),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Export papers in bibliography format, respecting the same filters as the list endpoint."""
+    from app.services.export_service import FORMAT_EXTENSIONS, FORMAT_MIME_TYPES, generate_export
+
+    if format not in ("bibtex", "ris", "endnote"):
+        raise HTTPException(status_code=400, detail="Format must be bibtex, ris, or endnote")
+
+    base = select(Paper).where(Paper.project_id == project_id)
+    if status:
+        base = base.where(Paper.status == status)
+    if year:
+        base = base.where(Paper.year == year)
+    if q:
+        like_q = f"%{q}%"
+        base = base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
+
+    papers = (await db.execute(base.order_by(Paper.year.desc()))).scalars().all()
+    content = generate_export(papers, format)
+    ext = FORMAT_EXTENSIONS[format]
+    filename = f"{project.name.replace(' ', '-').lower()}-{format}.{ext}"
+
+    return Response(
+        content=content,
+        media_type=FORMAT_MIME_TYPES[format],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Trash2, Zap, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { PapersExportDropdown } from './PapersExportDropdown';
 
 interface PapersToolbarProps {
   selectedRows: Set<string | number>;
@@ -10,6 +11,13 @@ interface PapersToolbarProps {
   onBatchDelete: () => void;
   onProcessAll: () => void;
   onAddPaper: () => void;
+  projectId: number;
+  paperFilters: {
+    q?: string;
+    status?: string;
+    year?: number;
+  };
+  paperCount: number;
 }
 
 export function PapersToolbar({
@@ -19,11 +27,19 @@ export function PapersToolbar({
   onBatchDelete,
   onProcessAll,
   onAddPaper,
+  projectId,
+  paperFilters,
+  paperCount,
 }: PapersToolbarProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex gap-2">
+      <PapersExportDropdown
+        projectId={projectId}
+        filters={paperFilters}
+        paperCount={paperCount}
+      />
       {selectedRows.size > 0 && (
         <ConfirmDialog
           trigger={

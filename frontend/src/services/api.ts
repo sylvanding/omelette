@@ -47,6 +47,49 @@ export const paperApi = {
     }).then(r => r.data),
 };
 
+export type ExportFormat = 'bibtex' | 'ris' | 'endnote';
+
+export interface ExportFilters {
+  format: ExportFormat;
+  q?: string;
+  status?: string;
+  year?: number;
+}
+
+/**
+ * Export papers as a downloadable file. Uses raw fetch to bypass the axios
+ * response interceptor (which unwraps JSON, not blobs).
+ */
+export async function exportPapers(projectId: number, filters: ExportFilters): Promise<void> {
+  const params = new URLSearchParams({ format: filters.format });
+  if (filters.q) params.set('q', filters.q);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.year) params.set('year', String(filters.year));
+
+  const response = await fetch(`/api/v1/projects/${projectId}/papers/export?${params}`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.status}`);
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `export-${filters.format}`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match) filename = match[1];
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const keywordApi = {
   list: (projectId: number, params?: PaginationParams & { level?: number }) =>
     api.get<PaginatedData<Keyword>>(`/projects/${projectId}/keywords`, { params }).then(r => r.data),

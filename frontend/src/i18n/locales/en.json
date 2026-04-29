@@ -328,7 +328,11 @@
       "year": "Year",
       "citation_count": "Citations",
       "title": "Title"
-    }
+    },
+    "export": "Export",
+    "exportFormat": "Export format",
+    "exportSuccess": "Export downloaded successfully",
+    "exportFailed": "Export failed, please try again"
   },
   "keywords": {
     "title": "Keywords",

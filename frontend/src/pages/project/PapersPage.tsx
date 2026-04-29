@@ -207,6 +207,13 @@ export default function PapersPage() {
       onBatchDelete={handleBatchDelete}
       onProcessAll={handleProcessAll}
       onAddPaper={() => setShowAddPaper(true)}
+      projectId={pid}
+      paperFilters={{
+        q: search || undefined,
+        status: status || undefined,
+        year: year ? Number(year) : undefined,
+      }}
+      paperCount={total}
     />
   );
 
