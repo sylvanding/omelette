@@ -33,6 +33,8 @@ export interface Paper {
   notes: string;
   reading_status: ReadingStatus;
   read_at: string | null;
+  rating: number;
+  quality_tags: string[] | null;
   created_at: string;
   updated_at: string;
 }

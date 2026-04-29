@@ -59,6 +59,8 @@ export const mockPaper: Paper = {
   notes: '',
   reading_status: 'unread',
   read_at: null,
+  rating: 0,
+  quality_tags: null,
   created_at: now,
   updated_at: now,
 };

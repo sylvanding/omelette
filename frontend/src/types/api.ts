@@ -18,6 +18,7 @@ export interface PaperListFilters extends PaginationParams {
   status?: PaperStatus;
   reading_status?: ReadingStatus;
   year?: number;
+  quality_tags?: string;
   sort_by?: string;
   order?: 'asc' | 'desc';
 }

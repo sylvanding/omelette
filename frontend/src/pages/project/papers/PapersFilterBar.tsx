@@ -15,12 +15,14 @@ interface PapersFilterBarProps {
   search: string;
   status: PaperStatus | '';
   readingStatus: ReadingStatus | '';
+  qualityTag: string;
   year: string;
   sortBy: string;
   order: 'asc' | 'desc';
   onSearchChange: (value: string) => void;
   onStatusChange: (value: PaperStatus | '') => void;
   onReadingStatusChange: (value: ReadingStatus | '') => void;
+  onQualityTagChange: (value: string) => void;
   onYearChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onOrderChange: () => void;
@@ -30,12 +32,14 @@ export function PapersFilterBar({
   search,
   status,
   readingStatus,
+  qualityTag,
   year,
   sortBy,
   order,
   onSearchChange,
   onStatusChange,
   onReadingStatusChange,
+  onQualityTagChange,
   onYearChange,
   onSortChange,
   onOrderChange,
@@ -56,7 +60,17 @@ export function PapersFilterBar({
     { value: 'created_at', label: t('papers.sortBy.created_at') },
     { value: 'year', label: t('papers.sortBy.year') },
     { value: 'citation_count', label: t('papers.sortBy.citation_count') },
+    { value: 'rating', label: t('papers.sortBy.rating', 'Rating') },
     { value: 'title', label: t('papers.sortBy.title') },
+  ];
+
+  const qualityTagOptions = [
+    { value: '', label: t('papers.qualityTags', 'Quality Tags') },
+    { value: 'Seminal', label: 'Seminal' },
+    { value: 'Survey', label: 'Survey' },
+    { value: 'Controversial', label: 'Controversial' },
+    { value: 'Replication', label: 'Replication' },
+    { value: 'Methodology', label: 'Methodology' },
   ];
 
   return (
@@ -107,6 +121,21 @@ export function PapersFilterBar({
             <SelectItem value="reading">{t('papers.readingStatuses.reading')}</SelectItem>
             <SelectItem value="read">{t('papers.readingStatuses.read')}</SelectItem>
             <SelectItem value="archived">{t('papers.readingStatuses.archived')}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={qualityTag || '__all__'}
+          onValueChange={(v) => onQualityTagChange(v === '__all__' ? '' : v)}
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder={t('papers.qualityTags', 'Quality Tags')} />
+          </SelectTrigger>
+          <SelectContent>
+            {qualityTagOptions.map((o) => (
+              <SelectItem key={o.value || '__all__'} value={o.value || '__all__'}>
+                {o.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={onSortChange}>

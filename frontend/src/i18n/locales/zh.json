@@ -328,6 +328,7 @@
       "created_at": "创建时间",
       "year": "年份",
       "citation_count": "引用数",
+      "rating": "评分",
       "title": "标题"
     },
     "export": "导出",
@@ -342,6 +343,8 @@
     },
     "readingStatus": "阅读状态",
     "readingStatusFilter": "按阅读状态筛选",
+    "rating": "评分",
+    "qualityTags": "质量标签",
     "compare": "对比",
     "compareTooMany": "请选择 2-5 篇论文进行对比",
     "compareTitle": "论文对比"

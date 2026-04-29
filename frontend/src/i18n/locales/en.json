@@ -328,6 +328,7 @@
       "created_at": "Created",
       "year": "Year",
       "citation_count": "Citations",
+      "rating": "Rating",
       "title": "Title"
     },
     "export": "Export",
@@ -342,6 +343,8 @@
     },
     "readingStatus": "Reading Status",
     "readingStatusFilter": "Filter by reading status",
+    "rating": "Rating",
+    "qualityTags": "Quality Tags",
     "compare": "Compare",
     "compareTooMany": "Select 2-5 papers to compare",
     "compareTitle": "Paper Comparison"

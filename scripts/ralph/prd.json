@@ -110,7 +110,7 @@
         "Test: sort papers by rating descending, verify highest-rated papers appear first"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: add 'rating' (Integer, 0-5) and 'quality_tags' (JSON array) fields to Paper model. Add query params for sort=rating and filter by quality_tags. Frontend: add star rating component (can use shadcn/ui or build custom), quality tag dropdown/badges. Update PapersPage table to include rating column and tag filters. Sort and filter integration with existing paperApi.list params."
     },
     {

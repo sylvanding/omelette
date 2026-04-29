@@ -9,6 +9,9 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
 - i18n keys nested under feature name in both `en.json` and `zh.json` (e.g., `papers.export`)
 - Tests use vitest with jsdom, fixtures in `src/test/fixtures/`
 - Toolbar components receive props from parent page (PapersPage → PapersToolbar → PapersExportDropdown)
+- `usePapersColumns` hook in `papers-columns.tsx` accepts callbacks for inline actions (rating change, delete, etc.)
+- Backend quality_tags filter uses PostgreSQL `overlap()` for array matching — pass comma-separated tags in query param
+- Alembic migration chain may be broken — set `down_revision = None` if prior migration files are missing
 
 ## [2026-04-29 21:40] - US-008
 - Implemented bibliography export (BibTeX, RIS, EndNote) for paper collections
@@ -124,4 +127,29 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The PapersFilterBar component is reusable across different paper views — it already handles search, status, reading status, and year filters
   - `screen.getByText()` throws when multiple elements match — use `getAllByText` for elements that appear in multiple places (year labels in timeline bar + year headers)
   - Paper card node size is computed as `Math.sqrt(citation_count) * 5` with min/max bounds for visual scaling
+---
+
+## [2026-04-29 22:35] - US-013
+- Implemented paper rating and quality scoring system
+- Files changed:
+  - `backend/app/models/paper.py` — added rating (Integer, default 0) and quality_tags (JSON) columns
+  - `backend/app/schemas/paper.py` — added rating and quality_tags to PaperRead and PaperUpdate schemas
+  - `backend/app/api/v1/papers.py` — added quality_tags filter param and rating to allowed_sort
+  - `backend/alembic/versions/b601f8ed7674_*.py` (new) — migration for new columns
+  - `frontend/src/types/index.ts` — added rating and quality_tags to Paper interface
+  - `frontend/src/types/api.ts` — added quality_tags to PaperListFilters
+  - `frontend/src/components/ui/star-rating.tsx` (new) — interactive star rating component with hover preview
+  - `frontend/src/components/ui/__tests__/star-rating.test.tsx` (new) — 6 unit tests
+  - `frontend/src/pages/project/papers/papers-columns.tsx` — added rating and quality_tags columns, onRatingChange callback
+  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added quality tags filter dropdown and rating sort option
+  - `frontend/src/pages/project/papers/__tests__/PapersFilterBar.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up qualityTag state, rating change handler
+  - `frontend/src/test/fixtures/index.ts` — added rating and quality_tags to mockPaper
+  - `frontend/src/i18n/locales/en.json` — added rating, qualityTags, sortBy.rating keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+- **Learnings for future iterations:**
+  - radix-ui Select components have `hasPointerCapture` issues with userEvent — test render state, not interaction
+  - The `usePapersColumns` hook pattern works well for injecting callbacks into column cells
+  - PostgreSQL `overlap()` is used for array containment in quality_tags filter — comma-separated tags match any
+  - Alembic migration chain was broken (prior migration file missing) — had to set `down_revision = None`
 ---

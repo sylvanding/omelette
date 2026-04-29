@@ -26,6 +26,7 @@ async def list_papers(
     reading_status: str | None = None,
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
+    quality_tags: str | None = Query(default=None, description="Filter by quality tag"),
     sort_by: str = "created_at",
     order: str = "desc",
     db: AsyncSession = Depends(get_db),
@@ -48,10 +49,25 @@ async def list_papers(
         like_q = f"%{q}%"
         base = base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
         count_base = count_base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
+    if quality_tags:
+        tags = [t.strip() for t in quality_tags.split(",") if t.strip()]
+        if tags:
+            base = base.where(Paper.quality_tags.overlap(tags))
+            count_base = count_base.where(Paper.quality_tags.overlap(tags))
 
     total = (await db.execute(count_base)).scalar() or 0
 
-    allowed_sort = {"id", "title", "year", "created_at", "updated_at", "citation_count", "source", "reading_status"}
+    allowed_sort = {
+        "id",
+        "title",
+        "year",
+        "created_at",
+        "updated_at",
+        "citation_count",
+        "source",
+        "reading_status",
+        "rating",
+    }
     sort_col = getattr(Paper, sort_by) if sort_by in allowed_sort else Paper.created_at
     base = base.order_by(sort_col.asc() if order == "asc" else sort_col.desc())
 
