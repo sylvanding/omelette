@@ -9,8 +9,8 @@ class ActivityRead(BaseModel):
     id: int
     project_id: int
     action: str
-    entity_type: str
-    entity_id: int
+    entity_type: str | None
+    entity_id: int | None
     actor: str
     details: dict | None
     created_at: datetime

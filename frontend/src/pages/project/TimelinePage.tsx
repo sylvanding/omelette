@@ -42,7 +42,7 @@ export default function TimelinePage() {
   const filters = useMemo(
     () => ({
       page: 1,
-      page_size: 500,
+      page_size: 100,
       q: search || undefined,
       status: status || undefined,
       reading_status: readingStatus || undefined,
