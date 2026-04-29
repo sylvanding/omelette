@@ -34,3 +34,18 @@
   - When adding aria-labels, use t() for i18n support with fallback strings
   - The `<nav>` element should also have `aria-label` for landmark navigation
 ---
+
+## 2026-04-29 21:10 - US-007
+- Split all four large components into focused sub-components
+- PapersPage.tsx: 632 → 360 lines (extracted PaperStatusBanner, CitationGraphDialog, used pre-existing PapersFilterBar/PapersToolbar/papers-columns)
+- WritingPage.tsx: 560 → 123 lines (extracted WritingTabs, WritingTabInputs, WritingOutputPanel, useWritingMutations)
+- AddPaperDialog.tsx: 542 → 332 lines (extracted AddPaperDialogFooter, UploadTabContent)
+- SubscriptionManager.tsx: 460 → 196 lines (extracted SubscriptionCard, SubscriptionFormDialog)
+- All extracted components under 200 lines each, focused responsibility
+- All aria-labels preserved from previous work
+- **Learnings for future iterations:**
+  - When extracting, move shared constants (SOURCE_OPTIONS, FREQUENCY_OPTIONS) to the extracted component file
+  - Clean up unused imports after extraction — ESLint will catch them
+  - The UploadTabContent extraction required moving handleDrop, formatSize, totalSize as well
+  - PapersPage was already partially extracted (filter bar, toolbar, columns) — just needed to finish the work
+---
