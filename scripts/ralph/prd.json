@@ -37,7 +37,7 @@
         "Test: verify overlap includes full sentences at the boundary"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Add sentence splitting regex: r'(?<=[.。!?])\\s+' for English/Chinese. In _flush_text_chunk, if a single paragraph exceeds chunk_size, split it into sentences first, then accumulate sentences into chunks."
     },
     {
@@ -54,7 +54,7 @@
         "Test: verify 1000 papers complete in under 5 seconds"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/services/dedup_service.py. Create title_fingerprint() function: normalize, remove stop words, sort tokens, create frozenset hash. Group papers by fingerprint. Only run SequenceMatcher within fingerprint groups. Add timing logs."
     },
     {
@@ -69,7 +69,7 @@
         "Test: verify /tmp has no leftover OCR files after processing"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Files: backend/app/services/ocr_service.py lines 156-203. Replace page.get_pixmap() -> PNG file -> ocr.ocr(file) with page.get_pixmap() -> Image.frombytes() -> ocr.ocr(image). Remove all os.remove(temp_file) calls."
     },
     {

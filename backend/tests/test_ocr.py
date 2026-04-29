@@ -415,3 +415,175 @@ class TestSentenceAwareChunking:
         for chunk in chunks:
             assert chunk["section"] == "Methods"
             assert chunk["page_number"] == 3
+
+
+class TestInMemoryOCR:
+    """Tests for in-memory PaddleOCR processing (OPT-004)."""
+
+    def test_ocr_passes_numpy_array_not_file_path(self):
+        """extract_text_ocr should pass a numpy array to PaddleOCR, not a file path."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])  # Only 'ocr' attribute, no 'predict'
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            # Create a mock PDF document with one page
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (100 * 100 * 3)  # 100x100 RGB
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("text", 0.9)]]]
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                # Verify ocr.ocr was called with a numpy array, not a string path
+                call_args = mock_ocr.ocr.call_args
+                assert call_args is not None
+                first_arg = call_args[0][0]
+                assert not isinstance(first_arg, str), "OCR should receive numpy array, not file path"
+                import numpy as np
+
+                assert isinstance(first_arg, np.ndarray)
+                assert first_arg.shape == (100, 100, 3)
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_no_temp_files_created(self):
+        """extract_text_ocr should not create any temporary files in /tmp."""
+        import glob as _glob
+
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (50 * 50 * 3)
+            mock_pix.height = 50
+            mock_pix.width = 50
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 2
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("hello", 0.95)]]]
+
+            # Capture temp files before
+            before_files = set(_glob.glob("/tmp/omelette_ocr_*"))
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                after_files = set(_glob.glob("/tmp/omelette_ocr_*"))
+                assert after_files == before_files, "No temporary OCR files should be created"
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_rgba_image_strips_alpha_channel(self):
+        """RGBA images should have alpha channel stripped before passing to OCR."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\x00" * (100 * 100 * 4)  # RGBA
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 4  # 4 channels = RGBA
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = [[["box", ("text", 0.9)]]]
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                service.extract_text_ocr(pdf_path)
+                call_args = mock_ocr.ocr.call_args
+                first_arg = call_args[0][0]
+                # Should be RGB (3 channels), not RGBA (4 channels)
+                assert first_arg.shape == (100, 100, 3)
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)
+
+    def test_ocr_empty_result_when_no_text_found(self):
+        """OCR should return empty text when no text is detected."""
+        from app.services.ocr_service import OCRService
+
+        mock_ocr = MagicMock(spec=["ocr"])
+
+        with (
+            patch.object(OCRService, "_get_paddle_ocr", return_value=mock_ocr),
+            patch("fitz.open") as mock_fitz_open,
+        ):
+            mock_pix = MagicMock()
+            mock_pix.samples = b"\xff" * (100 * 100 * 3)
+            mock_pix.height = 100
+            mock_pix.width = 100
+            mock_pix.n = 3
+
+            mock_page = MagicMock()
+            mock_page.get_pixmap.return_value = mock_pix
+
+            mock_pdf = MagicMock()
+            mock_pdf.__len__ = lambda self: 1
+            mock_pdf.__getitem__ = lambda self, idx: mock_page
+
+            mock_fitz_open.return_value.__enter__ = MagicMock(return_value=mock_pdf)
+            mock_fitz_open.return_value.__exit__ = MagicMock(return_value=False)
+
+            mock_ocr.ocr.return_value = []  # No text found
+
+            service = OCRService()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                pdf_path = f.name
+            try:
+                pages = service.extract_text_ocr(pdf_path)
+                assert len(pages) == 1
+                assert pages[0]["text"] == ""
+                assert pages[0]["has_text"] is False
+            finally:
+                Path(pdf_path).unlink(missing_ok=True)

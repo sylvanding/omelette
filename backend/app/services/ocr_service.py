@@ -10,7 +10,6 @@ Fallback chain: MinerU → pdfplumber → PaddleOCR (scanned PDFs).
 import json
 import logging
 import re
-import tempfile
 from pathlib import Path
 
 import pdfplumber
@@ -179,17 +178,18 @@ class OCRService:
                 result = ocr.predict(pdf_path)
             else:
                 import fitz
+                import numpy as np
 
                 result = []
                 with fitz.open(pdf_path) as pdf_doc:
                     for page_num in range(len(pdf_doc)):
                         page = pdf_doc[page_num]
                         pix = page.get_pixmap(dpi=150)
-                        img_path = str(Path(tempfile.gettempdir()) / f"omelette_ocr_page_{page_num}.png")
-                        pix.save(img_path)
-                        page_result = ocr.ocr(img_path, cls=False)
+                        img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
+                        if pix.n == 4:
+                            img_array = img_array[:, :, :3]
+                        page_result = ocr.ocr(img_array, cls=False)
                         result.append(page_result[0] if page_result else [])
-                        Path(img_path).unlink(missing_ok=True)
 
             for i, page_result in enumerate(result):
                 text_lines = []

@@ -14,6 +14,7 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
 - Backend quality_tags filter uses PostgreSQL `overlap()` for array matching — pass comma-separated tags in query param
 - Alembic migration chain may be broken — set `down_revision = None` if prior migration files are missing
 - New model files go in `backend/app/models/` with `Mapped[T]` + `mapped_column` pattern, register in `models/__init__.py` and add relationship on `Project`
+- Dedup fingerprint grouping: `_group_by_fingerprint()` in dedup_service.py uses exact match + (N-1)-word subsets to catch papers differing by one content word while keeping comparisons well below O(N^2)
 - New API routers in `backend/app/api/v1/` — register in `api/v1/__init__.py` with `include_router`
 - radix-ui SelectItem cannot have empty string value — use `"all"` or similar placeholder instead of `""`
 
@@ -231,4 +232,43 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - For overlap: encode current chunk, slice last N tokens, decode back — this correctly handles multi-byte characters
   - marker-pdf fallback now splits by token boundaries instead of fixed 2000-char windows
 - All 14 OCR tests pass, lint clean
+---
+
+## [2026-04-30 01:15] - OPT-002
+- Added sentence-aware paragraph splitting to chunking
+- Files changed:
+  - `backend/app/services/ocr_service.py` — added _split_sentences() helper; rewrote _flush_text_chunk() and chunk_text() to split oversized paragraphs at sentence boundaries with token-based fallback for individual long sentences
+  - `backend/tests/test_ocr.py` — added TestSentenceAwareChunking class with 8 tests covering English, Chinese, overflow, and metadata preservation
+- **Learnings for future iterations:**
+  - Sentence splitting regex must handle Chinese (no whitespace between sentences): `r"(?<=[.。!！？])\s*|(?<=[\n])\s+"`
+  - When paragraph is oversized and added to empty chunk, must still trigger sentence splitting — don't let `not current_tokens` bypass size checks
+  - The token-based fallback splits at exact token boundaries when individual sentences exceed chunk_size (rare edge case)
+  - All 22 OCR tests pass, lint clean
+---
+
+## [2026-04-30 01:15] - OPT-003
+- Optimized dedup from O(N^2) to near-O(N) with token fingerprint pre-grouping
+- Files changed:
+  - `backend/app/services/dedup_service.py` — added `title_fingerprint()`, `_group_by_fingerprint()`, and `_ENGLISH_STOP_WORDS`; rewrote `title_similarity_dedup()` and `find_llm_dedup_candidates()` to group by fingerprint before pairwise comparisons; added timing logs
+  - `backend/tests/test_dedup.py` — added 10 new tests: 5 for fingerprint functions, 2 for grouping, 2 for dedup correctness with fingerprint optimization, 1 performance test with 1000 papers
+- **Learnings for future iterations:**
+  - Stop word removal alone isn't enough — titles differing by one content word need `(N-1)`-word subset grouping to still be compared
+  - The sub-grouping is bounded to fingerprints with 2-5 words to prevent combinatorial explosion
+  - `frozenset` is hashable and can be used as dict keys for grouping — useful for any set-based grouping pattern
+  - SequenceMatcher similarity can differ significantly from human intuition — "network" vs "networks" drops similarity below 0.80 even though they're clearly the same concept
+  - All 29 dedup tests pass, lint clean
+  - Performance test: 1000 papers complete in under 5 seconds
+---
+
+## [2026-04-30 01:20] - OPT-004
+- Eliminated PaddleOCR disk I/O by using in-memory numpy array processing
+- Files changed:
+  - `backend/app/services/ocr_service.py` — removed `tempfile` import; replaced disk-based `pix.save()` + `ocr.ocr(file)` with `np.frombuffer(pix.samples).reshape()` to pass numpy array directly to PaddleOCR; strips alpha channel for RGBA images
+  - `backend/tests/test_ocr.py` — added TestInMemoryOCR class with 4 tests: numpy array verification, no temp files created, RGBA alpha stripping, empty result handling
+- **Learnings for future iterations:**
+  - `MagicMock(spec=["ocr"])` prevents auto-created attributes — needed because `hasattr(mock, "predict")` returns True on plain MagicMock
+  - `fitz` (PyMuPDF) is a local import inside the OCR function — patch `fitz.open` directly, not `app.services.ocr_service.fitz`
+  - Pixmap samples from fitz are raw bytes — `np.frombuffer` with proper reshape creates the image array without any copy
+  - RGBA images (4 channels) need alpha stripped to RGB (3 channels) before passing to PaddleOCR
+  - All 26 OCR tests pass, lint clean
 ---
