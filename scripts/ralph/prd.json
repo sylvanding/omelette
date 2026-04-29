@@ -72,7 +72,7 @@
         "Test: verify selecting more than 5 papers disables the Compare button with a tooltip"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: add POST /projects/{id}/papers/compare endpoint accepting paper_ids and optional focus dimension. Uses existing LLM provider to generate comparison from paper abstracts + OCR content. Frontend: add checkbox selection to PapersPage table, Compare button appears when 2-5 selected, new comparison dialog or full-page view with table layout. Reuse existing LLM infrastructure from writing_service.py."
     },
     {

@@ -395,4 +395,74 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Paper compare
+  http.post(`${apiBase}/projects/:id/papers/compare`, async ({ request }) => {
+    const body = (await request.json()) as { paper_ids?: number[]; focus?: string };
+    const ids = body.paper_ids ?? [1, 2];
+    return HttpResponse.json(
+      mockResponse({
+        papers: ids.map((id, i) => ({
+          id,
+          title: `Paper ${id} - Title ${i + 1}`,
+          authors: [{ name: `Author ${i + 1}` }],
+          year: 2024 - i,
+          journal: 'Test Journal',
+          citation_count: 10 * (i + 1),
+        })),
+        dimensions: [
+          {
+            dimension: 'research_question',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} investigates research question ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'method',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} uses method ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'dataset',
+            cells: ids.map((id) => ({
+              paper_id: id,
+              content: `Dataset used in paper ${id}.`,
+            })),
+          },
+          {
+            dimension: 'key_results',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} found result ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'limitations',
+            cells: ids.map((id) => ({
+              paper_id: id,
+              content: `Limitations of paper ${id}.`,
+            })),
+          },
+          {
+            dimension: 'year',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: String(2024 - i),
+            })),
+          },
+          {
+            dimension: 'citation_count',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: String(10 * (i + 1)),
+            })),
+          },
+        ],
+        summary: 'Mock AI-generated comparison summary highlighting differences between the selected papers.',
+      }),
+    );
+  }),
 ];

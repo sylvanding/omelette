@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mocks/server';
 import { projectApi, paperApi } from '../api';
 import type { ReadingAnalytics } from '../api';
+import type { PaperComparisonResponse } from '@/types/api';
 
 describe('projectApi', () => {
   it('should fetch project list and return typed data', async () => {
@@ -68,5 +69,29 @@ describe('paperApi.getAnalytics', () => {
     expect(typeof result.total).toBe('number');
     expect(result.by_status).toHaveProperty('unread');
     expect(Array.isArray(result.top_journals)).toBe(true);
+  });
+});
+
+describe('paperApi.compare', () => {
+  it('sends compare request and returns comparison data', async () => {
+    const result: PaperComparisonResponse = await paperApi.compare(1, {
+      paper_ids: [1, 2],
+    });
+
+    expect(result).toHaveProperty('papers');
+    expect(result).toHaveProperty('dimensions');
+    expect(result).toHaveProperty('summary');
+    expect(result.papers).toHaveLength(2);
+    expect(result.dimensions.length).toBeGreaterThan(0);
+  });
+
+  it('passes focus parameter to the request', async () => {
+    const result = await paperApi.compare(1, {
+      paper_ids: [1, 2, 3],
+      focus: 'Compare methods only',
+    });
+
+    expect(result.papers).toHaveLength(3);
+    expect(typeof result.summary).toBe('string');
   });
 });

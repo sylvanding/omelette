@@ -340,7 +340,10 @@
       "archived": "已归档"
     },
     "readingStatus": "阅读状态",
-    "readingStatusFilter": "按阅读状态筛选"
+    "readingStatusFilter": "按阅读状态筛选",
+    "compare": "对比",
+    "compareTooMany": "请选择 2-5 篇论文进行对比",
+    "compareTitle": "论文对比"
   },
   "analytics": {
     "title": "阅读分析",

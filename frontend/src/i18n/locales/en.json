@@ -340,7 +340,10 @@
       "archived": "Archived"
     },
     "readingStatus": "Reading Status",
-    "readingStatusFilter": "Filter by reading status"
+    "readingStatusFilter": "Filter by reading status",
+    "compare": "Compare",
+    "compareTooMany": "Select 2-5 papers to compare",
+    "compareTitle": "Paper Comparison"
   },
   "analytics": {
     "title": "Reading Analytics",

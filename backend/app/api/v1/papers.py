@@ -281,6 +281,31 @@ async def export_papers(
     )
 
 
+@router.post("/compare", response_model=ApiResponse[dict], summary="Compare selected papers")
+async def compare_papers(
+    project_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Generate an AI-powered comparison of 2-5 selected papers."""
+    from app.services.comparison_service import ComparisonService
+    from app.services.llm.client import get_llm_client
+
+    paper_ids = body.get("paper_ids", [])
+    if not isinstance(paper_ids, list) or len(paper_ids) < 2:
+        raise HTTPException(status_code=400, detail="Select 2-5 papers to compare")
+    if len(paper_ids) > 5:
+        raise HTTPException(status_code=400, detail="Cannot compare more than 5 papers")
+
+    focus = body.get("focus")
+
+    llm = get_llm_client()
+    svc = ComparisonService(db, llm)
+    result = await svc.compare_papers(paper_ids, focus=focus)
+    return ApiResponse(data=result)
+
+
 @router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
 async def get_reading_analytics(
     project_id: int,

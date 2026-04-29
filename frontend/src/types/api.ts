@@ -49,3 +49,33 @@ export interface SearchExecuteRequest {
   year_to?: number;
   auto_import?: boolean;
 }
+
+export interface PaperComparisonRequest {
+  paper_ids: number[];
+  focus?: string;
+}
+
+export interface PaperComparisonCell {
+  paper_id: number;
+  content: string;
+}
+
+export interface PaperComparisonDimension {
+  dimension: string;
+  cells: PaperComparisonCell[];
+}
+
+export interface PaperComparisonPaper {
+  id: number;
+  title: string;
+  authors: { name: string; affiliation?: string }[] | null;
+  year: number | null;
+  journal: string;
+  citation_count: number;
+}
+
+export interface PaperComparisonResponse {
+  papers: PaperComparisonPaper[];
+  dimensions: PaperComparisonDimension[];
+  summary: string;
+}

@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import type { PaginatedData } from '@/lib/api';
 import { apiUrl } from '@/lib/api-config';
 import type { Project, Paper, Keyword, Task } from '@/types';
-import type { PaginationParams, PaperListFilters } from '@/types/api';
+import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
 export const projectApi = {
@@ -56,6 +56,8 @@ export const paperApi = {
     api.put<Paper>(`/projects/${projectId}/papers/${paperId}`, data).then(r => r.data),
   getAnalytics: (projectId: number) =>
     api.get<ReadingAnalytics>(`/projects/${projectId}/papers/analytics`).then(r => r.data),
+  compare: (projectId: number, data: PaperComparisonRequest) =>
+    api.post<PaperComparisonResponse>(`/projects/${projectId}/papers/compare`, data).then(r => r.data),
 };
 
 export type ExportFormat = 'bibtex' | 'ris' | 'endnote';

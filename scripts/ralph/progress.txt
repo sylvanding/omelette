@@ -84,3 +84,27 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - Badge variants use `success`/`info`/`destructive`/`warning` pattern — for custom colors use className directly
   - The papers list endpoint `sort_by` parameter needed `reading_status` added to the allowed_sort set
 ---
+
+## [2026-04-29 22:22] - US-011
+- Implemented AI paper comparison view for selected papers
+- Files changed:
+  - `backend/app/services/comparison_service.py` (new) — LLM-powered paper comparison with structured JSON output
+  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/compare endpoint
+  - `frontend/src/types/api.ts` — added PaperComparisonRequest/Response types
+  - `frontend/src/services/api.ts` — added paperApi.compare method
+  - `frontend/src/pages/project/papers/PaperComparisonDialog.tsx` (new) — comparison dialog with table + AI summary
+  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added Compare button with tooltip for 2-5 selection
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up comparison dialog state
+  - `frontend/src/i18n/locales/en.json` — added compare keys
+  - `frontend/src/i18n/locales/zh.json` — added compare keys (Chinese)
+  - `frontend/src/test/mocks/handlers.ts` — added compare endpoint mock
+  - `frontend/src/pages/project/papers/__tests__/PaperComparisonDialog.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/project/papers/__tests__/PapersToolbar.test.tsx` (new) — 6 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 compare API tests
+- **Learnings for future iterations:**
+  - The `LLMClient.chat_json()` method handles JSON extraction with fallback for wrapped responses — useful for any structured LLM output
+  - PapersPage already has `selectedRows` state — reuse it for any multi-paper operation (compare, batch delete, etc.)
+  - Tooltip from `@/components/ui/tooltip` wraps disabled buttons well for explaining why they're disabled
+  - The DataTable already has checkbox selection built-in — just pass `selectedRows` and `onSelectionChange` props
+  - Avoid mutating `handlers.ts` with `server.use()` inside async tests without cleanup — can cause cross-test interference
+---
