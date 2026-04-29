@@ -1,0 +1,81 @@
+{
+  "project": "Omelette",
+  "branchName": "ralph/remaining-improvements",
+  "description": "Comprehensive project improvements for open-source readiness - remaining items after initial cleanup",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add frontend pre-commit hooks for ESLint and TypeScript",
+      "description": "As a developer, I need automatic linting and type checking before commits so I don't break the build.",
+      "acceptanceCriteria": [
+        "Add pre-commit hook that runs ESLint on staged .ts/.tsx files",
+        "Add pre-commit hook that runs tsc --noEmit on TypeScript files",
+        "Hooks use cached results for speed",
+        "Hooks don't block commits for warnings, only errors",
+        "Test: modifying a file with an ESLint error should fail pre-commit"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Backend already has ruff hooks. Add frontend hooks to .pre-commit-config.yaml"
+    },
+    {
+      "id": "US-002",
+      "title": "Add frontend unit tests for remaining components",
+      "description": "As a developer, I need test coverage above 80% so I can refactor with confidence.",
+      "acceptanceCriteria": [
+        "Add tests for MessageBubble component",
+        "Add tests for CitationCard component",
+        "Add tests for PDFViewer component",
+        "Add tests for CitationGraphView component",
+        "Run vitest run --coverage and verify >80% coverage",
+        "All tests pass on CI"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Use @testing-library/react. Check coverage with: cd frontend && npm test -- --coverage"
+    },
+    {
+      "id": "US-003",
+      "title": "Add Docker health check and multi-arch support",
+      "description": "As a deployer, I need Docker health checks so I can monitor container health automatically.",
+      "acceptanceCriteria": [
+        "Add HEALTHCHECK to frontend/Dockerfile (curl localhost:80)",
+        "Add HEALTHCHECK to backend/Dockerfile (curl localhost:8000/health)",
+        "Update docker-compose.yml to use health checks",
+        "Add restart policies based on health check status",
+        "docker compose up --build succeeds and both services are healthy"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Backend already has /health endpoint. Frontend nginx needs health check endpoint."
+    },
+    {
+      "id": "US-004",
+      "title": "Add error boundaries and loading states to frontend",
+      "description": "As a user, I need graceful error handling so I never see a blank screen when something breaks.",
+      "acceptanceCriteria": [
+        "Add ErrorBoundary component wrapping all page routes",
+        "Add loading skeletons for all data-fetching pages",
+        "Error boundary shows retry button and friendly message",
+        "Test: simulate network error and verify error boundary catches it"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Check if react-error-boundary package is already installed. If not, add it."
+    },
+    {
+      "id": "US-005",
+      "title": "Add accessibility improvements (ARIA labels, keyboard navigation)",
+      "description": "As a user relying on assistive technology, I need proper ARIA labels and keyboard shortcuts.",
+      "acceptanceCriteria": [
+        "All interactive elements have aria-label or aria-labelledby",
+        "Keyboard navigation works for all major flows (tab, enter, escape)",
+        "Color contrast meets WCAG AA standards",
+        "Screen reader can navigate sidebar properly"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Use axe-core or eslint-plugin-jsx-a11y for automated checks"
+    }
+  ]
+}
