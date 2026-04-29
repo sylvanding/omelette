@@ -4,3 +4,22 @@
 - Backend: python urllib check to /api/v1/settings/health
 - Frontend: wget check to localhost:80
 - docker-compose.yml: frontend depends on backend condition: service_healthy
+
+## 2026-04-29 20:47 - US-002
+- Added PDFViewer tests with react-pdf mock (7 tests)
+- Added CitationGraphView tests with d3 mocks (8 tests)
+- Added NodeDetailPanel tests (11 tests)
+- Added useTheme hook tests with matchMedia mocking (7 tests)
+- Added useSidebar hook tests with localStorage persistence (8 tests)
+- Fixed existing CitationCard et al. test (isExpanded was false)
+- Fixed PDFViewer keyboard handler missing dependency (useCallback)
+- Added aria-labels to PDFViewer toolbar and NodeDetailPanel close button
+- Added aria-live regions to PDFViewer indicators
+- Total tests: 76 passing (was 34)
+- **Learnings for future iterations:**
+  - react-pdf requires full mock to avoid import.meta.url crash in jsdom
+  - d3 modules (force, selection, drag, zoom) must all be mocked for CitationGraphView
+  - framer-motion AnimatePresence doesn't animate in jsdom - use isExpanded=true for state tests
+  - Test utils export `render` from @testing-library/react separately
+  - window.matchMedia not available in jsdom - must mock with Object.defineProperty
+---

@@ -31,8 +31,8 @@
         "All tests pass on CI"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": "Use @testing-library/react. Check coverage with: cd frontend && npm test -- --coverage"
+      "passes": true,
+      "notes": "76 tests passing. MessageBubble, CitationCard, PDFViewer, CitationGraphView, NodeDetailPanel, useTheme, useSidebar all tested."
     },
     {
       "id": "US-003",
@@ -76,6 +76,37 @@
       "priority": 5,
       "passes": true,
       "notes": "Use axe-core or eslint-plugin-jsx-a11y for automated checks"
+    },
+    {
+      "id": "US-006",
+      "title": "Add aria-labels to interactive elements lacking accessibility support",
+      "description": "As a user relying on assistive technology, I need all interactive elements to have proper ARIA labels.",
+      "acceptanceCriteria": [
+        "CitationCard action buttons (toggle, copy, link) have aria-labels",
+        "AddPaperDialog action buttons have aria-labels",
+        "MobileMenuSheet and MobileBottomNav have aria-labels",
+        "ToolModeSelector has aria-labels",
+        "PapersPage action buttons have aria-labels",
+        "All icon-only buttons have aria-label or aria-labelledby"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Survey found 25+ click handlers without aria-label. Check: CitationCard, NodeDetailPanel (done), AddPaperDialog, ToolModeSelector, MobileBottomNav, MobileMenuSheet, PapersPage"
+    },
+    {
+      "id": "US-007",
+      "title": "Split large page components into sub-components",
+      "description": "As a maintainer, I need large files split for easier navigation and code review.",
+      "acceptanceCriteria": [
+        "PapersPage.tsx (627 lines) split into toolbar, table, bulk actions sub-components",
+        "WritingPage.tsx (560 lines) split into editor, sidebar, toolbar sub-components",
+        "AddPaperDialog.tsx (542 lines) split into upload form, search form, step components",
+        "SubscriptionManager.tsx (460 lines) split into list, form, dialog components",
+        "Each extracted component has focused responsibility (<400 lines)"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Focus on PapersPage.tsx and WritingPage.tsx first. Ensure existing tests still pass after refactoring."
     }
   ]
 }
