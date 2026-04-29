@@ -60,7 +60,7 @@ export default function ActivityFeedPage() {
   const filters = useMemo(
     () => ({
       page: 1,
-      page_size: 500,
+      page_size: 100,
       ...(actionFilter ? { action: actionFilter } : {}),
     }),
     [actionFilter],
