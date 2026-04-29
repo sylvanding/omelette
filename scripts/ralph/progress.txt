@@ -129,6 +129,27 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - Paper card node size is computed as `Math.sqrt(citation_count) * 5` with min/max bounds for visual scaling
 ---
 
+## [2026-04-29 22:50] - US-014
+- Implemented related paper recommendations based on semantic similarity
+- Files changed:
+  - `backend/app/api/v1/papers.py` — added GET /projects/{id}/papers/{paper_id}/similar endpoint
+  - `frontend/src/services/api.ts` — added paperApi.getRelated method + SimilarPaper type
+  - `frontend/src/lib/query-keys.ts` — added related query key
+  - `frontend/src/components/pdf-reader/RelatedPapers.tsx` (new) — related papers list with similarity score badges
+  - `frontend/src/components/pdf-reader/PDFReaderLayout.tsx` — added "Related" tab to right panel
+  - `frontend/src/i18n/locales/en.json` — added related tab keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+  - `frontend/src/test/mocks/handlers.ts` — added similar papers endpoint mock
+  - `frontend/src/components/pdf-reader/__tests__/RelatedPapers.test.tsx` (new) — 5 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 API tests for getRelated
+- **Learnings for future iterations:**
+  - ChromaDB collections are per-project (`project_{id}`) with cosine distance metric — distances convert to similarity via `(1 - distance) * 100`
+  - Paper-level embeddings require averaging all chunk embeddings for that paper
+  - The `get_or_404` call validates paper exists before querying ChromaDB — prevents 404 vs empty result confusion
+  - `screen.getByText()` fails when text is split across child elements — use partial match or `textContent` assertion
+  - Authors truncation with "et al." requires `slice(0, 3)` before `join()`, not just appending after join
+---
+
 ## [2026-04-29 22:35] - US-013
 - Implemented paper rating and quality scoring system
 - Files changed:

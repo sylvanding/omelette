@@ -128,7 +128,7 @@
         "Test: verify 'Find more like this' returns papers from outside the current project"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: add GET /projects/{id}/papers/{paper_id}/similar?limit=10 endpoint. Use existing embedding_service.py and ChromaDB to query similar vectors. Frontend: add RelatedPapers card component to PDFReaderPage or paper detail panel. Display similarity score as a percentage badge. 'Find more like this' reuses the semantic search from knowledge bases."
     },
     {
