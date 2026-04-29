@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import {
   Search,
   Upload,
-  Loader2,
   FileText,
   X,
   Check,
@@ -15,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -24,6 +22,7 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { SearchQueryStep } from './search-add/SearchQueryStep';
 import { SearchResultsStep, type SearchResult } from './search-add/SearchResultsStep';
+import { AddPaperDialogFooter } from './AddPaperDialogFooter';
 
 interface AddPaperDialogProps {
   projectId: number;
@@ -438,104 +437,26 @@ export function AddPaperDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
-          {activeTab === 'search' && (
-            <>
-              {hasSearchResults ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchResults([]);
-                      setSelected(new Set());
-                    }}
-                  >
-                    {t('common.back')}
-                  </Button>
-                  <Button
-                    onClick={handleImportSelected}
-                    disabled={selected.size === 0 || isImporting}
-                  >
-                    {isImporting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        {t('kb.searchAdd.importing')}
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="size-4" />
-                        {t('kb.searchAdd.addSelected', {
-                          count: selected.size,
-                        })}
-                      </>
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleOpenChange(false)}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    onClick={handleSearch}
-                    disabled={!query.trim() || isSearching}
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        {t('kb.searchAdd.searching')}
-                      </>
-                    ) : (
-                      <>
-                        <Search className="size-4" />
-                        {t('common.search')}
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-          {activeTab === 'upload' && (
-            <>
-              {uploadResult ? (
-                <Button onClick={handleUploadContinue}>
-                  {uploadResult.conflicts.length > 0
-                    ? t('kb.upload.continueToConflicts')
-                    : t('kb.upload.done')}
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleOpenChange(false)}
-                  >
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    onClick={handleUpload}
-                    disabled={files.length === 0 || isUploading}
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        {t('kb.upload.uploading')}
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="size-4" />
-                        {t('kb.upload.upload')}
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </DialogFooter>
+        <AddPaperDialogFooter
+          activeTab={activeTab}
+          hasSearchResults={hasSearchResults}
+          selectedCount={selected.size}
+          isImporting={isImporting}
+          isSearching={isSearching}
+          query={query}
+          isUploading={isUploading}
+          filesCount={files.length}
+          uploadResult={uploadResult}
+          onBack={() => {
+            setSearchResults([]);
+            setSelected(new Set());
+          }}
+          onImport={handleImportSelected}
+          onSearch={handleSearch}
+          onCancel={() => handleOpenChange(false)}
+          onUpload={handleUpload}
+          onContinue={handleUploadContinue}
+        />
       </DialogContent>
     </Dialog>
   );
