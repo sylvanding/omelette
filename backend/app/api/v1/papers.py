@@ -481,3 +481,78 @@ async def get_similar_papers(
         )
 
     return ApiResponse(data=similar_papers)
+
+
+@router.post("/{paper_id}/highlights", response_model=ApiResponse[dict], summary="Generate skimming highlights")
+async def generate_highlights(
+    project_id: int,
+    paper_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Generate Goal/Method/Result skimming highlights for a paper."""
+    from app.api.deps import get_llm
+    from app.services.augmented_reading_service import AugmentedReadingService
+
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    paper_content = f"Title: {paper.title or ''}\nAbstract: {paper.abstract or ''}"
+    if paper.notes:
+        paper_content += f"\n\nNotes: {paper.notes}"
+
+    llm = get_llm()
+    svc = AugmentedReadingService(llm)
+    highlights = await svc.generate_highlights(paper_content)
+    return ApiResponse(data={"highlights": highlights})
+
+
+@router.get(
+    "/{paper_id}/citation-cards", response_model=ApiResponse[dict], summary="Get citation cards for project papers"
+)
+async def get_citation_cards(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Generate TLDR citation cards for papers in the project."""
+    from app.api.deps import get_llm
+    from app.services.augmented_reading_service import AugmentedReadingService
+
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    # Get other papers in the project for citation cards
+    stmt = select(Paper).where(Paper.project_id == project_id, Paper.id != paper_id).limit(10)
+    result = await db.execute(stmt)
+    other_papers = result.scalars().all()
+
+    paper_dicts = [{"paper_id": p.id, "title": p.title, "abstract": p.abstract, "doi": p.doi} for p in other_papers]
+
+    llm = get_llm()
+    svc = AugmentedReadingService(llm)
+    cards = await svc.generate_citation_cards(paper_dicts)
+    return ApiResponse(data={"cards": cards})
+
+
+@router.get("/{paper_id}/definitions", response_model=ApiResponse[dict], summary="Get term definitions from paper")
+async def get_definitions(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Extract and define key technical terms from a paper."""
+    from app.api.deps import get_llm
+    from app.services.augmented_reading_service import AugmentedReadingService
+
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    paper_content = f"Title: {paper.title or ''}\nAbstract: {paper.abstract or ''}"
+    if paper.notes:
+        paper_content += f"\n\nNotes: {paper.notes}"
+
+    llm = get_llm()
+    svc = AugmentedReadingService(llm)
+    definitions = await svc.generate_definitions(paper_content)
+    return ApiResponse(data={"definitions": definitions})

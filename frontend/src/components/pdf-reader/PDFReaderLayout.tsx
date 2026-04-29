@@ -7,7 +7,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SelectionQA } from './SelectionQA';
 import NotesPanel from './NotesPanel';
 import RelatedPapers from './RelatedPapers';
-import { paperApi } from '@/services/api';
+import HighlightOverlay from './HighlightOverlay';
+import CitationCardPanel from './CitationCardPanel';
+import { paperApi, augmentedReadingApi } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
 
 const PDFViewer = lazy(() => import('./PDFViewer'));
 
@@ -42,6 +45,37 @@ export default function PDFReaderLayout({
     await paperApi.update(projectId, paperId, { notes: content });
   };
 
+  // Augmented reading data
+  const highlightsQuery = useQuery({
+    queryKey: ['highlights', projectId, paperId],
+    queryFn: async () => {
+      const content = `Title: ${paperTitle}\nAbstract: `;
+      return augmentedReadingApi.getHighlights(projectId, paperId, content);
+    },
+    enabled: activeTab === 'highlights',
+  });
+
+  const citationCardsQuery = useQuery({
+    queryKey: ['citation-cards', projectId, paperId],
+    queryFn: () => augmentedReadingApi.getCitationCards(projectId, paperId),
+    enabled: activeTab === 'citations',
+  });
+
+  const definitionsQuery = useQuery({
+    queryKey: ['definitions', projectId, paperId],
+    queryFn: () => augmentedReadingApi.getDefinitions(projectId, paperId),
+    enabled: activeTab === 'citations',
+  });
+
+  const handleRefreshHighlights = () => {
+    highlightsQuery.refetch();
+  };
+
+  const handleRefreshCitations = () => {
+    citationCardsQuery.refetch();
+    definitionsQuery.refetch();
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       {/* Header */}
@@ -73,6 +107,8 @@ export default function PDFReaderLayout({
                   <TabsTrigger value="notes" className="text-xs">{t('notes.tab', 'Notes')}</TabsTrigger>
                   <TabsTrigger value="qa" className="text-xs">{t('notes.qa', 'Q&A')}</TabsTrigger>
                   <TabsTrigger value="related" className="text-xs">{t('papers.related.tab', 'Related')}</TabsTrigger>
+                  <TabsTrigger value="highlights" className="text-xs">Highlights</TabsTrigger>
+                  <TabsTrigger value="citations" className="text-xs">Citations</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="notes" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
@@ -94,6 +130,21 @@ export default function PDFReaderLayout({
               </TabsContent>
               <TabsContent value="related" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
                 <RelatedPapers projectId={projectId} paperId={paperId} />
+              </TabsContent>
+              <TabsContent value="highlights" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <HighlightOverlay
+                  highlights={highlightsQuery.data?.highlights ?? []}
+                  loading={highlightsQuery.isFetching}
+                  onRefresh={handleRefreshHighlights}
+                />
+              </TabsContent>
+              <TabsContent value="citations" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <CitationCardPanel
+                  cards={citationCardsQuery.data?.cards ?? []}
+                  definitions={definitionsQuery.data?.definitions ?? []}
+                  loading={citationCardsQuery.isFetching || definitionsQuery.isFetching}
+                  onRefresh={handleRefreshCitations}
+                />
               </TabsContent>
             </Tabs>
           </Panel>

@@ -1,358 +1,44 @@
 # Ralph Progress Log
-Started: Wed Apr 29 09:30:31 PM CST 2026
+Started: Thu Apr 30 07:12:46 AM CST 2026
 ---
 
 ## Codebase Patterns
-- Token-based chunking uses tiktoken cl100k_base — `_get_tiktoken_encoder()` in ocr_service.py lazy-initializes for all chunk sizing
-- UI components in `src/components/ui/` use radix-ui primitives via `radix-ui` package (follow `select.tsx`, `popover.tsx` patterns)
-- API service layer in `src/services/api.ts` — axios interceptor unwraps `response.data`, use raw `fetch` for blob downloads
-- Backend endpoints in `backend/app/api/v1/` — use `ApiResponse<T>` wrapper, `FileResponse`/`Response` for file downloads
-- i18n keys nested under feature name in both `en.json` and `zh.json` (e.g., `papers.export`)
-- Tests use vitest with jsdom, fixtures in `src/test/fixtures/`
-- Toolbar components receive props from parent page (PapersPage → PapersToolbar → PapersExportDropdown)
-- `usePapersColumns` hook in `papers-columns.tsx` accepts callbacks for inline actions (rating change, delete, etc.)
-- Backend quality_tags filter uses PostgreSQL `overlap()` for array matching — pass comma-separated tags in query param
-- Alembic migration chain may be broken — set `down_revision = None` if prior migration files are missing
-- New model files go in `backend/app/models/` with `Mapped[T]` + `mapped_column` pattern, register in `models/__init__.py` and add relationship on `Project`
-- Dedup fingerprint grouping: `_group_by_fingerprint()` in dedup_service.py uses exact match + (N-1)-word subsets to catch papers differing by one content word while keeping comparisons well below O(N^2)
-- New API routers in `backend/app/api/v1/` — register in `api/v1/__init__.py` with `include_router`
-- radix-ui SelectItem cannot have empty string value — use `"all"` or similar placeholder instead of `""`
+- Backend uses `ApiResponse` envelope for all endpoints with `{code, message, data}` structure
+- LLM calls use `llm.chat_json()` for JSON responses and `task_type` for mock routing
+- New services go in `app/services/` with constructor taking `LLMClient`
+- Each route module exports `router = APIRouter(tags=["..."])` — mounted via `__init__.py`
+- Frontend API calls use axios instance from `@/lib/api` that unwraps `response.data`
+- Mock responses live in `app/services/llm/adapters/mock_adapter.py` — add task_type entries
+- Test fixtures use `client` (AsyncClient), `project_id`, and `setup_db` from conftest.py
+- Frontend uses `@tanstack/react-query` for data fetching with `useQuery`
+- shadcn/ui components may not exist for everything — use native HTML elements when missing (e.g., `<input type="range">` instead of missing Slider)
 
-## [2026-04-29 21:40] - US-008
-- Implemented bibliography export (BibTeX, RIS, EndNote) for paper collections
+---
+
+## [2026-04-30 07:20] - FEAT-001
+- Implemented augmented PDF reading with skimming highlights and inline citation cards
+- Backend: Created `augmented_reading_service.py` with 3 methods (highlights, citation cards, definitions)
+- Backend: Added 3 endpoints to papers.py: POST /highlights, GET /citation-cards, GET /definitions
+- Backend: Added Pydantic schemas in `schemas/augmented_reading.py`
+- Backend: Added mock responses for all 3 task types
+- Backend: Added 6 tests (success + 404 for each endpoint)
+- Frontend: Added `augmentedReadingApi` to services/api.ts with typed interfaces
+- Frontend: Created HighlightOverlay component with category toggles and opacity control
+- Frontend: Created CitationCardPanel component with citations/definitions tabs
+- Frontend: Integrated as new "Highlights" and "Citations" tabs in PDFReaderLayout
 - Files changed:
-  - `backend/app/services/export_service.py` (new) — format generators
-  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/export endpoint
-  - `frontend/src/lib/bibliography-export.ts` (new) — frontend format utilities + download
-  - `frontend/src/lib/__tests__/bibliography-export.test.ts` (new) — 13 unit tests
-  - `frontend/src/components/ui/dropdown-menu.tsx` (new) — radix-ui dropdown menu wrapper
-  - `frontend/src/pages/project/papers/PapersExportDropdown.tsx` (new) — export dropdown component
-  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added export button
-  - `frontend/src/pages/project/PapersPage.tsx` — wired up export props
-  - `frontend/src/services/api.ts` — added exportPapers function
-  - `frontend/src/i18n/locales/en.json` — added export keys
-  - `frontend/src/i18n/locales/zh.json` — added export keys
+  - backend/app/services/augmented_reading_service.py (new)
+  - backend/app/schemas/augmented_reading.py (new)
+  - backend/app/api/v1/papers.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_api_projects_papers.py (modified)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (modified)
+  - frontend/src/components/pdf-reader/HighlightOverlay.tsx (new)
+  - frontend/src/components/pdf-reader/CitationCardPanel.tsx (new)
 - **Learnings for future iterations:**
-  - The axios interceptor unwraps `response.data` — for blob/file downloads, use raw `fetch` instead
-  - `radix-ui` umbrella package (v1.4.3) includes DropdownMenu — import as `import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"`
-  - Backend export endpoint should accept the same filter params as list endpoint (q, status, year) to respect current page filters
-  - File downloads work best with `Response` + `Content-Disposition` header on backend side
-- Avoid nesting radix-ui Tabs inside TabsContent — use simple state buttons instead to prevent rendering conflicts
-- The PDFReaderPage already fetches paper data with react-query, pass notes from there to PDFReaderLayout
-- `paperApi.update` was missing from api.ts but backend PUT endpoint existed — needed to add frontend method + MSW handler
----
-
-## [2026-04-29 21:50] - US-009
-- Implemented paper notes and annotations system
-- Files changed:
-  - `frontend/src/hooks/useDebouncedSave.ts` (new) — debounced auto-save hook with status tracking
-  - `frontend/src/hooks/__tests__/useDebouncedSave.test.ts` (new) — 6 unit tests
-  - `frontend/src/components/pdf-reader/NotesPanel.tsx` (new) — notes editor with markdown/LaTeX preview
-  - `frontend/src/components/pdf-reader/__tests__/NotesPanel.test.tsx` (new) — 4 component tests
-  - `frontend/src/components/pdf-reader/PDFReaderLayout.tsx` — added Notes/Q&A tabs in right panel
-  - `frontend/src/pages/project/PDFReaderPage.tsx` — pass paper notes to PDFReaderLayout
-  - `frontend/src/services/api.ts` — added paperApi.update method
-  - `frontend/src/services/__tests__/api.test.ts` — added 2 tests for paperApi.update
-  - `frontend/src/test/mocks/handlers.ts` — added PUT paper endpoint mock
-  - `frontend/src/i18n/locales/en.json` — added notes keys
-  - `frontend/src/i18n/locales/zh.json` — added notes keys
-- **Learnings for future iterations:**
-  - The `notes` field already existed on Paper model and PUT endpoint — no backend changes needed
-  - Avoid nesting radix-ui Tabs inside TabsContent — caused rendering issues; use simple state buttons instead
-  - Markdown/LaTeX packages (react-markdown, remark-gfm, remark-math, rehype-katex, katex) already installed
-  - When using vi.useFakeTimers() in component tests, wrap in beforeEach/afterEach to avoid cross-test pollution
-  - PDFReaderPage already fetches paper via react-query — pass data down rather than re-fetching
----
-
-## [2026-04-29 22:10] - US-010
-- Implemented reading progress tracker with reading analytics dashboard
-- Files changed:
-  - `backend/app/models/paper.py` — added ReadingStatus enum, reading_status and read_at columns
-  - `backend/app/schemas/paper.py` — updated PaperRead and PaperUpdate schemas
-  - `backend/app/api/v1/papers.py` — added reading_status filter, sort, and analytics endpoint
-  - `backend/alembic/versions/eed9e0cebcb5_*.py` (new) — migration for new columns
-  - `frontend/src/types/index.ts` — added ReadingStatus type, reading_status/read_at to Paper
-  - `frontend/src/types/api.ts` — added ReadingStatus type and reading_status to PaperListFilters
-  - `frontend/src/services/api.ts` — added paperApi.getAnalytics and ReadingAnalytics interface
-  - `frontend/src/lib/query-keys.ts` — added papers.analytics query key
-  - `frontend/src/pages/project/AnalyticsPage.tsx` (new) — dashboard with recharts pie/bar charts
-  - `frontend/src/pages/project/PapersPage.tsx` — added readingStatus filter state
-  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added reading status dropdown
-  - `frontend/src/pages/project/papers/papers-columns.tsx` — added reading status column
-  - `frontend/src/App.tsx` — added /analytics route
-  - `frontend/src/i18n/locales/en.json` — added reading/analytics keys
-  - `frontend/src/i18n/locales/zh.json` — added reading/analytics keys
-  - `frontend/src/pages/__tests__/AnalyticsPage.test.tsx` (new) — 5 component tests
-  - `frontend/src/services/__tests__/api.test.ts` — added 2 analytics API tests
-  - `frontend/src/test/fixtures/index.ts` — added reading fields to mockPaper
-  - `frontend/src/test/mocks/handlers.ts` — added analytics endpoint handler
-- **Learnings for future iterations:**
-  - recharts was not installed — had to `npm install recharts`; use ResponsiveContainer for fluid sizing
-  - The axios interceptor unwraps `response.data` so analytics API returns typed data directly
-  - Badge variants use `success`/`info`/`destructive`/`warning` pattern — for custom colors use className directly
-  - The papers list endpoint `sort_by` parameter needed `reading_status` added to the allowed_sort set
----
-
-## [2026-04-29 22:22] - US-011
-- Implemented AI paper comparison view for selected papers
-- Files changed:
-  - `backend/app/services/comparison_service.py` (new) — LLM-powered paper comparison with structured JSON output
-  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/compare endpoint
-  - `frontend/src/types/api.ts` — added PaperComparisonRequest/Response types
-  - `frontend/src/services/api.ts` — added paperApi.compare method
-  - `frontend/src/pages/project/papers/PaperComparisonDialog.tsx` (new) — comparison dialog with table + AI summary
-  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added Compare button with tooltip for 2-5 selection
-  - `frontend/src/pages/project/PapersPage.tsx` — wired up comparison dialog state
-  - `frontend/src/i18n/locales/en.json` — added compare keys
-  - `frontend/src/i18n/locales/zh.json` — added compare keys (Chinese)
-  - `frontend/src/test/mocks/handlers.ts` — added compare endpoint mock
-  - `frontend/src/pages/project/papers/__tests__/PaperComparisonDialog.test.tsx` (new) — 5 component tests
-  - `frontend/src/pages/project/papers/__tests__/PapersToolbar.test.tsx` (new) — 6 component tests
-  - `frontend/src/services/__tests__/api.test.ts` — added 2 compare API tests
-- **Learnings for future iterations:**
-  - The `LLMClient.chat_json()` method handles JSON extraction with fallback for wrapped responses — useful for any structured LLM output
-  - PapersPage already has `selectedRows` state — reuse it for any multi-paper operation (compare, batch delete, etc.)
-  - Tooltip from `@/components/ui/tooltip` wraps disabled buttons well for explaining why they're disabled
-  - The DataTable already has checkbox selection built-in — just pass `selectedRows` and `onSelectionChange` props
-  - Avoid mutating `handlers.ts` with `server.use()` inside async tests without cleanup — can cause cross-test interference
----
-
-## [2026-04-29 22:30] - US-012
-- Implemented research topic timeline view showing paper chronology
-- Files changed:
-  - `frontend/src/pages/project/TimelinePage.tsx` (new) — timeline page with horizontal bar chart, year groups, expandable paper cards
-  - `frontend/src/pages/project/__tests__/TimelinePage.test.tsx` (new) — 5 component tests
-  - `frontend/src/pages/ProjectDetail.tsx` — added Timeline nav item with Clock icon
-  - `frontend/src/App.tsx` — added /timeline route
-  - `frontend/src/i18n/locales/en.json` — added timeline keys
-  - `frontend/src/i18n/locales/zh.json` — added timeline keys (Chinese)
-- **Learnings for future iterations:**
-  - The paperApi.list supports `page_size: 500` to fetch all papers for full-project views like timeline
-  - `useNavigate` from react-router-dom needs to be mocked in tests with `vi.fn()` to avoid navigation errors
-  - The PapersFilterBar component is reusable across different paper views — it already handles search, status, reading status, and year filters
-  - `screen.getByText()` throws when multiple elements match — use `getAllByText` for elements that appear in multiple places (year labels in timeline bar + year headers)
-  - Paper card node size is computed as `Math.sqrt(citation_count) * 5` with min/max bounds for visual scaling
----
-
-## [2026-04-29 22:50] - US-014
-- Implemented related paper recommendations based on semantic similarity
-- Files changed:
-  - `backend/app/api/v1/papers.py` — added GET /projects/{id}/papers/{paper_id}/similar endpoint
-  - `frontend/src/services/api.ts` — added paperApi.getRelated method + SimilarPaper type
-  - `frontend/src/lib/query-keys.ts` — added related query key
-  - `frontend/src/components/pdf-reader/RelatedPapers.tsx` (new) — related papers list with similarity score badges
-  - `frontend/src/components/pdf-reader/PDFReaderLayout.tsx` — added "Related" tab to right panel
-  - `frontend/src/i18n/locales/en.json` — added related tab keys
-  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
-  - `frontend/src/test/mocks/handlers.ts` — added similar papers endpoint mock
-  - `frontend/src/components/pdf-reader/__tests__/RelatedPapers.test.tsx` (new) — 5 component tests
-  - `frontend/src/services/__tests__/api.test.ts` — added 2 API tests for getRelated
-- **Learnings for future iterations:**
-  - ChromaDB collections are per-project (`project_{id}`) with cosine distance metric — distances convert to similarity via `(1 - distance) * 100`
-  - Paper-level embeddings require averaging all chunk embeddings for that paper
-  - The `get_or_404` call validates paper exists before querying ChromaDB — prevents 404 vs empty result confusion
-  - `screen.getByText()` fails when text is split across child elements — use partial match or `textContent` assertion
-  - Authors truncation with "et al." requires `slice(0, 3)` before `join()`, not just appending after join
----
-
-## [2026-04-29 23:05] - US-015
-- Implemented project activity feed and change log
-- Files changed:
-  - `backend/app/models/activity_log.py` (new) — ActivityLog model with project_id, action, entity_type, entity_id, actor, details, created_at
-  - `backend/app/models/__init__.py` — registered ActivityLog in exports
-  - `backend/app/models/project.py` — added activity_logs relationship with cascade delete
-  - `backend/app/schemas/activity_log.py` (new) — Pydantic ActivityRead schema
-  - `backend/app/api/v1/activities.py` (new) — GET /projects/{id}/activities endpoint with pagination and filters
-  - `backend/app/api/v1/__init__.py` — registered activities router
-  - `backend/alembic/versions/a1b2c3d4e5f6_*.py` (new) — migration for activity_logs table
-  - `frontend/src/types/index.ts` — added ActivityLog interface
-  - `frontend/src/types/api.ts` — added ActivityListFilters type
-  - `frontend/src/services/api.ts` — added activityApi.list method
-  - `frontend/src/lib/query-keys.ts` — added activities query keys
-  - `frontend/src/pages/project/ActivityFeedPage.tsx` (new) — activity feed page with date grouping, action filter, load more pagination
-  - `frontend/src/pages/ProjectDetail.tsx` — added Activity nav item with Activity icon
-  - `frontend/src/App.tsx` — added /activity route
-  - `frontend/src/i18n/locales/en.json` — added activity feed keys
-  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
-  - `frontend/src/test/fixtures/index.ts` — added mockActivityLog fixtures
-  - `frontend/src/test/mocks/handlers.ts` — added activities endpoint mock
-  - `frontend/src/pages/project/__tests__/ActivityFeedPage.test.tsx` (new) — 5 component tests
-- **Learnings for future iterations:**
-  - radix-ui SelectItem cannot have empty string value — use "all" as placeholder and translate in onValueChange handler
-  - Activity feed groups entries by date using `toLocaleDateString()` — "Today" and "Yesterday" are special-cased
-  - The `useInfiniteQuery` pattern works well for paginated activity feeds with getNextPageParam
-  - When writing tests, use `getAllByText` for text that appears in multiple activity items
----
-
-## [2026-04-29 22:35] - US-013
-- Implemented paper rating and quality scoring system
-- Files changed:
-  - `backend/app/models/paper.py` — added rating (Integer, default 0) and quality_tags (JSON) columns
-  - `backend/app/schemas/paper.py` — added rating and quality_tags to PaperRead and PaperUpdate schemas
-  - `backend/app/api/v1/papers.py` — added quality_tags filter param and rating to allowed_sort
-  - `backend/alembic/versions/b601f8ed7674_*.py` (new) — migration for new columns
-  - `frontend/src/types/index.ts` — added rating and quality_tags to Paper interface
-  - `frontend/src/types/api.ts` — added quality_tags to PaperListFilters
-  - `frontend/src/components/ui/star-rating.tsx` (new) — interactive star rating component with hover preview
-  - `frontend/src/components/ui/__tests__/star-rating.test.tsx` (new) — 6 unit tests
-  - `frontend/src/pages/project/papers/papers-columns.tsx` — added rating and quality_tags columns, onRatingChange callback
-  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added quality tags filter dropdown and rating sort option
-  - `frontend/src/pages/project/papers/__tests__/PapersFilterBar.test.tsx` (new) — 5 component tests
-  - `frontend/src/pages/project/PapersPage.tsx` — wired up qualityTag state, rating change handler
-  - `frontend/src/test/fixtures/index.ts` — added rating and quality_tags to mockPaper
-  - `frontend/src/i18n/locales/en.json` — added rating, qualityTags, sortBy.rating keys
-  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
-- **Learnings for future iterations:**
-  - radix-ui Select components have `hasPointerCapture` issues with userEvent — test render state, not interaction
-  - The `usePapersColumns` hook pattern works well for injecting callbacks into column cells
-  - PostgreSQL `overlap()` is used for array containment in quality_tags filter — comma-separated tags match any
-  - Alembic migration chain was broken (prior migration file missing) — had to set `down_revision = None`
----
-
----
-## [2026-04-30 00:50] - Core Optimization Phase
-- New PRD written with 10 optimization tasks (OPT-001 to OPT-010)
-- Branch: ralph/core-optimization
-- Focus: RAG pipeline chunking, dedup, search, multimodal, workflow parallelization
-- Previous work (US-008 to US-015) all verified with 30/30 E2E tests passing
-- Backend papers.py similar papers endpoint numpy bug fixed
-- E2E test suite at /tmp/e2e-report.json: 30 passed, 0 failed
----
-
-## [2026-04-30 01:00] - OPT-001
-- Replaced character-based chunk sizing with token-based sizing using tiktoken (cl100k_base)
-- Files changed:
-  - `backend/pyproject.toml` — added tiktoken>=0.9.0 dependency
-  - `backend/app/services/ocr_service.py` — rewrote chunk_text(), _flush_text_chunk(), chunk_mineru_markdown(), and extract_text_marker() to use tiktoken for all sizing/counting
-  - `backend/tests/test_ocr.py` — already had 5 token-based chunking tests (all passing)
-- **Learnings for future iterations:**
-  - tiktoken is already installed on the conda env, no install needed
-  - `_get_tiktoken_encoder()` lazy-initializes to avoid import overhead when chunking isn't used
-  - Default chunk_size changed from 1024 (chars) to 512 (tokens), overlap from 100 to 50
-  - For overlap: encode current chunk, slice last N tokens, decode back — this correctly handles multi-byte characters
-  - marker-pdf fallback now splits by token boundaries instead of fixed 2000-char windows
-- All 14 OCR tests pass, lint clean
----
-
-## [2026-04-30 01:15] - OPT-002
-- Added sentence-aware paragraph splitting to chunking
-- Files changed:
-  - `backend/app/services/ocr_service.py` — added _split_sentences() helper; rewrote _flush_text_chunk() and chunk_text() to split oversized paragraphs at sentence boundaries with token-based fallback for individual long sentences
-  - `backend/tests/test_ocr.py` — added TestSentenceAwareChunking class with 8 tests covering English, Chinese, overflow, and metadata preservation
-- **Learnings for future iterations:**
-  - Sentence splitting regex must handle Chinese (no whitespace between sentences): `r"(?<=[.。!！？])\s*|(?<=[\n])\s+"`
-  - When paragraph is oversized and added to empty chunk, must still trigger sentence splitting — don't let `not current_tokens` bypass size checks
-  - The token-based fallback splits at exact token boundaries when individual sentences exceed chunk_size (rare edge case)
-  - All 22 OCR tests pass, lint clean
----
-
-## [2026-04-30 01:15] - OPT-003
-- Optimized dedup from O(N^2) to near-O(N) with token fingerprint pre-grouping
-- Files changed:
-  - `backend/app/services/dedup_service.py` — added `title_fingerprint()`, `_group_by_fingerprint()`, and `_ENGLISH_STOP_WORDS`; rewrote `title_similarity_dedup()` and `find_llm_dedup_candidates()` to group by fingerprint before pairwise comparisons; added timing logs
-  - `backend/tests/test_dedup.py` — added 10 new tests: 5 for fingerprint functions, 2 for grouping, 2 for dedup correctness with fingerprint optimization, 1 performance test with 1000 papers
-- **Learnings for future iterations:**
-  - Stop word removal alone isn't enough — titles differing by one content word need `(N-1)`-word subset grouping to still be compared
-  - The sub-grouping is bounded to fingerprints with 2-5 words to prevent combinatorial explosion
-  - `frozenset` is hashable and can be used as dict keys for grouping — useful for any set-based grouping pattern
-  - SequenceMatcher similarity can differ significantly from human intuition — "network" vs "networks" drops similarity below 0.80 even though they're clearly the same concept
-  - All 29 dedup tests pass, lint clean
-  - Performance test: 1000 papers complete in under 5 seconds
----
-
-## [2026-04-30 01:20] - OPT-004
-- Eliminated PaddleOCR disk I/O by using in-memory numpy array processing
-- Files changed:
-  - `backend/app/services/ocr_service.py` — removed `tempfile` import; replaced disk-based `pix.save()` + `ocr.ocr(file)` with `np.frombuffer(pix.samples).reshape()` to pass numpy array directly to PaddleOCR; strips alpha channel for RGBA images
-  - `backend/tests/test_ocr.py` — added TestInMemoryOCR class with 4 tests: numpy array verification, no temp files created, RGBA alpha stripping, empty result handling
-- **Learnings for future iterations:**
-  - `MagicMock(spec=["ocr"])` prevents auto-created attributes — needed because `hasattr(mock, "predict")` returns True on plain MagicMock
-  - `fitz` (PyMuPDF) is a local import inside the OCR function — patch `fitz.open` directly, not `app.services.ocr_service.fitz`
-  - Pixmap samples from fitz are raw bytes — `np.frombuffer` with proper reshape creates the image array without any copy
-  - RGBA images (4 channels) need alpha stripped to RGB (3 channels) before passing to PaddleOCR
-  - All 26 OCR tests pass, lint clean
----
-
-## [2026-04-30 01:30] - OPT-005
-- Enabled MinerU image extraction and store figure metadata
-- Files changed:
-  - `backend/app/services/mineru_client.py` — added `return_images` parameter to `parse_pdf()`, default `False` for backward compatibility; passes `return_images` to MinerU API
-  - `backend/app/services/ocr_service.py` — added `_save_mineru_images()` helper that decodes base64 images from `content_list` and saves to figures directory; updated `_extract_with_mineru()` to accept `project_id`/`paper_id` and extract figures; updated `process_pdf_async()` to forward project/paper context
-  - `backend/app/config.py` — added `figures_dir` setting with default `{data_dir}/figures`
-  - `backend/app/pipelines/nodes.py` — `ocr_node` passes `project_id` and `paper.id` to `process_pdf_async()`
-  - `backend/tests/test_mineru_client.py` — added test for `return_images` parameter in API request
-  - `backend/tests/test_ocr.py` — added TestMinerUImageExtraction class with 6 tests: image extraction/saving, empty content list, non-image filtering, multiple images, directory creation, async parameter forwarding
-- **Learnings for future iterations:**
-  - MinerU `content_list` entries with `type: "image"` contain `image_body` (base64) and `image_path` — need to match the old path back to markdown references
-  - The `chunk_mineru_markdown()` method already handles `figure_path` in chunk metadata from `![...](...)` markdown image refs — updating the markdown content after saving images ensures chunks get correct paths
-  - Pre-commit ruff-format hook may reformat files — need to re-add after hook runs
-  - All 40 tests pass (6 new for image extraction + 1 for MinerU return_images), lint clean
----
-
-## [2026-04-30 01:40] - OPT-006
-- Parallelized LangGraph OCR node with asyncio.gather and semaphore-based concurrency control
-- Files changed:
-  - `backend/app/pipelines/nodes.py` — replaced sequential for loop with `asyncio.gather(*[_process_paper_ocr(...) for paper in papers], return_exceptions=True)`; added `asyncio.Semaphore(settings.ocr_parallel_limit)` for GPU concurrency limiting; extracted `_process_paper_ocr()` helper function
-  - `backend/tests/test_nodes.py` (new) — 9 tests: no papers early exit, single paper success, parallel processing, single failure doesn't crash batch, parallel limit enforcement, cancelled state, OCR error marks paper ERROR, unit tests for _process_paper_ocr
-- **Learnings for future iterations:**
-  - When patching a class used as a context manager, use `patch(..., side_effect=lambda *a, **kw: mock_instance)` instead of `return_value=mock_instance` — the class is called (`OCRService(...)`) before being used with `async with`
-  - `asyncio.gather(return_exceptions=True)` catches exceptions from `async with` blocks that don't suppress them via `__aexit__` returning `True`
-  - `settings.ocr_parallel_limit` of 0 means auto (use number of papers as limit); positive value sets explicit concurrency cap
-  - The `_process_paper_ocr()` helper isolates per-paper processing logic — useful pattern for any gather-based parallelization
-  - Paper paths sort alphabetically: "bad" < "good" — verify sorted assertions match expected order
----
-
-## [2026-04-30 01:45] - OPT-007
-- Batched DOI check for search import — replaced N separate DB queries with single batch query
-- Files changed:
-  - `backend/app/api/v1/search.py` — replaced per-paper `select(Paper).where(...doi==...)` loop with single `select(Paper.doi).where(Paper.doi.in_(all_dois))` batch query; existing DOIs collected into a set for O(1) lookups during import
-  - `backend/tests/test_search.py` — added 2 tests: `test_execute_search_auto_import_batch_doi_dedup` (5 papers, 2 existing, verifies only 3 imported with single SQL query) and `test_execute_search_auto_import_skips_empty_doi` (papers without DOI always imported)
-- **Learnings for future iterations:**
-  - The batch DOI check is visible in SQLAlchemy logs as a single `WHERE papers.doi IN (?, ?, ...)` query — confirms optimization works
-  - SQLite unique constraint on `(project_id, doi)` means test papers must have distinct DOIs — can't test multiple empty-DOI papers in same project
-  - The `insert` from SQLAlchemy needs to be imported inline when used in tests that don't import it at module level
-  - All 14 search tests pass, lint clean
----
-
-## [2026-04-30 01:55] - OPT-008
-- Added weighted chunk averaging for similar paper matching
-- Files changed:
-  - `backend/app/api/v1/papers.py` — added `_section_weights` dict (abstract=3x, intro=2x, conclusion=2.5x, methods=1x, methodology=1x, results=1.5x, discussion=2x, references=0x); replaced `np.mean()` with `np.average()` using section-weighted embeddings for paper vector; replaced `sum(dists)/len(dists)` with `statistics.median()` for per-paper distance aggregation; reference-section chunks excluded from candidate scoring
-  - `backend/tests/test_similar_papers.py` (new) — 6 tests: weighted paper vector computation, median distance aggregation, references exclusion, zero-weight fallback to uniform mean, section name variations (intro/methodology), API response format unchanged
-- **Learnings for future iterations:**
-  - The `from ... import X` inside function bodies means patching must target the source module (`app.services.rag_service.RAGService`), not the importing module
-  - ChromaDB query results return nested lists (`metadatas: [[...]]`, `distances: [[...]]`) — the endpoint extracts `[0]` to get per-query results, so mocks must match this format
-  - Using `statistics.median` instead of mean protects against outlier chunks (e.g. a single dissimilar chunk doesn't drag down the whole paper score)
-  - Section weights map both "introduction" and "intro", "methods" and "methodology" to handle variation in section naming
-  - All 6 new tests pass, lint clean, 66 total tests in related test files pass
----
-
-## [2026-04-30 02:05] - OPT-009
-- Added cross-source deduplication to federated search results
-- Files changed:
-  - `backend/app/services/search_service.py` — added `_title_fingerprint()`, `_paper_completeness_score()`, `_dedup_results()` methods; wired dedup into `search()` after gather
-  - `backend/tests/test_search.py` — added 8 tests: title fingerprint normalization, empty fingerprint, completeness scoring, DOI dedup with best-metadata selection, title fingerprint dedup for no-DOI papers, no false dedup on different papers, empty input, and integration test verifying same paper from 2 providers appears once
-- **Learnings for future iterations:**
-  - `_title_fingerprint()` normalizes by lowercasing, stripping punctuation, and collapsing whitespace — simple but effective for academic paper titles
-  - `_paper_completeness_score()` weights abstract (2pts) and author count higher than simple fields — this ensures the version with richer metadata wins
-  - Two-phase dedup: first by DOI (exact match, case-insensitive), then by title fingerprint for papers without DOI
-  - The `pre-commit` ruff-format hook may reorder imports alphabetically — staged changes may need re-add after hook runs
-  - All 22 search tests pass, lint clean
----
-
-## [2026-04-30 02:15] - OPT-010
-- Verified PDF content hash upload-time deduplication was already implemented in upload.py (SHA-256 hash computation, per-project duplicate detection with 409 response, hash stored on Paper model)
-- Alembic migration (c1d2e3f4a5b6) already existed to add content_hash column
-- Fixed test_upload.py which had 4 broken tests:
-  - Mock pattern: `extract_metadata` is async — must use `AsyncMock(return_value=NewPaperData(...))` not `mock.return_value = AsyncMock(...)`
-  - Cross-project test used wrong URL paths (`/upload` instead of `/papers/upload`)
-  - DB verification query needs `async_session_factory()` not raw `conn.execute()` for ORM queries
-  - Error response uses `message` field (custom ApiResponse wrapper), not FastAPI's default `detail`
-  - Added `process_papers_background` mock to prevent background task race condition
-- **Learnings for future iterations:**
-  - The backend uses a custom `ApiResponse` wrapper — HTTPException errors return `{"code": N, "message": "...", "data": None}` not `{"detail": "..."}`
-  - Async endpoint functions must be mocked with `AsyncMock(return_value=...)` — using `mock.return_value = AsyncMock(...)` returns the AsyncMock itself when awaited
-  - For ORM queries after API calls in tests, use `async_session_factory()` — raw `AsyncConnection.execute()` doesn't properly handle ORM entity queries
-  - `process_papers_background` runs asynchronously after upload — must mock it to prevent fake PDF processing from interfering with test assertions
-  - All 4 upload tests pass, lint clean
+  - When adding new LLM task types, always add corresponding mock responses to avoid test failures
+  - The `get_or_404` helper validates paper existence — no need to use the returned value if not needed
+  - Frontend Slider component wasn't available in shadcn/ui — used native `<input type="range">` instead
+  - Always check for component existence before importing from `@/components/ui/`
 ---

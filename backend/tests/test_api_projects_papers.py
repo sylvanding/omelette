@@ -582,3 +582,86 @@ class TestUploadAPI:
         body = resp.json()
         assert body["data"]["total"] == 1
         assert body["data"]["items"][0]["status"] == "pdf_downloaded"
+
+
+# ---------------------------------------------------------------------------
+# Augmented Reading API
+# ---------------------------------------------------------------------------
+
+
+class TestAugmentedReadingAPI:
+    """Tests for augmented reading endpoints: highlights, citation-cards, definitions."""
+
+    @pytest.mark.asyncio
+    async def test_generate_highlights_returns_structured_data(self, client: AsyncClient, project_id: int):
+        create_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Test Paper", "abstract": "A novel approach to microscopy."},
+        )
+        paper_id = create_resp.json()["data"]["id"]
+
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers/{paper_id}/highlights",
+            json={"paper_content": "Test content"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 200
+        assert "highlights" in body["data"]
+        assert isinstance(body["data"]["highlights"], list)
+
+    @pytest.mark.asyncio
+    async def test_generate_highlights_404(self, client: AsyncClient, project_id: int):
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers/99999/highlights",
+            json={"paper_content": "Test"},
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_citation_cards_returns_structured_data(self, client: AsyncClient, project_id: int):
+        # Create the seed paper
+        create_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Seed Paper", "abstract": "Seed abstract."},
+        )
+        paper_id = create_resp.json()["data"]["id"]
+
+        # Create other papers for citation cards
+        for i in range(3):
+            await client.post(
+                f"/api/v1/projects/{project_id}/papers",
+                json={"title": f"Ref Paper {i}", "abstract": f"Abstract {i}", "doi": f"10.1234/ref{i}"},
+            )
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/{paper_id}/citation-cards")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 200
+        assert "cards" in body["data"]
+        assert isinstance(body["data"]["cards"], list)
+
+    @pytest.mark.asyncio
+    async def test_citation_cards_404(self, client: AsyncClient, project_id: int):
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/99999/citation-cards")
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_definitions_returns_structured_data(self, client: AsyncClient, project_id: int):
+        create_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Test Paper", "abstract": "A paper about super-resolution microscopy."},
+        )
+        paper_id = create_resp.json()["data"]["id"]
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/{paper_id}/definitions")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 200
+        assert "definitions" in body["data"]
+        assert isinstance(body["data"]["definitions"], list)
+
+    @pytest.mark.asyncio
+    async def test_definitions_404(self, client: AsyncClient, project_id: int):
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/99999/definitions")
+        assert resp.status_code == 404

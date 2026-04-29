@@ -323,3 +323,46 @@ export const activityApi = {
   list: (projectId: number, params?: ActivityListFilters) =>
     api.get<PaginatedData<ActivityLog>>(`/projects/${projectId}/activities`, { params }).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Augmented Reading API
+// ---------------------------------------------------------------------------
+
+export interface PaperHighlight {
+  category: 'Goal' | 'Method' | 'Result';
+  text: string;
+  page: number;
+  start_offset: number;
+  end_offset: number;
+}
+
+export interface CitationCard {
+  paper_id: number | null;
+  paper_title: string;
+  tldr: string;
+  doi: string | null;
+}
+
+export interface TermDefinition {
+  term: string;
+  definition: string;
+  context: string;
+}
+
+export const augmentedReadingApi = {
+  getHighlights: (projectId: number, paperId: number, paperContent: string) =>
+    api.post<{ highlights: PaperHighlight[] }>(
+      `/projects/${projectId}/papers/${paperId}/highlights`,
+      { paper_content: paperContent },
+    ).then(r => r.data),
+
+  getCitationCards: (projectId: number, paperId: number) =>
+    api.get<{ cards: CitationCard[] }>(
+      `/projects/${projectId}/papers/${paperId}/citation-cards`,
+    ).then(r => r.data),
+
+  getDefinitions: (projectId: number, paperId: number) =>
+    api.get<{ definitions: TermDefinition[] }>(
+      `/projects/${projectId}/papers/${paperId}/definitions`,
+    ).then(r => r.data),
+};

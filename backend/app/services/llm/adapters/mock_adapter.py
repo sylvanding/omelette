@@ -20,6 +20,61 @@ MOCK_RESPONSES: dict[str, str] = {
     ),
     "summarize": "This paper presents a novel approach to super-resolution microscopy...",
     "dedup_check": json.dumps({"is_duplicate": False, "confidence": 0.85, "reason": "Different methodology"}),
+    "augmented_reading_highlights": json.dumps(
+        {
+            "highlights": [
+                {
+                    "category": "Goal",
+                    "text": "This paper aims to improve super-resolution imaging",
+                    "page": 1,
+                    "start_offset": 0,
+                    "end_offset": 55,
+                },
+                {
+                    "category": "Method",
+                    "text": "We propose a novel deep learning approach",
+                    "page": 2,
+                    "start_offset": 100,
+                    "end_offset": 145,
+                },
+                {
+                    "category": "Result",
+                    "text": "Our method achieves 2x resolution improvement",
+                    "page": 5,
+                    "start_offset": 200,
+                    "end_offset": 250,
+                },
+            ]
+        }
+    ),
+    "augmented_reading_citation_cards": json.dumps(
+        {
+            "citations": [
+                {
+                    "paper_id": 1,
+                    "paper_title": "Deep Learning for Microscopy",
+                    "tldr": "This paper introduces a deep learning method for enhancing microscopy resolution. Using a novel neural architecture, the authors achieve 2x improvement over traditional methods.",
+                    "doi": "10.1234/test",
+                },
+            ]
+        }
+    ),
+    "augmented_reading_definitions": json.dumps(
+        {
+            "definitions": [
+                {
+                    "term": "Super-resolution",
+                    "definition": "Imaging techniques that achieve resolution beyond the diffraction limit of light.",
+                    "context": "Used in microscopy to observe sub-cellular structures",
+                },
+                {
+                    "term": "Point spread function",
+                    "definition": "The response of an imaging system to a point source or point object.",
+                    "context": "Characterizes the blur in optical systems",
+                },
+            ]
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 
