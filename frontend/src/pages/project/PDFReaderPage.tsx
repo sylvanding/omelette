@@ -63,6 +63,7 @@ export default function PDFReaderPage() {
         paperId={ppid}
         paperTitle={paper.title ?? 'Untitled'}
         projectId={pid}
+        notes={paper.notes ?? ''}
         onBack={() => navigate(`/projects/${pid}/papers`)}
       />
     </Suspense>

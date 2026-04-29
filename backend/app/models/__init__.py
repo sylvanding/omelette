@@ -1,5 +1,6 @@
 """SQLAlchemy ORM models."""
 
+from app.models.activity_log import ActivityLog
 from app.models.chunk import PaperChunk
 from app.models.conversation import Conversation
 from app.models.keyword import Keyword
@@ -11,6 +12,7 @@ from app.models.task import Task, TaskStatus, TaskType
 from app.models.user_settings import UserSettings
 
 __all__ = [
+    "ActivityLog",
     "Conversation",
     "Keyword",
     "Message",

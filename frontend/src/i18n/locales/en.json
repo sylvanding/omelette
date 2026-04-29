@@ -277,6 +277,8 @@
     "ragChat": "RAG Chat",
     "writing": "Writing",
     "tasks": "Tasks",
+    "timeline": "Timeline",
+    "activity": "Activity",
     "backToKB": "Back to Knowledge Bases",
     "notFound": "Project not found",
     "noDesc": "No description",
@@ -327,8 +329,50 @@
       "created_at": "Created",
       "year": "Year",
       "citation_count": "Citations",
+      "rating": "Rating",
       "title": "Title"
+    },
+    "export": "Export",
+    "exportFormat": "Export format",
+    "exportSuccess": "Export downloaded successfully",
+    "exportFailed": "Export failed, please try again",
+    "readingStatuses": {
+      "unread": "Unread",
+      "reading": "Reading",
+      "read": "Read",
+      "archived": "Archived"
+    },
+    "readingStatus": "Reading Status",
+    "readingStatusFilter": "Filter by reading status",
+    "rating": "Rating",
+    "qualityTags": "Quality Tags",
+    "compare": "Compare",
+    "compareTooMany": "Select 2-5 papers to compare",
+    "compareTitle": "Paper Comparison",
+    "related": {
+      "tab": "Related",
+      "empty": "No related papers found",
+      "emptyHint": "Index paper content to enable semantic similarity matching"
     }
+  },
+  "analytics": {
+    "title": "Reading Analytics",
+    "totalPapers": "Total Papers",
+    "readingProgress": "Reading Progress",
+    "weeklyReads": "Papers Read per Week",
+    "topJournals": "Top Journals",
+    "noData": "No data available",
+    "noReadData": "No papers have been marked as read yet",
+    "noJournalData": "No journal data available",
+    "loadFailed": "Failed to load analytics data"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "empty": "No papers on the timeline",
+    "emptyHint": "Add papers to your project to see them on a chronological timeline.",
+    "paperCount": "{{count}} paper(s)",
+    "papers": "papers",
+    "citations": "{{count}} citation(s)"
   },
   "keywords": {
     "title": "Keywords",
@@ -423,6 +467,13 @@
     "custom": "Custom prompt",
     "customPlaceholder": "Enter custom rewrite instructions..."
   },
+  "notes": {
+    "tab": "Notes",
+    "qa": "Q&A",
+    "edit": "Edit",
+    "preview": "Preview",
+    "placeholder": "Write your notes here... Markdown and LaTeX are supported."
+  },
   "subscriptions": {
     "title": "Subscriptions",
     "newSubscription": "New Subscription",
@@ -454,5 +505,27 @@
     "totalFound": "{{count}} found",
     "active": "Active",
     "inactive": "Inactive"
+  },
+  "activity": {
+    "title": "Project Activity",
+    "empty": "No activity yet",
+    "emptyHint": "Changes to papers, keywords, and tasks will appear here.",
+    "filterAll": "All actions",
+    "loadMore": "Load more",
+    "actions": {
+      "paper_created": "Paper added",
+      "paper_deleted": "Paper deleted",
+      "paper_updated": "Paper updated",
+      "rating_changed": "Rating changed",
+      "tag_added": "Tag added",
+      "tag_removed": "Tag removed",
+      "keyword_added": "Keyword added",
+      "search_executed": "Search executed",
+      "rag_indexed": "RAG indexed",
+      "task_completed": "Task completed",
+      "note_updated": "Note updated",
+      "status_changed": "Status changed",
+      "writing_generated": "Writing generated"
+    }
   }
 }

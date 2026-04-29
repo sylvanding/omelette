@@ -2,7 +2,7 @@
  * Mock data fixtures for tests. Values match types in src/types/index.ts and src/types/chat.ts.
  */
 
-import type { Project, Paper, Keyword, Task } from '@/types';
+import type { Project, Paper, Keyword, Task, ActivityLog } from '@/types';
 import type { Conversation } from '@/types/chat';
 import type { Subscription } from '@/services/subscription-api';
 
@@ -57,6 +57,10 @@ export const mockPaper: Paper = {
   status: 'indexed',
   tags: ['test'],
   notes: '',
+  reading_status: 'unread',
+  read_at: null,
+  rating: 0,
+  quality_tags: null,
   created_at: now,
   updated_at: now,
 };
@@ -137,3 +141,33 @@ export const mockTask: Task = {
 };
 
 export const mockTaskList: Task[] = [mockTask];
+
+export const mockActivityLog: ActivityLog = {
+  id: 1,
+  project_id: 1,
+  action: 'paper_created',
+  entity_type: 'paper',
+  entity_id: 1,
+  actor: 'system',
+  details: { title: 'Test Paper' },
+  created_at: now,
+};
+
+const mockActivityLog2: ActivityLog = {
+  id: 2,
+  project_id: 1,
+  action: 'note_updated',
+  entity_type: 'paper',
+  entity_id: 1,
+  actor: 'user',
+  details: { title: 'Test Paper' },
+  created_at: new Date(Date.now() - 3600_000).toISOString(),
+};
+
+export const mockActivityLogList = {
+  items: [mockActivityLog, mockActivityLog2],
+  total: 2,
+  page: 1,
+  page_size: 20,
+  total_pages: 1,
+};

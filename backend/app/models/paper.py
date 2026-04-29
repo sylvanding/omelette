@@ -18,6 +18,13 @@ class PaperStatus(StrEnum):
     ERROR = "error"
 
 
+class ReadingStatus(StrEnum):
+    UNREAD = "unread"
+    READING = "reading"
+    READ = "read"
+    ARCHIVED = "archived"
+
+
 class Paper(Base):
     __tablename__ = "papers"
     __table_args__ = (
@@ -41,6 +48,10 @@ class Paper(Base):
     status: Mapped[str] = mapped_column(String(50), default=PaperStatus.PENDING)
     tags: Mapped[list | None] = mapped_column(JSON, default=None)
     notes: Mapped[str] = mapped_column(Text, default="")
+    reading_status: Mapped[str] = mapped_column(String(20), default=ReadingStatus.UNREAD)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    rating: Mapped[int] = mapped_column(Integer, default=0)
+    quality_tags: Mapped[list | None] = mapped_column(JSON, default=None)
     extra_metadata: Mapped[dict | None] = mapped_column(JSON, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

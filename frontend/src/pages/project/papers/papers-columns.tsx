@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { StarRating } from '@/components/ui/star-rating';
 import type { DataTableColumn } from '@/components/ui/data-table';
-import type { Paper, PaperStatus } from '@/types';
+import type { Paper, PaperStatus, ReadingStatus } from '@/types';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -13,6 +14,7 @@ interface UsePapersColumnsParams {
   deleteMutation: { isPending: boolean; mutate: (id: number) => void };
   handleRetry: (paperId: number) => void;
   setGraphPaperId: (id: number) => void;
+  onRatingChange?: (paperId: number, rating: number) => void;
 }
 
 export function usePapersColumns({
@@ -20,6 +22,7 @@ export function usePapersColumns({
   deleteMutation,
   handleRetry,
   setGraphPaperId,
+  onRatingChange,
 }: UsePapersColumnsParams): DataTableColumn<Paper>[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -29,6 +32,13 @@ export function usePapersColumns({
     if (PROCESSING_STATUSES.includes(status)) return 'info';
     if (status === 'error') return 'destructive';
     return 'warning';
+  };
+
+  const getReadingStatusColor = (status: ReadingStatus): string => {
+    if (status === 'read') return 'text-green-600 bg-green-500/10';
+    if (status === 'reading') return 'text-blue-600 bg-blue-500/10';
+    if (status === 'archived') return 'text-gray-600 bg-gray-500/10';
+    return 'text-slate-500 bg-slate-500/10';
   };
 
   return [
@@ -72,6 +82,47 @@ export function usePapersColumns({
           {t(`papers.statuses.${row.status}`, row.status)}
         </Badge>
       ),
+    },
+    {
+      id: 'reading_status',
+      header: t('papers.readingStatus', 'Reading Status'),
+      accessorKey: 'reading_status',
+      cell: ({ row }) => (
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getReadingStatusColor(row.reading_status)}`}>
+          {t(`papers.readingStatuses.${row.reading_status}`, row.reading_status)}
+        </span>
+      ),
+    },
+    {
+      id: 'rating',
+      header: t('papers.rating', 'Rating'),
+      accessorKey: 'rating',
+      sortable: true,
+      cell: ({ row }) => (
+        <StarRating
+          value={row.rating ?? 0}
+          onChange={(rating) => onRatingChange?.(row.id, rating)}
+          size={14}
+        />
+      ),
+    },
+    {
+      id: 'quality_tags',
+      header: t('papers.qualityTags', 'Quality Tags'),
+      accessorKey: 'quality_tags',
+      cell: ({ row }) => {
+        const tags = row.quality_tags;
+        if (!tags || tags.length === 0) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="info" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       id: 'actions',

@@ -13,6 +13,7 @@ import {
   mockSubscription,
   mockSubscriptionList,
   mockTaskList,
+  mockActivityLogList,
 } from '@/test/fixtures';
 
 const apiBase = '/api/v1';
@@ -103,6 +104,18 @@ export const handlers = [
     const body = (await request.json()) as { papers?: unknown[] };
     return HttpResponse.json(
       mockResponse({ imported: body.papers?.length ?? 0 }),
+    );
+  }),
+  http.put(`${apiBase}/projects/:id/papers/:paperId`, async ({ request, params }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json(
+      mockResponse({
+        ...mockPaper,
+        id: Number(params.paperId),
+        project_id: Number(params.id),
+        ...body,
+        updated_at: new Date().toISOString(),
+      }),
     );
   }),
   http.post(`${apiBase}/projects/:id/papers/upload`, async ({ request }) => {
@@ -370,5 +383,118 @@ export const handlers = [
   // RAG index (for completeness)
   http.post(`${apiBase}/projects/:id/rag/index`, () =>
     HttpResponse.json(mockResponse({ status: 'started' })),
+  ),
+
+  // Paper analytics
+  http.get(`${apiBase}/projects/:id/papers/analytics`, () =>
+    HttpResponse.json(
+      mockResponse({
+        total: 1,
+        by_status: { unread: 1, reading: 0, read: 0, archived: 0 },
+        read_by_week: {},
+        top_journals: [{ journal: 'Test Journal', count: 1 }],
+      }),
+    ),
+  ),
+
+  // Paper similar / related
+  http.get(`${apiBase}/projects/:id/papers/:paperId/similar`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 2,
+          title: 'Related Paper One',
+          authors: ['Author A', 'Author B'],
+          year: 2023,
+          journal: 'Related Journal',
+          citation_count: 25,
+          similarity_score: 92.5,
+        },
+        {
+          id: 3,
+          title: 'Related Paper Two',
+          authors: ['Author C'],
+          year: 2022,
+          journal: 'Another Journal',
+          citation_count: 15,
+          similarity_score: 78.3,
+        },
+      ]),
+    ),
+  ),
+
+  // Paper compare
+  http.post(`${apiBase}/projects/:id/papers/compare`, async ({ request }) => {
+    const body = (await request.json()) as { paper_ids?: number[]; focus?: string };
+    const ids = body.paper_ids ?? [1, 2];
+    return HttpResponse.json(
+      mockResponse({
+        papers: ids.map((id, i) => ({
+          id,
+          title: `Paper ${id} - Title ${i + 1}`,
+          authors: [{ name: `Author ${i + 1}` }],
+          year: 2024 - i,
+          journal: 'Test Journal',
+          citation_count: 10 * (i + 1),
+        })),
+        dimensions: [
+          {
+            dimension: 'research_question',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} investigates research question ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'method',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} uses method ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'dataset',
+            cells: ids.map((id) => ({
+              paper_id: id,
+              content: `Dataset used in paper ${id}.`,
+            })),
+          },
+          {
+            dimension: 'key_results',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: `Paper ${id} found result ${i + 1}.`,
+            })),
+          },
+          {
+            dimension: 'limitations',
+            cells: ids.map((id) => ({
+              paper_id: id,
+              content: `Limitations of paper ${id}.`,
+            })),
+          },
+          {
+            dimension: 'year',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: String(2024 - i),
+            })),
+          },
+          {
+            dimension: 'citation_count',
+            cells: ids.map((id, i) => ({
+              paper_id: id,
+              content: String(10 * (i + 1)),
+            })),
+          },
+        ],
+        summary: 'Mock AI-generated comparison summary highlighting differences between the selected papers.',
+      }),
+    );
+  }),
+
+  // Activities
+  http.get(`${apiBase}/projects/:id/activities`, () =>
+    HttpResponse.json(mockResponse(mockActivityLogList)),
   ),
 ];

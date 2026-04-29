@@ -1,8 +1,8 @@
 import { api } from '@/lib/api';
 import type { PaginatedData } from '@/lib/api';
 import { apiUrl } from '@/lib/api-config';
-import type { Project, Paper, Keyword, Task } from '@/types';
-import type { PaginationParams, PaperListFilters } from '@/types/api';
+import type { Project, Paper, Keyword, Task, ActivityLog } from '@/types';
+import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse, ActivityListFilters } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
 export const projectApi = {
@@ -26,6 +26,13 @@ export const projectApi = {
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
 };
 
+export interface ReadingAnalytics {
+  total: number;
+  by_status: Record<string, number>;
+  read_by_week: Record<string, number>;
+  top_journals: Array<{ journal: string; count: number }>;
+}
+
 export const paperApi = {
   list: (projectId: number, params?: PaperListFilters) =>
     api.get<PaginatedData<Paper>>(`/projects/${projectId}/papers`, { params }).then(r => r.data),
@@ -45,7 +52,70 @@ export const paperApi = {
     api.get<GraphData>(`/projects/${projectId}/papers/${paperId}/citation-graph`, {
       params: { depth, max_nodes: maxNodes },
     }).then(r => r.data),
+  update: (projectId: number, paperId: number, data: Partial<Paper>) =>
+    api.put<Paper>(`/projects/${projectId}/papers/${paperId}`, data).then(r => r.data),
+  getAnalytics: (projectId: number) =>
+    api.get<ReadingAnalytics>(`/projects/${projectId}/papers/analytics`).then(r => r.data),
+  compare: (projectId: number, data: PaperComparisonRequest) =>
+    api.post<PaperComparisonResponse>(`/projects/${projectId}/papers/compare`, data).then(r => r.data),
+  getRelated: (projectId: number, paperId: number, limit?: number) =>
+    api.get<SimilarPaper[]>(`/projects/${projectId}/papers/${paperId}/similar`, {
+      params: limit ? { limit } : {},
+    }).then(r => r.data),
 };
+
+export interface SimilarPaper {
+  id: number;
+  title: string;
+  authors: string[];
+  year: number | null;
+  journal: string;
+  citation_count: number;
+  similarity_score: number;
+}
+
+export type ExportFormat = 'bibtex' | 'ris' | 'endnote';
+
+export interface ExportFilters {
+  format: ExportFormat;
+  q?: string;
+  status?: string;
+  year?: number;
+}
+
+/**
+ * Export papers as a downloadable file. Uses raw fetch to bypass the axios
+ * response interceptor (which unwraps JSON, not blobs).
+ */
+export async function exportPapers(projectId: number, filters: ExportFilters): Promise<void> {
+  const params = new URLSearchParams({ format: filters.format });
+  if (filters.q) params.set('q', filters.q);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.year) params.set('year', String(filters.year));
+
+  const response = await fetch(`/api/v1/projects/${projectId}/papers/export?${params}`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.status}`);
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = `export-${filters.format}`;
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (match) filename = match[1];
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export const keywordApi = {
   list: (projectId: number, params?: PaginationParams & { level?: number }) =>
@@ -247,4 +317,9 @@ export const crawlerApi = {
     }).then(r => r.data),
   stats: (projectId: number) =>
     api.get<Record<string, unknown>>(`/projects/${projectId}/crawl/stats`).then(r => r.data),
+};
+
+export const activityApi = {
+  list: (projectId: number, params?: ActivityListFilters) =>
+    api.get<PaginatedData<ActivityLog>>(`/projects/${projectId}/activities`, { params }).then(r => r.data),
 };

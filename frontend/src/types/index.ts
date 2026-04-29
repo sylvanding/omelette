@@ -31,6 +31,10 @@ export interface Paper {
   status: PaperStatus;
   tags: string[] | null;
   notes: string;
+  reading_status: ReadingStatus;
+  read_at: string | null;
+  rating: number;
+  quality_tags: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +45,7 @@ export interface Author {
 }
 
 export type PaperStatus = 'pending' | 'metadata_only' | 'pdf_downloaded' | 'ocr_complete' | 'indexed' | 'error';
+export type ReadingStatus = 'unread' | 'reading' | 'read' | 'archived';
 
 export interface Keyword {
   id: number;
@@ -62,5 +67,16 @@ export interface Task {
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   progress: number;
   total: number;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  project_id: number;
+  action: string;
+  entity_type: string;
+  entity_id: number;
+  actor: string;
+  details: Record<string, unknown> | null;
   created_at: string;
 }

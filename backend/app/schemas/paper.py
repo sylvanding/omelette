@@ -29,6 +29,9 @@ class PaperUpdate(BaseModel):
     tags: list[str] | None = None
     notes: str | None = None
     status: Literal["pending", "metadata_only", "pdf_downloaded", "ocr_complete", "indexed", "error"] | None = None
+    reading_status: Literal["unread", "reading", "read", "archived"] | None = None
+    rating: int | None = None
+    quality_tags: list[str] | None = None
 
 
 class PaperRead(BaseModel):
@@ -48,6 +51,10 @@ class PaperRead(BaseModel):
     status: str
     tags: list[str] | None
     notes: str
+    reading_status: str
+    read_at: datetime | None
+    rating: int
+    quality_tags: list[str] | None
     created_at: datetime
     updated_at: datetime
 

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mocks/server';
-import { projectApi } from '../api';
+import { projectApi, paperApi } from '../api';
+import type { ReadingAnalytics, SimilarPaper } from '../api';
+import type { PaperComparisonResponse } from '@/types/api';
 
 describe('projectApi', () => {
   it('should fetch project list and return typed data', async () => {
@@ -28,5 +30,91 @@ describe('projectApi', () => {
     );
 
     await expect(projectApi.list(1, 20)).rejects.toThrow('Not found');
+  });
+});
+
+describe('paperApi.update', () => {
+  it('updates paper notes and returns the updated paper', async () => {
+    const result = await paperApi.update(1, 1, { notes: 'My research notes' });
+
+    expect(result).toHaveProperty('id', 1);
+    expect(result.notes).toBe('My research notes');
+  });
+
+  it('sends a PUT request to the correct endpoint', async () => {
+    const result = await paperApi.update(2, 42, {
+      title: 'Updated Title',
+      notes: 'New notes',
+    });
+
+    expect(result.project_id).toBe(2);
+    expect(result.title).toBe('Updated Title');
+    expect(result.notes).toBe('New notes');
+  });
+});
+
+describe('paperApi.getAnalytics', () => {
+  it('returns reading analytics data', async () => {
+    const result = await paperApi.getAnalytics(1);
+
+    expect(result).toHaveProperty('total');
+    expect(result).toHaveProperty('by_status');
+    expect(result).toHaveProperty('read_by_week');
+    expect(result).toHaveProperty('top_journals');
+  });
+
+  it('returns typed analytics data', async () => {
+    const result: ReadingAnalytics = await paperApi.getAnalytics(1);
+
+    expect(typeof result.total).toBe('number');
+    expect(result.by_status).toHaveProperty('unread');
+    expect(Array.isArray(result.top_journals)).toBe(true);
+  });
+});
+
+describe('paperApi.compare', () => {
+  it('sends compare request and returns comparison data', async () => {
+    const result: PaperComparisonResponse = await paperApi.compare(1, {
+      paper_ids: [1, 2],
+    });
+
+    expect(result).toHaveProperty('papers');
+    expect(result).toHaveProperty('dimensions');
+    expect(result).toHaveProperty('summary');
+    expect(result.papers).toHaveLength(2);
+    expect(result.dimensions.length).toBeGreaterThan(0);
+  });
+
+  it('passes focus parameter to the request', async () => {
+    const result = await paperApi.compare(1, {
+      paper_ids: [1, 2, 3],
+      focus: 'Compare methods only',
+    });
+
+    expect(result.papers).toHaveLength(3);
+    expect(typeof result.summary).toBe('string');
+  });
+});
+
+describe('paperApi.getRelated', () => {
+  it('returns list of similar papers with similarity scores', async () => {
+    const result: SimilarPaper[] = await paperApi.getRelated(1, 1);
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toHaveProperty('id');
+    expect(result[0]).toHaveProperty('title');
+    expect(result[0]).toHaveProperty('authors');
+    expect(result[0]).toHaveProperty('similarity_score');
+    expect(result[0].similarity_score).toBe(92.5);
+  });
+
+  it('returns typed similar paper data', async () => {
+    const result: SimilarPaper[] = await paperApi.getRelated(1, 1);
+
+    expect(typeof result[0].id).toBe('number');
+    expect(typeof result[0].title).toBe('string');
+    expect(Array.isArray(result[0].authors)).toBe(true);
+    expect(typeof result[0].similarity_score).toBe('number');
   });
 });

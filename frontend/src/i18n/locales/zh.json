@@ -277,6 +277,8 @@
     "ragChat": "RAG 问答",
     "writing": "写作",
     "tasks": "任务",
+    "timeline": "时间线",
+    "activity": "动态",
     "backToKB": "返回知识库",
     "notFound": "项目不存在",
     "noDesc": "暂无描述",
@@ -327,8 +329,50 @@
       "created_at": "创建时间",
       "year": "年份",
       "citation_count": "引用数",
+      "rating": "评分",
       "title": "标题"
+    },
+    "export": "导出",
+    "exportFormat": "导出格式",
+    "exportSuccess": "导出下载成功",
+    "exportFailed": "导出失败，请重试",
+    "readingStatuses": {
+      "unread": "未读",
+      "reading": "阅读中",
+      "read": "已读",
+      "archived": "已归档"
+    },
+    "readingStatus": "阅读状态",
+    "readingStatusFilter": "按阅读状态筛选",
+    "rating": "评分",
+    "qualityTags": "质量标签",
+    "compare": "对比",
+    "compareTooMany": "请选择 2-5 篇论文进行对比",
+    "compareTitle": "论文对比",
+    "related": {
+      "tab": "相关",
+      "empty": "未找到相关论文",
+      "emptyHint": "索引论文内容以启用语义相似度匹配"
     }
+  },
+  "analytics": {
+    "title": "阅读分析",
+    "totalPapers": "论文总数",
+    "readingProgress": "阅读进度",
+    "weeklyReads": "每周阅读数",
+    "topJournals": "热门期刊",
+    "noData": "暂无数据",
+    "noReadData": "暂无已读论文",
+    "noJournalData": "暂无期刊数据",
+    "loadFailed": "加载分析数据失败"
+  },
+  "timeline": {
+    "title": "时间线",
+    "empty": "时间线上暂无论文",
+    "emptyHint": "向项目添加论文后，它们将显示在按时间顺序排列的时间线上。",
+    "paperCount": "{{count}} 篇论文",
+    "papers": "篇论文",
+    "citations": "{{count}} 次引用"
   },
   "keywords": {
     "title": "关键词",
@@ -423,6 +467,13 @@
     "custom": "自定义指令",
     "customPlaceholder": "输入自定义重写指令..."
   },
+  "notes": {
+    "tab": "笔记",
+    "qa": "问答",
+    "edit": "编辑",
+    "preview": "预览",
+    "placeholder": "在此撰写笔记…支持 Markdown 和 LaTeX 数学公式。"
+  },
   "subscriptions": {
     "title": "订阅",
     "newSubscription": "新建订阅",
@@ -454,5 +505,27 @@
     "totalFound": "已找到 {{count}} 篇",
     "active": "启用",
     "inactive": "停用"
+  },
+  "activity": {
+    "title": "项目动态",
+    "empty": "暂无动态",
+    "emptyHint": "论文、关键词和任务的变更将在此处显示。",
+    "filterAll": "全部操作",
+    "loadMore": "加载更多",
+    "actions": {
+      "paper_created": "添加论文",
+      "paper_deleted": "删除论文",
+      "paper_updated": "更新论文",
+      "rating_changed": "评分变更",
+      "tag_added": "添加标签",
+      "tag_removed": "移除标签",
+      "keyword_added": "添加关键词",
+      "search_executed": "执行检索",
+      "rag_indexed": "RAG 索引",
+      "task_completed": "任务完成",
+      "note_updated": "更新笔记",
+      "status_changed": "状态变更",
+      "writing_generated": "生成写作"
+    }
   }
 }

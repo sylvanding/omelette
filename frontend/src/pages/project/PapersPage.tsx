@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { paperApi, projectApi, paperProcessApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
-import type { Paper, PaperStatus } from '@/types';
+import type { Paper, PaperStatus, ReadingStatus } from '@/types';
 import type { UploadResult, DedupConflictPair } from '@/services/kb-api';
 import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -21,6 +21,7 @@ import { PapersToolbar } from './papers/PapersToolbar';
 import { usePapersColumns } from './papers/papers-columns';
 import { PaperStatusBanner } from './PaperStatusBanner';
 import { CitationGraphDialog } from './CitationGraphDialog';
+import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -33,6 +34,8 @@ export default function PapersPage() {
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PaperStatus | ''>('');
+  const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
+  const [qualityTag, setQualityTag] = useState('');
   const [year, setYear] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -43,6 +46,7 @@ export default function PapersPage() {
   const [showAddPaper, setShowAddPaper] = useState(false);
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
   const [graphPaperId, setGraphPaperId] = useState<number | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -50,11 +54,13 @@ export default function PapersPage() {
       page_size: pageSize,
       q: search || undefined,
       status: status || undefined,
+      reading_status: readingStatus || undefined,
+      quality_tags: qualityTag || undefined,
       year: year ? Number(year) : undefined,
       sort_by: sortBy,
       order,
     }),
-    [page, pageSize, search, status, year, sortBy, order],
+    [page, pageSize, search, status, readingStatus, qualityTag, year, sortBy, order],
   );
 
   const { data: projectData } = useQuery({
@@ -184,11 +190,19 @@ export default function PapersPage() {
 
   const needsProcessing = statusCounts.processing > 0 || statusCounts.error > 0;
 
+  const handleRatingChange = (paperId: number, rating: number) => {
+    paperApi.update(pid, paperId, { rating }).catch(() => {
+      toast.error(t('common.updateFailed'));
+    });
+    queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
+  };
+
   const columns = usePapersColumns({
     pid,
     deleteMutation,
     handleRetry,
     setGraphPaperId,
+    onRatingChange: handleRatingChange,
   });
 
   const subtitle = projectData && (
@@ -207,6 +221,14 @@ export default function PapersPage() {
       onBatchDelete={handleBatchDelete}
       onProcessAll={handleProcessAll}
       onAddPaper={() => setShowAddPaper(true)}
+      onCompare={() => setShowComparison(true)}
+      projectId={pid}
+      paperFilters={{
+        q: search || undefined,
+        status: status || undefined,
+        year: year ? Number(year) : undefined,
+      }}
+      paperCount={total}
     />
   );
 
@@ -237,11 +259,15 @@ export default function PapersPage() {
         <PapersFilterBar
           search={search}
           status={status}
+          readingStatus={readingStatus}
+          qualityTag={qualityTag}
           year={year}
           sortBy={sortBy}
           order={order}
           onSearchChange={setSearch}
           onStatusChange={setStatus}
+          onReadingStatusChange={setReadingStatus}
+          onQualityTagChange={setQualityTag}
           onYearChange={setYear}
           onSortChange={setSortBy}
           onOrderChange={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
@@ -354,6 +380,14 @@ export default function PapersPage() {
           onOpenChange={setShowAddPaper}
           onComplete={handleAddComplete}
         />
+
+        {showComparison && (
+          <PaperComparisonDialog
+            projectId={pid}
+            paperIds={Array.from(selectedRows).map(Number)}
+            onClose={() => setShowComparison(false)}
+          />
+        )}
       </div>
     </PageLayout>
   );

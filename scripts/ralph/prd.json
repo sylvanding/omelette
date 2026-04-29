@@ -1,112 +1,154 @@
 {
   "project": "Omelette",
-  "branchName": "ralph/remaining-improvements",
-  "description": "Comprehensive project improvements for open-source readiness - remaining items after initial cleanup",
+  "branchName": "ralph/new-features",
+  "description": "Eight new user-facing features for Omelette (Scientific Literature Lifecycle Management System) — identified through competitive analysis of open-source research tools including Paperlib (2.1k stars), Amadeus, Arxie, ScholarAIO, and ScholiumAI. Each feature addresses a real gap in omelette's current capabilities and fills needs that competing tools already serve.",
   "userStories": [
     {
-      "id": "US-001",
-      "title": "Add frontend pre-commit hooks for ESLint and TypeScript",
-      "description": "As a developer, I need automatic linting and type checking before commits so I don't break the build.",
+      "id": "US-008",
+      "title": "Add bibliography export (BibTeX, RIS, EndNote) for paper collections",
+      "description": "As a researcher, I need to export my paper library in standard citation formats (BibTeX, RIS, EndNote XML) so I can import them into Zotero, Mendeley, LaTeX, or Word. Competitors like Paperlib and LitOrganizer support this; omelette currently has no export capability.",
       "acceptanceCriteria": [
-        "Add pre-commit hook that runs ESLint on staged .ts/.tsx files",
-        "Add pre-commit hook that runs tsc --noEmit on TypeScript files",
-        "Hooks use cached results for speed",
-        "Hooks don't block commits for warnings, only errors",
-        "Test: modifying a file with an ESLint error should fail pre-commit"
+        "Project papers page has an 'Export' dropdown button with BibTeX, RIS, and EndNote XML options",
+        "Export respects current page filters (search, tags, status) — only filtered papers are exported",
+        "BibTeX export produces valid .bib entries with DOI, title, authors, year, journal, abstract fields",
+        "RIS export produces valid .ris format (TY, TI, AU, PY, AB, DO, ER tags)",
+        "EndNote export produces valid .xml with proper schema",
+        "Export downloads as a file automatically (not displayed on screen)",
+        "Test: export a project with 3 papers and verify BibTeX output is parseable by a BibTeX parser",
+        "Test: export respects filter — apply a tag filter and verify only matching papers appear in export"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Backend already has ruff hooks. Add frontend hooks to .pre-commit-config.yaml"
+      "notes": "Backend: add new endpoint GET /projects/{id}/export?format=bibtex|ris|endnote. Create a new export_service.py with format generators. Frontend: add Export dropdown to PapersPage toolbar. Use blob download for file delivery. No new database models needed — all data exists in Paper model."
     },
     {
-      "id": "US-002",
-      "title": "Add frontend unit tests for remaining components",
-      "description": "As a developer, I need test coverage above 80% so I can refactor with confidence.",
+      "id": "US-009",
+      "title": "Add paper notes and annotations system",
+      "description": "As a researcher, I need to write and organize personal notes per paper so I can capture insights, questions, and connections while reading. Competitors like Paperlib, Amadeus, and PaperArxiv all support per-paper markdown notes with LaTeX and diagram rendering.",
       "acceptanceCriteria": [
-        "Add tests for MessageBubble component",
-        "Add tests for CitationCard component",
-        "Add tests for PDFViewer component",
-        "Add tests for CitationGraphView component",
-        "Run vitest run --coverage and verify >80% coverage",
-        "All tests pass on CI"
+        "Each paper has a Notes tab in the paper detail/PDF reader view",
+        "Notes editor supports markdown with LaTeX math rendering (KaTeX or MathJax)",
+        "Notes are auto-saved with debounce (save after 2 seconds of inactivity)",
+        "Notes support section headers for organization (e.g., '## Summary', '## Questions', '## Key Findings')",
+        "Notes page in sidebar lists all papers that have notes for quick navigation",
+        "Test: write a note with markdown formatting and LaTeX, refresh the page, verify it persists",
+        "Test: verify auto-save indicator shows 'Saving...' then 'Saved' state",
+        "Test: verify notes are scoped to the correct paper (notes from paper A don't appear on paper B)"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "76 tests passing. MessageBubble, CitationCard, PDFViewer, CitationGraphView, NodeDetailPanel, useTheme, useSidebar all tested."
+      "notes": "Backend: add 'notes' field already exists on Paper model (Text column). Consider adding a separate PaperNote model with id, paper_id, content, section, order, created_at, updated_at for richer structure. Frontend: add markdown editor component (use react-markdown + KaTeX for rendering, react-simplemde-editor or similar for editing). Add Notes tab to PDFReaderPage or Paper detail panel. Auto-save via debounced API call."
     },
     {
-      "id": "US-003",
-      "title": "Add Docker health check and multi-arch support",
-      "description": "As a deployer, I need Docker health checks so I can monitor container health automatically.",
+      "id": "US-010",
+      "title": "Add reading progress tracker with reading analytics dashboard",
+      "description": "As a researcher, I need to track my reading progress across papers and see analytics on my reading habits so I can prioritize and measure my literature review progress. Competitors like Amadeus offer read/unread tracking and reading history with timestamps.",
       "acceptanceCriteria": [
-        "Add HEALTHCHECK to frontend/Dockerfile (curl localhost:80)",
-        "Add HEALTHCHECK to backend/Dockerfile (curl localhost:8000/health)",
-        "Update docker-compose.yml to use health checks",
-        "Add restart policies based on health check status",
-        "docker compose up --build succeeds and both services are healthy"
+        "Each paper has a reading status: Unread, Reading, Read, Archived",
+        "Status can be changed via a dropdown or keyboard shortcut in the papers list",
+        "Papers list can be filtered by reading status",
+        "Dashboard view shows: total papers, papers by status (pie chart), papers read per week (bar chart), top journals read",
+        "Reading status persists across sessions in the database",
+        "Test: mark 5 papers as 'Read', verify dashboard shows 5 read papers",
+        "Test: filter papers list by 'Reading' status, verify only matching papers appear",
+        "Test: change a paper from 'Unread' to 'Read' and refresh the page, verify status persists"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Backend already has /health endpoint. Frontend nginx needs health check endpoint."
+      "notes": "Backend: add 'reading_status' (String) and 'read_at' (DateTime) fields to Paper model. Add GET /projects/{id}/analytics endpoint returning aggregated stats. Frontend: add reading status badge to paper rows, status filter dropdown, new Analytics sub-route under project with charts (use recharts). Keyboard shortcut: 'r' to cycle status on selected paper."
     },
     {
-      "id": "US-004",
-      "title": "Add error boundaries and loading states to frontend",
-      "description": "As a user, I need graceful error handling so I never see a blank screen when something breaks.",
+      "id": "US-011",
+      "title": "Add AI paper comparison view for selected papers",
+      "description": "As a researcher, I need to compare multiple papers side-by-side across dimensions (method, dataset, results, limitations) so I can quickly identify differences, contradictions, and complementarity. Competitors like Arxie support contradiction detection and evidence comparison.",
       "acceptanceCriteria": [
-        "Add ErrorBoundary component wrapping all page routes",
-        "Add loading skeletons for all data-fetching pages",
-        "Error boundary shows retry button and friendly message",
-        "Test: simulate network error and verify error boundary catches it"
+        "Users can select 2-5 papers from the papers list via checkboxes and click 'Compare'",
+        "Comparison view shows a table with papers as columns and comparison dimensions as rows",
+        "Dimensions include: Research Question, Method, Dataset, Key Results, Limitations, Year, Citation Count",
+        "An AI-generated summary section highlights key differences, contradictions, and complementary findings",
+        "Comparison can be regenerated with different prompts (e.g., 'Compare methods only')",
+        "Test: select 3 papers, verify comparison table renders all 5 dimensions for each paper",
+        "Test: verify AI summary contains citations back to the original papers",
+        "Test: verify selecting more than 5 papers disables the Compare button with a tooltip"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Check if react-error-boundary package is already installed. If not, add it."
+      "notes": "Backend: add POST /projects/{id}/papers/compare endpoint accepting paper_ids and optional focus dimension. Uses existing LLM provider to generate comparison from paper abstracts + OCR content. Frontend: add checkbox selection to PapersPage table, Compare button appears when 2-5 selected, new comparison dialog or full-page view with table layout. Reuse existing LLM infrastructure from writing_service.py."
     },
     {
-      "id": "US-005",
-      "title": "Add accessibility improvements (ARIA labels, keyboard navigation)",
-      "description": "As a user relying on assistive technology, I need proper ARIA labels and keyboard shortcuts.",
+      "id": "US-012",
+      "title": "Add research topic timeline view showing paper chronology",
+      "description": "As a researcher, I need to visualize papers on a chronological timeline so I can see how a research topic evolved, identify foundational papers, and track the progression of ideas over time. Competitors like Arxie support citation timeline tracing.",
       "acceptanceCriteria": [
-        "All interactive elements have aria-label or aria-labelledby",
-        "Keyboard navigation works for all major flows (tab, enter, escape)",
-        "Color contrast meets WCAG AA standards",
-        "Screen reader can navigate sidebar properly"
+        "Project has a 'Timeline' tab showing all papers sorted chronologically by year/publication date",
+        "Each paper appears as a node on a horizontal timeline, sized by citation count",
+        "Papers from the same year are grouped and can be expanded to show details",
+        "Hovering a paper shows a tooltip with title, authors, journal, citation count, and a one-line AI summary",
+        "Clicking a paper navigates to its detail/PDF reader view",
+        "Timeline can be filtered by tags or search query",
+        "Test: create a project with papers from 2019-2024, verify timeline renders all years correctly",
+        "Test: filter by a tag, verify only matching papers appear on timeline",
+        "Test: verify timeline is scrollable and handles 50+ papers without performance issues"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Use axe-core or eslint-plugin-jsx-a11y for automated checks"
+      "notes": "Frontend-only feature using existing paper data (year, citation_count fields). Create new TimelineView component with a custom horizontal timeline. Use d3 or a lightweight timeline library. AI summary on hover can be generated on-demand or pre-cached. Group papers by year, sort by citation count within each year."
     },
     {
-      "id": "US-006",
-      "title": "Add aria-labels to interactive elements lacking accessibility support",
-      "description": "As a user relying on assistive technology, I need all interactive elements to have proper ARIA labels.",
+      "id": "US-013",
+      "title": "Add paper rating and quality scoring system",
+      "description": "As a researcher, I need to rate papers (1-5 stars) and assign custom quality tags (e.g., 'seminal', 'controversial', 'survey') so I can prioritize high-quality papers and filter my library by perceived importance. Competitors like Paperlib support rating, flagging, and tagging.",
       "acceptanceCriteria": [
-        "CitationCard action buttons (toggle, copy, link) have aria-labels",
-        "AddPaperDialog action buttons have aria-labels",
-        "MobileMenuSheet and MobileBottomNav have aria-labels",
-        "ToolModeSelector has aria-labels",
-        "PapersPage action buttons have aria-labels",
-        "All icon-only buttons have aria-label or aria-labelledby"
+        "Each paper in the list view has a 5-star rating component (click to rate, hover to preview)",
+        "Rating is saved immediately to the database",
+        "Papers list can be sorted by rating (highest first)",
+        "Users can add custom quality tags from a predefined set (Seminal, Survey, Controversial, Replication, Methodology) plus custom tags",
+        "Papers can be filtered by quality tags",
+        "Rating and tags are visible as columns in the papers table",
+        "Test: rate a paper 4 stars, refresh page, verify rating persists",
+        "Test: add a quality tag 'Seminal' to a paper, filter by that tag, verify only matching papers appear",
+        "Test: sort papers by rating descending, verify highest-rated papers appear first"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "All icon-only buttons now have aria-labels. Most components already had them; added to MobileBottomNav More button, ProjectDetail back button, and PDFReaderLayout back button."
+      "notes": "Backend: add 'rating' (Integer, 0-5) and 'quality_tags' (JSON array) fields to Paper model. Add query params for sort=rating and filter by quality_tags. Frontend: add star rating component (can use shadcn/ui or build custom), quality tag dropdown/badges. Update PapersPage table to include rating column and tag filters. Sort and filter integration with existing paperApi.list params."
     },
     {
-      "id": "US-007",
-      "title": "Split large page components into sub-components",
-      "description": "As a maintainer, I need large files split for easier navigation and code review.",
+      "id": "US-014",
+      "title": "Add related paper recommendations based on semantic similarity",
+      "description": "As a researcher reading a paper, I need to discover semantically related papers in my library so I don't miss relevant work I've already collected. This leverages the existing ChromaDB vector store that already holds paper embeddings for RAG queries.",
       "acceptanceCriteria": [
-        "PapersPage.tsx (627 lines) split into toolbar, table, bulk actions sub-components",
-        "WritingPage.tsx (560 lines) split into editor, sidebar, toolbar sub-components",
-        "AddPaperDialog.tsx (542 lines) split into upload form, search form, step components",
-        "SubscriptionManager.tsx (460 lines) split into list, form, dialog components",
-        "Each extracted component has focused responsibility (<400 lines)"
+        "Paper detail/PDF reader view shows a 'Related Papers' section listing 5-10 most similar papers from the same project",
+        "Each related paper shows title, authors, year, and a similarity score (0-100%)",
+        "Similarity is computed using existing ChromaDB embeddings (cosine similarity)",
+        "Clicking a related paper navigates to its detail view",
+        "Related papers section has a 'Find more like this' action that triggers a broader semantic search across all projects",
+        "Test: verify related papers for a given paper are semantically similar (not random)",
+        "Test: verify clicking a related paper navigates correctly",
+        "Test: verify 'Find more like this' returns papers from outside the current project"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Focus on PapersPage.tsx and WritingPage.tsx first. Ensure existing tests still pass after refactoring."
+      "notes": "Backend: add GET /projects/{id}/papers/{paper_id}/similar?limit=10 endpoint. Use existing embedding_service.py and ChromaDB to query similar vectors. Frontend: add RelatedPapers card component to PDFReaderPage or paper detail panel. Display similarity score as a percentage badge. 'Find more like this' reuses the semantic search from knowledge bases."
+    },
+    {
+      "id": "US-015",
+      "title": "Add project activity feed and change log",
+      "description": "As a researcher working across multiple sessions, I need an activity feed showing recent actions (papers added, notes written, status changes, RAG indexing) so I can quickly pick up where I left off. This provides a 'what happened since I was last here' overview that no competitor currently offers.",
+      "acceptanceCriteria": [
+        "Project detail page has an 'Activity' tab showing a chronological feed of recent actions",
+        "Activity types include: paper_added, paper_deleted, note_updated, status_changed, rag_indexed, writing_generated, search_executed, keyword_added",
+        "Each activity entry shows: action type icon, description, timestamp, and a link to the relevant paper/page",
+        "Feed is paginated (show 20 entries, load more on scroll)",
+        "Activity feed highlights entries since the user's last visit (e.g., '5 new activities since yesterday')",
+        "Activity data is stored in the database with a new activity_log table",
+        "Test: add a paper, update a note, change a status — verify all three appear in the activity feed",
+        "Test: verify pagination loads older entries correctly",
+        "Test: verify 'since last visit' highlighting works (clear last_visited, add activities, verify they're highlighted)"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Backend: create new ActivityLog model (id, project_id, action_type, entity_type, entity_id, description, created_at). Add event hooks in existing services to write activity entries (paper_service, rag_service, writing_service, etc.). Add GET /projects/{id}/activity?limit=20&cursor= endpoint. Frontend: add ActivityFeed component with grouped timeline entries (group by date). Use intersection observer for infinite scroll. Add 'last_visited' tracking to user_settings model."
     }
   ]
 }
