@@ -130,7 +130,7 @@ export default function PapersPage() {
     invalidateKeys: [['papers', pid], queryKeys.projects.detail(pid)],
   });
 
-  const papers: Paper[] = data?.items ?? [];
+  const papers: Paper[] = useMemo(() => data?.items ?? [], [data?.items]);
   const total = data?.total ?? 0;
 
   const statusCounts = useMemo(() => {

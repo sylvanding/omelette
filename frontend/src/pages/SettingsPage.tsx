@@ -93,6 +93,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (data) {
       const d = data as Record<string, string>;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync form with query response
       setForm({
         llm_provider: d.llm_provider ?? 'mock',
         llm_temperature: String(d.llm_temperature ?? '0.7'),
