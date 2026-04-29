@@ -1,51 +1,32 @@
-## 2026-04-29 - US-003
-- Implemented Docker health checks for both services
-- Files changed: Dockerfile, frontend/Dockerfile, docker-compose.yml
-- Backend: python urllib check to /api/v1/settings/health
-- Frontend: wget check to localhost:80
-- docker-compose.yml: frontend depends on backend condition: service_healthy
-
-## 2026-04-29 20:47 - US-002
-- Added PDFViewer tests with react-pdf mock (7 tests)
-- Added CitationGraphView tests with d3 mocks (8 tests)
-- Added NodeDetailPanel tests (11 tests)
-- Added useTheme hook tests with matchMedia mocking (7 tests)
-- Added useSidebar hook tests with localStorage persistence (8 tests)
-- Fixed existing CitationCard et al. test (isExpanded was false)
-- Fixed PDFViewer keyboard handler missing dependency (useCallback)
-- Added aria-labels to PDFViewer toolbar and NodeDetailPanel close button
-- Added aria-live regions to PDFViewer indicators
-- Total tests: 76 passing (was 34)
-- **Learnings for future iterations:**
-  - react-pdf requires full mock to avoid import.meta.url crash in jsdom
-  - d3 modules (force, selection, drag, zoom) must all be mocked for CitationGraphView
-  - framer-motion AnimatePresence doesn't animate in jsdom - use isExpanded=true for state tests
-  - Test utils export `render` from @testing-library/react separately
-  - window.matchMedia not available in jsdom - must mock with Object.defineProperty
+# Ralph Progress Log
+Started: Wed Apr 29 09:30:31 PM CST 2026
 ---
 
-## 2026-04-29 20:55 - US-006
-- Added aria-labels to remaining icon-only buttons
-- Files changed: MobileBottomNav.tsx (More button + nav element), ProjectDetail.tsx (back button), PDFReaderLayout.tsx (back button)
-- CitationCard, PapersPage, NodeDetailPanel, CitationGraphDialog already had aria-labels from previous work
-- All 76 tests passing, lint and typecheck clean
-- **Learnings for future iterations:**
-  - Most aria-labels were already in place from US-005 work
-  - When adding aria-labels, use t() for i18n support with fallback strings
-  - The `<nav>` element should also have `aria-label` for landmark navigation
----
+## Codebase Patterns
+- UI components in `src/components/ui/` use radix-ui primitives via `radix-ui` package (follow `select.tsx`, `popover.tsx` patterns)
+- API service layer in `src/services/api.ts` — axios interceptor unwraps `response.data`, use raw `fetch` for blob downloads
+- Backend endpoints in `backend/app/api/v1/` — use `ApiResponse<T>` wrapper, `FileResponse`/`Response` for file downloads
+- i18n keys nested under feature name in both `en.json` and `zh.json` (e.g., `papers.export`)
+- Tests use vitest with jsdom, fixtures in `src/test/fixtures/`
+- Toolbar components receive props from parent page (PapersPage → PapersToolbar → PapersExportDropdown)
 
-## 2026-04-29 21:10 - US-007
-- Split all four large components into focused sub-components
-- PapersPage.tsx: 632 → 360 lines (extracted PaperStatusBanner, CitationGraphDialog, used pre-existing PapersFilterBar/PapersToolbar/papers-columns)
-- WritingPage.tsx: 560 → 123 lines (extracted WritingTabs, WritingTabInputs, WritingOutputPanel, useWritingMutations)
-- AddPaperDialog.tsx: 542 → 332 lines (extracted AddPaperDialogFooter, UploadTabContent)
-- SubscriptionManager.tsx: 460 → 196 lines (extracted SubscriptionCard, SubscriptionFormDialog)
-- All extracted components under 200 lines each, focused responsibility
-- All aria-labels preserved from previous work
+## [2026-04-29 21:40] - US-008
+- Implemented bibliography export (BibTeX, RIS, EndNote) for paper collections
+- Files changed:
+  - `backend/app/services/export_service.py` (new) — format generators
+  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/export endpoint
+  - `frontend/src/lib/bibliography-export.ts` (new) — frontend format utilities + download
+  - `frontend/src/lib/__tests__/bibliography-export.test.ts` (new) — 13 unit tests
+  - `frontend/src/components/ui/dropdown-menu.tsx` (new) — radix-ui dropdown menu wrapper
+  - `frontend/src/pages/project/papers/PapersExportDropdown.tsx` (new) — export dropdown component
+  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added export button
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up export props
+  - `frontend/src/services/api.ts` — added exportPapers function
+  - `frontend/src/i18n/locales/en.json` — added export keys
+  - `frontend/src/i18n/locales/zh.json` — added export keys
 - **Learnings for future iterations:**
-  - When extracting, move shared constants (SOURCE_OPTIONS, FREQUENCY_OPTIONS) to the extracted component file
-  - Clean up unused imports after extraction — ESLint will catch them
-  - The UploadTabContent extraction required moving handleDrop, formatSize, totalSize as well
-  - PapersPage was already partially extracted (filter bar, toolbar, columns) — just needed to finish the work
+  - The axios interceptor unwraps `response.data` — for blob/file downloads, use raw `fetch` instead
+  - `radix-ui` umbrella package (v1.4.3) includes DropdownMenu — import as `import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"`
+  - Backend export endpoint should accept the same filter params as list endpoint (q, status, year) to respect current page filters
+  - File downloads work best with `Response` + `Content-Disposition` header on backend side
 ---
