@@ -396,6 +396,32 @@ export const handlers = [
     ),
   ),
 
+  // Paper similar / related
+  http.get(`${apiBase}/projects/:id/papers/:paperId/similar`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 2,
+          title: 'Related Paper One',
+          authors: ['Author A', 'Author B'],
+          year: 2023,
+          journal: 'Related Journal',
+          citation_count: 25,
+          similarity_score: 92.5,
+        },
+        {
+          id: 3,
+          title: 'Related Paper Two',
+          authors: ['Author C'],
+          year: 2022,
+          journal: 'Another Journal',
+          citation_count: 15,
+          similarity_score: 78.3,
+        },
+      ]),
+    ),
+  ),
+
   // Paper compare
   http.post(`${apiBase}/projects/:id/papers/compare`, async ({ request }) => {
     const body = (await request.json()) as { paper_ids?: number[]; focus?: string };

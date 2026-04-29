@@ -58,7 +58,21 @@ export const paperApi = {
     api.get<ReadingAnalytics>(`/projects/${projectId}/papers/analytics`).then(r => r.data),
   compare: (projectId: number, data: PaperComparisonRequest) =>
     api.post<PaperComparisonResponse>(`/projects/${projectId}/papers/compare`, data).then(r => r.data),
+  getRelated: (projectId: number, paperId: number, limit?: number) =>
+    api.get<SimilarPaper[]>(`/projects/${projectId}/papers/${paperId}/similar`, {
+      params: limit ? { limit } : {},
+    }).then(r => r.data),
 };
+
+export interface SimilarPaper {
+  id: number;
+  title: string;
+  authors: string[];
+  year: number | null;
+  journal: string;
+  citation_count: number;
+  similarity_score: number;
+}
 
 export type ExportFormat = 'bibtex' | 'ris' | 'endnote';
 

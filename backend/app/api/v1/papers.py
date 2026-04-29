@@ -357,3 +357,100 @@ async def get_reading_analytics(
             "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
         }
     )
+
+
+@router.get("/{paper_id}/similar", response_model=ApiResponse[list[dict]], summary="Get similar papers")
+async def get_similar_papers(
+    project_id: int,
+    paper_id: int,
+    limit: int = Query(default=10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return papers semantically similar to the given paper using ChromaDB embeddings."""
+    import asyncio
+    import logging
+
+    import numpy as np
+
+    from app.services.rag_service import RAGService
+
+    logger = logging.getLogger(__name__)
+
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    rag_service = RAGService()
+    collection = rag_service._get_collection(project_id)
+
+    try:
+        chunk_result = await asyncio.to_thread(
+            collection.get,
+            where={"paper_id": paper_id},
+            include=["embeddings", "metadatas"],
+        )
+    except Exception as e:
+        logger.warning("Failed to fetch embeddings for paper %d: %s", paper_id, e)
+        return ApiResponse(data=[])
+
+    chunk_embeddings = chunk_result.get("embeddings")
+    if not chunk_embeddings:
+        return ApiResponse(data=[])
+
+    paper_vector = np.mean(chunk_embeddings, axis=0).tolist()
+
+    query_result = await asyncio.to_thread(
+        collection.query,
+        query_embeddings=[paper_vector],
+        n_results=limit + 1,
+        where={"paper_id": {"$ne": paper_id}},
+        include=["metadatas", "distances"],
+    )
+
+    metadatas = query_result.get("metadatas", [[]])[0]
+    distances = query_result.get("distances", [[]])[0]
+
+    paper_scores: dict[int, list[float]] = {}
+    for meta, dist in zip(metadatas, distances):
+        pid = meta.get("paper_id")
+        if pid is None:
+            continue
+        if pid not in paper_scores:
+            paper_scores[pid] = []
+        paper_scores[pid].append(dist)
+
+    aggregated = []
+    for pid, dists in paper_scores.items():
+        avg_dist = sum(dists) / len(dists)
+        similarity = round(max(0, (1 - avg_dist) * 100), 1)
+        aggregated.append((pid, similarity))
+
+    aggregated.sort(key=lambda x: x[1], reverse=True)
+    top_paper_ids = [pid for pid, _ in aggregated[:limit]]
+
+    if not top_paper_ids:
+        return ApiResponse(data=[])
+
+    stmt = select(Paper).where(Paper.id.in_(top_paper_ids))
+    result = await db.execute(stmt)
+    papers_map = {p.id: p for p in result.scalars().all()}
+
+    similar_papers = []
+    for pid, score in aggregated[:limit]:
+        p = papers_map.get(pid)
+        if p is None:
+            continue
+        authors = p.authors or []
+        author_names = [a.get("name", "") for a in authors if isinstance(a, dict)]
+        similar_papers.append(
+            {
+                "id": p.id,
+                "title": p.title,
+                "authors": author_names[:3],
+                "year": p.year,
+                "journal": p.journal,
+                "citation_count": p.citation_count,
+                "similarity_score": score,
+            }
+        )
+
+    return ApiResponse(data=similar_papers)

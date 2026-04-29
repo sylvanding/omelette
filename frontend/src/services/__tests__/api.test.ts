@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mocks/server';
 import { projectApi, paperApi } from '../api';
-import type { ReadingAnalytics } from '../api';
+import type { ReadingAnalytics, SimilarPaper } from '../api';
 import type { PaperComparisonResponse } from '@/types/api';
 
 describe('projectApi', () => {
@@ -93,5 +93,28 @@ describe('paperApi.compare', () => {
 
     expect(result.papers).toHaveLength(3);
     expect(typeof result.summary).toBe('string');
+  });
+});
+
+describe('paperApi.getRelated', () => {
+  it('returns list of similar papers with similarity scores', async () => {
+    const result: SimilarPaper[] = await paperApi.getRelated(1, 1);
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toHaveProperty('id');
+    expect(result[0]).toHaveProperty('title');
+    expect(result[0]).toHaveProperty('authors');
+    expect(result[0]).toHaveProperty('similarity_score');
+    expect(result[0].similarity_score).toBe(92.5);
+  });
+
+  it('returns typed similar paper data', async () => {
+    const result: SimilarPaper[] = await paperApi.getRelated(1, 1);
+
+    expect(typeof result[0].id).toBe('number');
+    expect(typeof result[0].title).toBe('string');
+    expect(Array.isArray(result[0].authors)).toBe(true);
+    expect(typeof result[0].similarity_score).toBe('number');
   });
 });

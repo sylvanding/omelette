@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SelectionQA } from './SelectionQA';
 import NotesPanel from './NotesPanel';
+import RelatedPapers from './RelatedPapers';
 import { paperApi } from '@/services/api';
 
 const PDFViewer = lazy(() => import('./PDFViewer'));
@@ -71,6 +72,7 @@ export default function PDFReaderLayout({
                 <TabsList className="h-7">
                   <TabsTrigger value="notes" className="text-xs">{t('notes.tab', 'Notes')}</TabsTrigger>
                   <TabsTrigger value="qa" className="text-xs">{t('notes.qa', 'Q&A')}</TabsTrigger>
+                  <TabsTrigger value="related" className="text-xs">{t('papers.related.tab', 'Related')}</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="notes" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
@@ -89,6 +91,9 @@ export default function PDFReaderLayout({
                   paperTitle={paperTitle}
                   projectId={projectId}
                 />
+              </TabsContent>
+              <TabsContent value="related" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <RelatedPapers projectId={projectId} paperId={paperId} />
               </TabsContent>
             </Tabs>
           </Panel>

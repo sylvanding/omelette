@@ -347,7 +347,12 @@
     "qualityTags": "Quality Tags",
     "compare": "Compare",
     "compareTooMany": "Select 2-5 papers to compare",
-    "compareTitle": "Paper Comparison"
+    "compareTitle": "Paper Comparison",
+    "related": {
+      "tab": "Related",
+      "empty": "No related papers found",
+      "emptyHint": "Index paper content to enable semantic similarity matching"
+    }
   },
   "analytics": {
     "title": "Reading Analytics",
