@@ -19,7 +19,7 @@ export default function NodeDetailPanel({ node, projectId, onClose }: NodeDetail
     <div className="absolute right-0 top-0 z-20 h-full w-80 overflow-y-auto border-l border-border bg-background/95 p-4 shadow-lg backdrop-blur">
       <div className="mb-4 flex items-start justify-between">
         <h3 className="text-sm font-semibold leading-tight">{node.title}</h3>
-        <Button size="icon" variant="ghost" className="size-6 shrink-0" onClick={onClose}>
+        <Button size="icon" variant="ghost" className="size-6 shrink-0" onClick={onClose} aria-label={t('papers.citationGraph.close', 'Close')}>
           <X className="size-4" />
         </Button>
       </div>
