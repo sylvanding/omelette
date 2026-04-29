@@ -115,3 +115,14 @@ CI runs on push/PR to `main`: ruff lint+format, mypy, pytest (backend); tsc, bui
 4. Ensure CI passes
 5. Request review; address feedback
 6. Squash/merge after approval
+
+## Docker Quick Start
+
+Build and run the entire stack:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+The backend will be available at `http://localhost:8000` and the frontend at `http://localhost:3000`.

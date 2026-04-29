@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Filter } from 'lucide-react';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, type SimulationNodeDatum, type SimulationLinkDatum } from 'd3-force';
@@ -73,12 +73,12 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
     return { nodes, edges };
   }, [data, showLocalOnly]);
 
-  function getNodeColor(node: GraphNode): string {
+  const getNodeColor = useCallback((node: GraphNode): string => {
     if (node.id === data.center_id) return getCSSVariable('--primary') || 'oklch(0.585 0.233 293)';
     if (node.is_local) return getCSSVariable('--chart-3') || '#22c55e';
     if (node.year && node.year >= 2020) return getCSSVariable('--chart-2') || '#3b82f6';
     return getCSSVariable('--muted-foreground') || '#94a3b8';
-  }
+  }, [data.center_id]);
 
   function getNodeRadius(node: GraphNode): number {
     return Math.log10((node.citation_count || 0) + 1) * 4 + 4;
@@ -199,7 +199,7 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
       sim.stop();
       simulationRef.current = null;
     };
-  }, [graphData, data.center_id]);
+  }, [graphData, data.center_id, getNodeColor]);
 
   if (isLoading) return <GraphSkeleton />;
 

@@ -104,14 +104,12 @@ export default function PlaygroundPage() {
   // When navigating to a different conversation via sidebar, load its messages
   // into the existing Chat instance (which is preserved thanks to key="playground").
   const prevConvIdRef = useRef(convIdNum);
-  useEffect(() => {
-    if (convIdNum !== prevConvIdRef.current) {
-      prevConvIdRef.current = convIdNum;
-      setNewConversationId(undefined);
-      setToolModeOverride(null);
-      setSelectedKBsOverride(null);
-    }
-  }, [convIdNum]);
+  if (convIdNum !== prevConvIdRef.current) {
+    prevConvIdRef.current = convIdNum;
+    setNewConversationId(undefined);
+    setToolModeOverride(null);
+    setSelectedKBsOverride(null);
+  }
 
   useEffect(() => {
     if (restoredConv && restoredMessages.length > 0 && convIdNum != null) {

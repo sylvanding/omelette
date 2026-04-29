@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+/* eslint-disable react-hooks/refs -- intentional: ref-based throttle for streaming UX */
+import { useState, useRef, useCallback } from 'react';
 
 /**
  * Throttle a rapidly changing value (e.g. SSE streaming content).
@@ -9,24 +10,25 @@ export function useThrottledValue<T>(value: T, intervalMs = 60): T {
   const [throttled, setThrottled] = useState(value);
   const lastUpdate = useRef(0);
   const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
-  useEffect(() => {
+  const throttledUpdate = useCallback(() => {
     const now = Date.now();
     const elapsed = now - lastUpdate.current;
-
     if (elapsed >= intervalMs) {
-      setThrottled(value);
+      setThrottled(valueRef.current);
       lastUpdate.current = now;
     } else {
       clearTimeout(pending.current);
       pending.current = setTimeout(() => {
-        setThrottled(value);
+        setThrottled(valueRef.current);
         lastUpdate.current = Date.now();
       }, intervalMs - elapsed);
     }
+  }, [intervalMs]);
 
-    return () => clearTimeout(pending.current);
-  }, [value, intervalMs]);
+  throttledUpdate();
 
   return throttled;
 }

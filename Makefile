@@ -54,3 +54,15 @@ clean: ## Clean build artifacts
 	rm -rf backend/dist backend/build backend/*.egg-info
 	rm -rf frontend/dist
 	rm -rf docs/.vitepress/dist docs/.vitepress/cache
+
+docker-build: ## Build Docker images
+	docker compose build
+
+docker-up: ## Start services with Docker
+	docker compose up
+
+docker-down: ## Stop services
+	docker compose down
+
+docker-clean: ## Remove all Docker containers and images
+	docker compose down -v --rmi local
