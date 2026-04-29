@@ -277,6 +277,7 @@
     "ragChat": "RAG Chat",
     "writing": "Writing",
     "tasks": "Tasks",
+    "timeline": "Timeline",
     "backToKB": "Back to Knowledge Bases",
     "notFound": "Project not found",
     "noDesc": "No description",
@@ -355,6 +356,14 @@
     "noReadData": "No papers have been marked as read yet",
     "noJournalData": "No journal data available",
     "loadFailed": "Failed to load analytics data"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "empty": "No papers on the timeline",
+    "emptyHint": "Add papers to your project to see them on a chronological timeline.",
+    "paperCount": "{{count}} paper(s)",
+    "papers": "papers",
+    "citations": "{{count}} citation(s)"
   },
   "keywords": {
     "title": "Keywords",

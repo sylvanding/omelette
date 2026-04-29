@@ -91,7 +91,7 @@
         "Test: verify timeline is scrollable and handles 50+ papers without performance issues"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Frontend-only feature using existing paper data (year, citation_count fields). Create new TimelineView component with a custom horizontal timeline. Use d3 or a lightweight timeline library. AI summary on hover can be generated on-demand or pre-cached. Group papers by year, sort by citation count within each year."
     },
     {

@@ -108,3 +108,20 @@ Started: Wed Apr 29 09:30:31 PM CST 2026
   - The DataTable already has checkbox selection built-in — just pass `selectedRows` and `onSelectionChange` props
   - Avoid mutating `handlers.ts` with `server.use()` inside async tests without cleanup — can cause cross-test interference
 ---
+
+## [2026-04-29 22:30] - US-012
+- Implemented research topic timeline view showing paper chronology
+- Files changed:
+  - `frontend/src/pages/project/TimelinePage.tsx` (new) — timeline page with horizontal bar chart, year groups, expandable paper cards
+  - `frontend/src/pages/project/__tests__/TimelinePage.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/ProjectDetail.tsx` — added Timeline nav item with Clock icon
+  - `frontend/src/App.tsx` — added /timeline route
+  - `frontend/src/i18n/locales/en.json` — added timeline keys
+  - `frontend/src/i18n/locales/zh.json` — added timeline keys (Chinese)
+- **Learnings for future iterations:**
+  - The paperApi.list supports `page_size: 500` to fetch all papers for full-project views like timeline
+  - `useNavigate` from react-router-dom needs to be mocked in tests with `vi.fn()` to avoid navigation errors
+  - The PapersFilterBar component is reusable across different paper views — it already handles search, status, reading status, and year filters
+  - `screen.getByText()` throws when multiple elements match — use `getAllByText` for elements that appear in multiple places (year labels in timeline bar + year headers)
+  - Paper card node size is computed as `Math.sqrt(citation_count) * 5` with min/max bounds for visual scaling
+---

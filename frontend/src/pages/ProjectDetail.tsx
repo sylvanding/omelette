@@ -6,6 +6,7 @@ import {
   Compass,
   PenLine,
   ArrowLeft,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -21,6 +22,7 @@ export default function ProjectDetail() {
     { path: '', label: t('project.papers'), icon: FileText },
     { path: 'discovery', label: t('discovery.title'), icon: Compass },
     { path: 'writing', label: t('project.writing'), icon: PenLine },
+    { path: 'timeline', label: t('project.timeline'), icon: Clock },
   ];
 
   const { data } = useQuery({

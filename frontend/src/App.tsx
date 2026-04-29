@@ -17,6 +17,7 @@ const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
 const DiscoveryPage = lazy(() => import('@/pages/project/DiscoveryPage'));
 const PDFReaderPage = lazy(() => import('@/pages/project/PDFReaderPage'));
 const AnalyticsPage = lazy(() => import('@/pages/project/AnalyticsPage'));
+const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +57,7 @@ function App() {
               <Route path="discovery" element={<DiscoveryPage />} />
               <Route path="writing" element={<WritingPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="timeline" element={<TimelinePage />} />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="search" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
