@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omelette — Save Paper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <header class="header">
+      <h1>Save to Omelette</h1>
+    </header>
+
+    <!-- Settings section (shown if not configured) -->
+    <div id="settings-panel" class="panel hidden">
+      <p class="label">Backend URL</p>
+      <input type="url" id="backend-url" placeholder="http://localhost:8000" />
+      <p class="label">API Key</p>
+      <input type="password" id="api-key" placeholder="Your API key" />
+      <button id="save-settings" class="btn btn-primary">Save Settings</button>
+    </div>
+
+    <!-- Save section (shown when configured) -->
+    <div id="save-panel" class="panel">
+      <div id="paper-info" class="paper-info">
+        <p id="paper-title" class="paper-title">Loading...</p>
+      </div>
+
+      <div class="field">
+        <label for="project-select" class="label">Project</label>
+        <select id="project-select">
+          <option value="">Select a project...</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tags-input" class="label">Tags (comma-separated)</label>
+        <input type="text" id="tags-input" placeholder="e.g. survey, ML, NLP" />
+      </div>
+
+      <button id="save-btn" class="btn btn-primary" disabled>Save Paper</button>
+
+      <div id="status" class="status hidden"></div>
+    </div>
+
+    <footer class="footer">
+      <button id="open-settings" class="btn-link">Settings</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

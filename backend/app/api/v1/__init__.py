@@ -7,6 +7,7 @@ from app.api.v1 import (
     analysis,
     analytics,
     audio_overviews,
+    browser_upload,
     chat,
     collections,
     concepts,
@@ -37,6 +38,7 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(projects.router, prefix="/projects")
 api_router.include_router(papers.router, prefix="/projects/{project_id}/papers")
 api_router.include_router(upload.router, prefix="/projects/{project_id}/papers")
+api_router.include_router(browser_upload.router, prefix="/projects/{project_id}/upload")
 api_router.include_router(collections.router, prefix="/projects/{project_id}/collections")
 api_router.include_router(activities.router, prefix="/projects/{project_id}/activities")
 api_router.include_router(keywords.router)

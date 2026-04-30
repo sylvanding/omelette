@@ -513,4 +513,18 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Browser Upload
+  http.post(`${apiBase}/projects/:id/upload/browser`, ({ request }) => {
+    const url = new URL(request.url);
+    const title = url.searchParams.get('title') || 'Captured Paper';
+    return HttpResponse.json(
+      mockResponse({
+        status: 'captured',
+        paper_id: 101,
+        title,
+        processing: true,
+      }),
+    );
+  }),
 ];

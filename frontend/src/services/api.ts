@@ -749,3 +749,32 @@ export const audioOverviewsApi = {
   generate: (projectId: number, data: AudioOverviewRequest) =>
     api.post<AudioOverviewResponse>(`/projects/${projectId}/audio-overviews`, data).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Browser Upload API
+// ---------------------------------------------------------------------------
+
+export interface BrowserCaptureResult {
+  status: string;
+  paper_id: number;
+  title: string;
+  processing: boolean;
+}
+
+export const browserUploadApi = {
+  capture: (
+    projectId: number,
+    params: {
+      pdf_url?: string;
+      doi?: string;
+      arxiv_id?: string;
+      title?: string;
+      tags?: string;
+    },
+  ) =>
+    api.post<BrowserCaptureResult>(
+      `/projects/${projectId}/upload/browser`,
+      null,
+      { params },
+    ).then(r => r.data),
+};
