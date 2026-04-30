@@ -80,3 +80,31 @@ export interface ActivityLog {
   details: Record<string, unknown> | null;
   created_at: string;
 }
+
+export interface Collection {
+  id: number;
+  project_id: number;
+  name: string;
+  description: string;
+  color: string;
+  sort_order: number;
+  paper_count: number;
+}
+
+export interface CollectionPaper {
+  paper_id: number;
+  title: string;
+  doi: string | null;
+  year: number | null;
+  citation_count: number;
+}
+
+export interface CollectionDetail {
+  collection: Collection;
+  papers: CollectionPaper[];
+}
+
+export interface PaperTagSuggestion {
+  paper_id: number;
+  suggested_tags: string[];
+}

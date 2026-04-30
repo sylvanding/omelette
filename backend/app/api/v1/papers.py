@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_or_404, get_project
 from app.config import settings
-from app.models import Paper, Project
+from app.models import CollectionPaper, Paper, Project
 from app.models.chunk import PaperChunk
 from app.schemas.chunk import ChunkRead
 from app.schemas.common import ApiResponse, PaginatedData, PaginationParams
@@ -27,6 +27,7 @@ async def list_papers(
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
     quality_tags: str | None = Query(default=None, description="Filter by quality tag"),
+    collection_id: int | None = Query(default=None, description="Filter by collection"),
     sort_by: str = "created_at",
     order: str = "desc",
     db: AsyncSession = Depends(get_db),
@@ -35,6 +36,14 @@ async def list_papers(
     page, page_size = pagination.page, pagination.page_size
     base = select(Paper).where(Paper.project_id == project_id)
     count_base = select(func.count(Paper.id)).where(Paper.project_id == project_id)
+
+    if collection_id:
+        base = base.join(CollectionPaper, Paper.id == CollectionPaper.paper_id).where(
+            CollectionPaper.collection_id == collection_id
+        )
+        count_base = count_base.join(CollectionPaper, Paper.id == CollectionPaper.paper_id).where(
+            CollectionPaper.collection_id == collection_id
+        )
 
     if status:
         base = base.where(Paper.status == status)

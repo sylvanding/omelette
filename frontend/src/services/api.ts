@@ -428,3 +428,61 @@ export const contradictionsApi = {
       `/projects/${projectId}/analysis/contradictions`,
     ).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Collections API
+// ---------------------------------------------------------------------------
+
+export interface Collection {
+  id: number;
+  project_id: number;
+  name: string;
+  description: string;
+  color: string;
+  sort_order: number;
+  paper_count: number;
+}
+
+export interface CollectionPaperItem {
+  paper_id: number;
+  title: string;
+  doi: string | null;
+  year: number | null;
+  citation_count: number;
+}
+
+export interface CollectionDetail {
+  collection: Collection;
+  papers: CollectionPaperItem[];
+}
+
+export interface PaperTagSuggestion {
+  paper_id: number;
+  suggested_tags: string[];
+}
+
+export const collectionsApi = {
+  list: (projectId: number) =>
+    api.get<{ collections: Collection[] }>(`/projects/${projectId}/collections`).then(r => r.data),
+
+  create: (projectId: number, data: { name: string; description?: string; color?: string }) =>
+    api.post<Collection>(`/projects/${projectId}/collections`, data).then(r => r.data),
+
+  update: (projectId: number, collectionId: number, data: Partial<{ name: string; description: string; color: string; sort_order: number }>) =>
+    api.put<Collection>(`/projects/${projectId}/collections/${collectionId}`, data).then(r => r.data),
+
+  delete: (projectId: number, collectionId: number) =>
+    api.delete<null>(`/projects/${projectId}/collections/${collectionId}`).then(r => r.data),
+
+  getDetail: (projectId: number, collectionId: number) =>
+    api.get<CollectionDetail>(`/projects/${projectId}/collections/${collectionId}`).then(r => r.data),
+
+  addPapers: (projectId: number, collectionId: number, paperIds: number[]) =>
+    api.post<Collection>(`/projects/${projectId}/collections/${collectionId}/papers`, { paper_ids: paperIds }).then(r => r.data),
+
+  removePapers: (projectId: number, collectionId: number, paperIds: number[]) =>
+    api.delete<Collection>(`/projects/${projectId}/collections/${collectionId}/papers`, { data: { paper_ids: paperIds } }).then(r => r.data),
+
+  suggestTags: (projectId: number, paperIds: number[]) =>
+    api.post<{ tags: PaperTagSuggestion[] }>(`/projects/${projectId}/collections/tags/suggest`, { paper_ids: paperIds }).then(r => r.data),
+};

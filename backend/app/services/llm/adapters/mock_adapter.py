@@ -134,6 +134,42 @@ MOCK_RESPONSES: dict[str, str] = {
             "topics": ["Resolution Enhancement", "Method Applicability"],
         }
     ),
+    "smart_tagging": json.dumps(
+        {
+            "tags": [
+                {
+                    "paper_id": 1,
+                    "suggested_tags": [
+                        "deep learning",
+                        "super-resolution",
+                        "microscopy",
+                        "neural networks",
+                        "image enhancement",
+                    ],
+                },
+                {
+                    "paper_id": 2,
+                    "suggested_tags": [
+                        "AI limitations",
+                        "image artifacts",
+                        "neural reconstruction",
+                        "image fidelity",
+                        "evaluation",
+                    ],
+                },
+                {
+                    "paper_id": 3,
+                    "suggested_tags": [
+                        "hybrid methods",
+                        "multi-modal imaging",
+                        "sample variability",
+                        "combined approaches",
+                        "specimen analysis",
+                    ],
+                },
+            ]
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 
