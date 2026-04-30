@@ -197,3 +197,30 @@ export interface FeedResponse {
   recommendations: FeedRecommendation[];
   total: number;
 }
+
+export type TeamMemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export interface TeamMember {
+  id: number;
+  email: string;
+  role: TeamMemberRole;
+  status: string;
+  invited_by: string | null;
+  created_at: string;
+}
+
+export type APIKeyScope = 'read' | 'write' | 'admin';
+
+export interface APIKey {
+  id: number;
+  name: string;
+  key_prefix: string;
+  scope: APIKeyScope;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+}
+
+export interface CreatedAPIKey extends APIKey {
+  key: string;
+}

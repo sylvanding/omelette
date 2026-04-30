@@ -1,0 +1,208 @@
+# Ralph Progress Log
+Started: Wed Apr 29 09:30:31 PM CST 2026
+---
+
+## Codebase Patterns
+- UI components in `src/components/ui/` use radix-ui primitives via `radix-ui` package (follow `select.tsx`, `popover.tsx` patterns)
+- API service layer in `src/services/api.ts` — axios interceptor unwraps `response.data`, use raw `fetch` for blob downloads
+- Backend endpoints in `backend/app/api/v1/` — use `ApiResponse<T>` wrapper, `FileResponse`/`Response` for file downloads
+- i18n keys nested under feature name in both `en.json` and `zh.json` (e.g., `papers.export`)
+- Tests use vitest with jsdom, fixtures in `src/test/fixtures/`
+- Toolbar components receive props from parent page (PapersPage → PapersToolbar → PapersExportDropdown)
+- `usePapersColumns` hook in `papers-columns.tsx` accepts callbacks for inline actions (rating change, delete, etc.)
+- Backend quality_tags filter uses PostgreSQL `overlap()` for array matching — pass comma-separated tags in query param
+- Alembic migration chain may be broken — set `down_revision = None` if prior migration files are missing
+- New model files go in `backend/app/models/` with `Mapped[T]` + `mapped_column` pattern, register in `models/__init__.py` and add relationship on `Project`
+- New API routers in `backend/app/api/v1/` — register in `api/v1/__init__.py` with `include_router`
+- radix-ui SelectItem cannot have empty string value — use `"all"` or similar placeholder instead of `""`
+
+## [2026-04-29 21:40] - US-008
+- Implemented bibliography export (BibTeX, RIS, EndNote) for paper collections
+- Files changed:
+  - `backend/app/services/export_service.py` (new) — format generators
+  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/export endpoint
+  - `frontend/src/lib/bibliography-export.ts` (new) — frontend format utilities + download
+  - `frontend/src/lib/__tests__/bibliography-export.test.ts` (new) — 13 unit tests
+  - `frontend/src/components/ui/dropdown-menu.tsx` (new) — radix-ui dropdown menu wrapper
+  - `frontend/src/pages/project/papers/PapersExportDropdown.tsx` (new) — export dropdown component
+  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added export button
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up export props
+  - `frontend/src/services/api.ts` — added exportPapers function
+  - `frontend/src/i18n/locales/en.json` — added export keys
+  - `frontend/src/i18n/locales/zh.json` — added export keys
+- **Learnings for future iterations:**
+  - The axios interceptor unwraps `response.data` — for blob/file downloads, use raw `fetch` instead
+  - `radix-ui` umbrella package (v1.4.3) includes DropdownMenu — import as `import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"`
+  - Backend export endpoint should accept the same filter params as list endpoint (q, status, year) to respect current page filters
+  - File downloads work best with `Response` + `Content-Disposition` header on backend side
+- Avoid nesting radix-ui Tabs inside TabsContent — use simple state buttons instead to prevent rendering conflicts
+- The PDFReaderPage already fetches paper data with react-query, pass notes from there to PDFReaderLayout
+- `paperApi.update` was missing from api.ts but backend PUT endpoint existed — needed to add frontend method + MSW handler
+---
+
+## [2026-04-29 21:50] - US-009
+- Implemented paper notes and annotations system
+- Files changed:
+  - `frontend/src/hooks/useDebouncedSave.ts` (new) — debounced auto-save hook with status tracking
+  - `frontend/src/hooks/__tests__/useDebouncedSave.test.ts` (new) — 6 unit tests
+  - `frontend/src/components/pdf-reader/NotesPanel.tsx` (new) — notes editor with markdown/LaTeX preview
+  - `frontend/src/components/pdf-reader/__tests__/NotesPanel.test.tsx` (new) — 4 component tests
+  - `frontend/src/components/pdf-reader/PDFReaderLayout.tsx` — added Notes/Q&A tabs in right panel
+  - `frontend/src/pages/project/PDFReaderPage.tsx` — pass paper notes to PDFReaderLayout
+  - `frontend/src/services/api.ts` — added paperApi.update method
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 tests for paperApi.update
+  - `frontend/src/test/mocks/handlers.ts` — added PUT paper endpoint mock
+  - `frontend/src/i18n/locales/en.json` — added notes keys
+  - `frontend/src/i18n/locales/zh.json` — added notes keys
+- **Learnings for future iterations:**
+  - The `notes` field already existed on Paper model and PUT endpoint — no backend changes needed
+  - Avoid nesting radix-ui Tabs inside TabsContent — caused rendering issues; use simple state buttons instead
+  - Markdown/LaTeX packages (react-markdown, remark-gfm, remark-math, rehype-katex, katex) already installed
+  - When using vi.useFakeTimers() in component tests, wrap in beforeEach/afterEach to avoid cross-test pollution
+  - PDFReaderPage already fetches paper via react-query — pass data down rather than re-fetching
+---
+
+## [2026-04-29 22:10] - US-010
+- Implemented reading progress tracker with reading analytics dashboard
+- Files changed:
+  - `backend/app/models/paper.py` — added ReadingStatus enum, reading_status and read_at columns
+  - `backend/app/schemas/paper.py` — updated PaperRead and PaperUpdate schemas
+  - `backend/app/api/v1/papers.py` — added reading_status filter, sort, and analytics endpoint
+  - `backend/alembic/versions/eed9e0cebcb5_*.py` (new) — migration for new columns
+  - `frontend/src/types/index.ts` — added ReadingStatus type, reading_status/read_at to Paper
+  - `frontend/src/types/api.ts` — added ReadingStatus type and reading_status to PaperListFilters
+  - `frontend/src/services/api.ts` — added paperApi.getAnalytics and ReadingAnalytics interface
+  - `frontend/src/lib/query-keys.ts` — added papers.analytics query key
+  - `frontend/src/pages/project/AnalyticsPage.tsx` (new) — dashboard with recharts pie/bar charts
+  - `frontend/src/pages/project/PapersPage.tsx` — added readingStatus filter state
+  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added reading status dropdown
+  - `frontend/src/pages/project/papers/papers-columns.tsx` — added reading status column
+  - `frontend/src/App.tsx` — added /analytics route
+  - `frontend/src/i18n/locales/en.json` — added reading/analytics keys
+  - `frontend/src/i18n/locales/zh.json` — added reading/analytics keys
+  - `frontend/src/pages/__tests__/AnalyticsPage.test.tsx` (new) — 5 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 analytics API tests
+  - `frontend/src/test/fixtures/index.ts` — added reading fields to mockPaper
+  - `frontend/src/test/mocks/handlers.ts` — added analytics endpoint handler
+- **Learnings for future iterations:**
+  - recharts was not installed — had to `npm install recharts`; use ResponsiveContainer for fluid sizing
+  - The axios interceptor unwraps `response.data` so analytics API returns typed data directly
+  - Badge variants use `success`/`info`/`destructive`/`warning` pattern — for custom colors use className directly
+  - The papers list endpoint `sort_by` parameter needed `reading_status` added to the allowed_sort set
+---
+
+## [2026-04-29 22:22] - US-011
+- Implemented AI paper comparison view for selected papers
+- Files changed:
+  - `backend/app/services/comparison_service.py` (new) — LLM-powered paper comparison with structured JSON output
+  - `backend/app/api/v1/papers.py` — added POST /projects/{id}/papers/compare endpoint
+  - `frontend/src/types/api.ts` — added PaperComparisonRequest/Response types
+  - `frontend/src/services/api.ts` — added paperApi.compare method
+  - `frontend/src/pages/project/papers/PaperComparisonDialog.tsx` (new) — comparison dialog with table + AI summary
+  - `frontend/src/pages/project/papers/PapersToolbar.tsx` — added Compare button with tooltip for 2-5 selection
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up comparison dialog state
+  - `frontend/src/i18n/locales/en.json` — added compare keys
+  - `frontend/src/i18n/locales/zh.json` — added compare keys (Chinese)
+  - `frontend/src/test/mocks/handlers.ts` — added compare endpoint mock
+  - `frontend/src/pages/project/papers/__tests__/PaperComparisonDialog.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/project/papers/__tests__/PapersToolbar.test.tsx` (new) — 6 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 compare API tests
+- **Learnings for future iterations:**
+  - The `LLMClient.chat_json()` method handles JSON extraction with fallback for wrapped responses — useful for any structured LLM output
+  - PapersPage already has `selectedRows` state — reuse it for any multi-paper operation (compare, batch delete, etc.)
+  - Tooltip from `@/components/ui/tooltip` wraps disabled buttons well for explaining why they're disabled
+  - The DataTable already has checkbox selection built-in — just pass `selectedRows` and `onSelectionChange` props
+  - Avoid mutating `handlers.ts` with `server.use()` inside async tests without cleanup — can cause cross-test interference
+---
+
+## [2026-04-29 22:30] - US-012
+- Implemented research topic timeline view showing paper chronology
+- Files changed:
+  - `frontend/src/pages/project/TimelinePage.tsx` (new) — timeline page with horizontal bar chart, year groups, expandable paper cards
+  - `frontend/src/pages/project/__tests__/TimelinePage.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/ProjectDetail.tsx` — added Timeline nav item with Clock icon
+  - `frontend/src/App.tsx` — added /timeline route
+  - `frontend/src/i18n/locales/en.json` — added timeline keys
+  - `frontend/src/i18n/locales/zh.json` — added timeline keys (Chinese)
+- **Learnings for future iterations:**
+  - The paperApi.list supports `page_size: 500` to fetch all papers for full-project views like timeline
+  - `useNavigate` from react-router-dom needs to be mocked in tests with `vi.fn()` to avoid navigation errors
+  - The PapersFilterBar component is reusable across different paper views — it already handles search, status, reading status, and year filters
+  - `screen.getByText()` throws when multiple elements match — use `getAllByText` for elements that appear in multiple places (year labels in timeline bar + year headers)
+  - Paper card node size is computed as `Math.sqrt(citation_count) * 5` with min/max bounds for visual scaling
+---
+
+## [2026-04-29 22:50] - US-014
+- Implemented related paper recommendations based on semantic similarity
+- Files changed:
+  - `backend/app/api/v1/papers.py` — added GET /projects/{id}/papers/{paper_id}/similar endpoint
+  - `frontend/src/services/api.ts` — added paperApi.getRelated method + SimilarPaper type
+  - `frontend/src/lib/query-keys.ts` — added related query key
+  - `frontend/src/components/pdf-reader/RelatedPapers.tsx` (new) — related papers list with similarity score badges
+  - `frontend/src/components/pdf-reader/PDFReaderLayout.tsx` — added "Related" tab to right panel
+  - `frontend/src/i18n/locales/en.json` — added related tab keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+  - `frontend/src/test/mocks/handlers.ts` — added similar papers endpoint mock
+  - `frontend/src/components/pdf-reader/__tests__/RelatedPapers.test.tsx` (new) — 5 component tests
+  - `frontend/src/services/__tests__/api.test.ts` — added 2 API tests for getRelated
+- **Learnings for future iterations:**
+  - ChromaDB collections are per-project (`project_{id}`) with cosine distance metric — distances convert to similarity via `(1 - distance) * 100`
+  - Paper-level embeddings require averaging all chunk embeddings for that paper
+  - The `get_or_404` call validates paper exists before querying ChromaDB — prevents 404 vs empty result confusion
+  - `screen.getByText()` fails when text is split across child elements — use partial match or `textContent` assertion
+  - Authors truncation with "et al." requires `slice(0, 3)` before `join()`, not just appending after join
+---
+
+## [2026-04-29 23:05] - US-015
+- Implemented project activity feed and change log
+- Files changed:
+  - `backend/app/models/activity_log.py` (new) — ActivityLog model with project_id, action, entity_type, entity_id, actor, details, created_at
+  - `backend/app/models/__init__.py` — registered ActivityLog in exports
+  - `backend/app/models/project.py` — added activity_logs relationship with cascade delete
+  - `backend/app/schemas/activity_log.py` (new) — Pydantic ActivityRead schema
+  - `backend/app/api/v1/activities.py` (new) — GET /projects/{id}/activities endpoint with pagination and filters
+  - `backend/app/api/v1/__init__.py` — registered activities router
+  - `backend/alembic/versions/a1b2c3d4e5f6_*.py` (new) — migration for activity_logs table
+  - `frontend/src/types/index.ts` — added ActivityLog interface
+  - `frontend/src/types/api.ts` — added ActivityListFilters type
+  - `frontend/src/services/api.ts` — added activityApi.list method
+  - `frontend/src/lib/query-keys.ts` — added activities query keys
+  - `frontend/src/pages/project/ActivityFeedPage.tsx` (new) — activity feed page with date grouping, action filter, load more pagination
+  - `frontend/src/pages/ProjectDetail.tsx` — added Activity nav item with Activity icon
+  - `frontend/src/App.tsx` — added /activity route
+  - `frontend/src/i18n/locales/en.json` — added activity feed keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+  - `frontend/src/test/fixtures/index.ts` — added mockActivityLog fixtures
+  - `frontend/src/test/mocks/handlers.ts` — added activities endpoint mock
+  - `frontend/src/pages/project/__tests__/ActivityFeedPage.test.tsx` (new) — 5 component tests
+- **Learnings for future iterations:**
+  - radix-ui SelectItem cannot have empty string value — use "all" as placeholder and translate in onValueChange handler
+  - Activity feed groups entries by date using `toLocaleDateString()` — "Today" and "Yesterday" are special-cased
+  - The `useInfiniteQuery` pattern works well for paginated activity feeds with getNextPageParam
+  - When writing tests, use `getAllByText` for text that appears in multiple activity items
+---
+
+## [2026-04-29 22:35] - US-013
+- Implemented paper rating and quality scoring system
+- Files changed:
+  - `backend/app/models/paper.py` — added rating (Integer, default 0) and quality_tags (JSON) columns
+  - `backend/app/schemas/paper.py` — added rating and quality_tags to PaperRead and PaperUpdate schemas
+  - `backend/app/api/v1/papers.py` — added quality_tags filter param and rating to allowed_sort
+  - `backend/alembic/versions/b601f8ed7674_*.py` (new) — migration for new columns
+  - `frontend/src/types/index.ts` — added rating and quality_tags to Paper interface
+  - `frontend/src/types/api.ts` — added quality_tags to PaperListFilters
+  - `frontend/src/components/ui/star-rating.tsx` (new) — interactive star rating component with hover preview
+  - `frontend/src/components/ui/__tests__/star-rating.test.tsx` (new) — 6 unit tests
+  - `frontend/src/pages/project/papers/papers-columns.tsx` — added rating and quality_tags columns, onRatingChange callback
+  - `frontend/src/pages/project/papers/PapersFilterBar.tsx` — added quality tags filter dropdown and rating sort option
+  - `frontend/src/pages/project/papers/__tests__/PapersFilterBar.test.tsx` (new) — 5 component tests
+  - `frontend/src/pages/project/PapersPage.tsx` — wired up qualityTag state, rating change handler
+  - `frontend/src/test/fixtures/index.ts` — added rating and quality_tags to mockPaper
+  - `frontend/src/i18n/locales/en.json` — added rating, qualityTags, sortBy.rating keys
+  - `frontend/src/i18n/locales/zh.json` — added Chinese translations
+- **Learnings for future iterations:**
+  - radix-ui Select components have `hasPointerCapture` issues with userEvent — test render state, not interaction
+  - The `usePapersColumns` hook pattern works well for injecting callbacks into column cells
+  - PostgreSQL `overlap()` is used for array containment in quality_tags filter — comma-separated tags match any
+  - Alembic migration chain was broken (prior migration file missing) — had to set `down_revision = None`
+---

@@ -4,8 +4,10 @@ import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText } from 'l
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { StarRating } from '@/components/ui/star-rating';
+import { ImpactScoreBadge } from '@/components/impact-score/ImpactScoreBadge';
 import type { DataTableColumn } from '@/components/ui/data-table';
 import type { Paper, PaperStatus, ReadingStatus } from '@/types';
+import type { ImpactFactor } from '@/services/api';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -15,6 +17,7 @@ interface UsePapersColumnsParams {
   handleRetry: (paperId: number) => void;
   setGraphPaperId: (id: number) => void;
   onRatingChange?: (paperId: number, rating: number) => void;
+  impactScores?: Map<number, { score: number; factors: Record<string, ImpactFactor> }>;
 }
 
 export function usePapersColumns({
@@ -23,6 +26,7 @@ export function usePapersColumns({
   handleRetry,
   setGraphPaperId,
   onRatingChange,
+  impactScores,
 }: UsePapersColumnsParams): DataTableColumn<Paper>[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -69,6 +73,22 @@ export function usePapersColumns({
       header: t('papers.citations'),
       accessorKey: 'citation_count',
       sortable: true,
+    },
+    {
+      id: 'impact_score',
+      header: t('papers.impactScore', 'Impact'),
+      sortable: true,
+      accessorFn: (row) => {
+        const entry = impactScores?.get(row.id);
+        return entry?.score ?? 0;
+      },
+      cell: ({ row }) => {
+        const entry = impactScores?.get(row.id);
+        if (!entry) return <span className="text-muted-foreground">—</span>;
+        return (
+          <ImpactScoreBadge score={entry.score} factors={entry.factors} />
+        );
+      },
     },
     {
       id: 'status',

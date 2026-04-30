@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Omelette — Save Papers",
+  "version": "1.0.0",
+  "description": "One-click paper capture for Omelette. Save papers from academic sites directly to your projects.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://api.semanticscholar.org/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://arxiv.org/*",
+        "https://ar5iv.labs.arxiv.org/*",
+        "https://www.semanticscholar.org/*",
+        "https://aclanthology.org/*",
+        "https://openreview.net/*",
+        "https://www.ncbi.nlm.nih.gov/pmc/*",
+        "https://dl.acm.org/*",
+        "https://ieeexplore.ieee.org/*",
+        "https://link.springer.com/*",
+        "https://www.nature.com/*",
+        "https://www.sciencedirect.com/*",
+        "https://onlinelibrary.wiley.com/*",
+        "*://*.pdf"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

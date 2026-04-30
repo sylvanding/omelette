@@ -303,6 +303,66 @@ MOCK_RESPONSES: dict[str, str] = {
             ]
         }
     ),
+    "gap_analysis": json.dumps(
+        {
+            "gaps": [
+                {
+                    "topic": "Long-term clinical outcomes",
+                    "description": "No papers evaluate the long-term effectiveness of the proposed methods in clinical settings.",
+                    "evidence": "Papers 1 and 3 focus on short-term metrics without follow-up studies.",
+                    "related_paper_ids": [1, 3],
+                    "gap_score": 0.82,
+                },
+                {
+                    "topic": "Cross-modal validation",
+                    "description": "Methods are validated only on single modalities; no cross-modal transfer studies exist.",
+                    "evidence": "Papers 1 and 2 each test on one modality only.",
+                    "related_paper_ids": [1, 2],
+                    "gap_score": 0.71,
+                },
+                {
+                    "topic": "Computational efficiency analysis",
+                    "description": "None of the papers report runtime or computational cost comparisons.",
+                    "evidence": "All papers focus on accuracy metrics without efficiency analysis.",
+                    "related_paper_ids": [1, 2, 3],
+                    "gap_score": 0.65,
+                },
+            ],
+            "research_questions": [
+                {
+                    "question": "How do deep learning-based super-resolution methods perform in longitudinal clinical studies over 12+ months?",
+                    "addresses_gap": "Long-term clinical outcomes",
+                    "novelty_score": 0.85,
+                    "feasibility_score": 0.6,
+                },
+                {
+                    "question": "Can a single model achieve state-of-the-art results across fluorescence, electron, and light microscopy?",
+                    "addresses_gap": "Cross-modal validation",
+                    "novelty_score": 0.78,
+                    "feasibility_score": 0.55,
+                },
+                {
+                    "question": "What is the trade-off between reconstruction quality and inference time across neural methods?",
+                    "addresses_gap": "Computational efficiency analysis",
+                    "novelty_score": 0.6,
+                    "feasibility_score": 0.8,
+                },
+                {
+                    "question": "How robust are current methods to variations in sample preparation and staining protocols?",
+                    "addresses_gap": "Cross-modal validation",
+                    "novelty_score": 0.72,
+                    "feasibility_score": 0.7,
+                },
+                {
+                    "question": "Can self-supervised pretraining reduce the labeled data requirements for microscopy tasks by 10x?",
+                    "addresses_gap": "Long-term clinical outcomes",
+                    "novelty_score": 0.8,
+                    "feasibility_score": 0.65,
+                },
+            ],
+            "summary": {"total_gaps": 3, "total_questions": 5},
+        }
+    ),
     "research_feed": json.dumps(
         {
             "recommendations": [

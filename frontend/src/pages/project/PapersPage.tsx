@@ -6,7 +6,7 @@ import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { toast } from 'sonner';
 import { FileText } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
-import { paperApi, projectApi, paperProcessApi } from '@/services/api';
+import { paperApi, projectApi, paperProcessApi, impactScoresApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
 import type { Paper, PaperStatus, ReadingStatus } from '@/types';
@@ -22,6 +22,9 @@ import { usePapersColumns } from './papers/papers-columns';
 import { PaperStatusBanner } from './PaperStatusBanner';
 import { CitationGraphDialog } from './CitationGraphDialog';
 import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
+import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
+import { ExportDialog } from '@/components/export/ExportDialog';
+import { AuthorNetworkDialog } from '@/components/author-network/AuthorNetworkDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -47,6 +50,23 @@ export default function PapersPage() {
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
   const [graphPaperId, setGraphPaperId] = useState<number | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [showAudioOverview, setShowAudioOverview] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
+
+  const { data: impactData } = useQuery({
+    queryKey: queryKeys.impactScores.all(pid),
+    queryFn: () => impactScoresApi.get(pid),
+    enabled: !!pid,
+  });
+
+  const impactScoreMap = useMemo(() => {
+    const map = new Map<number, { score: number; factors: Record<string, import('@/services/api').ImpactFactor> }>();
+    for (const entry of impactData?.scores ?? []) {
+      map.set(entry.paper_id, { score: entry.score, factors: entry.factors });
+    }
+    return map;
+  }, [impactData]);
 
   const filters = useMemo(
     () => ({
@@ -203,6 +223,7 @@ export default function PapersPage() {
     handleRetry,
     setGraphPaperId,
     onRatingChange: handleRatingChange,
+    impactScores: impactScoreMap,
   });
 
   const subtitle = projectData && (
@@ -222,6 +243,9 @@ export default function PapersPage() {
       onProcessAll={handleProcessAll}
       onAddPaper={() => setShowAddPaper(true)}
       onCompare={() => setShowComparison(true)}
+      onAudioOverview={() => setShowAudioOverview(true)}
+      onExport={() => setShowExport(true)}
+      onAuthorNetwork={() => setShowAuthorNetwork(true)}
       projectId={pid}
       paperFilters={{
         q: search || undefined,
@@ -386,6 +410,33 @@ export default function PapersPage() {
             projectId={pid}
             paperIds={Array.from(selectedRows).map(Number)}
             onClose={() => setShowComparison(false)}
+          />
+        )}
+
+        {showAudioOverview && (
+          <AudioOverviewDialog
+            projectId={pid}
+            paperIds={Array.from(selectedRows).map(Number)}
+            paperTitles={papers
+              .filter((p) => selectedRows.has(p.id))
+              .map((p) => p.title || 'Untitled')}
+            onClose={() => setShowAudioOverview(false)}
+          />
+        )}
+
+        {showExport && (
+          <ExportDialog
+            projectId={pid}
+            papers={papers}
+            projectName={projectData?.name ?? ''}
+            onClose={() => setShowExport(false)}
+          />
+        )}
+
+        {showAuthorNetwork && (
+          <AuthorNetworkDialog
+            projectId={pid}
+            onClose={() => setShowAuthorNetwork(false)}
           />
         )}
       </div>

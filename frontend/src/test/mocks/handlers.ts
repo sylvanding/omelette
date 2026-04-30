@@ -497,4 +497,422 @@ export const handlers = [
   http.get(`${apiBase}/projects/:id/activities`, () =>
     HttpResponse.json(mockResponse(mockActivityLogList)),
   ),
+
+  // Audio Overviews
+  http.post(`${apiBase}/projects/:id/audio-overviews`, () =>
+    HttpResponse.json(
+      mockResponse({
+        title: 'Audio Overview',
+        duration_estimate: '1 min',
+        summary: 'Mock audio overview summary.',
+        script: [
+          { speaker: 'Alex', text: 'Welcome to our discussion.' },
+          { speaker: 'Jordan', text: "Today we're exploring key findings." },
+        ],
+        paper_count: 2,
+      }),
+    ),
+  ),
+
+  // Browser Upload
+  http.post(`${apiBase}/projects/:id/upload/browser`, ({ request }) => {
+    const url = new URL(request.url);
+    const title = url.searchParams.get('title') || 'Captured Paper';
+    return HttpResponse.json(
+      mockResponse({
+        status: 'captured',
+        paper_id: 101,
+        title,
+        processing: true,
+      }),
+    );
+  }),
+
+  // Reference Manager Export
+  http.post(`${apiBase}/projects/:id/export/bibtex`, () =>
+    HttpResponse.text('@article{Smith2024Test,\n  title = {Test Paper},\n  author = {Smith, John},\n  year = {2024},\n}'),
+  ),
+  http.post(`${apiBase}/projects/:id/export/ris`, () =>
+    HttpResponse.text('TY  - JOUR\nTI  - Test Paper\nAU  - Smith, John\nPY  - 2024\nER  - '),
+  ),
+  http.post(`${apiBase}/projects/:id/export/zotero`, async ({ request }) => {
+    const body = (await request.json()) as { collection_name?: string };
+    return HttpResponse.json(
+      mockResponse({
+        preview: '@article{Smith2024Test,\n  title = {Test Paper},\n  author = {Smith, John},\n  year = {2024},\n}',
+        message: body.collection_name ? `Created collection "${body.collection_name}" (demo mode)` : 'Zotero credentials not configured. Import the BibTeX preview manually.',
+        paper_count: 1,
+        items_created: 0,
+        errors: [],
+      }),
+    );
+  }),
+
+  // Team Members
+  http.get(`${apiBase}/projects/:id/members`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 1,
+          email: 'owner@example.com',
+          role: 'owner',
+          status: 'active',
+          invited_by: null,
+          created_at: new Date().toISOString(),
+        },
+      ]),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/members`, async ({ request }) => {
+    const body = (await request.json()) as { email?: string; role?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        email: body.email ?? 'new@example.com',
+        role: body.role ?? 'viewer',
+        status: 'active',
+        invited_by: null,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.put(`${apiBase}/projects/:id/members/:memberId`, async ({ request }) => {
+    const body = (await request.json()) as { role?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        email: 'updated@example.com',
+        role: body.role ?? 'viewer',
+        status: 'active',
+        invited_by: null,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.delete(`${apiBase}/projects/:id/members/:memberId`, () =>
+    HttpResponse.json(mockResponse(null)),
+  ),
+
+  // API Keys
+  http.get(`${apiBase}/api-keys`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 1,
+          name: 'My API Key',
+          key_prefix: 'omk_ab12',
+          scope: 'read',
+          is_active: true,
+          last_used_at: null,
+          created_at: new Date().toISOString(),
+        },
+      ]),
+    ),
+  ),
+  http.post(`${apiBase}/api-keys`, async ({ request }) => {
+    const body = (await request.json()) as { name?: string; scope?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        name: body.name ?? 'New Key',
+        key: 'omk_test' + Math.random().toString(36).slice(2, 34),
+        key_prefix: 'omk_test',
+        scope: body.scope ?? 'read',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.post(`${apiBase}/api-keys/:keyId/revoke`, () =>
+    HttpResponse.json(
+      mockResponse({
+        id: 99,
+        name: 'Revoked Key',
+        key_prefix: 'omk_test',
+        scope: 'read',
+        is_active: false,
+        last_used_at: null,
+        created_at: new Date().toISOString(),
+      }),
+    ),
+  ),
+  http.delete(`${apiBase}/api-keys/:keyId`, () =>
+    HttpResponse.json(mockResponse(null)),
+  ),
+
+  // Author Network
+  http.get(`${apiBase}/projects/:id/analysis/author-network`, () =>
+    HttpResponse.json(
+      mockResponse({
+        nodes: [
+          {
+            name: 'Jane Smith',
+            paper_count: 5,
+            paper_ids: [1, 2, 3, 4, 5],
+            coauthors: ['John Doe', 'Alice Wang'],
+            h_index_estimate: 2,
+          },
+          {
+            name: 'John Doe',
+            paper_count: 3,
+            paper_ids: [1, 2, 6],
+            coauthors: ['Jane Smith'],
+            h_index_estimate: 1,
+          },
+          {
+            name: 'Alice Wang',
+            paper_count: 2,
+            paper_ids: [3, 7],
+            coauthors: ['Jane Smith'],
+            h_index_estimate: 1,
+          },
+        ],
+        edges: [
+          { source: 'Jane Smith', target: 'John Doe', collaboration_count: 2 },
+          { source: 'Jane Smith', target: 'Alice Wang', collaboration_count: 1 },
+        ],
+        metrics: {
+          total_authors: 3,
+          total_edges: 2,
+          density: 0.667,
+          top_authors: [
+            { name: 'Jane Smith', degree: 2 },
+            { name: 'John Doe', degree: 1 },
+            { name: 'Alice Wang', degree: 1 },
+          ],
+        },
+        total_authors: 3,
+      }),
+    ),
+  ),
+
+  // Research Trends
+  http.get(`${apiBase}/projects/:id/analysis/trends`, () =>
+    HttpResponse.json(
+      mockResponse({
+        publication_timeline: [
+          { year: 2020, count: 2, citations: 80 },
+          { year: 2021, count: 3, citations: 120 },
+          { year: 2022, count: 5, citations: 200 },
+          { year: 2023, count: 4, citations: 180 },
+          { year: 2024, count: 6, citations: 250 },
+        ],
+        topic_trends: [
+          {
+            topic: 'deep learning',
+            slope: 0.8,
+            r_squared: 0.92,
+            trend: 'rising',
+            total_papers: 12,
+            first_year: 2020,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2020, count: 2 },
+              { year: 2021, count: 3 },
+              { year: 2022, count: 4 },
+              { year: 2023, count: 2 },
+              { year: 2024, count: 1 },
+            ],
+          },
+          {
+            topic: 'transformers',
+            slope: 1.2,
+            r_squared: 0.95,
+            trend: 'rising',
+            total_papers: 8,
+            first_year: 2021,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2021, count: 1 },
+              { year: 2022, count: 2 },
+              { year: 2023, count: 3 },
+              { year: 2024, count: 2 },
+            ],
+          },
+          {
+            topic: 'reinforcement learning',
+            slope: -0.3,
+            r_squared: 0.65,
+            trend: 'declining',
+            total_papers: 4,
+            first_year: 2020,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2020, count: 2 },
+              { year: 2021, count: 1 },
+              { year: 2022, count: 1 },
+              { year: 2023, count: 0 },
+              { year: 2024, count: 0 },
+            ],
+          },
+        ],
+        emerging_topics: [
+          { topic: 'transformers', yoy_growth: 0.67 },
+        ],
+        declining_topics: [
+          { topic: 'reinforcement learning', yoy_growth: -1.0 },
+        ],
+        summary_stats: {
+          total_papers: 20,
+          year_span: 5,
+          first_year: 2020,
+          last_year: 2024,
+          total_topics: 3,
+          emerging_count: 1,
+          declining_count: 1,
+        },
+      }),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/analysis/gaps`, () =>
+    HttpResponse.json(
+      mockResponse({
+        gaps: [
+          {
+            topic: 'Long-term clinical outcomes',
+            description: 'No papers evaluate the long-term effectiveness of the proposed methods in clinical settings.',
+            evidence: 'Papers 1 and 3 focus on short-term metrics without follow-up studies.',
+            related_paper_ids: [1, 3],
+            gap_score: 0.82,
+          },
+          {
+            topic: 'Cross-modal validation',
+            description: 'Methods are validated only on single modalities; no cross-modal transfer studies exist.',
+            evidence: 'Papers 1 and 2 each test on one modality only.',
+            related_paper_ids: [1, 2],
+            gap_score: 0.71,
+          },
+        ],
+        research_questions: [
+          {
+            question: 'How do deep learning-based methods perform in longitudinal studies over 12+ months?',
+            addresses_gap: 'Long-term clinical outcomes',
+            novelty_score: 0.85,
+            feasibility_score: 0.6,
+          },
+          {
+            question: 'Can a single model achieve state-of-the-art results across multiple modalities?',
+            addresses_gap: 'Cross-modal validation',
+            novelty_score: 0.78,
+            feasibility_score: 0.55,
+          },
+          {
+            question: 'What is the trade-off between reconstruction quality and inference time?',
+            addresses_gap: 'Cross-modal validation',
+            novelty_score: 0.6,
+            feasibility_score: 0.8,
+          },
+        ],
+        summary: { total_gaps: 2, total_questions: 3 },
+      }),
+    ),
+  ),
+
+  // Paper Version Tracking
+  http.get(`${apiBase}/projects/:id/papers/:paperId/versions`, () =>
+    HttpResponse.json(
+      mockResponse({
+        versions: [
+          {
+            id: 1,
+            paper_id: 1,
+            version: 1,
+            source: 'auto_poll',
+            doi: '10.1101/2024.01.01.123456',
+            title: 'A Study on Machine Learning (Preprint)',
+            abstract: 'Preprint abstract.',
+            authors: null,
+            journal: '',
+            year: 2024,
+            citation_count: 5,
+            pdf_url: null,
+            is_preprint: true,
+            preprint_server: 'bioRxiv',
+            diff_summary: null,
+            created_at: '2024-01-15T10:00:00Z',
+          },
+          {
+            id: 2,
+            paper_id: 1,
+            version: 2,
+            source: 'auto_poll',
+            doi: '10.1234/journal.2024.567',
+            title: 'A Study on Machine Learning',
+            abstract: 'Updated journal abstract with additional details.',
+            authors: null,
+            journal: 'Nature Machine Intelligence',
+            year: 2024,
+            citation_count: 25,
+            pdf_url: 'https://example.com/paper.pdf',
+            is_preprint: false,
+            preprint_server: null,
+            diff_summary: 'Title changed; Journal: None -> Nature Machine Intelligence; Citations: 5 -> 25',
+            created_at: '2024-06-20T14:30:00Z',
+          },
+        ],
+        total: 2,
+      }),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/papers/:paperId/versions/check`, () =>
+    HttpResponse.json(
+      mockResponse({
+        update_found: true,
+        version: {
+          id: 3,
+          paper_id: 1,
+          version: 3,
+          source: 'manual_check',
+          doi: '10.1234/journal.2024.890',
+          title: 'A Study on Machine Learning (Revised)',
+          abstract: 'Revised abstract.',
+          authors: null,
+          journal: 'Nature Machine Intelligence',
+          year: 2024,
+          citation_count: 42,
+          pdf_url: null,
+          is_preprint: false,
+          preprint_server: null,
+          diff_summary: 'Citations: 25 -> 42',
+          created_at: new Date().toISOString(),
+        },
+      }),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/papers/:paperId/versions/:versionId/upgrade`, async ({ params }) =>
+    HttpResponse.json(
+      mockResponse({
+        paper_id: Number(params.paperId),
+        upgraded_to_version: Number(params.versionId),
+        new_doi: '10.1234/journal.2024.567',
+        new_journal: 'Nature Machine Intelligence',
+        preserved_fields: ['notes', 'tags', 'reading_status', 'read_at', 'rating', 'quality_tags', 'status'],
+      }),
+    ),
+  ),
+
+  // Impact Scores
+  http.get(`${apiBase}/projects/:id/analysis/impact-scores`, () =>
+    HttpResponse.json(
+      mockResponse({
+        scores: [
+          {
+            paper_id: 1,
+            title: mockPaper.title,
+            score: 72.5,
+            factors: {
+              citations: { raw: mockPaper.citation_count, normalized: 0.8, weight: 0.3 },
+              recency: { year: mockPaper.year, normalized: 0.9, weight: 0.2 },
+              journal: { name: mockPaper.journal, normalized: 0.6, weight: 0.2 },
+              evidence_consensus: { quality_tags: mockPaper.quality_tags, normalized: 0.5, weight: 0.15 },
+              field_percentile: { percentile: 0.75, normalized: 0.75, weight: 0.15 },
+            },
+          },
+        ],
+        total: 1,
+        avg_score: 72.5,
+        top_paper_id: 1,
+      }),
+    ),
+  ),
 ];

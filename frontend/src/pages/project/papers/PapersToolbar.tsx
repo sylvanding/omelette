@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Trash2, Zap, Plus, GitCompareArrows } from 'lucide-react';
+import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PapersExportDropdown } from './PapersExportDropdown';
@@ -18,6 +18,9 @@ interface PapersToolbarProps {
   onProcessAll: () => void;
   onAddPaper: () => void;
   onCompare: () => void;
+  onAudioOverview: () => void;
+  onExport: () => void;
+  onAuthorNetwork: () => void;
   projectId: number;
   paperFilters: {
     q?: string;
@@ -35,12 +38,16 @@ export function PapersToolbar({
   onProcessAll,
   onAddPaper,
   onCompare,
+  onAudioOverview,
+  onExport,
+  onAuthorNetwork,
   projectId,
   paperFilters,
   paperCount,
 }: PapersToolbarProps) {
   const { t } = useTranslation();
   const canCompare = selectedRows.size >= 2 && selectedRows.size <= 5;
+  const canAudio = selectedRows.size >= 1 && selectedRows.size <= 10;
 
   return (
     <div className="flex gap-2">
@@ -49,6 +56,25 @@ export function PapersToolbar({
         filters={paperFilters}
         paperCount={paperCount}
       />
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onExport}
+        className="gap-1.5"
+        disabled={paperCount === 0}
+      >
+        <BookOpen className="size-4" />
+        Reference Export
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onAuthorNetwork}
+        className="gap-1.5"
+      >
+        <Network className="size-4" />
+        {t('papers.authorNetwork')}
+      </Button>
       {selectedRows.size > 0 && (
         <TooltipProvider>
           <Tooltip>
@@ -68,6 +94,30 @@ export function PapersToolbar({
             {!canCompare && (
               <TooltipContent>
                 <p>{t('papers.compareTooMany')}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {selectedRows.size > 0 && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="outline"
+                  disabled={!canAudio}
+                  onClick={canAudio ? onAudioOverview : undefined}
+                  className="gap-1.5"
+                >
+                  <Headphones className="size-4" />
+                  {t('papers.audioOverview')} ({selectedRows.size})
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!canAudio && (
+              <TooltipContent>
+                <p>{t('papers.audioOverviewRange', 'Select 1-10 papers')}</p>
               </TooltipContent>
             )}
           </Tooltip>

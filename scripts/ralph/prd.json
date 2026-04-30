@@ -1,180 +1,177 @@
 {
-  "project": "Omelette - Feature Gap Analysis & Implementation",
-  "branchName": "ralph/feature-gaps",
-  "description": "Based on comprehensive analysis of Elicit, Consensus, SciSpace, ResearchRabbit, Connected Papers, NotebookLM, Semantic Scholar, and PaperQA2, implement the highest-impact missing features. Focus: augmented reading, evidence synthesis, systematic review workflow, concept graphs, and multi-document analysis.",
+  "project": "Omelette - Phase 2 Feature Expansion",
+  "branchName": "ralph/phase2-features",
+  "description": "After completing FEAT-001 through FEAT-010, implement the next 10 highest-impact features based on competitive analysis. Focus: audio overviews, browser extension, reference manager export, team collaboration, public API, author network, trend analysis, gap detection, preprint tracking, and impact scoring.",
   "userStories": [
     {
-      "id": "FEAT-001",
-      "title": "Add augmented PDF reading with skimming highlights and inline citation cards",
-      "description": "As a researcher, I need AI-powered skimming highlights (Goal/Method/Result categories) and inline citation cards when reading PDFs, like Semantic Scholar's Semantic Reader. Currently the PDF reader shows raw PDF with selection-based Q&A but no AI-assisted reading overlay.",
+      "id": "FEAT-011",
+      "title": "Add audio overviews (AI podcast generation) for papers",
+      "description": "As a researcher, I want to generate conversational audio summaries of papers or collections so I can consume research while commuting, like NotebookLM Audio Overviews.",
       "acceptanceCriteria": [
-        "POST /projects/{id}/papers/{paper_id}/highlights returns Goal/Method/Result highlights",
-        "GET /projects/{id}/papers/{paper_id}/citation-cards returns citation TLDRs",
-        "GET /projects/{id}/papers/{paper_id}/definitions returns term definitions",
-        "Frontend highlight overlay with customizable opacity in PDF reader",
-        "Inline citation card component showing TLDR on click",
-        "Tests: verify highlight endpoint returns structured data",
-        "Tests: verify citation card returns TLDR for known papers",
-        "Tests: verify definition endpoint returns explanations"
-      ],
-      "priority": 1,
-      "passes": true,
-      "notes": "Add augmented_reading_service.py. Use LLM to classify paper sections as Goal/Method/Result. Match citation DOIs against project papers for TLDR cards. Frontend: add overlay layer to PDF reader."
-    },
-    {
-      "id": "FEAT-002",
-      "title": "Add evidence consensus visualization for research questions",
-      "description": "As a researcher, I need to see what percentage of papers support, contradict, or are neutral on a given claim, like Consensus's Consensus Meter. Currently RAG Q&A returns a single answer but no aggregate evidence visualization.",
-      "acceptanceCriteria": [
-        "POST /projects/{id}/rag/evidence-consensus accepts a research question",
-        "Returns support_count, contradict_count, mixed_count with percentages",
-        "Each paper has a one-line finding extraction",
-        "Results include confidence score and source quotes",
-        "Frontend EvidenceConsensus component with chart",
-        "Tests: verify consensus returns structured data",
-        "Tests: verify one-line findings per paper",
-        "Tests: verify confidence scores bounded [0,1]"
-      ],
-      "priority": 2,
-      "passes": true,
-      "notes": "Add evidence_consensus_service.py. Pipeline: RAG retrieval, LLM classifies stance, extract one-line findings. Frontend: new component in src/components/evidence/."
-    },
-    {
-      "id": "FEAT-003",
-      "title": "Add multi-document contradiction detection",
-      "description": "As a researcher, I need the system to automatically identify where papers contradict each other, like PaperQA2's ContraCrow. Currently no cross-document conflict analysis exists.",
-      "acceptanceCriteria": [
-        "POST /projects/{id}/analysis/contradictions analyzes all papers",
-        "Returns contradiction pairs with: paper_a_id, paper_b_id, claim, positions, confidence",
-        "Contradictions grouped by topic/claim",
-        "Frontend ContradictionReport component with table",
-        "Tests: verify detection finds known conflicts",
-        "Tests: verify no false positives on agreeing papers"
-      ],
-      "priority": 3,
-      "passes": true,
-      "notes": "Add contradiction_service.py. Extract claims via LLM, group by embedding similarity, compare positions. Cache per project."
-    },
-    {
-      "id": "FEAT-004",
-      "title": "Add iterative visual discovery with prior/derivative works",
-      "description": "As a researcher, I need to trace a paper's intellectual lineage backwards (prior works) and forwards (derivative works), like ResearchRabbit and Connected Papers. Currently only direct citations via Semantic Scholar.",
-      "acceptanceCriteria": [
-        "Citation graph has Prior Works, Derivative Works, and Similarity toggle modes",
-        "Prior Works: papers cited by the seed paper",
-        "Derivative Works: papers citing the seed paper",
-        "Any graph paper can become new seed (iterative)",
-        "Similarity edges based on embedding cosine similarity",
-        "Tests: verify prior works returns cited papers",
-        "Tests: verify derivative works returns citing papers",
-        "Tests: verify similarity edges connect related papers"
-      ],
-      "priority": 4,
-      "passes": true,
-      "notes": "Enhance citation_graph_service.py for both directions + similarity edges from ChromaDB. Frontend: toggle modes in CitationGraphView."
-    },
-    {
-      "id": "FEAT-005",
-      "title": "Add paper collections and smart tagging within projects",
-      "description": "As a researcher with 100+ papers, I need to organize them into collections/folders with AI-suggested tags. Currently papers are a flat list.",
-      "acceptanceCriteria": [
-        "New Collection model with CRUD endpoints",
-        "POST/GET/PUT/DELETE /projects/{id}/collections",
-        "POST /projects/{id}/collections/{cid}/papers to add papers",
-        "POST /projects/{id}/tags/suggest returns AI tags per paper",
-        "GET /projects/{id}/papers?collection_id=X filter",
-        "Frontend: collection sidebar with drag-and-drop",
-        "Tests: verify collection CRUD",
-        "Tests: verify smart tagging returns tags"
-      ],
-      "priority": 5,
-      "passes": true,
-      "notes": "New model: collection.py. New service: collection_service.py. Smart tagging: LLM with title+abstract. Frontend: sidebar panel."
-    },
-    {
-      "id": "FEAT-006",
-      "title": "Add systematic review workflow with data extraction tables",
-      "description": "As a researcher conducting a systematic review, I need custom extraction columns (sample size, methodology, outcome) and structured data extraction from all papers, like Elicit.",
-      "acceptanceCriteria": [
-        "New Review model with research_question, columns (JSON), paper_ids",
-        "CRUD: POST/GET/PUT/DELETE /projects/{id}/reviews",
-        "POST /projects/{id}/reviews/{rid}/extract runs LLM extraction",
-        "SSE streaming progress for extraction",
-        "GET /projects/{id}/reviews/{rid}/export?format=csv downloads CSV",
-        "Frontend: review page with column builder and data table",
-        "Tests: verify review CRUD",
-        "Tests: verify extraction returns structured data"
-      ],
-      "priority": 6,
-      "passes": true,
-      "notes": "New model: review.py. New service: review_service.py. Extraction: LLM with paper content + column definitions. Frontend: new /projects/:projectId/reviews route."
-    },
-    {
-      "id": "FEAT-007",
-      "title": "Add concept knowledge graph and topic pages",
-      "description": "As a researcher, I need to see how concepts connect across papers, like Semantic Scholar topic pages. Currently only citation graph exists.",
-      "acceptanceCriteria": [
-        "POST /projects/{id}/concepts/extract identifies key concepts",
-        "GET /projects/{id}/concepts/graph returns concept network",
-        "Each concept: name, frequency, related_papers, related_concepts, definition",
-        "GET /projects/{id}/concepts/{name}/page returns topic overview",
-        "Frontend: concept graph with clickable topic pages",
-        "Tests: verify concept extraction",
-        "Tests: verify concept graph relationships"
-      ],
-      "priority": 7,
-      "passes": true,
-      "notes": "Add concept_service.py. Extract concepts via LLM, build graph via co-occurrence. Topic pages: LLM overview."
-    },
-    {
-      "id": "FEAT-008",
-      "title": "Add AI library organization with auto-tagging and metadata repair",
-      "description": "As a researcher, I need AI to automatically organize papers: fix missing metadata, suggest tags, and group related papers.",
-      "acceptanceCriteria": [
-        "GET /projects/{id}/library/health returns papers with missing metadata",
-        "POST /projects/{id}/library/repair fixes missing metadata",
-        "POST /projects/{id}/library/auto-tag suggests tags for untagged papers",
-        "POST /projects/{id}/library/clusters groups related papers",
-        "Tests: verify health identifies missing fields",
-        "Tests: verify repair fills metadata",
-        "Tests: verify clustering produces coherent groups"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "Add library_service.py. Health: scan for null fields. Repair: call Semantic Scholar API. Clustering: embedding K-means."
-    },
-    {
-      "id": "FEAT-009",
-      "title": "Add enhanced reading analytics with productivity metrics",
-      "description": "As a researcher, I need detailed analytics: papers per week trends, reading streaks, knowledge coverage, citation impact distribution. Currently only basic status counts exist.",
-      "acceptanceCriteria": [
-        "Enhanced analytics: papers_per_week, avg_read_time, reading_streak, domain_coverage, citation_impact",
-        "Reading time tracking in PDF reader",
-        "Knowledge gap analysis: underrepresented topics",
-        "Frontend: enhanced dashboard with all new charts",
-        "Tests: verify analytics returns all metrics"
+        "POST /projects/{id}/audio-overviews generates dialogue script from paper content",
+        "Audio player with play/pause, seek, speed 0.5x-2x controls in UI",
+        "Generated audio cached and available for download",
+        "User can customize tone (formal/conversational) and focus areas",
+        "Tests: verify audio overview endpoint returns structured dialogue",
+        "Tests: verify audio player component renders with controls"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Enhance existing analytics endpoint. Frontend: measure time in PDF reader, report to backend. Use embeddings for topic coverage."
+      "notes": "Backend: audio_overview_service.py with TTS generation. Frontend: AudioOverviewDialog + audio player component. Use OpenAI TTS or ElevenLabs API."
     },
     {
-      "id": "FEAT-010",
-      "title": "Add personalized research feed with paper recommendations",
-      "description": "As a researcher, I need a personalized feed of relevant papers based on reading history and interests, like Semantic Scholar Research Feeds. Currently only keyword subscriptions.",
+      "id": "FEAT-012",
+      "title": "Add browser extension for one-click paper capture",
+      "description": "As a researcher browsing academic sites, I want a Chrome/Firefox extension to save papers directly into my Omelette projects without leaving the page.",
       "acceptanceCriteria": [
-        "GET /projects/{id}/feed returns personalized recommendations",
-        "Based on: reading history, liked papers, keywords, recent activity",
-        "Each: paper metadata, relevance_score, reason",
-        "POST /projects/{id}/feed/refresh forces recalculation",
-        "POST /projects/{id}/feed/{paper_id}/feedback for learning",
-        "Frontend: feed page with card-based infinite scroll",
-        "Tests: verify feed returns recommendations",
-        "Tests: verify feedback improves recommendations"
+        "Extension detects DOI/arXiv ID/PDF URL and shows save button",
+        "One-click save fetches metadata via Semantic Scholar API",
+        "User can select target project and add tags from extension popup",
+        "Backend: POST /api/v1/upload/browser accepts PDF + metadata",
+        "Extension shows sync status with notifications",
+        "Tests: verify browser upload endpoint accepts PDF"
       ],
-      "priority": 10,
+      "priority": 9,
       "passes": true,
-      "notes": "Add feed_service.py. Build interest vector from read/liked papers. Search Semantic Scholar/OpenAlex. Score by cosine similarity. Frontend: new feed route."
+      "notes": "Build Chrome extension (Manifest V3). Content script for DOI detection. Popup for project selection. Backend: /api/v1/upload/browser endpoint. Reuse existing paper processing pipeline."
+    },
+    {
+      "id": "FEAT-013",
+      "title": "Add reference manager export (Zotero/Mendeley/BibTeX)",
+      "description": "As a researcher, I want to export my Omelette collections to Zotero, Mendeley, or BibTeX so I can use them in my existing citation workflow.",
+      "acceptanceCriteria": [
+        "POST /projects/{id}/export/bibtex returns BibTeX formatted string",
+        "POST /projects/{id}/export/ris returns RIS formatted string",
+        "POST /projects/{id}/export/zotero creates Zotero collection via API",
+        "Export dialog shows preview of items before exporting",
+        "Tests: verify BibTeX export includes all required fields",
+        "Tests: verify RIS export is valid format"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Backend: export_service.py with BibTeX, RIS, Zotero API integration. Frontend: ExportDialog component. Reuse existing collection model."
+    },
+    {
+      "id": "FEAT-014",
+      "title": "Add team collaboration and shared workspaces",
+      "description": "As a research team lead, I want shared project workspaces where team members can collaboratively annotate papers and track review assignments.",
+      "acceptanceCriteria": [
+        "New team_members table with project_id, user_id, role columns",
+        "POST/GET/PUT/DELETE /projects/{id}/members for CRUD",
+        "Shared annotations visible to all project members with author attribution",
+        "Paper review assignment with due dates and status tracking",
+        "RBAC middleware restricts access by role",
+        "Tests: verify member CRUD operations",
+        "Tests: verify RBAC blocks unauthorized access"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "New model: team_member.py. New service: team_service.py. RBAC middleware for existing endpoints. Frontend: InviteModal, MemberList, role selector."
+    },
+    {
+      "id": "FEAT-015",
+      "title": "Add public REST API with API key management",
+      "description": "As a power user, I want a documented REST API with API keys so I can programmatically access Omelette features and integrate with my research pipeline.",
+      "acceptanceCriteria": [
+        "New api_keys table with hashed keys and scopes",
+        "POST/GET/DELETE /api/v1/api-keys for key management",
+        "API key auth middleware alongside session auth",
+        "Rate limiting enforced per API key",
+        "OpenAPI/Swagger docs served at /api/docs",
+        "Frontend: API Keys settings tab with generate/revoke UI",
+        "Tests: verify API key auth works",
+        "Tests: verify rate limiting enforced"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Backend: api_key model, auth middleware, rate limiting via slowapi. FastAPI auto-generates OpenAPI docs. Frontend: API Keys tab in SettingsPage."
+    },
+    {
+      "id": "FEAT-016",
+      "title": "Add author network and collaboration graph",
+      "description": "As a researcher exploring a new field, I want to visualize author collaboration networks and identify influential researchers and research groups.",
+      "acceptanceCriteria": [
+        "GET /projects/{id}/analysis/author-network returns author graph",
+        "Force-directed graph with authors as nodes, co-authorship as edges",
+        "Node size reflects publication count, edge weight reflects co-authorship count",
+        "Author detail panel shows papers, h-index estimate, top topics",
+        "Graph exportable as PNG/SVG",
+        "Tests: verify author network returns structured graph data",
+        "Tests: verify AuthorNetwork component renders correctly"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Backend: author_network_service.py extracts authors, builds co-authorship matrix, computes centrality metrics. Frontend: AuthorNetworkDialog reusing d3-force from citation-graph."
+    },
+    {
+      "id": "FEAT-017",
+      "title": "Add research trend analysis and temporal insights",
+      "description": "As a researcher, I want to see how research topics have evolved over time with trend detection for emerging areas and declining topics.",
+      "acceptanceCriteria": [
+        "GET /projects/{id}/analysis/trends returns year-binned topic data",
+        "Timeline chart showing publication volume per year",
+        "Topic trend lines with rising/declining indicators",
+        "Emerging topic detection (>50% YoY growth)",
+        "Export trend analysis as PNG or CSV",
+        "Frontend: TrendsPage with line/bar/area charts",
+        "Tests: verify trend endpoint returns structured data",
+        "Tests: verify trend chart renders correctly"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Backend: trend_service.py extracts keywords, computes year-binned aggregates, linear regression for trend slopes. Frontend: TrendsPage using recharts (already installed)."
+    },
+    {
+      "id": "FEAT-018",
+      "title": "Add literature gap detection and research opportunity finder",
+      "description": "As a researcher identifying my next project, I want Omelette to analyze my collection and identify under-explored areas and generate research questions.",
+      "acceptanceCriteria": [
+        "POST /projects/{id}/analysis/gaps returns gap analysis results",
+        "Identifies 3-5 under-researched subtopics with supporting evidence",
+        "Generates 5-10 candidate research questions with novelty scores",
+        "User can save gaps as research ideas with notes",
+        "Analysis runs asynchronously with progress notification",
+        "Frontend: GapAnalysisPanel with gap cards",
+        "Tests: verify gap detection returns structured data"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Backend: gap_service.py uses LLM to analyze paper collection. Async task with SSE progress. Frontend: GapAnalysisPanel component. Reuse existing contradiction data as input."
+    },
+    {
+      "id": "FEAT-019",
+      "title": "Add preprint-to-journal version tracking",
+      "description": "As a researcher, I want to automatically track when preprints in my collection are updated or published in journals, so I always cite the definitive version.",
+      "acceptanceCriteria": [
+        "Daily job polls Semantic Scholar/CrossRef for paper updates",
+        "GET /papers/{id}/versions returns version history",
+        "Version timeline shows preprint v1, v2, journal publication",
+        "User can upgrade preprint to published version preserving annotations",
+        "Notification badge on papers with new versions available",
+        "Frontend: VersionTimeline component in paper detail",
+        "Tests: verify version tracking endpoint returns history",
+        "Tests: verify annotation migration on version upgrade"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Backend: version_service.py with daily APScheduler job. Frontend: VersionTimeline component. Use react-diff-viewer-continued for abstract diff display."
+    },
+    {
+      "id": "FEAT-020",
+      "title": "Add citation impact scoring and paper significance ranking",
+      "description": "As a researcher evaluating papers, I want computed impact scores combining citation count, recency, journal prestige, and evidence consensus to prioritize significant papers.",
+      "acceptanceCriteria": [
+        "Each paper displays Omelette Impact Score (0-100)",
+        "Score combines: citations (30%), recency (20%), journal IF (20%), evidence consensus (15%), field percentile (15%)",
+        "Papers sortable by impact score in all views",
+        "Score methodology transparent with factor breakdown tooltip",
+        "Impact score column in papers table",
+        "Tests: verify impact score calculation bounded [0,100]",
+        "Tests: verify score breakdown returns all factors"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Backend: compute_impact_score() in analysis service. Fetch citation counts from Semantic Scholar. Frontend: ImpactScoreBadge on paper cards, score column in tables."
     }
   ]
 }

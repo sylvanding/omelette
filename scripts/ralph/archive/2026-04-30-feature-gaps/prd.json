@@ -1,0 +1,177 @@
+{
+  "project": "Omelette - Phase 2 Feature Expansion",
+  "branchName": "ralph/phase2-features",
+  "description": "After completing FEAT-001 through FEAT-010, implement the next 10 highest-impact features based on competitive analysis. Focus: audio overviews, browser extension, reference manager export, team collaboration, public API, author network, trend analysis, gap detection, preprint tracking, and impact scoring.",
+  "userStories": [
+    {
+      "id": "FEAT-011",
+      "title": "Add audio overviews (AI podcast generation) for papers",
+      "description": "As a researcher, I want to generate conversational audio summaries of papers or collections so I can consume research while commuting, like NotebookLM Audio Overviews.",
+      "acceptanceCriteria": [
+        "POST /projects/{id}/audio-overviews generates dialogue script from paper content",
+        "Audio player with play/pause, seek, speed 0.5x-2x controls in UI",
+        "Generated audio cached and available for download",
+        "User can customize tone (formal/conversational) and focus areas",
+        "Tests: verify audio overview endpoint returns structured dialogue",
+        "Tests: verify audio player component renders with controls"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Backend: audio_overview_service.py with TTS generation. Frontend: AudioOverviewDialog + audio player component. Use OpenAI TTS or ElevenLabs API."
+    },
+    {
+      "id": "FEAT-012",
+      "title": "Add browser extension for one-click paper capture",
+      "description": "As a researcher browsing academic sites, I want a Chrome/Firefox extension to save papers directly into my Omelette projects without leaving the page.",
+      "acceptanceCriteria": [
+        "Extension detects DOI/arXiv ID/PDF URL and shows save button",
+        "One-click save fetches metadata via Semantic Scholar API",
+        "User can select target project and add tags from extension popup",
+        "Backend: POST /api/v1/upload/browser accepts PDF + metadata",
+        "Extension shows sync status with notifications",
+        "Tests: verify browser upload endpoint accepts PDF"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Build Chrome extension (Manifest V3). Content script for DOI detection. Popup for project selection. Backend: /api/v1/upload/browser endpoint. Reuse existing paper processing pipeline."
+    },
+    {
+      "id": "FEAT-013",
+      "title": "Add reference manager export (Zotero/Mendeley/BibTeX)",
+      "description": "As a researcher, I want to export my Omelette collections to Zotero, Mendeley, or BibTeX so I can use them in my existing citation workflow.",
+      "acceptanceCriteria": [
+        "POST /projects/{id}/export/bibtex returns BibTeX formatted string",
+        "POST /projects/{id}/export/ris returns RIS formatted string",
+        "POST /projects/{id}/export/zotero creates Zotero collection via API",
+        "Export dialog shows preview of items before exporting",
+        "Tests: verify BibTeX export includes all required fields",
+        "Tests: verify RIS export is valid format"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Backend: export_service.py with BibTeX, RIS, Zotero API integration. Frontend: ExportDialog component. Reuse existing collection model."
+    },
+    {
+      "id": "FEAT-014",
+      "title": "Add team collaboration and shared workspaces",
+      "description": "As a research team lead, I want shared project workspaces where team members can collaboratively annotate papers and track review assignments.",
+      "acceptanceCriteria": [
+        "New team_members table with project_id, user_id, role columns",
+        "POST/GET/PUT/DELETE /projects/{id}/members for CRUD",
+        "Shared annotations visible to all project members with author attribution",
+        "Paper review assignment with due dates and status tracking",
+        "RBAC middleware restricts access by role",
+        "Tests: verify member CRUD operations",
+        "Tests: verify RBAC blocks unauthorized access"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "New model: team_member.py. New service: team_service.py. RBAC middleware for existing endpoints. Frontend: InviteModal, MemberList, role selector."
+    },
+    {
+      "id": "FEAT-015",
+      "title": "Add public REST API with API key management",
+      "description": "As a power user, I want a documented REST API with API keys so I can programmatically access Omelette features and integrate with my research pipeline.",
+      "acceptanceCriteria": [
+        "New api_keys table with hashed keys and scopes",
+        "POST/GET/DELETE /api/v1/api-keys for key management",
+        "API key auth middleware alongside session auth",
+        "Rate limiting enforced per API key",
+        "OpenAPI/Swagger docs served at /api/docs",
+        "Frontend: API Keys settings tab with generate/revoke UI",
+        "Tests: verify API key auth works",
+        "Tests: verify rate limiting enforced"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Backend: api_key model, auth middleware, rate limiting via slowapi. FastAPI auto-generates OpenAPI docs. Frontend: API Keys tab in SettingsPage."
+    },
+    {
+      "id": "FEAT-016",
+      "title": "Add author network and collaboration graph",
+      "description": "As a researcher exploring a new field, I want to visualize author collaboration networks and identify influential researchers and research groups.",
+      "acceptanceCriteria": [
+        "GET /projects/{id}/analysis/author-network returns author graph",
+        "Force-directed graph with authors as nodes, co-authorship as edges",
+        "Node size reflects publication count, edge weight reflects co-authorship count",
+        "Author detail panel shows papers, h-index estimate, top topics",
+        "Graph exportable as PNG/SVG",
+        "Tests: verify author network returns structured graph data",
+        "Tests: verify AuthorNetwork component renders correctly"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Backend: author_network_service.py extracts authors, builds co-authorship matrix, computes centrality metrics. Frontend: AuthorNetworkDialog reusing d3-force from citation-graph."
+    },
+    {
+      "id": "FEAT-017",
+      "title": "Add research trend analysis and temporal insights",
+      "description": "As a researcher, I want to see how research topics have evolved over time with trend detection for emerging areas and declining topics.",
+      "acceptanceCriteria": [
+        "GET /projects/{id}/analysis/trends returns year-binned topic data",
+        "Timeline chart showing publication volume per year",
+        "Topic trend lines with rising/declining indicators",
+        "Emerging topic detection (>50% YoY growth)",
+        "Export trend analysis as PNG or CSV",
+        "Frontend: TrendsPage with line/bar/area charts",
+        "Tests: verify trend endpoint returns structured data",
+        "Tests: verify trend chart renders correctly"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Backend: trend_service.py extracts keywords, computes year-binned aggregates, linear regression for trend slopes. Frontend: TrendsPage using recharts (already installed)."
+    },
+    {
+      "id": "FEAT-018",
+      "title": "Add literature gap detection and research opportunity finder",
+      "description": "As a researcher identifying my next project, I want Omelette to analyze my collection and identify under-explored areas and generate research questions.",
+      "acceptanceCriteria": [
+        "POST /projects/{id}/analysis/gaps returns gap analysis results",
+        "Identifies 3-5 under-researched subtopics with supporting evidence",
+        "Generates 5-10 candidate research questions with novelty scores",
+        "User can save gaps as research ideas with notes",
+        "Analysis runs asynchronously with progress notification",
+        "Frontend: GapAnalysisPanel with gap cards",
+        "Tests: verify gap detection returns structured data"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Backend: gap_service.py uses LLM to analyze paper collection. Async task with SSE progress. Frontend: GapAnalysisPanel component. Reuse existing contradiction data as input."
+    },
+    {
+      "id": "FEAT-019",
+      "title": "Add preprint-to-journal version tracking",
+      "description": "As a researcher, I want to automatically track when preprints in my collection are updated or published in journals, so I always cite the definitive version.",
+      "acceptanceCriteria": [
+        "Daily job polls Semantic Scholar/CrossRef for paper updates",
+        "GET /papers/{id}/versions returns version history",
+        "Version timeline shows preprint v1, v2, journal publication",
+        "User can upgrade preprint to published version preserving annotations",
+        "Notification badge on papers with new versions available",
+        "Frontend: VersionTimeline component in paper detail",
+        "Tests: verify version tracking endpoint returns history",
+        "Tests: verify annotation migration on version upgrade"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Backend: version_service.py with daily APScheduler job. Frontend: VersionTimeline component. Use react-diff-viewer-continued for abstract diff display."
+    },
+    {
+      "id": "FEAT-020",
+      "title": "Add citation impact scoring and paper significance ranking",
+      "description": "As a researcher evaluating papers, I want computed impact scores combining citation count, recency, journal prestige, and evidence consensus to prioritize significant papers.",
+      "acceptanceCriteria": [
+        "Each paper displays Omelette Impact Score (0-100)",
+        "Score combines: citations (30%), recency (20%), journal IF (20%), evidence consensus (15%), field percentile (15%)",
+        "Papers sortable by impact score in all views",
+        "Score methodology transparent with factor breakdown tooltip",
+        "Impact score column in papers table",
+        "Tests: verify impact score calculation bounded [0,100]",
+        "Tests: verify score breakdown returns all factors"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Backend: compute_impact_score() in analysis service. Fetch citation counts from Semantic Scholar. Frontend: ImpactScoreBadge on paper cards, score column in tables."
+    }
+  ]
+}

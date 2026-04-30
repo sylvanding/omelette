@@ -1,330 +1,297 @@
 # Ralph Progress Log
-Started: Thu Apr 30 07:12:46 AM CST 2026
+Started: Thu Apr 30 01:02:06 PM CST 2026
+---
+
+## 2026-04-30 15:08 - FEAT-018
+- GapService uses LLM to analyze paper collection for research gaps
+- POST /projects/{id}/analysis/gaps endpoint with GapEntry and GapResearchQuestion response models
+- Gap scores clamped to [0,1], limited to 5 gaps and 10 research questions
+- Empty response returned for projects with fewer than 2 papers
+- Frontend: GapAnalysisPanel with color-coded gap score badges and novelty/feasibility indicators
+- GapAnalysisDialog with fixed overlay, GapAnalysisPage wrapper with navigation on close
+- Added "Gap Analysis" nav item with Lightbulb icon in ProjectDetail sidebar
+- Tests: 6 backend tests pass, 5 frontend tests pass
+- **Learnings for future iterations:**
+  - The stop hook auto-commits when all checks pass — don't manually commit after implementation
+  - GapAnalysisDialog uses a fixed-position overlay pattern (different from TrendsPage's inline layout)
+  - GapAnalysisPage is a thin wrapper that delegates to GapAnalysisDialog and navigates back on close
+  - The `LLM_PROVIDER=mock` env var in conftest.py makes all LLM-based service tests work without real API
+---
+
+## 2026-04-30 14:56 - FEAT-017
+- Implemented GET /projects/{id}/analysis/trends endpoint returning year-binned topic data
+- Created TrendService with publication volume, citation timeline, topic trend extraction
+- Linear regression for trend slope computation per topic
+- Emerging topic detection (>50% YoY growth) and declining topic detection (<30% YoY)
+- Built TrendsPage with recharts: BarChart (publication volume), AreaChart (citations), LineChart (topic trends)
+- Emerging/declining topics lists with color-coded badges
+- Summary cards: total papers, year span, emerging count, declining count
+- Added route in App.tsx and navigation item in ProjectDetail.tsx
+- Files changed:
+  - backend/app/services/trend_service.py (new)
+  - backend/app/api/v1/analysis.py (added trends endpoint + response models)
+  - backend/tests/test_trend_analysis.py (new, 10 tests)
+  - frontend/src/services/api.ts (added trendsApi + types)
+  - frontend/src/lib/query-keys.ts (added trends query key, fixed duplicate analytics key)
+  - frontend/src/pages/project/TrendsPage.tsx (new)
+  - frontend/src/pages/ProjectDetail.tsx (added Trends nav item)
+  - frontend/src/App.tsx (added TrendsPage route)
+  - frontend/src/test/mocks/handlers.ts (added trends mock handler)
+  - frontend/src/i18n/locales/en.json (added/merged trends translations)
+  - frontend/src/pages/__tests__/TrendsPage.test.tsx (new, 7 tests)
+- Tests: 10 backend tests pass, 7 frontend tests pass
+- **Learnings for future iterations:**
+  - i18n file already had a `trends` section — must check for duplicates before adding new sections
+  - The `query-keys.ts` had a pre-existing duplicate `analytics` key inside `papers` — fixed it
+  - Recharts components (BarChart, AreaChart, LineChart) render fine in jsdom tests
+  - MSW handlers for `/projects/:id/analysis/*` pattern work correctly with path params
+---
+
+## 2026-04-30 14:42 - FEAT-016
+- AuthorNetworkDialog component with d3-force directed graph visualization
+- Force-directed graph with authors as nodes, co-authorship as edges
+- Node size reflects publication count, color reflects centrality
+- Author detail panel shows papers, h-index estimate, co-authors list
+- PNG export functionality via canvas rendering
+- "Active only" filter to show only authors with collaborations
+- Toolbar button on PapersPage to open the author network view
+- Backend service and endpoint already existed (author_network_service.py, analysis.py)
+- MSW mock handler already existed
+- Files changed:
+  - frontend/src/components/author-network/AuthorNetworkDialog.tsx (new)
+  - frontend/src/components/author-network/__tests__/AuthorNetworkDialog.test.tsx (new, 7 tests)
+  - frontend/src/pages/project/PapersPage.tsx (wired up dialog)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added Author Network button)
+  - frontend/src/i18n/locales/en.json (added authorNetwork translations)
+- Tests: 7 frontend tests pass, 9 backend tests pass
+- **Learnings for future iterations:**
+  - D3 modules (d3-force, d3-selection, d3-drag, d3-zoom, d3-scale) must be mocked in frontend tests
+  - The backend author network service and endpoint were already implemented in a previous iteration
+  - MSW mock handler for author-network was already present in handlers.ts
+  - i18n translations for authorNetwork were partially present; added missing keys
+  - Query key `authorNetwork` already existed in query-keys.ts
+---
+
+## 2026-04-30 14:30 - FEAT-015
+- Created APIKey model with hashed key storage (SHA-256), scope, and prefix display
+- Created Alembic migration for api_keys table with index on key_hash
+- Created APIKeyService with generate, create, list, revoke, delete, validate operations
+- Generated keys use `omk_` prefix + 32 alphanumeric chars for easy identification
+- Created REST endpoints: GET/POST /api/v1/api-keys, POST revoke, DELETE
+- Added FastAPI dependency `require_authenticated_api_key()` for DB-backed key auth
+- Added scope enforcement factory `require_scope()` with read < write < admin hierarchy
+- Built frontend APIKeysSettings component with create/revoke/delete UI
+- Added create dialog with name input and scope selector
+- Shows key once at creation with copy-to-clipboard
+- Files changed:
+  - backend/app/models/api_key.py (new)
+  - backend/app/models/__init__.py (added APIKey, APIKeyScope)
+  - backend/app/services/api_key_service.py (new)
+  - backend/app/api/v1/api_keys.py (new, 4 endpoints)
+  - backend/app/api/v1/__init__.py (registered api_keys router)
+  - backend/app/middleware/auth.py (added authenticate_api_key, require_scope, require_authenticated_api_key)
+  - backend/alembic/versions/b1c2d3e4f5a6_add_api_keys_table.py (new)
+  - backend/tests/test_api_keys.py (new, 17 tests)
+  - frontend/src/components/api-keys/APIKeysSettings.tsx (new)
+  - frontend/src/pages/SettingPage.tsx (added APIKeysSettings card)
+  - frontend/src/services/api.ts (added apiKeysApi)
+  - frontend/src/types/index.ts (added APIKeyScope, APIKey, CreatedAPIKey)
+  - frontend/src/lib/query-keys.ts (added apiKeys query key)
+  - frontend/src/test/mocks/handlers.ts (added mock handlers)
+  - frontend/src/i18n/locales/en.json (added apiKeys translations)
+- **Learnings for future iterations:**
+  - API responses use `{ code, message, data }` format — match this in new endpoints
+  - SQLite locks when multiple async sessions write simultaneously — test service methods directly, not through HTTP client
+  - Query keys should be constant arrays, not functions (`queryKeys.apiKeys.all`, not `.all()`)
+  - Key hashing: SHA-256 is used; the raw key is only returned at creation time and never stored
 ---
 
 ## Codebase Patterns
-- Backend uses `ApiResponse` envelope for all endpoints with `{code, message, data}` structure
-- LLM calls use `llm.chat_json()` for JSON responses and `task_type` for mock routing
-- New services go in `app/services/` with constructor taking `LLMClient`
-- Each route module exports `router = APIRouter(tags=["..."])` — mounted via `__init__.py`
-- New route modules need BOTH an import AND `api_router.include_router()` call in `__init__.py`
-- Router prefix is set in `include_router()` call in `__init__.py`, not on the `APIRouter()` constructor
-- Frontend API calls use axios instance from `@/lib/api` that unwraps `response.data`
-- Mock responses live in `app/services/llm/adapters/mock_adapter.py` — add task_type entries
-- Test fixtures use `client` (AsyncClient), `project_id`, and `setup_db` from conftest.py
-- Frontend uses `@tanstack/react-query` for data fetching with `useQuery`
-- shadcn/ui components may not exist for everything — use native HTML elements when missing (e.g., `<input type="range">` instead of missing Slider)
-- Endpoint tests that query DB should use `app.dependency_overrides[get_db]` for mock session injection
-- Use `func` from `sqlalchemy` for aggregate functions, NOT `db.func` (AsyncSession has no `func` attribute)
-- httpx AsyncClient DELETE doesn't support `json` or `content` params — use `client.request("DELETE", ..., content=...)` for DELETE with body
-- Pre-commit hooks (ruff, ruff-format) modify files in-place — always stage after first commit attempt
+- Reference export endpoints use `/projects/{id}/export/{format}` pattern (bibtex, ris, zotero)
+- Zotero integration requires `ZOTERO_API_KEY` and `ZOTERO_USER_ID` env vars; falls back to BibTeX preview when not configured
+- `downloadExport()` in `bibliography-export.ts` handles client-side file downloads for BibTeX/RIS/EndNote
+- Export dialog uses two-tab pattern (Download + Zotero) with paper preview
 
----
+## Codebase Patterns
+- Team member model uses `email` (not `user_id`) since the app is currently single-user; invites are tracked by email
+- RBAC middleware uses `X-User-Email` header for identity; without it, single-user mode is assumed and access is granted
+- API error responses use `{ code, message, data }` format (not FastAPI's default `{ detail }`)
+- Error responses from HTTPException are wrapped by a custom exception handler in the main app
+- Team members cascade-delete when their project is deleted (`ondelete="CASCADE"`)
 
-## [2026-04-30 07:20] - FEAT-001
-- Implemented augmented PDF reading with skimming highlights and inline citation cards
-- Backend: Created `augmented_reading_service.py` with 3 methods (highlights, citation cards, definitions)
-- Backend: Added 3 endpoints to papers.py: POST /highlights, GET /citation-cards, GET /definitions
-- Backend: Added Pydantic schemas in `schemas/augmented_reading.py`
-- Backend: Added mock responses for all 3 task types
-- Backend: Added 6 tests (success + 404 for each endpoint)
-- Frontend: Added `augmentedReadingApi` to services/api.ts with typed interfaces
-- Frontend: Created HighlightOverlay component with category toggles and opacity control
-- Frontend: Created CitationCardPanel component with citations/definitions tabs
-- Frontend: Integrated as new "Highlights" and "Citations" tabs in PDFReaderLayout
+## 2026-04-30 14:07 - FEAT-014
+- Created TeamMember model with email, role, status, invite_code fields
+- Created Alembic migration for team_members table
+- Created TeamService with invite, update_role, remove, list operations
+- Created API endpoints: GET/POST /projects/{id}/members, PUT/DELETE /projects/{id}/members/{memberId}
+- Created RBAC middleware in deps.py: require_role() factory, get_current_user_role() dependency
+- Created frontend TeamMembersManager component with member list, invite dialog, role selector
+- Added i18n translations for team member UI strings
 - Files changed:
-  - backend/app/services/augmented_reading_service.py (new)
-  - backend/app/schemas/augmented_reading.py (new)
-  - backend/app/api/v1/papers.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_api_projects_papers.py (modified)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (modified)
-  - frontend/src/components/pdf-reader/HighlightOverlay.tsx (new)
-  - frontend/src/components/pdf-reader/CitationCardPanel.tsx (new)
+  - backend/app/models/team_member.py (new)
+  - backend/app/models/__init__.py (added TeamMember, TeamMemberRole)
+  - backend/app/models/project.py (added team_members relationship)
+  - backend/app/services/team_service.py (new)
+  - backend/app/api/v1/team_members.py (new, 4 endpoints)
+  - backend/app/api/v1/__init__.py (registered team_members router)
+  - backend/app/api/deps.py (added RBAC: require_role, get_current_user_role)
+  - backend/alembic/versions/a1b2c3d4e5f7_add_team_members_table.py (new)
+  - backend/tests/test_team_members.py (new, 16 tests)
+  - frontend/src/components/team/TeamMembersManager.tsx (new)
+  - frontend/src/components/team/__tests__/TeamMembersManager.test.tsx (new, 6 tests)
+  - frontend/src/services/api.ts (added teamMembersApi, TeamMember types)
+  - frontend/src/types/index.ts (added TeamMember, TeamMemberRole)
+  - frontend/src/test/mocks/handlers.ts (added team members mock handlers)
+  - frontend/src/i18n/locales/en.json (added team translations)
 - **Learnings for future iterations:**
-  - When adding new LLM task types, always add corresponding mock responses to avoid test failures
-  - The `get_or_404` helper validates paper existence — no need to use the returned value if not needed
-  - Frontend Slider component wasn't available in shadcn/ui — used native `<input type="range">` instead
-  - Always check for component existence before importing from `@/components/ui/`
-
+  - This codebase wraps HTTPException responses in ApiResponse format with `message` field (not `detail`)
+  - The `EmailStr` Pydantic type from `pydantic` provides built-in email validation
+  - Alembic migrations have a cycle issue — existing migrations reference each other in a loop; new migrations should still use the latest head as down_revision
+  - Frontend tests use `fireEvent` from `@testing-library/react` directly (not exported from test utils)
 ---
 
-## [2026-04-30 07:45] - FEAT-002
-- Implemented evidence consensus visualization for research questions
-- Backend: Created `evidence_consensus_service.py` with stance classification (support/contradict/mixed)
-- Backend: Added POST /projects/{id}/rag/evidence-consensus endpoint in rag.py with Pydantic schemas
-- Backend: Added mock LLM response for `evidence_consensus` task type
-- Backend: Added 5 tests covering structured data, findings, confidence bounds, percentage sums, empty retrieval
-- Frontend: Created EvidenceConsensus component with recharts bar chart, paper findings, and stance badges
-- Frontend: Added typed API integration in services/api.ts
+## 2026-04-30 13:44 - FEAT-013
+- Implemented POST /projects/{id}/export/bibtex and /ris endpoints returning downloadable bibliography files
+- Implemented POST /projects/{id}/export/zotero for direct Zotero collection creation with API
+- Created ZoteroService with collection and item creation via Zotero REST API
+- Built ExportDialog component with Download tab (BibTeX/RIS/EndNote) and Zotero tab
+- Wired ExportDialog to PapersPage via PapersToolbar "Reference Export" button
 - Files changed:
-  - backend/app/services/evidence_consensus_service.py (new)
-  - backend/app/api/v1/rag.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_evidence_consensus.py (new)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/components/evidence/EvidenceConsensus.tsx (new)
+  - backend/app/api/v1/export.py (new router, 3 endpoints)
+  - backend/app/services/zotero_service.py (new Zotero API integration)
+  - backend/app/api/v1/__init__.py (registered export router)
+  - backend/tests/test_reference_export.py (new, 10 tests)
+  - frontend/src/components/export/ExportDialog.tsx (new)
+  - frontend/src/components/export/__tests__/ExportDialog.test.tsx (new, 6 tests)
+  - frontend/src/services/api.ts (added exportReferenceApi)
+  - frontend/src/test/mocks/handlers.ts (added mock handlers)
+  - frontend/src/pages/project/PapersPage.tsx (wired up dialog)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added button)
 - **Learnings for future iterations:**
-  - RAG endpoints that depend on ChromaDB retrieval need mocked `retrieve_only` in tests
-  - Pre-commit hooks (ruff, ruff-format) may reformat newly created Python files — re-stage after first commit attempt
-  - Percentage rounding across 3 categories can sum to 99.9 — allow 1% tolerance in tests
-  - Recharts is already available in the project for charting needs
-  - The rag.py file uses inline Pydantic schemas (not separate schema files) for request/response models
+  - The existing `export_service.py` already had BibTeX/RIS/EndNote generators — reuse rather than reimplement
+  - Pydantic validation returns 422 (not 400) for missing required fields in request body
+  - Paper DOI has a unique constraint per project — tests creating multiple papers need unique DOIs
+  - The `downloadExport()` client-side utility in `bibliography-export.ts` handles blob creation and browser download
 ---
 
-## [2026-04-30 08:00] - FEAT-003
-- Implemented multi-document contradiction detection
-- Backend: Created contradiction_service.py with detect_contradictions() method that uses LLM to identify conflicting claims across papers
-- Backend: Created analysis.py router with POST /projects/{id}/analysis/contradictions endpoint
-- Backend: Registered analysis router in __init__.py with prefix /projects/{project_id}/analysis
-- Backend: Added mock LLM response for contradiction_detection task type
-- Backend: Added 8 tests (6 unit tests for service edge cases + 2 API endpoint tests)
-- Frontend: Created ContradictionReport component with summary cards, topic filter badges, and contradiction detail cards
-- Frontend: Added typed API integration (ContradictionPair, ContradictionResult, contradictionsApi) to services/api.ts
+## Codebase Patterns
+- Browser extension goes in `browser-extension/` at project root, separate from backend/frontend
+- Use Query params for browser upload endpoint (not JSON body) — simpler for extension GET/POST from popup
+- `async_session_factory` (not `async_session`) is the correct import from `app.database`
+- Browser upload endpoint path: `/projects/{id}/upload/browser` (separate from `/papers/upload`)
+- Backend endpoints use FastAPI `APIRouter` with `Depends(get_db)` and `Depends(get_project)` for DI
+- Services import `LLMClient` lazily inside endpoints via `get_llm()` from `app.api.deps`
+- Request/response schemas are Pydantic models defined inline in API files
+- Frontend API calls are organized in `src/services/api.ts` as namespace objects with `.then(r => r.data)` unwrapping
+- Dialogs use fixed-position overlays with `fixed inset-0 z-50` pattern
+- MSW mock handlers in `src/test/mocks/handlers.ts` need new endpoints added for tests
+- `useToastMutation` is the standard mutation hook with toast + query invalidation
+
+## 2026-04-30 13:14 - FEAT-011
+- Implemented audio overview generation endpoint (POST /projects/{id}/audio-overviews)
+- Created AudioOverviewService with LLM-based dialogue generation and graceful fallback
+- Built AudioPlayer component with play/pause, skip, speed (0.5x-2x), and mute controls
+- Built AudioOverviewDialog with tone selector (formal/conversational) and focus area tags
+- Integrated audio overview button into PapersToolbar (enabled for 1-10 selected papers)
 - Files changed:
-  - backend/app/services/contradiction_service.py (new)
-  - backend/app/api/v1/analysis.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_contradiction_detection.py (new)
-  - frontend/src/components/contradiction/ContradictionReport.tsx (new)
-  - frontend/src/services/api.ts (modified)
+  - backend/app/services/audio_overview_service.py (new)
+  - backend/app/api/v1/audio_overviews.py (new)
+  - backend/app/api/v1/__init__.py (added router)
+  - frontend/src/services/api.ts (added audioOverviewsApi)
+  - frontend/src/components/audio/AudioPlayer.tsx (new)
+  - frontend/src/components/audio/AudioOverviewDialog.tsx (new)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added audio overview button)
+  - frontend/src/pages/project/PapersPage.tsx (wired up dialog)
+  - frontend/src/test/mocks/handlers.ts (added mock handler)
+  - backend/tests/test_audio_overviews.py (new, 7 tests)
+  - frontend/src/components/audio/__tests__/AudioOverviewDialog.test.tsx (new, 6 tests)
 - **Learnings for future iterations:**
-  - New route modules should be registered in __init__.py with both an import and include_router call with appropriate prefix
-  - Tests for endpoints that query the DB should use app.dependency_overrides for get_db to inject mock sessions
-  - The LLM prompt should instruct the model to return both contradiction pairs AND topic groupings in the same response
-  - When adding task types to mock_adapter.py, ensure the JSON structure matches exactly what the service expects
+  - This codebase uses inline Pydantic schemas in API files (not separate schema files)
+  - LLM services must handle `None` gracefully with fallback implementations
+  - Test mocks must be updated in `handlers.ts` when adding new API endpoints
+  - The PapersToolbar pattern for action buttons uses TooltipProvider with conditional enable/disable
 ---
 
-## [2026-04-30 08:20] - FEAT-004
-- Implemented iterative visual discovery with prior/derivative/similarity graph modes
-- Backend: Added `mode` parameter to `get_citation_graph()` supporting "all", "prior", "derivative", "similarity"
-- Backend: Added `_get_similarity_graph()` method that computes cosine similarity from ChromaDB embeddings
-- Backend: Prior Works mode returns only references (type: "cites"), Derivative Works only citations (type: "cited_by")
-- Backend: Added 5 new tests covering all modes and API mode parameter
-- Frontend: Added mode toggle buttons (All, Prior Works, Derivative, Similarity) with icons
-- Frontend: Updated CitationGraphDialog with mode state and onNodeClick for iterative seed switching
-- Frontend: Edge types now visually distinct (cites=blue, cited_by=orange, similar=purple with thickness)
+## 2026-04-30 13:30 - FEAT-012
+- Implemented browser extension (Chrome Manifest V3) for one-click paper capture
+- Created backend endpoint POST /projects/{id}/upload/browser accepting PDF URL, DOI, or arXiv ID
+- Extension detects academic papers via content script on arXiv, Semantic Scholar, PubMed, etc.
+- Injects floating "Save to Omelette" button on detected pages
+- Popup UI for project selection, tag entry, and save confirmation
+- Backend fetches metadata via Semantic Scholar API, downloads PDF, reuses paper processing pipeline
 - Files changed:
-  - backend/app/services/citation_graph_service.py (modified)
-  - backend/app/api/v1/papers.py (modified)
-  - backend/tests/test_citation_graph.py (modified)
-  - frontend/src/components/citation-graph/CitationGraphView.tsx (modified)
-  - frontend/src/components/citation-graph/CitationGraphDialog.tsx (modified)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/lib/query-keys.ts (modified)
+  - backend/app/api/v1/browser_upload.py (new)
+  - backend/app/api/v1/__init__.py (added router)
+  - backend/tests/test_browser_upload.py (new, 6 tests)
+  - browser-extension/ (new directory — manifest, content script, popup, icons)
+  - frontend/src/services/api.ts (added browserUploadApi)
+  - frontend/src/test/mocks/handlers.ts (added mock handler)
+  - frontend/src/services/__tests__/api.browser.test.ts (new, 4 tests)
 - **Learnings for future iterations:**
-  - Edge types now use "cites" (seed→ref), "cited_by" (cite→seed), "similar" (embedding match) — must be consistent across service and frontend
-  - Similarity graph uses paper_id as node ID (not S2 ID) since similarity is computed within project — frontend handles both ID formats
-  - When ChromaDB is unavailable, similarity mode returns empty graph gracefully rather than erroring
-  - Query keys must include mode parameter to avoid stale cache when switching between modes
+  - The `app.database` module uses `async_session_factory` (not `async_session`)
+  - Query params work well for browser extension POST requests — simpler than JSON body
+  - Content script can communicate with popup via `chrome.runtime.sendMessage`
+  - Need to check `title` query param separately from metadata dict in validation
 ---
 
-## [2026-04-30 08:45] - FEAT-005
-- Implemented paper collections and smart tagging within projects
-- Backend: Created Collection and CollectionPaper models with proper relationships and indexes
-- Backend: Created collection_service.py with AI smart tagging via LLM (suggest_tags method)
-- Backend: Added collections.py router with full CRUD + paper association + tag suggestion endpoints
-- Backend: Added collection_id filter to existing papers list endpoint
-- Backend: Registered collections router in __init__.py with prefix /projects/{project_id}/collections
-- Backend: Added mock LLM response for smart_tagging task type
-- Backend: Added 17 tests (4 service unit tests + 9 collection API tests + 2 smart tagging tests + 2 paper filter tests)
-- Backend: Created Alembic migration for collections and collection_papers tables
-- Frontend: Added Collection, CollectionPaper, CollectionDetail, PaperTagSuggestion types
-- Frontend: Added collectionsApi with list/create/update/delete/getDetail/addPapers/removePapers/suggestTags
-- Frontend: Created CollectionSidebar component with create/rename/delete/inline-edit and AI tag suggestion button
+## 2026-04-30 15:10 - FEAT-019
+- PaperVersion model with FK to papers, cascade delete from Paper
+- Alembic migration creating paper_versions table
+- VersionService: check_for_updates, get_version_history, record_version, upgrade_to_version, poll_all_papers
+- _compute_diff generates human-readable diff between versions
+- _is_preprint_source and _extract_preprint_server helpers for Semantic Scholar metadata
+- 3 new API endpoints: GET /papers/{id}/versions, POST /papers/{id}/versions/check, POST /papers/{id}/versions/{version_id}/upgrade
+- upgrade_to_version preserves user data (notes, tags, rating, reading_status, quality_tags)
+- Scheduled job polls all papers with DOIs for version updates
+- Frontend: VersionTimeline component with timeline dots, preprint/journal badges, diff summaries
+- VersionTimelineDialog with fixed overlay, React Query data fetching and mutations
+- Wired "Versions" button into PDFReaderLayout header bar
+- useToastMutation hook for upgrade action with toast feedback
+- 17 backend tests pass, 10 frontend tests pass, TypeScript clean
 - Files changed:
-  - backend/app/models/collection.py (new)
-  - backend/app/models/__init__.py (modified)
-  - backend/alembic/versions/a2b3c4d5e6f7_add_collections_tables.py (new)
-  - backend/app/services/collection_service.py (new)
-  - backend/app/api/v1/collections.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/api/v1/papers.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_collections.py (new)
-  - frontend/src/types/index.ts (modified)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/components/collections/CollectionSidebar.tsx (new)
+  - backend/app/models/paper_version.py (new)
+  - backend/app/models/__init__.py (added PaperVersion)
+  - backend/app/models/paper.py (added versions relationship)
+  - backend/app/services/version_service.py (new)
+  - backend/app/api/v1/papers.py (added 3 version endpoints)
+  - backend/alembic/versions/g1h2i3j4k5l6_add_paper_versions_table.py (new)
+  - backend/tests/test_version_tracking.py (new, 17 tests)
+  - frontend/src/services/api.ts (added PaperVersionEntry, versionTrackingApi)
+  - frontend/src/lib/query-keys.ts (added paperVersions query key)
+  - frontend/src/components/version-timeline/VersionTimeline.tsx (new)
+  - frontend/src/components/version-timeline/VersionTimelineDialog.tsx (new)
+  - frontend/src/components/version-timeline/__tests__/VersionTimeline.test.tsx (new, 10 tests)
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (added Versions button + dialog)
+  - frontend/src/test/mocks/handlers.ts (added version tracking mock handlers)
+  - frontend/src/i18n/locales/en.json, zh.json (added versions translations)
 - **Learnings for future iterations:**
-  - Use `func` imported from `sqlalchemy`, NOT `db.func` — AsyncSession doesn't expose `func`
-  - httpx AsyncClient DELETE doesn't accept `json` param — use `client.request("DELETE", url, content=..., headers=...)`
-  - Pre-commit hooks run ruff and ruff-format which modify files — need to re-stage after first commit failure
-  - CollectionPaper junction table uses separate model (not SQLAlchemy association proxy) for easier CRUD operations
-  - When filtering papers by collection, need to JOIN CollectionPaper on both the base query AND count query
-- Avoid MySQL-specific types like LONGTEXT in models when tests run on SQLite — use Text instead
-- The extraction endpoint POST /reviews/{id}/extract runs LLM for each paper, so tests need mock LLM responses
+  - cascade="all, delete-orphan" belongs on the one-side of a relationship (Paper.versions), not the many-side
+  - Semantic Scholar API returns venue field for journal names, externalIds for preprint server detection
+  - Fixed-position dialog overlay pattern: `fixed inset-0 z-50 flex items-center justify-center bg-black/50`
+  - Version upgrade mutation invalidates both the paper query and paper-versions query key
+
 ---
 
-## [2026-04-30 09:10] - FEAT-006
-- Implemented systematic review workflow with data extraction tables
-- Backend: Created Review and ReviewExtraction models with JSON-stored columns and paper_ids
-- Backend: Created review_service.py with LLM-based extraction (per-paper) and CSV export
-- Backend: Added reviews.py router with full CRUD + extract + extractions + export endpoints
-- Backend: Export endpoint uses StreamingResponse for CSV download
-- Backend: Added mock LLM response for review_extraction task type
-- Backend: Created Alembic migration for reviews and review_extractions tables
-- Backend: Added 13 tests (4 service unit + 6 review API + 3 extraction API)
-- Frontend: Added Review, ReviewColumn, ExtractionResult, ExtractionProgress types
-- Frontend: Added reviewsApi with list/create/update/delete/extract/getExtractions methods
-- Frontend: Created ReviewsPage with column builder, extraction table, and CSV export
-- Frontend: Added /reviews route and navigation link in ProjectDetail sidebar
+## 2026-04-30 15:07 - FEAT-018
+- Implemented POST /projects/{id}/analysis/gaps endpoint
+- Created GapService using LLM to analyze paper collection for research gaps
+- Identifies 2-5 under-researched subtopics with gap scores and evidence
+- Generates candidate research questions with novelty and feasibility scores
+- Built GapAnalysisPanel component with gap cards and research question list
+- Built GapAnalysisDialog wrapper with React Query integration
+- Added route (/gaps) and navigation item in ProjectDetail.tsx
+- Backend: 6 tests, Frontend: 5 tests - all passing
 - Files changed:
-  - backend/app/models/review.py (new)
-  - backend/app/models/__init__.py (modified)
-  - backend/alembic/versions/f0a1b2c3d4e5_add_reviews_tables.py (new)
-  - backend/app/services/review_service.py (new)
-  - backend/app/api/v1/reviews.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_reviews.py (new)
-  - frontend/src/types/index.ts (modified)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/pages/project/ReviewsPage.tsx (new)
-  - frontend/src/App.tsx (modified)
-  - frontend/src/pages/ProjectDetail.tsx (modified)
-- **Learnings for future iterations:**
-  - MySQL-specific types like LONGTEXT fail on SQLite test databases — use Text instead
-  - Export endpoints return StreamingResponse, not ApiResponse envelope
-  - The extract endpoint processes papers one-by-one (no SSE streaming implemented yet)
-  - Frontend uses native table for extraction display rather than DataTable component
-  - useTranslation import creates unused variable warnings if `t` isn't actually used
-
----
-
-## [2026-04-30 09:30] - FEAT-007
-- Implemented concept knowledge graph and topic pages
-- Backend: Created concept_service.py with extract_concepts(), build_concept_graph(), and get_topic_page() methods
-- Backend: Added concepts.py router with POST /extract, GET /graph, GET /{name}/page endpoints
-- Backend: Registered concepts router in __init__.py with prefix /projects/{project_id}/concepts
-- Backend: Added mock LLM responses for concept_extraction, concept_graph_building, topic_page_generation
-- Backend: Added 10 tests (6 service unit + 4 API endpoint tests)
-- Frontend: Created ConceptsPage with searchable concept card grid, relationship display, and clickable topic page viewer
-- Frontend: Added ConceptNode, ConceptEdge, TopicPage types to services/api.ts and types/index.ts
-- Frontend: Added /concepts route and "Concepts" navigation link (Network icon) in ProjectDetail sidebar
-- Files changed:
-  - backend/app/services/concept_service.py (new)
-  - backend/app/api/v1/concepts.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_concepts.py (new)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/types/index.ts (modified)
-  - frontend/src/pages/project/ConceptsPage.tsx (new)
-  - frontend/src/App.tsx (modified)
-  - frontend/src/pages/ProjectDetail.tsx (modified)
-- **Learnings for future iterations:**
-  - Concept extraction limits to 30 papers and 1500 chars per abstract to avoid token overflow
-  - Topic page generation filters related papers by paper_id match from concept extraction
-  - Frontend concept cards use native button elements with onClick instead of Link for topic page navigation
-  - The same extract+build pipeline is reused for both POST /extract and GET /graph endpoints (no caching yet)
-
----
-
-## [2026-04-30 10:00] - FEAT-008
-- Implemented AI library organization with auto-tagging and metadata repair
-- Backend: Created library_service.py with check_health(), repair_metadata(), suggest_tags(), and cluster_papers() methods
-- Backend: Added library.py router with GET /health, POST /repair, POST /auto-tag, POST /clusters endpoints
-- Backend: Health check scans papers for missing abstract, authors, year, journal, doi, citation_count fields
-- Backend: Repair queries Semantic Scholar API by DOI first, then falls back to title search
-- Backend: Auto-tag uses LLM to suggest 3-5 descriptive tags per paper
-- Backend: Clustering uses LLM to group papers into 3-7 thematic clusters
-- Backend: Registered library router in __init__.py with prefix /projects/{project_id}/library
-- Backend: Added mock LLM responses for library_auto_tag, library_cluster_analysis task types
-- Backend: Added 17 tests (10 service unit + 7 API endpoint tests)
-- Frontend: Added LibraryHealth, RepairResult, AutoTagResult, ClusterResult types
-- Frontend: Added libraryApi with health/repair/autoTag/clusters methods
-- Frontend: Created LibraryPage with tabbed interface (Health Check, Repair, Auto-Tag, Cluster)
-- Frontend: Added /library route and "Library" navigation link (FolderOpen icon) in ProjectDetail sidebar
-- Files changed:
-  - backend/app/services/library_service.py (new)
-  - backend/app/api/v1/library.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_library.py (new)
-  - frontend/src/types/index.ts (modified)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/pages/project/LibraryPage.tsx (new)
-  - frontend/src/App.tsx (modified)
-  - frontend/src/pages/ProjectDetail.tsx (modified)
-- **Learnings for future iterations:**
-  - ESLint catches unused imports/variables — check imports before committing
-  - The repair_metadata endpoint identifies papers needing repair automatically (no body needed) — it scans for null/empty fields
-  - Semantic Scholar lookup by DOI is more reliable than title search — try DOI first, fall back to title
-  - LibraryService.check_health() is synchronous (no LLM needed) — pass None for llm parameter
-  - httpx.AsyncClient proxy uses settings.http_proxy via _get_proxy() helper for consistency with search_service
-  - Tab-based UI pattern: use state for activeTab, conditionally render sections, each tab has its own mutation
-- Route ordering matters in FastAPI: static paths (e.g., `/analytics`) MUST be defined before parameterized paths (e.g., `/{paper_id}`) in the same file to avoid route conflicts
-- Reading time is tracked via `useReadingTimer` hook in `frontend/src/hooks/useReadingTimer.ts` — auto-flushes on tab hide and component unmount
-
----
-
-## [2026-04-30 10:30] - FEAT-009
-- Implemented enhanced reading analytics with productivity metrics and knowledge gap analysis
-- Backend: Created `analytics_service.py` with compute_papers_per_week, compute_avg_read_time, compute_reading_streak, compute_domain_coverage, compute_citation_impact, analyze_knowledge_gaps methods
-- Backend: Added `POST /projects/{id}/papers/reading-sessions` endpoint in papers.py (moved before /{paper_id} routes)
-- Backend: Enhanced `GET /projects/{id}/papers/analytics` with new metrics (papers_per_week, avg_read_time_seconds, reading_streak_days, domain_coverage, citation_impact)
-- Backend: Created `analytics.py` router with `GET /projects/{id}/analytics/knowledge-gaps` endpoint
-- Backend: Created ReadingSession model and Alembic migration for reading_sessions table
-- Backend: Added 14 tests (4 reading session API + 4 analytics API + 2 knowledge gap + 4 service unit tests)
-- Frontend: Created `useReadingTimer` hook with auto-flush on visibility change and unmount
-- Frontend: Integrated reading timer display in PDFReaderLayout header (Clock icon + formatted time)
-- Frontend: Enhanced AnalyticsPage with productivity metric cards, citation impact bar chart, knowledge gaps list
-- Frontend: Added ReadingSessionInput, KnowledgeGapItem, KnowledgeGapAnalysis types to api.ts
-- Frontend: Added readingSessionApi and knowledgeGapsApi service objects
-- Files changed:
-  - backend/app/models/reading_session.py (new)
-  - backend/app/models/__init__.py (modified)
-  - backend/app/schemas/analytics.py (new)
-  - backend/app/services/analytics_service.py (new)
-  - backend/app/api/v1/analytics.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/api/v1/papers.py (modified)
-  - backend/alembic/versions/a1b2c3d4e5f6_add_reading_sessions_table.py (new)
-  - backend/tests/test_reading_analytics.py (new)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/lib/query-keys.ts (modified)
-  - frontend/src/hooks/useReadingTimer.ts (new)
-  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (modified)
-  - frontend/src/pages/project/AnalyticsPage.tsx (modified)
-  - frontend/src/i18n/locales/en.json (modified)
-  - frontend/src/i18n/locales/zh.json (modified)
-  - scripts/ralph/prd.json (modified)
-- **Learnings for future iterations:**
-  - FastAPI route ordering: static paths MUST come before parameterized paths in the same file, or they'll match incorrectly
-  - ReadingSession model uses separate table (not Paper columns) for per-session granularity
-  - The `formatReadingTime` utility function is in the same file as `useReadingTimer` hook for easy reuse
-  - Knowledge gaps analysis uses journal distribution as proxy for topic diversity (no Concept model exists)
-- Route path `/{paper_id}/feedback` inside `/projects/{project_id}/feed` prefix resolves to `/projects/{project_id}/feed/{paper_id}/feedback` — must use named subpath (not bare `/`) to avoid trailing-slash 307 redirects
-
----
-
-## [2026-04-30 11:00] - FEAT-010
-- Implemented personalized research feed with paper recommendations
-- Backend: Created `feed_service.py` with `get_feed()` (LLM-based recommendations) and `submit_feedback()` methods
-- Backend: Added feed.py router with GET /recommendations, POST /refresh, POST /{paper_id}/feedback endpoints
-- Backend: Registered feed router in `__init__.py` with prefix `/projects/{project_id}/feed`
-- Backend: Added mock LLM response for `research_feed` task type
-- Backend: Added 13 tests (6 service unit + 7 API endpoint tests)
-- Frontend: Created FeedPage with recommendation cards, expandable abstracts, and like/dislike feedback
-- Frontend: Added feedApi to services/api.ts and FeedRecommendation/FeedResponse types to types/index.ts
-- Frontend: Added /feed route and "Feed" navigation link (Sparkles icon) in ProjectDetail sidebar
-- Files changed:
-  - backend/app/services/feed_service.py (new)
-  - backend/app/api/v1/feed.py (new)
-  - backend/app/api/v1/__init__.py (modified)
-  - backend/app/services/llm/adapters/mock_adapter.py (modified)
-  - backend/tests/test_feed.py (new)
-  - frontend/src/services/api.ts (modified)
-  - frontend/src/types/index.ts (modified)
-  - frontend/src/pages/project/FeedPage.tsx (new)
-  - frontend/src/App.tsx (modified)
-  - frontend/src/pages/ProjectDetail.tsx (modified)
-- **Learnings for future iterations:**
-  - Avoid bare `/` as route path inside a prefix — use named paths like `/recommendations` to prevent trailing-slash 307 redirects
-  - `get_llm_client()` (not `get_llm`) is the correct import from `app.services.llm.client`
-  - `get_db` is imported from `app.api.deps`, not `app.database`
-  - Endpoint tests using `app.dependency_overrides[get_db]` with generator functions (`yield mock_session`) work reliably for mocking DB access
-  - The feed service builds a researcher profile from library papers, reading history, liked papers, and keywords, then asks the LLM for recommendations
----
+  - backend/app/services/gap_service.py (new)
+  - backend/app/api/v1/analysis.py (added gaps endpoint + models)
+  - backend/app/services/llm/adapters/mock_adapter.py (added gap_analysis mock)
+  - backend/tests/test_gap_analysis.py (new, 6 tests)
+  - frontend/src/services/api.ts (added gapApi + types)
+  - frontend/src/lib/query-keys.ts (added gaps query key)
+  - frontend/src/components/gap-analysis/GapAnalysisPanel.tsx (new)
+  - frontend/src/pages/project/GapAnalysisDialog.tsx (new)
+  - frontend/src/pages/project/GapAnalysisPage.tsx (new)
+  - frontend/src/App.tsx (added gaps route)
+  - frontend/src/pages/ProjectDetail.tsx (added nav item)
+  - frontend/src/i18n/locales/en.json, zh.json (added gaps translations)
+  - frontend/src/test/mocks/handlers.ts (added gaps mock handler)

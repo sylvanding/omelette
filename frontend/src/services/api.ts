@@ -721,3 +721,346 @@ export const feedApi = {
   feedback: (projectId: number, paperId: number, feedback: string) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/feed/${paperId}/feedback`, { feedback }).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Audio Overviews API
+// ---------------------------------------------------------------------------
+
+export interface DialogueEntry {
+  speaker: string;
+  text: string;
+}
+
+export interface AudioOverviewResponse {
+  title: string;
+  duration_estimate: string;
+  summary: string;
+  script: DialogueEntry[];
+  paper_count: number;
+}
+
+export interface AudioOverviewRequest {
+  paper_ids: number[];
+  tone?: 'formal' | 'conversational';
+  focus_areas?: string[];
+}
+
+export const audioOverviewsApi = {
+  generate: (projectId: number, data: AudioOverviewRequest) =>
+    api.post<AudioOverviewResponse>(`/projects/${projectId}/audio-overviews`, data).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Browser Upload API
+// ---------------------------------------------------------------------------
+
+export interface BrowserCaptureResult {
+  status: string;
+  paper_id: number;
+  title: string;
+  processing: boolean;
+}
+
+export const browserUploadApi = {
+  capture: (
+    projectId: number,
+    params: {
+      pdf_url?: string;
+      doi?: string;
+      arxiv_id?: string;
+      title?: string;
+      tags?: string;
+    },
+  ) =>
+    api.post<BrowserCaptureResult>(
+      `/projects/${projectId}/upload/browser`,
+      null,
+      { params },
+    ).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Reference Manager Export API
+// ---------------------------------------------------------------------------
+
+export interface ZoteroExportResult {
+  preview?: string;
+  message: string;
+  paper_count?: number;
+  collection_key?: string;
+  collection_name?: string;
+  items_created?: number;
+  errors?: string[];
+}
+
+export const exportReferenceApi = {
+  exportBibtex: (projectId: number) =>
+    api.post<string>(`/projects/${projectId}/export/bibtex`).then(r => r.data),
+  exportRis: (projectId: number) =>
+    api.post<string>(`/projects/${projectId}/export/ris`).then(r => r.data),
+  exportZotero: (projectId: number, collectionName: string) =>
+    api.post<{ data: ZoteroExportResult }>(
+      `/projects/${projectId}/export/zotero`,
+      { collection_name: collectionName },
+    ).then(r => r.data.data),
+};
+
+// ---------------------------------------------------------------------------
+// Team Members API
+// ---------------------------------------------------------------------------
+
+export type TeamMemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export interface TeamMember {
+  id: number;
+  email: string;
+  role: TeamMemberRole;
+  status: string;
+  invited_by: string | null;
+  created_at: string;
+}
+
+export const teamMembersApi = {
+  list: (projectId: number) =>
+    api.get<TeamMember[]>(`/projects/${projectId}/members`).then(r => r.data),
+  invite: (projectId: number, email: string, role: TeamMemberRole = 'viewer') =>
+    api.post<TeamMember>(`/projects/${projectId}/members`, { email, role }).then(r => r.data),
+  updateRole: (projectId: number, memberId: number, role: TeamMemberRole) =>
+    api.put<TeamMember>(`/projects/${projectId}/members/${memberId}`, { role }).then(r => r.data),
+  remove: (projectId: number, memberId: number) =>
+    api.delete<null>(`/projects/${projectId}/members/${memberId}`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// API Keys Management API
+// ---------------------------------------------------------------------------
+
+export type { APIKey, APIKeyScope, CreatedAPIKey } from '@/types';
+
+export interface CreateAPIKeyRequest {
+  name: string;
+  scope?: APIKeyScope;
+}
+
+export const apiKeysApi = {
+  list: () =>
+    api.get<import('@/types').APIKey[]>('/api-keys').then(r => r.data),
+
+  create: (data: CreateAPIKeyRequest) =>
+    api.post<import('@/types').CreatedAPIKey>('/api-keys', data).then(r => r.data),
+
+  revoke: (keyId: number) =>
+    api.post<import('@/types').APIKey>(`/api-keys/${keyId}/revoke`).then(r => r.data),
+
+  delete: (keyId: number) =>
+    api.delete<null>(`/api-keys/${keyId}`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Author Network API
+// ---------------------------------------------------------------------------
+
+export interface AuthorNetworkNode {
+  name: string;
+  paper_count: number;
+  paper_ids: number[];
+  coauthors: string[];
+  h_index_estimate: number;
+}
+
+export interface AuthorNetworkEdge {
+  source: string;
+  target: string;
+  collaboration_count: number;
+}
+
+export interface AuthorNetworkMetrics {
+  total_authors: number;
+  total_edges: number;
+  density: number;
+  top_authors: Array<{ name: string; degree: number }>;
+}
+
+export interface AuthorNetworkData {
+  nodes: AuthorNetworkNode[];
+  edges: AuthorNetworkEdge[];
+  metrics: AuthorNetworkMetrics;
+  total_authors: number;
+}
+
+export const authorNetworkApi = {
+  get: (projectId: number, params?: { min_collaborations?: number; max_nodes?: number }) =>
+    api.get<AuthorNetworkData>(`/projects/${projectId}/analysis/author-network`, {
+      params: {
+        min_collaborations: params?.min_collaborations,
+        max_nodes: params?.max_nodes,
+      },
+    }).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Research Trends API
+// ---------------------------------------------------------------------------
+
+export interface TrendYearlyCount {
+  year: number;
+  count: number;
+}
+
+export interface TrendTopicTrend {
+  topic: string;
+  slope: number;
+  r_squared: number;
+  trend: 'rising' | 'declining' | 'stable';
+  total_papers: number;
+  first_year: number;
+  last_year: number;
+  yearly_counts: TrendYearlyCount[];
+}
+
+export interface TrendEmergingTopic {
+  topic: string;
+  yoy_growth: number;
+}
+
+export interface TrendSummaryStats {
+  total_papers: number;
+  year_span: number;
+  first_year: number | null;
+  last_year: number | null;
+  total_topics: number;
+  emerging_count: number;
+  declining_count: number;
+}
+
+export interface TrendPublicationEntry {
+  year: number;
+  count: number;
+  citations: number;
+}
+
+export interface TrendAnalysisData {
+  publication_timeline: TrendPublicationEntry[];
+  topic_trends: TrendTopicTrend[];
+  emerging_topics: TrendEmergingTopic[];
+  declining_topics: TrendEmergingTopic[];
+  summary_stats: TrendSummaryStats;
+}
+
+export const trendsApi = {
+  get: (projectId: number) =>
+    api.get<TrendAnalysisData>(`/projects/${projectId}/analysis/trends`).then(r => r.data),
+};
+
+export interface GapEntry {
+  topic: string;
+  description: string;
+  evidence: string;
+  related_paper_ids: number[];
+  gap_score: number;
+}
+
+export interface GapResearchQuestion {
+  question: string;
+  addresses_gap: string;
+  novelty_score: number;
+  feasibility_score: number;
+}
+
+export interface GapSummary {
+  total_gaps: number;
+  total_questions: number;
+}
+
+export interface GapAnalysisData {
+  gaps: GapEntry[];
+  research_questions: GapResearchQuestion[];
+  summary: GapSummary;
+}
+
+export const gapApi = {
+  analyze: (projectId: number) =>
+    api.post<GapAnalysisData>(`/projects/${projectId}/analysis/gaps`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Paper Version Tracking API
+// ---------------------------------------------------------------------------
+
+export interface PaperVersionEntry {
+  id: number;
+  paper_id: number;
+  version: number;
+  source: string;
+  doi: string | null;
+  title: string;
+  abstract: string;
+  authors: unknown[] | null;
+  journal: string;
+  year: number | null;
+  citation_count: number;
+  pdf_url: string | null;
+  is_preprint: boolean;
+  preprint_server: string | null;
+  diff_summary: string | null;
+  created_at: string | null;
+}
+
+export interface VersionHistoryData {
+  versions: PaperVersionEntry[];
+  total: number;
+}
+
+export interface VersionUpgradeResult {
+  paper_id: number;
+  upgraded_to_version: number;
+  new_doi: string | null;
+  new_journal: string;
+  preserved_fields: string[];
+}
+
+export const versionTrackingApi = {
+  getVersions: (projectId: number, paperId: number) =>
+    api.get<VersionHistoryData>(`/projects/${projectId}/papers/${paperId}/versions`).then(r => r.data),
+
+  checkForUpdates: (projectId: number, paperId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/papers/${paperId}/versions/check`).then(r => r.data),
+
+  upgradeToVersion: (projectId: number, paperId: number, versionId: number) =>
+    api.post<VersionUpgradeResult>(
+      `/projects/${projectId}/papers/${paperId}/versions/${versionId}/upgrade`,
+    ).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Impact Score API
+// ---------------------------------------------------------------------------
+
+export interface ImpactFactor {
+  raw?: number | null;
+  year?: number | null;
+  name?: string | null;
+  quality_tags?: string[] | null;
+  normalized: number;
+  percentile?: number | null;
+  weight: number;
+}
+
+export interface ImpactScoreEntry {
+  paper_id: number;
+  title: string;
+  score: number;
+  factors: Record<string, ImpactFactor>;
+}
+
+export interface ImpactScoreResponse {
+  scores: ImpactScoreEntry[];
+  total: number;
+  avg_score: number;
+  top_paper_id: number | null;
+}
+
+export const impactScoresApi = {
+  get: (projectId: number) =>
+    api.get<ImpactScoreResponse>(`/projects/${projectId}/analysis/impact-scores`).then(r => r.data),
+};

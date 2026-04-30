@@ -655,3 +655,81 @@ async def get_definitions(
     svc = AugmentedReadingService(llm)
     definitions = await svc.generate_definitions(paper_content)
     return ApiResponse(data={"definitions": definitions})
+
+
+@router.get(
+    "/{paper_id}/versions",
+    response_model=ApiResponse[dict],
+    summary="Get version history for a paper",
+)
+async def get_paper_versions(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return the version history tracking preprint-to-journal lineage."""
+    from app.services.version_service import VersionService
+
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    svc = VersionService(db)
+    versions = await svc.get_version_history(paper_id)
+
+    return ApiResponse(data={"versions": versions, "total": len(versions)})
+
+
+@router.post(
+    "/{paper_id}/versions/check",
+    response_model=ApiResponse[dict],
+    summary="Check for newer versions of a paper",
+)
+async def check_paper_versions(
+    project_id: int,
+    paper_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Poll Semantic Scholar for newer versions of a paper and record if found."""
+    from app.services.version_service import VersionService
+
+    paper = await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+    if not paper.doi:
+        return ApiResponse(data={"update_found": False, "reason": "Paper has no DOI"})
+
+    svc = VersionService(db)
+    version_info = await svc.check_for_updates(paper_id)
+
+    if not version_info:
+        return ApiResponse(data={"update_found": False})
+
+    version_info["source"] = "manual_check"
+    entry = await svc.record_version(paper_id, version_info, previous_doi=paper.doi)
+
+    return ApiResponse(data={"update_found": True, "version": entry})
+
+
+@router.post(
+    "/{paper_id}/versions/{version_id}/upgrade",
+    response_model=ApiResponse[dict],
+    summary="Upgrade paper to a newer version",
+)
+async def upgrade_paper_version(
+    project_id: int,
+    paper_id: int,
+    version_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Upgrade a paper to a newer version, preserving annotations and user data."""
+    from app.services.version_service import VersionService
+
+    await get_or_404(db, Paper, paper_id, project_id=project_id, detail="Paper not found")
+
+    svc = VersionService(db)
+    try:
+        result = await svc.upgrade_to_version(paper_id, version_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    return ApiResponse(data=result)

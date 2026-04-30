@@ -19,10 +19,10 @@ export const queryKeys = {
       ['paper-analytics', projectId] as const,
     related: (projectId: number, paperId: number) =>
       ['related-papers', projectId, paperId] as const,
+  },
   analytics: {
     knowledgeGaps: (projectId: number) =>
       ['knowledge-gaps', projectId] as const,
-  },
   },
   keywords: {
     list: (projectId: number, level?: number) =>
@@ -60,5 +60,23 @@ export const queryKeys = {
   activities: {
     list: (projectId: number, filters?: ActivityListFilters) =>
       ['activities', projectId, filters] as const,
+  },
+  apiKeys: {
+    all: ['api-keys'] as const,
+  },
+  authorNetwork: {
+    all: (projectId: number) => ['author-network', projectId] as const,
+  },
+  trends: {
+    all: (projectId: number) => ['trends', projectId] as const,
+  },
+  gaps: {
+    all: (projectId: number) => ['gaps', projectId] as const,
+  },
+  paperVersions: {
+    all: (projectId: number, paperId: number) => ['paper-versions', projectId, paperId] as const,
+  },
+  impactScores: {
+    all: (projectId: number) => ['impact-scores', projectId] as const,
   },
 } as const;
