@@ -2,6 +2,22 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 15:08 - FEAT-018
+- GapService uses LLM to analyze paper collection for research gaps
+- POST /projects/{id}/analysis/gaps endpoint with GapEntry and GapResearchQuestion response models
+- Gap scores clamped to [0,1], limited to 5 gaps and 10 research questions
+- Empty response returned for projects with fewer than 2 papers
+- Frontend: GapAnalysisPanel with color-coded gap score badges and novelty/feasibility indicators
+- GapAnalysisDialog with fixed overlay, GapAnalysisPage wrapper with navigation on close
+- Added "Gap Analysis" nav item with Lightbulb icon in ProjectDetail sidebar
+- Tests: 6 backend tests pass, 5 frontend tests pass
+- **Learnings for future iterations:**
+  - The stop hook auto-commits when all checks pass — don't manually commit after implementation
+  - GapAnalysisDialog uses a fixed-position overlay pattern (different from TrendsPage's inline layout)
+  - GapAnalysisPage is a thin wrapper that delegates to GapAnalysisDialog and navigates back on close
+  - The `LLM_PROVIDER=mock` env var in conftest.py makes all LLM-based service tests work without real API
+---
+
 ## 2026-04-30 14:56 - FEAT-017
 - Implemented GET /projects/{id}/analysis/trends endpoint returning year-binned topic data
 - Created TrendService with publication volume, citation timeline, topic trend extraction
