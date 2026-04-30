@@ -1,0 +1,22 @@
+{
+  "tasks": [
+    {
+      "id": "6a71d314",
+      "cron": "5 18 * * *",
+      "prompt": "Check Ralph's progress on ralph/self-directed-improvements. Run:\n\n1. `ps aux | grep ralph.sh | grep -v grep` — alive?\n2. `tail -50 /home/djx/repos/omelette/scripts/ralph/progress.txt` — any story entries for AUTO-001 to AUTO-005?\n3. `cd /home/djx/repos/omelette && git status --short | grep -v \".eslintcache\\|.claude/\\|prd\\|progress\"` — code changes?\n4. `git log --oneline -3` — new commits?\n5. `python3 -c \"import json; d=json.load(open('scripts/ralph/prd.json')); [print(f'{s[\\\"id\\\"]} passes={s.get(\\\"passes\\\",False)}') for s in d.get('userStories',[])]\"` — pass status\n\nIf Ralph is dead: `CUDA_VISIBLE_DEVICES=6,7 bash /home/djx/repos/omelette/scripts/ralph/ralph.sh --tool claude 40 > /home/djx/repos/omelette/scripts/ralph/ralph.log 2>&1 &`\n\nIf there are uncommitted code changes: run backend tests (`cd backend && pytest`) and frontend tests (`cd frontend && npx vitest run`), commit and push if they pass. If all 5 stories pass:true, create PR from ralph/self-directed-improvements to main and merge it.\n\nAlso check the memory file at `/home/djx/.claude/projects/-home-djx-repos-omelette-frontend/memory/ralph-autonomous-mode.md` for autonomy instructions.",
+      "createdAt": 1777542522340,
+      "createdBySessionId": "0720a179-7cff-4fcf-9b5e-3f3e34e434aa",
+      "createdByPid": 3461299,
+      "createdByProcStart": "49647288"
+    },
+    {
+      "id": "4901a248",
+      "cron": "30 18 * * *",
+      "prompt": "Check Ralph's progress on ralph/self-directed-improvements. Run:\n\n1. `ps aux | grep ralph.sh | grep -v grep` — alive?\n2. `tail -50 /home/djx/repos/omelette/scripts/ralph/progress.txt` — any AUTO-001 to AUTO-005 entries?\n3. `cd /home/djx/repos/omelette && git status --short | grep -v \".eslintcache\\|.claude/\\|prd\\|progress\"` — code changes?\n4. `python3 -c \"import json; d=json.load(open('scripts/ralph/prd.json')); [print(f'{s[\\\"id\\\"]} passes={s.get(\\\"passes\\\",False)}') for s in d.get('userStories',[])]\"` — pass status\n\nIf Ralph is dead: `CUDA_VISIBLE_DEVICES=6,7 bash /home/djx/repos/omelette/scripts/ralph/ralph.sh --tool claude 40 > /home/djx/repos/omelette/scripts/ralph/ralph.log 2>&1 &`\n\nIf there are uncommitted code changes: run tests (`cd backend && pytest` and `cd frontend && npx vitest run`), commit and push if they pass. If all 5 stories pass, create PR and merge.\n\nRemember: Ralph should run autonomously - after completing stories, find new work rather than waiting.",
+      "createdAt": 1777542802123,
+      "createdBySessionId": "0720a179-7cff-4fcf-9b5e-3f3e34e434aa",
+      "createdByPid": 3461299,
+      "createdByProcStart": "49647288"
+    }
+  ]
+}

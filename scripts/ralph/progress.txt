@@ -49,4 +49,17 @@ Focus: i18n coverage gaps, keyboard shortcuts, contradiction integration, notes 
   - Relation type badges use dynamic keys with fallback: `t('concepts.relationTypes.${type}', fallback)`
   - The `plural` variable is used for simple English pluralization in interpolation
   - Topics page sections (Overview, Key Findings, etc.) are common patterns worth sharing with other detail pages
+
+## 2026-05-01 - AUTO-028
+- Added keyboard shortcuts for common actions
+- Files changed:
+  - frontend/src/hooks/useKeyboardShortcuts.ts: New hook for registering global shortcuts
+  - frontend/src/hooks/__tests__/useKeyboardShortcuts.test.tsx: 6 tests for the hook
+  - frontend/src/pages/PlaygroundPage.tsx: Added Ctrl+N (new chat), Escape (stop streaming)
+  - frontend/src/pages/project/WritingPage.tsx: Added Ctrl+Enter (run generation)
+- **Learnings for future iterations:**
+  - useKeyboardShortcuts uses a ref to avoid re-registering listeners on dep changes
+  - Shortcuts match when ALL specified modifiers (metaKey, ctrlKey, shiftKey) match
+  - The hook handles cleanup automatically via useEffect return
+  - For page-specific shortcuts, import the hook and pass an array of shortcut objects
 ---

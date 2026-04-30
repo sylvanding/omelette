@@ -40,7 +40,7 @@
         "Visual keyboard shortcuts indicator in settings or help dialog"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Create a useKeyboardShortcuts hook in frontend/src/hooks/. Use react-hotkeys-hook if available, or implement with native event listeners. Check package.json for existing dependencies first."
     },
     {

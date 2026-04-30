@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, ChevronDown, Sparkles, Square, BookOpen, Quote, List, Target } from 'lucide-react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -132,14 +133,19 @@ export default function PlaygroundPage() {
     stop();
   }, [stop]);
 
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
     stop();
     setMessages([]);
     setNewConversationId(undefined);
     setToolModeOverride(null);
     setSelectedKBsOverride(null);
     navigate('/', { replace: true });
-  };
+  }, [stop, setMessages, navigate]);
+
+  useKeyboardShortcuts([
+    { key: 'n', metaKey: true, ctrlKey: true, callback: handleNewChat },
+    { key: 'Escape', callback: () => { if (isStreaming) stop(); } },
+  ]);
 
   const toggleKB = (id: number) => {
     setSelectedKBs((prev) =>
@@ -214,9 +220,10 @@ export default function PlaygroundPage() {
               )}
             </PopoverContent>
           </Popover>
-          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={handleNewChat} className="gap-1.5" title={`${t('playground.newChat')} (Ctrl+N)`}>
             <Plus className="size-3.5" />
             {t('playground.newChat')}
+            <kbd className="ml-1 rounded border bg-muted px-1 text-[10px] font-mono">^N</kbd>
           </Button>
         </div>
       </header>

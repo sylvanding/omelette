@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { paperApi } from '@/services/api';
 import { useThrottledValue } from '@/hooks/useThrottledValue';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { queryKeys } from '@/lib/query-keys';
 import PageLayout from '@/components/layout/PageLayout';
 import { WritingOutputPanel } from './writing/WritingOutputPanel';
@@ -65,11 +66,25 @@ export default function WritingPage() {
 
   const displayContent = useThrottledValue(reviewContent, 80);
 
-  const togglePaper = (id: number) => {
+  const togglePaper = useCallback((id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-  };
+  }, []);
+
+  const handleRun = useCallback(() => {
+    if (activeTab === 'review') {
+      if (reviewStreaming) return;
+      startReviewStream();
+    } else {
+      if (isPending || !canRun) return;
+      runAction();
+    }
+  }, [activeTab, reviewStreaming, isPending, canRun, startReviewStream, runAction]);
+
+  useKeyboardShortcuts([
+    { key: 'Enter', metaKey: true, ctrlKey: true, callback: handleRun },
+  ]);
 
   return (
     <PageLayout title={t('writing.title')}>
