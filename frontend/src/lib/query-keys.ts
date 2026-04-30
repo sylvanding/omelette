@@ -61,4 +61,7 @@ export const queryKeys = {
     list: (projectId: number, filters?: ActivityListFilters) =>
       ['activities', projectId, filters] as const,
   },
+  apiKeys: {
+    all: ['api-keys'] as const,
+  },
 } as const;

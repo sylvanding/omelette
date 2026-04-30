@@ -1,6 +1,7 @@
 """SQLAlchemy ORM models."""
 
 from app.models.activity_log import ActivityLog
+from app.models.api_key import APIKey, APIKeyScope
 from app.models.chunk import PaperChunk
 from app.models.collection import Collection, CollectionPaper
 from app.models.conversation import Conversation
@@ -17,6 +18,8 @@ from app.models.user_settings import UserSettings
 
 __all__ = [
     "ActivityLog",
+    "APIKey",
+    "APIKeyScope",
     "Collection",
     "CollectionPaper",
     "Conversation",

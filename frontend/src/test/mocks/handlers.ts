@@ -592,4 +592,51 @@ export const handlers = [
   http.delete(`${apiBase}/projects/:id/members/:memberId`, () =>
     HttpResponse.json(mockResponse(null)),
   ),
+
+  // API Keys
+  http.get(`${apiBase}/api-keys`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 1,
+          name: 'My API Key',
+          key_prefix: 'omk_ab12',
+          scope: 'read',
+          is_active: true,
+          last_used_at: null,
+          created_at: new Date().toISOString(),
+        },
+      ]),
+    ),
+  ),
+  http.post(`${apiBase}/api-keys`, async ({ request }) => {
+    const body = (await request.json()) as { name?: string; scope?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        name: body.name ?? 'New Key',
+        key: 'omk_test' + Math.random().toString(36).slice(2, 34),
+        key_prefix: 'omk_test',
+        scope: body.scope ?? 'read',
+        is_active: true,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.post(`${apiBase}/api-keys/:keyId/revoke`, () =>
+    HttpResponse.json(
+      mockResponse({
+        id: 99,
+        name: 'Revoked Key',
+        key_prefix: 'omk_test',
+        scope: 'read',
+        is_active: false,
+        last_used_at: null,
+        created_at: new Date().toISOString(),
+      }),
+    ),
+  ),
+  http.delete(`${apiBase}/api-keys/:keyId`, () =>
+    HttpResponse.json(mockResponse(null)),
+  ),
 ];

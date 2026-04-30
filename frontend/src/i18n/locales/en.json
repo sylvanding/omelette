@@ -556,5 +556,32 @@
     "editor": "Editor",
     "viewer": "Viewer",
     "active": "Active"
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "generate": "Generate Key",
+    "generateTitle": "Generate New API Key",
+    "generateDesc": "Create a key to programmatically access the Omelette API. Save it immediately — it won't be shown again.",
+    "noKeys": "No API keys generated yet",
+    "noKeysDesc": "Generate a key to access the API programmatically.",
+    "keyName": "Key Name",
+    "keyNamePlaceholder": "e.g., Research Pipeline",
+    "scope": "Scope",
+    "scopeRead": "Read",
+    "scopeReadDesc": "Read-only access to data and endpoints.",
+    "scopeWrite": "Write",
+    "scopeAdmin": "Admin",
+    "revoke": "Revoke",
+    "revokeSuccess": "API key revoked successfully",
+    "revokeFailed": "Failed to revoke API key",
+    "deleteSuccess": "API key deleted successfully",
+    "deleteFailed": "Failed to delete API key",
+    "createSuccess": "API key created successfully",
+    "createFailed": "Failed to create API key",
+    "keyCreated": "API Key Created",
+    "keyWarning": "Copy this key now — it will not be shown again.",
+    "revoked": "Revoked",
+    "neverUsed": "Never used",
+    "usedRecently": "Used recently"
   }
 }

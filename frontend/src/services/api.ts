@@ -830,3 +830,28 @@ export const teamMembersApi = {
   remove: (projectId: number, memberId: number) =>
     api.delete<null>(`/projects/${projectId}/members/${memberId}`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// API Keys Management API
+// ---------------------------------------------------------------------------
+
+export type { APIKey, APIKeyScope, CreatedAPIKey } from '@/types';
+
+export interface CreateAPIKeyRequest {
+  name: string;
+  scope?: APIKeyScope;
+}
+
+export const apiKeysApi = {
+  list: () =>
+    api.get<import('@/types').APIKey[]>('/api-keys').then(r => r.data),
+
+  create: (data: CreateAPIKeyRequest) =>
+    api.post<import('@/types').CreatedAPIKey>('/api-keys', data).then(r => r.data),
+
+  revoke: (keyId: number) =>
+    api.post<import('@/types').APIKey>(`/api-keys/${keyId}/revoke`).then(r => r.data),
+
+  delete: (keyId: number) =>
+    api.delete<null>(`/api-keys/${keyId}`).then(r => r.data),
+};

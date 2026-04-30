@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { settingsApi } from '@/services/chat-api';
+import APIKeysSettings from '@/components/api-keys/APIKeysSettings';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -339,6 +340,8 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <APIKeysSettings />
 
         <Card>
           <CardHeader>

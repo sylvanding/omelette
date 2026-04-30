@@ -6,6 +6,7 @@ from app.api.v1 import (
     activities,
     analysis,
     analytics,
+    api_keys,
     audio_overviews,
     browser_upload,
     chat,
@@ -67,3 +68,4 @@ api_router.include_router(analytics.router, prefix="/projects/{project_id}/analy
 api_router.include_router(feed.router, prefix="/projects/{project_id}/feed")
 api_router.include_router(export.router)
 api_router.include_router(team_members.router, prefix="/projects/{project_id}/members")
+api_router.include_router(api_keys.router, prefix="/api-keys")
