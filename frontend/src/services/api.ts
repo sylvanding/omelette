@@ -486,3 +486,57 @@ export const collectionsApi = {
   suggestTags: (projectId: number, paperIds: number[]) =>
     api.post<{ tags: PaperTagSuggestion[] }>(`/projects/${projectId}/collections/tags/suggest`, { paper_ids: paperIds }).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Reviews API
+// ---------------------------------------------------------------------------
+
+export interface ReviewColumn {
+  name: string;
+  description: string;
+}
+
+export interface Review {
+  id: number;
+  project_id: number;
+  title: string;
+  research_question: string;
+  columns: ReviewColumn[];
+  paper_ids: number[];
+  extraction_status: string;
+}
+
+export interface ExtractionResult {
+  paper_id: number;
+  extracted_data: Record<string, unknown>;
+  status: string;
+  confidence: number;
+}
+
+export interface ExtractionProgress {
+  review_id: number;
+  status: string;
+  total_papers: number;
+  completed: number;
+  results: ExtractionResult[];
+}
+
+export const reviewsApi = {
+  list: (projectId: number) =>
+    api.get<{ reviews: Review[] }>(`/projects/${projectId}/reviews`).then(r => r.data),
+
+  create: (projectId: number, data: { title: string; research_question?: string; columns?: ReviewColumn[]; paper_ids?: number[] }) =>
+    api.post<Review>(`/projects/${projectId}/reviews`, data).then(r => r.data),
+
+  update: (projectId: number, reviewId: number, data: Partial<{ title: string; research_question: string; columns: ReviewColumn[]; paper_ids: number[] }>) =>
+    api.put<Review>(`/projects/${projectId}/reviews/${reviewId}`, data).then(r => r.data),
+
+  delete: (projectId: number, reviewId: number) =>
+    api.delete<null>(`/projects/${projectId}/reviews/${reviewId}`).then(r => r.data),
+
+  extract: (projectId: number, reviewId: number) =>
+    api.post<ExtractionProgress>(`/projects/${projectId}/reviews/${reviewId}/extract`).then(r => r.data),
+
+  getExtractions: (projectId: number, reviewId: number) =>
+    api.get<ExtractionProgress>(`/projects/${projectId}/reviews/${reviewId}/extractions`).then(r => r.data),
+};

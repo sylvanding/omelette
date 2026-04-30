@@ -108,3 +108,33 @@ export interface PaperTagSuggestion {
   paper_id: number;
   suggested_tags: string[];
 }
+
+export interface ReviewColumn {
+  name: string;
+  description: string;
+}
+
+export interface Review {
+  id: number;
+  project_id: number;
+  title: string;
+  research_question: string;
+  columns: ReviewColumn[];
+  paper_ids: number[];
+  extraction_status: string;
+}
+
+export interface ExtractionResult {
+  paper_id: number;
+  extracted_data: Record<string, unknown>;
+  status: string;
+  confidence: number;
+}
+
+export interface ExtractionProgress {
+  review_id: number;
+  status: string;
+  total_papers: number;
+  completed: number;
+  results: ExtractionResult[];
+}

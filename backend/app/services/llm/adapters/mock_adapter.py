@@ -170,6 +170,17 @@ MOCK_RESPONSES: dict[str, str] = {
             ]
         }
     ),
+    "review_extraction": json.dumps(
+        {
+            "extracted_data": {
+                "sample_size": "150 participants",
+                "methodology": "Randomized controlled trial",
+                "outcome": "Significant improvement (p<0.05)",
+                "limitations": "Single-center study with limited follow-up",
+            },
+            "confidence": 0.85,
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 

@@ -17,6 +17,7 @@ from app.api.v1 import (
     pipelines,
     projects,
     rag,
+    reviews,
     rewrite,
     search,
     settings_api,
@@ -49,3 +50,4 @@ api_router.include_router(rewrite.router)
 api_router.include_router(pipelines.router)
 api_router.include_router(gpu.router)
 api_router.include_router(analysis.router, prefix="/projects/{project_id}/analysis")
+api_router.include_router(reviews.router, prefix="/projects/{project_id}/reviews")
