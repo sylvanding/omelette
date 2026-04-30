@@ -251,6 +251,58 @@ MOCK_RESPONSES: dict[str, str] = {
             ],
         }
     ),
+    "library_auto_tag": json.dumps(
+        {
+            "tags": [
+                {
+                    "paper_id": 1,
+                    "suggested_tags": [
+                        "deep-learning",
+                        "microscopy",
+                        "image-enhancement",
+                        "neural-networks",
+                        "super-resolution",
+                    ],
+                },
+                {
+                    "paper_id": 2,
+                    "suggested_tags": [
+                        "ai-limitations",
+                        "image-artifacts",
+                        "neural-reconstruction",
+                        "evaluation",
+                        "image-fidelity",
+                    ],
+                },
+                {
+                    "paper_id": 3,
+                    "suggested_tags": [
+                        "hybrid-methods",
+                        "multi-modal-imaging",
+                        "sample-variability",
+                        "combined-approaches",
+                        "specimen-analysis",
+                    ],
+                },
+            ]
+        }
+    ),
+    "library_cluster_analysis": json.dumps(
+        {
+            "clusters": [
+                {
+                    "name": "Deep Learning for Imaging",
+                    "description": "Papers focused on applying deep learning techniques to scientific imaging and microscopy tasks.",
+                    "paper_ids": [1, 3],
+                },
+                {
+                    "name": "AI Limitations and Evaluation",
+                    "description": "Papers examining the limitations, artifacts, and evaluation challenges of AI-based imaging methods.",
+                    "paper_ids": [2],
+                },
+            ]
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 

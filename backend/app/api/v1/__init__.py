@@ -13,6 +13,7 @@ from app.api.v1 import (
     dedup,
     gpu,
     keywords,
+    library,
     ocr,
     papers,
     pipelines,
@@ -53,3 +54,4 @@ api_router.include_router(gpu.router)
 api_router.include_router(analysis.router, prefix="/projects/{project_id}/analysis")
 api_router.include_router(reviews.router, prefix="/projects/{project_id}/reviews")
 api_router.include_router(concepts.router, prefix="/projects/{project_id}/concepts")
+api_router.include_router(library.router, prefix="/projects/{project_id}/library")

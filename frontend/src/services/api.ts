@@ -585,3 +585,75 @@ export const conceptsApi = {
   getTopicPage: (projectId: number, conceptName: string) =>
     api.get<TopicPage>(`/projects/${projectId}/concepts/${encodeURIComponent(conceptName)}/page`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Library Organization API
+// ---------------------------------------------------------------------------
+
+export interface PaperIssue {
+  paper_id: number;
+  title: string;
+  issues: string[];
+  issue_count: number;
+}
+
+export interface LibraryHealth {
+  total_papers: number;
+  papers_with_issues: number;
+  healthy_papers: number;
+  issues: PaperIssue[];
+}
+
+export interface RepairedPaper {
+  paper_id: number;
+  title: string;
+  abstract: string;
+  authors: unknown[];
+  journal: string;
+  year: number | null;
+  citation_count: number;
+  doi: string;
+}
+
+export interface RepairResult {
+  repaired: RepairedPaper[];
+  failed: Array<{ paper_id: number; reason: string }>;
+  total_attempted: number;
+  success_count: number;
+  failure_count: number;
+}
+
+export interface TagSuggestion {
+  paper_id: number;
+  suggested_tags: string[];
+}
+
+export interface AutoTagResult {
+  tags: TagSuggestion[];
+  total_tagged: number;
+}
+
+export interface PaperCluster {
+  name: string;
+  description: string;
+  paper_ids: number[];
+}
+
+export interface ClusterResult {
+  clusters: PaperCluster[];
+  total_clusters: number;
+}
+
+export const libraryApi = {
+  health: (projectId: number) =>
+    api.get<LibraryHealth>(`/projects/${projectId}/library/health`).then(r => r.data),
+
+  repair: (projectId: number) =>
+    api.post<RepairResult>(`/projects/${projectId}/library/repair`).then(r => r.data),
+
+  autoTag: (projectId: number) =>
+    api.post<AutoTagResult>(`/projects/${projectId}/library/auto-tag`).then(r => r.data),
+
+  clusters: (projectId: number) =>
+    api.post<ClusterResult>(`/projects/${projectId}/library/clusters`).then(r => r.data),
+};

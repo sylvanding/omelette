@@ -162,3 +162,23 @@ export interface TopicPage {
   related_topics: string[];
   research_directions: string[];
 }
+
+export interface PaperIssue {
+  paper_id: number;
+  title: string;
+  issues: string[];
+  issue_count: number;
+}
+
+export interface LibraryHealth {
+  total_papers: number;
+  papers_with_issues: number;
+  healthy_papers: number;
+  issues: PaperIssue[];
+}
+
+export interface PaperCluster {
+  name: string;
+  description: string;
+  paper_ids: number[];
+}
