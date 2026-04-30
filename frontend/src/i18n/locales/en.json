@@ -678,5 +678,53 @@
     "loadError": "Failed to load version history",
     "newVersionAvailable": "New version available",
     "tab": "Versions"
+  },
+  "reviews": {
+    "title": "Systematic Reviews",
+    "subtitle": "Create systematic reviews with custom extraction columns and structured data extraction from papers.",
+    "newReview": "New Review",
+    "createTitle": "Create New Review",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g., Systematic Review of Deep Learning in Medicine",
+    "researchQuestion": "Research Question",
+    "questionPlaceholder": "What question is this review trying to answer?",
+    "extractionColumns": "Extraction Columns",
+    "columnName": "Column name",
+    "columnDescription": "Description",
+    "unnamed": "(unnamed)",
+    "addColumn": "+ Add Column",
+    "create": "Create Review",
+    "noReviews": "No reviews yet",
+    "noReviewsDesc": "Create your first systematic review to start extracting structured data from papers.",
+    "extractionResults": "Extraction Results: {{title}}",
+    "runExtraction": "Run Extraction",
+    "extracting": "Extracting...",
+    "exportCsv": "Export CSV",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "complete": "Complete",
+      "failed": "Failed"
+    },
+    "paperCount": "{{count}} papers, {{cols}} columns",
+    "tableHeaders": {
+      "paperId": "Paper ID",
+      "confidence": "Confidence"
+    },
+    "extractionProgress": "{{completed}} of {{total}} papers extracted",
+    "defaultColumns": {
+      "sample_size": {
+        "name": "sample_size",
+        "description": "Number of participants or samples"
+      },
+      "methodology": {
+        "name": "methodology",
+        "description": "Study design or methodology used"
+      },
+      "key_findings": {
+        "name": "key_findings",
+        "description": "Main results or findings"
+      }
+    }
   }
 }

@@ -1,72 +1,73 @@
 {
-  "project": "Omelette - Self-Directed Improvements (Cycle 5)",
-  "branchName": "ralph/cycle-5",
-  "description": "Fifth cycle of autonomous improvements. Focus on bulk citation export for selected papers, inline reading status editor, custom user-defined tags, and writing page markdown rendering.",
+  "project": "Omelette - Self-Directed Improvements (Cycle 6)",
+  "branchName": "ralph/cycle-6",
+  "description": "Sixth cycle of autonomous improvements. Focus on i18n coverage for missing pages, keyboard shortcuts for common actions, contradiction detection integration, notes export, and additional test coverage.",
   "userStories": [
     {
-      "id": "AUTO-021",
-      "title": "Add bulk citation export for selected papers",
+      "id": "AUTO-026",
+      "title": "Add i18n translations for ReviewsPage",
       "acceptanceCriteria": [
-        "Bulk export button in PapersToolbar for selected papers",
-        "Supports BibTeX, APA, and MLA formats",
-        "Copies all citations to clipboard as a single block",
-        "Works with cross-page selection (select all filtered)"
+        "All hardcoded English strings in ReviewsPage.tsx replaced with t() calls",
+        "English and Chinese translations added to locale files",
+        "Extraction table headers, status labels, and buttons all translated",
+        "Consistent with existing i18n naming conventions"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Reuse the existing toBibTeX/toAPA/toMLA formatters from bibliography-export.ts. The ExportDialog already exists but only exports current page — need to fetch all selected paper IDs or use the effectiveSelectedIds."
+      "notes": "ReviewsPage.tsx has many hardcoded strings: 'Systematic Reviews', 'Create systematic reviews...', 'New Review', 'Create New Review', extraction column labels, status labels ('pending', 'in_progress', 'complete', 'failed'), 'Run Extraction', 'Extracting...', 'Export CSV', table headers. Add to the 'reviews' namespace in both en.json and zh.json."
     },
     {
-      "id": "AUTO-022",
-      "title": "Add inline reading status editor in paper row",
+      "id": "AUTO-027",
+      "title": "Add i18n translations for ConceptsPage",
       "acceptanceCriteria": [
-        "Click on reading status badge opens a dropdown with status options",
-        "Status changes with optimistic UI update",
-        "Status reflects current reading state (unread, reading, read, archived)",
-        "i18n labels for all status options"
+        "All hardcoded English strings in ConceptsPage.tsx replaced with t() calls",
+        "English and Chinese translations added to locale files",
+        "Topic page section headers translated",
+        "Relation type labels translated (prerequisite, applies_to, contrasts_with)"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "The reading_status column in papers-columns.tsx is display-only (static badge). Use a Radix DropdownMenu triggered by the badge, similar to how the rating stars work. Use useToastMutation for optimistic update."
+      "passes": false,
+      "notes": "ConceptsPage.tsx has hardcoded strings: 'Back to Concepts', 'Generating topic page...', 'Overview', 'Key Findings', 'Related Topics', 'Research Directions', 'Concept Knowledge Graph', 'concepts', 'relationships', 'Search concepts...', 'No concepts extracted yet...'. Relation types in relationTypeColor() are hardcoded. Add to a 'concepts' namespace."
     },
     {
-      "id": "AUTO-023",
-      "title": "Add custom user-defined tags with bulk tagging",
+      "id": "AUTO-028",
+      "title": "Add keyboard shortcuts for common actions",
       "acceptanceCriteria": [
-        "Free-text tag input in InlineTagEditor for custom tags (not just 5 quality presets)",
-        "Tag filter dropdown shows both quality presets and recently used custom tags",
-        "\"Bulk tag operation via 'Add tags' in PapersToolbar for selected papers\"",
-        "Tags displayed as color-coded badges in paper row"
+        "Global keyboard hook registered (Cmd/Ctrl+K for search/command palette)",
+        "Cmd/Ctrl+N for new chat in PlaygroundPage",
+        "Escape to close dialogs/sheets",
+        "Cmd/Ctrl+Enter to submit forms in writing and chat inputs",
+        "Visual keyboard shortcuts indicator in settings or help dialog"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "The Paper type has both tags (free-form) and quality_tags (preset) fields. Currently only quality_tags is used in the UI. Reuse the existing tag mutation pattern. The backend libraryApi.autoTag and collectionsApi.suggestTags endpoints exist but are not wired up."
+      "passes": false,
+      "notes": "Create a useKeyboardShortcuts hook in frontend/src/hooks/. Use react-hotkeys-hook if available, or implement with native event listeners. Check package.json for existing dependencies first."
     },
     {
-      "id": "AUTO-024",
-      "title": "Render writing page outputs as markdown instead of raw text",
+      "id": "AUTO-029",
+      "title": "Integrate contradiction detection into PDF reader",
       "acceptanceCriteria": [
-        "Summarize, Cite, Outline, and Gap Analysis outputs rendered as formatted markdown",
-        "Review generation output remains as-is (already handled)",
-        "Uses the same MarkdownPreview component from PDF reader",
-        "Copy and download buttons still work with raw text"
+        "ContradictionReport component accessible from PDF reader sidebar",
+        "Shows contradictions between current paper and other papers in project",
+        "Click on contradiction navigates to relevant paper",
+        "Empty state shown when no contradictions found"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "WritingPage.tsx renders non-review tab outputs in a raw <pre> element. The MarkdownPreview component (lazy-loaded in NotesPanel) can be reused. The copy/download functionality operates on raw text, which should remain accessible."
+      "passes": false,
+      "notes": "The ContradictionReport component exists at frontend/src/components/contradiction/ContradictionReport.tsx. The backend has a contradictions endpoint (check backend/app/api/). Wire it into PDFReaderLayout sidebar as a new tab alongside Notes and Related papers."
     },
     {
-      "id": "AUTO-025",
-      "title": "Add reading streak visualization to analytics",
+      "id": "AUTO-030",
+      "title": "Add notes export from PDF reader",
       "acceptanceCriteria": [
-        "Calendar heatmap showing reading activity over last 90 days",
-        "Streak counter shows consecutive days with reading activity",
-        "Click on a day shows papers read that day",
-        "Responsive layout for mobile screens"
+        "Export button in NotesPanel of PDF reader",
+        "Export as markdown file download",
+        "Export includes paper title, date, and all notes",
+        "Supports batch export of notes across all papers in project"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "The backend already tracks reading_streak_days and read_by_week in reading analytics. Need a new endpoint or enhanced analytics response for per-day reading data. Consider using react-calendar-heatmap or a custom SVG grid."
+      "passes": false,
+      "notes": "NotesPanel.tsx in pdf-reader components. Add an export button that creates a markdown blob and triggers download. For batch export, use the projects API to fetch all papers with notes."
     }
   ]
 }

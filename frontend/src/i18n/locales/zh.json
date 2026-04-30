@@ -617,5 +617,53 @@
     "loadError": "加载版本历史失败",
     "newVersionAvailable": "有新版本可用",
     "tab": "版本"
+  },
+  "reviews": {
+    "title": "系统综述",
+    "subtitle": "创建具有自定义提取列的系统综述，从论文中提取结构化数据。",
+    "newReview": "新建综述",
+    "createTitle": "创建新综述",
+    "titleLabel": "标题",
+    "titlePlaceholder": "例如：深度学习在医学中的系统综述",
+    "researchQuestion": "研究问题",
+    "questionPlaceholder": "这个综述试图回答什么问题？",
+    "extractionColumns": "提取列",
+    "columnName": "列名",
+    "columnDescription": "描述",
+    "unnamed": "（未命名）",
+    "addColumn": "+ 添加列",
+    "create": "创建综述",
+    "noReviews": "暂无综述",
+    "noReviewsDesc": "创建第一个系统综述以开始从论文中提取结构化数据。",
+    "extractionResults": "提取结果：{{title}}",
+    "runExtraction": "运行提取",
+    "extracting": "提取中...",
+    "exportCsv": "导出 CSV",
+    "status": {
+      "pending": "待处理",
+      "in_progress": "进行中",
+      "complete": "完成",
+      "failed": "失败"
+    },
+    "paperCount": "{{count}} 篇论文，{{cols}} 列",
+    "tableHeaders": {
+      "paperId": "论文 ID",
+      "confidence": "置信度"
+    },
+    "extractionProgress": "已提取 {{completed}}/{{total}} 篇论文",
+    "defaultColumns": {
+      "sample_size": {
+        "name": "样本量",
+        "description": "参与者或样本数量"
+      },
+      "methodology": {
+        "name": "研究方法",
+        "description": "研究设计或使用的方法"
+      },
+      "key_findings": {
+        "name": "主要发现",
+        "description": "主要结果或发现"
+      }
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { FileText, Plus, Play, Download, Trash2, Edit2, Save, X } from 'lucide-react';
 
 import { reviewsApi } from '@/services/api';
@@ -11,6 +12,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import type { Review, ReviewColumn, ExtractionResult } from '@/types';
 
 export default function ReviewsPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
   const pid = Number(projectId!);
@@ -61,12 +63,12 @@ export default function ReviewsPage() {
   );
 
   return (
-    <PageLayout title="Systematic Reviews">
+    <PageLayout title={t('reviews.title')}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">
-              Create systematic reviews with custom extraction columns and structured data extraction from papers.
+              {t('reviews.subtitle')}
             </p>
           </div>
           <button
@@ -74,7 +76,7 @@ export default function ReviewsPage() {
             className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
-            New Review
+            {t('reviews.newReview')}
           </button>
         </div>
 
@@ -90,8 +92,8 @@ export default function ReviewsPage() {
         {!isLoading && reviews.length === 0 && !showCreateForm && (
           <EmptyState
             icon={FileText}
-            title="No reviews yet"
-            description="Create your first systematic review to start extracting structured data from papers."
+            title={t('reviews.noReviews')}
+            description={t('reviews.noReviewsDesc')}
           />
         )}
 
@@ -131,12 +133,13 @@ interface CreateReviewFormProps {
 }
 
 function CreateReviewForm({ onSubmit, onCancel }: CreateReviewFormProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
   const [columns, setColumns] = useState<ReviewColumn[]>([
-    { name: 'sample_size', description: 'Number of participants or samples' },
-    { name: 'methodology', description: 'Study design or methodology used' },
-    { name: 'key_findings', description: 'Main results or findings' },
+    { name: t('reviews.defaultColumns.sample_size.name'), description: t('reviews.defaultColumns.sample_size.description') },
+    { name: t('reviews.defaultColumns.methodology.name'), description: t('reviews.defaultColumns.methodology.description') },
+    { name: t('reviews.defaultColumns.key_findings.name'), description: t('reviews.defaultColumns.key_findings.description') },
   ]);
   const [editingColumn, setEditingColumn] = useState<number | null>(null);
 
@@ -163,33 +166,33 @@ function CreateReviewForm({ onSubmit, onCancel }: CreateReviewFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-      <h3 className="font-semibold">Create New Review</h3>
+      <h3 className="font-semibold">{t('reviews.createTitle')}</h3>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Title</label>
+        <label className="mb-1 block text-sm font-medium">{t('reviews.titleLabel')}</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g., Systematic Review of Deep Learning in Medicine"
+          placeholder={t('reviews.titlePlaceholder')}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           required
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Research Question</label>
+        <label className="mb-1 block text-sm font-medium">{t('reviews.researchQuestion')}</label>
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What question is this review trying to answer?"
+          placeholder={t('reviews.questionPlaceholder')}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           rows={2}
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Extraction Columns</label>
+        <label className="mb-1 block text-sm font-medium">{t('reviews.extractionColumns')}</label>
         <div className="space-y-2">
           {columns.map((col, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -199,14 +202,14 @@ function CreateReviewForm({ onSubmit, onCancel }: CreateReviewFormProps) {
                     type="text"
                     value={col.name}
                     onChange={(e) => updateColumn(i, 'name', e.target.value)}
-                    placeholder="Column name"
+                    placeholder={t('reviews.columnName')}
                     className="flex-1 rounded-md border bg-background px-2 py-1 text-sm"
                   />
                   <input
                     type="text"
                     value={col.description}
                     onChange={(e) => updateColumn(i, 'description', e.target.value)}
-                    placeholder="Description"
+                    placeholder={t('reviews.columnDescription')}
                     className="flex-1 rounded-md border bg-background px-2 py-1 text-sm"
                   />
                   <button type="button" onClick={() => setEditingColumn(null)} className="p-1 text-green-600">
@@ -215,7 +218,7 @@ function CreateReviewForm({ onSubmit, onCancel }: CreateReviewFormProps) {
                 </>
               ) : (
                 <>
-                  <span className="flex-1 truncate text-sm font-medium">{col.name || '(unnamed)'}</span>
+                  <span className="flex-1 truncate text-sm font-medium">{col.name || t('reviews.unnamed')}</span>
                   <span className="flex-1 truncate text-xs text-muted-foreground">{col.description}</span>
                   <button type="button" onClick={() => setEditingColumn(i)} className="p-1 text-muted-foreground hover:text-foreground">
                     <Edit2 className="h-4 w-4" />
@@ -233,16 +236,16 @@ function CreateReviewForm({ onSubmit, onCancel }: CreateReviewFormProps) {
           onClick={addColumn}
           className="mt-2 text-sm text-muted-foreground hover:text-foreground"
         >
-          + Add Column
+          {t('reviews.addColumn')}
         </button>
       </div>
 
       <div className="flex gap-2 justify-end">
         <button type="button" onClick={onCancel} className="rounded-md border px-3 py-2 text-sm hover:bg-muted">
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="submit" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90">
-          Create Review
+          {t('reviews.create')}
         </button>
       </div>
     </form>
@@ -257,12 +260,15 @@ interface ReviewCardProps {
 }
 
 function ReviewCard({ review, onSelect, onDelete, isSelected }: ReviewCardProps) {
+  const { t } = useTranslation();
   const statusColors: Record<string, string> = {
     pending: 'bg-slate-100 text-slate-700',
     in_progress: 'bg-blue-100 text-blue-700',
     complete: 'bg-green-100 text-green-700',
     failed: 'bg-red-100 text-red-700',
   };
+
+  const statusLabel = t(`reviews.status.${review.extraction_status}`, review.extraction_status);
 
   return (
     <div
@@ -282,10 +288,10 @@ function ReviewCard({ review, onSelect, onDelete, isSelected }: ReviewCardProps)
         </div>
         <div className="flex items-center gap-3">
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[review.extraction_status] ?? 'bg-slate-100 text-slate-700'}`}>
-            {review.extraction_status}
+            {statusLabel}
           </span>
           <span className="text-xs text-muted-foreground">
-            {review.paper_ids.length} papers, {review.columns.length} columns
+            {t('reviews.paperCount', { count: review.paper_ids.length, cols: review.columns.length })}
           </span>
           <button
             onClick={(e) => {
@@ -309,6 +315,7 @@ interface ReviewDetailProps {
 }
 
 function ReviewDetail({ review, onExtract, isExtracting }: ReviewDetailProps) {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
 
@@ -325,7 +332,7 @@ function ReviewDetail({ review, onExtract, isExtracting }: ReviewDetailProps) {
   return (
     <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Extraction Results: {review.title}</h3>
+        <h3 className="font-semibold">{t('reviews.extractionResults', { title: review.title })}</h3>
         <div className="flex gap-2">
           <button
             onClick={onExtract}
@@ -333,7 +340,7 @@ function ReviewDetail({ review, onExtract, isExtracting }: ReviewDetailProps) {
             className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Play className="h-4 w-4" />
-            {isExtracting ? 'Extracting...' : 'Run Extraction'}
+            {isExtracting ? t('reviews.extracting') : t('reviews.runExtraction')}
           </button>
           {extractions && extractions.completed > 0 && (
             <button
@@ -341,7 +348,7 @@ function ReviewDetail({ review, onExtract, isExtracting }: ReviewDetailProps) {
               className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              {t('reviews.exportCsv')}
             </button>
           )}
         </div>
@@ -369,11 +376,12 @@ interface ExtractionTableProps {
 }
 
 function ExtractionTable({ columns, results, completed, total }: ExtractionTableProps) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          {completed} of {total} papers extracted
+          {t('reviews.extractionProgress', { completed, total })}
         </span>
       </div>
 
@@ -381,13 +389,13 @@ function ExtractionTable({ columns, results, completed, total }: ExtractionTable
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-3 py-2 text-left font-medium">Paper ID</th>
+              <th className="px-3 py-2 text-left font-medium">{t('reviews.tableHeaders.paperId')}</th>
               {columns.map((col) => (
                 <th key={col.name} className="px-3 py-2 text-left font-medium">
                   {col.name}
                 </th>
               ))}
-              <th className="px-3 py-2 text-left font-medium">Confidence</th>
+              <th className="px-3 py-2 text-left font-medium">{t('reviews.tableHeaders.confidence')}</th>
             </tr>
           </thead>
           <tbody>
