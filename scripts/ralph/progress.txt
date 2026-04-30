@@ -217,3 +217,27 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - Content script can communicate with popup via `chrome.runtime.sendMessage`
   - Need to check `title` query param separately from metadata dict in validation
 ---
+
+## 2026-04-30 15:07 - FEAT-018
+- Implemented POST /projects/{id}/analysis/gaps endpoint
+- Created GapService using LLM to analyze paper collection for research gaps
+- Identifies 2-5 under-researched subtopics with gap scores and evidence
+- Generates candidate research questions with novelty and feasibility scores
+- Built GapAnalysisPanel component with gap cards and research question list
+- Built GapAnalysisDialog wrapper with React Query integration
+- Added route (/gaps) and navigation item in ProjectDetail.tsx
+- Backend: 6 tests, Frontend: 5 tests - all passing
+- Files changed:
+  - backend/app/services/gap_service.py (new)
+  - backend/app/api/v1/analysis.py (added gaps endpoint + models)
+  - backend/app/services/llm/adapters/mock_adapter.py (added gap_analysis mock)
+  - backend/tests/test_gap_analysis.py (new, 6 tests)
+  - frontend/src/services/api.ts (added gapApi + types)
+  - frontend/src/lib/query-keys.ts (added gaps query key)
+  - frontend/src/components/gap-analysis/GapAnalysisPanel.tsx (new)
+  - frontend/src/pages/project/GapAnalysisDialog.tsx (new)
+  - frontend/src/pages/project/GapAnalysisPage.tsx (new)
+  - frontend/src/App.tsx (added gaps route)
+  - frontend/src/pages/ProjectDetail.tsx (added nav item)
+  - frontend/src/i18n/locales/en.json, zh.json (added gaps translations)
+  - frontend/src/test/mocks/handlers.ts (added gaps mock handler)
