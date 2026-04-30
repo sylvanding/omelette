@@ -23,6 +23,7 @@ import { PaperStatusBanner } from './PaperStatusBanner';
 import { CitationGraphDialog } from './CitationGraphDialog';
 import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
 import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
+import { ExportDialog } from '@/components/export/ExportDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -49,6 +50,7 @@ export default function PapersPage() {
   const [graphPaperId, setGraphPaperId] = useState<number | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showAudioOverview, setShowAudioOverview] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -225,6 +227,7 @@ export default function PapersPage() {
       onAddPaper={() => setShowAddPaper(true)}
       onCompare={() => setShowComparison(true)}
       onAudioOverview={() => setShowAudioOverview(true)}
+      onExport={() => setShowExport(true)}
       projectId={pid}
       paperFilters={{
         q: search || undefined,
@@ -400,6 +403,15 @@ export default function PapersPage() {
               .filter((p) => selectedRows.has(p.id))
               .map((p) => p.title || 'Untitled')}
             onClose={() => setShowAudioOverview(false)}
+          />
+        )}
+
+        {showExport && (
+          <ExportDialog
+            projectId={pid}
+            papers={papers}
+            projectName={projectData?.name ?? ''}
+            onClose={() => setShowExport(false)}
           />
         )}
       </div>

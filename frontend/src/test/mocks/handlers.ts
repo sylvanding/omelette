@@ -527,4 +527,24 @@ export const handlers = [
       }),
     );
   }),
+
+  // Reference Manager Export
+  http.post(`${apiBase}/projects/:id/export/bibtex`, () =>
+    HttpResponse.text('@article{Smith2024Test,\n  title = {Test Paper},\n  author = {Smith, John},\n  year = {2024},\n}'),
+  ),
+  http.post(`${apiBase}/projects/:id/export/ris`, () =>
+    HttpResponse.text('TY  - JOUR\nTI  - Test Paper\nAU  - Smith, John\nPY  - 2024\nER  - '),
+  ),
+  http.post(`${apiBase}/projects/:id/export/zotero`, async ({ request }) => {
+    const body = (await request.json()) as { collection_name?: string };
+    return HttpResponse.json(
+      mockResponse({
+        preview: '@article{Smith2024Test,\n  title = {Test Paper},\n  author = {Smith, John},\n  year = {2024},\n}',
+        message: body.collection_name ? `Created collection "${body.collection_name}" (demo mode)` : 'Zotero credentials not configured. Import the BibTeX preview manually.',
+        paper_count: 1,
+        items_created: 0,
+        errors: [],
+      }),
+    );
+  }),
 ];

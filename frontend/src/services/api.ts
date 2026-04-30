@@ -778,3 +778,29 @@ export const browserUploadApi = {
       { params },
     ).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Reference Manager Export API
+// ---------------------------------------------------------------------------
+
+export interface ZoteroExportResult {
+  preview?: string;
+  message: string;
+  paper_count?: number;
+  collection_key?: string;
+  collection_name?: string;
+  items_created?: number;
+  errors?: string[];
+}
+
+export const exportReferenceApi = {
+  exportBibtex: (projectId: number) =>
+    api.post<string>(`/projects/${projectId}/export/bibtex`).then(r => r.data),
+  exportRis: (projectId: number) =>
+    api.post<string>(`/projects/${projectId}/export/ris`).then(r => r.data),
+  exportZotero: (projectId: number, collectionName: string) =>
+    api.post<{ data: ZoteroExportResult }>(
+      `/projects/${projectId}/export/zotero`,
+      { collection_name: collectionName },
+    ).then(r => r.data.data),
+};

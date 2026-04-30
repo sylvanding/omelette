@@ -32,7 +32,7 @@
         "Tests: verify browser upload endpoint accepts PDF"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Build Chrome extension (Manifest V3). Content script for DOI detection. Popup for project selection. Backend: /api/v1/upload/browser endpoint. Reuse existing paper processing pipeline."
     },
     {
@@ -48,7 +48,7 @@
         "Tests: verify RIS export is valid format"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: export_service.py with BibTeX, RIS, Zotero API integration. Frontend: ExportDialog component. Reuse existing collection model."
     },
     {

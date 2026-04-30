@@ -3,6 +3,40 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
 ## Codebase Patterns
+- Reference export endpoints use `/projects/{id}/export/{format}` pattern (bibtex, ris, zotero)
+- Zotero integration requires `ZOTERO_API_KEY` and `ZOTERO_USER_ID` env vars; falls back to BibTeX preview when not configured
+- `downloadExport()` in `bibliography-export.ts` handles client-side file downloads for BibTeX/RIS/EndNote
+- Export dialog uses two-tab pattern (Download + Zotero) with paper preview
+
+## 2026-04-30 13:44 - FEAT-013
+- Implemented POST /projects/{id}/export/bibtex and /ris endpoints returning downloadable bibliography files
+- Implemented POST /projects/{id}/export/zotero for direct Zotero collection creation with API
+- Created ZoteroService with collection and item creation via Zotero REST API
+- Built ExportDialog component with Download tab (BibTeX/RIS/EndNote) and Zotero tab
+- Wired ExportDialog to PapersPage via PapersToolbar "Reference Export" button
+- Files changed:
+  - backend/app/api/v1/export.py (new router, 3 endpoints)
+  - backend/app/services/zotero_service.py (new Zotero API integration)
+  - backend/app/api/v1/__init__.py (registered export router)
+  - backend/tests/test_reference_export.py (new, 10 tests)
+  - frontend/src/components/export/ExportDialog.tsx (new)
+  - frontend/src/components/export/__tests__/ExportDialog.test.tsx (new, 6 tests)
+  - frontend/src/services/api.ts (added exportReferenceApi)
+  - frontend/src/test/mocks/handlers.ts (added mock handlers)
+  - frontend/src/pages/project/PapersPage.tsx (wired up dialog)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added button)
+- **Learnings for future iterations:**
+  - The existing `export_service.py` already had BibTeX/RIS/EndNote generators — reuse rather than reimplement
+  - Pydantic validation returns 422 (not 400) for missing required fields in request body
+  - Paper DOI has a unique constraint per project — tests creating multiple papers need unique DOIs
+  - The `downloadExport()` client-side utility in `bibliography-export.ts` handles blob creation and browser download
+---
+
+## Codebase Patterns
+- Browser extension goes in `browser-extension/` at project root, separate from backend/frontend
+- Use Query params for browser upload endpoint (not JSON body) — simpler for extension GET/POST from popup
+- `async_session_factory` (not `async_session`) is the correct import from `app.database`
+- Browser upload endpoint path: `/projects/{id}/upload/browser` (separate from `/papers/upload`)
 - Backend endpoints use FastAPI `APIRouter` with `Depends(get_db)` and `Depends(get_project)` for DI
 - Services import `LLMClient` lazily inside endpoints via `get_llm()` from `app.api.deps`
 - Request/response schemas are Pydantic models defined inline in API files
@@ -34,4 +68,26 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - LLM services must handle `None` gracefully with fallback implementations
   - Test mocks must be updated in `handlers.ts` when adding new API endpoints
   - The PapersToolbar pattern for action buttons uses TooltipProvider with conditional enable/disable
+---
+
+## 2026-04-30 13:30 - FEAT-012
+- Implemented browser extension (Chrome Manifest V3) for one-click paper capture
+- Created backend endpoint POST /projects/{id}/upload/browser accepting PDF URL, DOI, or arXiv ID
+- Extension detects academic papers via content script on arXiv, Semantic Scholar, PubMed, etc.
+- Injects floating "Save to Omelette" button on detected pages
+- Popup UI for project selection, tag entry, and save confirmation
+- Backend fetches metadata via Semantic Scholar API, downloads PDF, reuses paper processing pipeline
+- Files changed:
+  - backend/app/api/v1/browser_upload.py (new)
+  - backend/app/api/v1/__init__.py (added router)
+  - backend/tests/test_browser_upload.py (new, 6 tests)
+  - browser-extension/ (new directory — manifest, content script, popup, icons)
+  - frontend/src/services/api.ts (added browserUploadApi)
+  - frontend/src/test/mocks/handlers.ts (added mock handler)
+  - frontend/src/services/__tests__/api.browser.test.ts (new, 4 tests)
+- **Learnings for future iterations:**
+  - The `app.database` module uses `async_session_factory` (not `async_session`)
+  - Query params work well for browser extension POST requests — simpler than JSON body
+  - Content script can communicate with popup via `chrome.runtime.sendMessage`
+  - Need to check `title` query param separately from metadata dict in validation
 ---
