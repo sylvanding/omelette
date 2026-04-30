@@ -65,7 +65,7 @@
         "Responsive layout for mobile screens"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "The backend already tracks reading_streak_days and read_by_week in reading analytics. Need a new endpoint or enhanced analytics response for per-day reading data. Consider using react-calendar-heatmap or a custom SVG grid."
     }
   ]

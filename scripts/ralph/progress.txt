@@ -2,6 +2,36 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 23:50 - AUTO-025
+- Added compute_reading_activity_days() method to AnalyticsService returning 90 days of per-day reading data
+- Enhanced analytics endpoint with reading_activity_days (90-day grid) and papers_by_date (date -> papers mapping)
+- Created ReadingStreakHeatmap component: custom SVG calendar heatmap with 13-week x 7-day grid
+- Streak counter badge showing consecutive reading days with Flame icon
+- Clickable day cells open Radix Dialog showing papers read that day with time badges
+- Tooltip on hover shows formatted date and paper count
+- Color intensity scale (5 levels) from muted to green
+- Legend with Less/More labels and 5 color swatches
+- Responsive: horizontal scroll container for heatmap on narrow screens
+- 6 frontend tests: streak counter, SVG cells, day labels, dialog interaction, zero state, legend
+- 2 backend tests: reading_activity_days 90-entry format, papers_by_date mapping
+- i18n keys for en/zh locales
+- Files changed:
+  - backend/app/services/analytics_service.py (added compute_reading_activity_days)
+  - backend/app/api/v1/papers.py (added reading_activity_days and papers_by_date to response)
+  - backend/tests/test_reading_analytics.py (2 new tests, updated existing)
+  - frontend/src/components/analytics/ReadingStreakHeatmap.tsx (new)
+  - frontend/src/components/analytics/__tests__/ReadingStreakHeatmap.test.tsx (new, 6 tests)
+  - frontend/src/pages/project/AnalyticsPage.tsx (added ReadingStreakHeatmap import and usage)
+  - frontend/src/i18n/locales/en.json, zh.json (added heatmap translations)
+  - frontend/src/test/mocks/handlers.ts (updated mock analytics response)
+- **Learnings for future iterations:**
+  - The analytics endpoint uses `Paper.read_at` for per-day aggregation (not ReadingSession.started_at)
+  - Custom SVG heatmap avoids adding a new dependency (react-calendar-heatmap) — simpler and matches project styling
+  - The week-building logic needs `[...currentWeek]` spread when pushing to avoid reference mutation
+  - SVG tooltip positioning uses getBoundingClientRect for accurate placement
+  - All backend tests pass (834), all frontend tests pass (281)
+---
+
 ## 2026-04-30 23:25 - AUTO-024
 - Replaced raw `<pre>` element in WritingOutputPanel with ReactMarkdown rendering for summarize, cite, outline, and gap analysis tabs
 - Uses same markdown plugins as NotesPanel: remarkGfm (tables, strikethrough), remarkMath (LaTeX), rehypeKatex (math rendering), rehypeHighlight (code highlighting)
