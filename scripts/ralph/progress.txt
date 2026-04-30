@@ -2,6 +2,35 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 14:56 - FEAT-017
+- Implemented GET /projects/{id}/analysis/trends endpoint returning year-binned topic data
+- Created TrendService with publication volume, citation timeline, topic trend extraction
+- Linear regression for trend slope computation per topic
+- Emerging topic detection (>50% YoY growth) and declining topic detection (<30% YoY)
+- Built TrendsPage with recharts: BarChart (publication volume), AreaChart (citations), LineChart (topic trends)
+- Emerging/declining topics lists with color-coded badges
+- Summary cards: total papers, year span, emerging count, declining count
+- Added route in App.tsx and navigation item in ProjectDetail.tsx
+- Files changed:
+  - backend/app/services/trend_service.py (new)
+  - backend/app/api/v1/analysis.py (added trends endpoint + response models)
+  - backend/tests/test_trend_analysis.py (new, 10 tests)
+  - frontend/src/services/api.ts (added trendsApi + types)
+  - frontend/src/lib/query-keys.ts (added trends query key, fixed duplicate analytics key)
+  - frontend/src/pages/project/TrendsPage.tsx (new)
+  - frontend/src/pages/ProjectDetail.tsx (added Trends nav item)
+  - frontend/src/App.tsx (added TrendsPage route)
+  - frontend/src/test/mocks/handlers.ts (added trends mock handler)
+  - frontend/src/i18n/locales/en.json (added/merged trends translations)
+  - frontend/src/pages/__tests__/TrendsPage.test.tsx (new, 7 tests)
+- Tests: 10 backend tests pass, 7 frontend tests pass
+- **Learnings for future iterations:**
+  - i18n file already had a `trends` section — must check for duplicates before adding new sections
+  - The `query-keys.ts` had a pre-existing duplicate `analytics` key inside `papers` — fixed it
+  - Recharts components (BarChart, AreaChart, LineChart) render fine in jsdom tests
+  - MSW handlers for `/projects/:id/analysis/*` pattern work correctly with path params
+---
+
 ## 2026-04-30 14:42 - FEAT-016
 - AuthorNetworkDialog component with d3-force directed graph visualization
 - Force-directed graph with authors as nodes, co-authorship as edges

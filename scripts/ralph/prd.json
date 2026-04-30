@@ -118,7 +118,7 @@
         "Tests: verify trend chart renders correctly"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: trend_service.py extracts keywords, computes year-binned aggregates, linear regression for trend slopes. Frontend: TrendsPage using recharts (already installed)."
     },
     {
