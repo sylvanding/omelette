@@ -540,3 +540,48 @@ export const reviewsApi = {
   getExtractions: (projectId: number, reviewId: number) =>
     api.get<ExtractionProgress>(`/projects/${projectId}/reviews/${reviewId}/extractions`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Concepts API
+// ---------------------------------------------------------------------------
+
+export interface ConceptNode {
+  name: string;
+  definition: string;
+  frequency: number;
+  related_papers: number[];
+  related_concepts: string[];
+}
+
+export interface ConceptEdge {
+  source: string;
+  target: string;
+  relation_type: string;
+  description: string;
+}
+
+export interface ConceptGraph {
+  nodes: ConceptNode[];
+  edges: ConceptEdge[];
+  total_concepts: number;
+}
+
+export interface TopicPage {
+  concept_name: string;
+  definition: string;
+  overview: string;
+  key_findings: string[];
+  related_topics: string[];
+  research_directions: string[];
+}
+
+export const conceptsApi = {
+  extract: (projectId: number) =>
+    api.post<ConceptGraph>(`/projects/${projectId}/concepts/extract`).then(r => r.data),
+
+  getGraph: (projectId: number) =>
+    api.get<ConceptGraph>(`/projects/${projectId}/concepts/graph`).then(r => r.data),
+
+  getTopicPage: (projectId: number, conceptName: string) =>
+    api.get<TopicPage>(`/projects/${projectId}/concepts/${encodeURIComponent(conceptName)}/page`).then(r => r.data),
+};

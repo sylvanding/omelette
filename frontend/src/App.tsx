@@ -18,6 +18,7 @@ const DiscoveryPage = lazy(() => import('@/pages/project/DiscoveryPage'));
 const PDFReaderPage = lazy(() => import('@/pages/project/PDFReaderPage'));
 const AnalyticsPage = lazy(() => import('@/pages/project/AnalyticsPage'));
 const ReviewsPage = lazy(() => import('@/pages/project/ReviewsPage'));
+const ConceptsPage = lazy(() => import('@/pages/project/ConceptsPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
 
@@ -61,6 +62,9 @@ function App() {
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="reviews" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ReviewsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="concepts" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ConceptsPage /></Suspense></ErrorBoundary>
               } />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="activity" element={

@@ -138,3 +138,27 @@ export interface ExtractionProgress {
   completed: number;
   results: ExtractionResult[];
 }
+
+export interface ConceptNode {
+  name: string;
+  definition: string;
+  frequency: number;
+  related_papers: number[];
+  related_concepts: string[];
+}
+
+export interface ConceptEdge {
+  source: string;
+  target: string;
+  relation_type: string;
+  description: string;
+}
+
+export interface TopicPage {
+  concept_name: string;
+  definition: string;
+  overview: string;
+  key_findings: string[];
+  related_topics: string[];
+  research_directions: string[];
+}

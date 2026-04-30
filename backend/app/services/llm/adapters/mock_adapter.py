@@ -181,6 +181,76 @@ MOCK_RESPONSES: dict[str, str] = {
             "confidence": 0.85,
         }
     ),
+    "concept_extraction": json.dumps(
+        {
+            "concepts": [
+                {
+                    "name": "Deep Learning",
+                    "definition": "Machine learning methods using multi-layer neural networks to learn hierarchical representations from data.",
+                    "frequency": 3,
+                    "related_papers": [1, 2, 3],
+                },
+                {
+                    "name": "Super-resolution",
+                    "definition": "Techniques for enhancing the resolution of images beyond the limits of the original sensor or acquisition system.",
+                    "frequency": 2,
+                    "related_papers": [1, 3],
+                },
+                {
+                    "name": "Image Artifacts",
+                    "definition": "Unwanted distortions or anomalies introduced during image processing or reconstruction that do not represent the true object.",
+                    "frequency": 1,
+                    "related_papers": [2],
+                },
+            ]
+        }
+    ),
+    "concept_graph_building": json.dumps(
+        {
+            "related_concepts": [
+                {
+                    "concept_a": "Deep Learning",
+                    "concept_b": "Super-resolution",
+                    "relation_type": "applies_to",
+                    "description": "Deep learning methods are applied to achieve super-resolution in imaging tasks.",
+                },
+                {
+                    "concept_a": "Deep Learning",
+                    "concept_b": "Image Artifacts",
+                    "relation_type": "contrasts_with",
+                    "description": "Deep learning approaches may introduce artifacts that contradict their intended quality improvements.",
+                },
+                {
+                    "concept_a": "Super-resolution",
+                    "concept_b": "Image Artifacts",
+                    "relation_type": "related_to",
+                    "description": "Super-resolution techniques must address and minimize image artifacts to be clinically useful.",
+                },
+            ]
+        }
+    ),
+    "topic_page_generation": json.dumps(
+        {
+            "overview": "Deep Learning has revolutionized scientific imaging by enabling automatic feature extraction and pattern recognition at scales previously impossible. Multi-layer neural networks learn hierarchical representations from raw data, eliminating the need for hand-crafted features. In microscopy and medical imaging, deep learning approaches have demonstrated resolution improvements, automated cell detection, and anomaly classification with accuracy rivaling expert annotators.",
+            "key_findings": [
+                "Deep learning methods achieve 2x resolution improvement over traditional approaches",
+                "Neural network architectures can automatically learn relevant features from raw microscopy data",
+                "Transfer learning from natural images improves convergence on scientific imaging tasks",
+                "Artifacts from neural reconstruction remain a challenge for clinical adoption",
+            ],
+            "related_topics": [
+                "Neural Network Architecture",
+                "Transfer Learning",
+                "Image Reconstruction",
+                "Feature Extraction",
+            ],
+            "research_directions": [
+                "Explainable deep learning for scientific imaging",
+                "Artifact-free neural reconstruction methods",
+                "Few-shot learning for rare specimen types",
+            ],
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 
