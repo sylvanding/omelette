@@ -345,6 +345,7 @@
     },
     "readingStatus": "Reading Status",
     "readingStatusFilter": "Filter by reading status",
+    "changeReadingStatus": "Change reading status",
     "rating": "Rating",
     "qualityTags": "Quality Tags",
     "compare": "Compare",

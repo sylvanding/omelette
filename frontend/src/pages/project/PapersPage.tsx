@@ -219,12 +219,20 @@ export default function PapersPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
   };
 
+  const handleReadingStatusChange = (paperId: number, status: ReadingStatus) => {
+    paperApi.update(pid, paperId, { reading_status: status }).catch(() => {
+      toast.error(t('common.updateFailed'));
+    });
+    queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
+  };
+
   const columns = usePapersColumns({
     pid,
     deleteMutation,
     handleRetry,
     setGraphPaperId,
     onRatingChange: handleRatingChange,
+    onReadingStatusChange: handleReadingStatusChange,
     impactScores: impactScoreMap,
   });
 

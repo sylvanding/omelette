@@ -4,6 +4,13 @@ import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText } from 'l
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { StarRating } from '@/components/ui/star-rating';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ImpactScoreBadge } from '@/components/impact-score/ImpactScoreBadge';
 import type { DataTableColumn } from '@/components/ui/data-table';
 import type { Paper, PaperStatus, ReadingStatus } from '@/types';
@@ -17,6 +24,7 @@ interface UsePapersColumnsParams {
   handleRetry: (paperId: number) => void;
   setGraphPaperId: (id: number) => void;
   onRatingChange?: (paperId: number, rating: number) => void;
+  onReadingStatusChange?: (paperId: number, status: ReadingStatus) => void;
   impactScores?: Map<number, { score: number; factors: Record<string, ImpactFactor> }>;
 }
 
@@ -26,6 +34,7 @@ export function usePapersColumns({
   handleRetry,
   setGraphPaperId,
   onRatingChange,
+  onReadingStatusChange,
   impactScores,
 }: UsePapersColumnsParams): DataTableColumn<Paper>[] {
   const { t } = useTranslation();
@@ -107,11 +116,33 @@ export function usePapersColumns({
       id: 'reading_status',
       header: t('papers.readingStatus', 'Reading Status'),
       accessorKey: 'reading_status',
-      cell: ({ row }) => (
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getReadingStatusColor(row.reading_status)}`}>
-          {t(`papers.readingStatuses.${row.reading_status}`, row.reading_status)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const readingStatuses: ReadingStatus[] = ['unread', 'reading', 'read', 'archived'];
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium hover:opacity-80 ${getReadingStatusColor(row.reading_status)}`}
+                aria-label={t('papers.changeReadingStatus')}
+              >
+                {t(`papers.readingStatuses.${row.reading_status}`, row.reading_status)}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuRadioGroup
+                value={row.reading_status}
+                onValueChange={(value) => onReadingStatusChange?.(row.id, value as ReadingStatus)}
+              >
+                {readingStatuses.map((status) => (
+                  <DropdownMenuRadioItem key={status} value={status}>
+                    {t(`papers.readingStatuses.${status}`, status)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
     {
       id: 'rating',

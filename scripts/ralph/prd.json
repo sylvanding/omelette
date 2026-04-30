@@ -26,7 +26,7 @@
         "i18n labels for all status options"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "The reading_status column in papers-columns.tsx is display-only (static badge). Use a Radix DropdownMenu triggered by the badge, similar to how the rating stars work. Use useToastMutation for optimistic update."
     },
     {

@@ -345,6 +345,7 @@
     },
     "readingStatus": "阅读状态",
     "readingStatusFilter": "按阅读状态筛选",
+    "changeReadingStatus": "更改阅读状态",
     "rating": "评分",
     "qualityTags": "质量标签",
     "compare": "对比",
