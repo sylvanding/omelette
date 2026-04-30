@@ -60,6 +60,7 @@ class Paper(Base):
 
     project = relationship("Project", back_populates="papers")
     chunks = relationship("PaperChunk", back_populates="paper", cascade="all, delete-orphan")
+    versions = relationship("PaperVersion", back_populates="paper", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Paper id={self.id} doi={self.doi!r} title={self.title[:50]!r}>"

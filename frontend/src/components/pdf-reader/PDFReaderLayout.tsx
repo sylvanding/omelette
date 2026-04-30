@@ -12,6 +12,7 @@ import CitationCardPanel from './CitationCardPanel';
 import { paperApi, augmentedReadingApi } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { useReadingTimer, formatReadingTime } from '@/hooks/useReadingTimer';
+import { VersionTimelineDialog } from '@/components/version-timeline/VersionTimelineDialog';
 
 const PDFViewer = lazy(() => import('./PDFViewer'));
 
@@ -36,6 +37,7 @@ export default function PDFReaderLayout({
   const [selectedText, setSelectedText] = useState('');
   const [selectedPage, setSelectedPage] = useState(1);
   const [activeTab, setActiveTab] = useState('notes');
+  const [showVersions, setShowVersions] = useState(false);
 
   const { elapsedSeconds } = useReadingTimer({ projectId, paperId });
 
@@ -87,6 +89,15 @@ export default function PDFReaderLayout({
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="line-clamp-1 flex-1 text-sm font-medium">{paperTitle}</h1>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setShowVersions(true)}
+          className="h-7 text-xs"
+          aria-label={t('versions.title', 'Version History')}
+        >
+          {t('versions.tab', 'Versions')}
+        </Button>
         <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Reading time">
           <Clock className="size-3" />
           <span>{formatReadingTime(elapsedSeconds)}</span>
@@ -157,6 +168,15 @@ export default function PDFReaderLayout({
           </Panel>
         </Group>
       </div>
+
+      {showVersions && (
+        <VersionTimelineDialog
+          projectId={projectId}
+          paperId={paperId}
+          paperTitle={paperTitle}
+          onClose={() => setShowVersions(false)}
+        />
+      )}
     </div>
   );
 }

@@ -581,5 +581,19 @@
     "novelty": "创新性",
     "feasibility": "可行性",
     "loadFailed": "加载缺口分析数据失败"
+  },
+  "versions": {
+    "title": "版本历史",
+    "close": "关闭版本历史",
+    "noVersions": "暂无版本历史",
+    "noVersionsDesc": "当从学术数据库检测到更新时，会追踪论文版本",
+    "checkForUpdates": "检查更新",
+    "upgrade": "升级",
+    "upgradeToThis": "升级到此版本",
+    "upgradeSuccess": "论文已升级到选定版本",
+    "upgradeFailed": "升级版本失败",
+    "loadError": "加载版本历史失败",
+    "newVersionAvailable": "有新版本可用",
+    "tab": "版本"
   }
 }

@@ -807,4 +807,87 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Paper Version Tracking
+  http.get(`${apiBase}/projects/:id/papers/:paperId/versions`, () =>
+    HttpResponse.json(
+      mockResponse({
+        versions: [
+          {
+            id: 1,
+            paper_id: 1,
+            version: 1,
+            source: 'auto_poll',
+            doi: '10.1101/2024.01.01.123456',
+            title: 'A Study on Machine Learning (Preprint)',
+            abstract: 'Preprint abstract.',
+            authors: null,
+            journal: '',
+            year: 2024,
+            citation_count: 5,
+            pdf_url: null,
+            is_preprint: true,
+            preprint_server: 'bioRxiv',
+            diff_summary: null,
+            created_at: '2024-01-15T10:00:00Z',
+          },
+          {
+            id: 2,
+            paper_id: 1,
+            version: 2,
+            source: 'auto_poll',
+            doi: '10.1234/journal.2024.567',
+            title: 'A Study on Machine Learning',
+            abstract: 'Updated journal abstract with additional details.',
+            authors: null,
+            journal: 'Nature Machine Intelligence',
+            year: 2024,
+            citation_count: 25,
+            pdf_url: 'https://example.com/paper.pdf',
+            is_preprint: false,
+            preprint_server: null,
+            diff_summary: 'Title changed; Journal: None -> Nature Machine Intelligence; Citations: 5 -> 25',
+            created_at: '2024-06-20T14:30:00Z',
+          },
+        ],
+        total: 2,
+      }),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/papers/:paperId/versions/check`, () =>
+    HttpResponse.json(
+      mockResponse({
+        update_found: true,
+        version: {
+          id: 3,
+          paper_id: 1,
+          version: 3,
+          source: 'manual_check',
+          doi: '10.1234/journal.2024.890',
+          title: 'A Study on Machine Learning (Revised)',
+          abstract: 'Revised abstract.',
+          authors: null,
+          journal: 'Nature Machine Intelligence',
+          year: 2024,
+          citation_count: 42,
+          pdf_url: null,
+          is_preprint: false,
+          preprint_server: null,
+          diff_summary: 'Citations: 25 -> 42',
+          created_at: new Date().toISOString(),
+        },
+      }),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/papers/:paperId/versions/:versionId/upgrade`, async ({ params }) =>
+    HttpResponse.json(
+      mockResponse({
+        paper_id: Number(params.paperId),
+        upgraded_to_version: Number(params.versionId),
+        new_doi: '10.1234/journal.2024.567',
+        new_journal: 'Nature Machine Intelligence',
+        preserved_fields: ['notes', 'tags', 'reading_status', 'read_at', 'rating', 'quality_tags', 'status'],
+      }),
+    ),
+  ),
 ];

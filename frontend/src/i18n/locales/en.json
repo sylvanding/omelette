@@ -642,5 +642,19 @@
     "novelty": "Novelty",
     "feasibility": "Feasibility",
     "loadFailed": "Failed to load gap analysis data"
+  },
+  "versions": {
+    "title": "Version History",
+    "close": "Close version history",
+    "noVersions": "No version history available",
+    "noVersionsDesc": "Paper versions are tracked when updates are detected from academic databases",
+    "checkForUpdates": "Check for updates",
+    "upgrade": "Upgrade",
+    "upgradeToThis": "Upgrade to this version",
+    "upgradeSuccess": "Paper upgraded to selected version",
+    "upgradeFailed": "Failed to upgrade version",
+    "loadError": "Failed to load version history",
+    "newVersionAvailable": "New version available",
+    "tab": "Versions"
   }
 }

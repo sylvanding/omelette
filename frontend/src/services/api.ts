@@ -982,3 +982,52 @@ export const gapApi = {
   analyze: (projectId: number) =>
     api.post<GapAnalysisData>(`/projects/${projectId}/analysis/gaps`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Paper Version Tracking API
+// ---------------------------------------------------------------------------
+
+export interface PaperVersionEntry {
+  id: number;
+  paper_id: number;
+  version: number;
+  source: string;
+  doi: string | null;
+  title: string;
+  abstract: string;
+  authors: unknown[] | null;
+  journal: string;
+  year: number | null;
+  citation_count: number;
+  pdf_url: string | null;
+  is_preprint: boolean;
+  preprint_server: string | null;
+  diff_summary: string | null;
+  created_at: string | null;
+}
+
+export interface VersionHistoryData {
+  versions: PaperVersionEntry[];
+  total: number;
+}
+
+export interface VersionUpgradeResult {
+  paper_id: number;
+  upgraded_to_version: number;
+  new_doi: string | null;
+  new_journal: string;
+  preserved_fields: string[];
+}
+
+export const versionTrackingApi = {
+  getVersions: (projectId: number, paperId: number) =>
+    api.get<VersionHistoryData>(`/projects/${projectId}/papers/${paperId}/versions`).then(r => r.data),
+
+  checkForUpdates: (projectId: number, paperId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/papers/${paperId}/versions/check`).then(r => r.data),
+
+  upgradeToVersion: (projectId: number, paperId: number, versionId: number) =>
+    api.post<VersionUpgradeResult>(
+      `/projects/${projectId}/papers/${paperId}/versions/${versionId}/upgrade`,
+    ).then(r => r.data),
+};
