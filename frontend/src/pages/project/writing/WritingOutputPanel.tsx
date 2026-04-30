@@ -1,6 +1,14 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
 import { Loader2, Copy, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import 'katex/dist/katex.min.css';
 
 interface WritingOutputPanelProps {
   activeTab: string;
@@ -25,18 +33,38 @@ export function WritingOutputPanel({
 }: WritingOutputPanelProps) {
   const { t } = useTranslation();
 
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkMath], []);
+  const rehypePlugins = useMemo(() => [rehypeKatex, rehypeHighlight], []);
+
+  const hasContent = activeTab === 'review' ? reviewContent.trim() : output.trim();
+
+  const handleCopyOutput = () => {
+    navigator.clipboard.writeText(output.trim());
+    toast.success(t('common.copied', 'Copied to clipboard'));
+  };
+
+  const handleDownloadOutput = () => {
+    const blob = new Blob([output.trim()], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeTab}-output.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">
           {t('common.output')}
         </h2>
-        {activeTab === 'review' && reviewContent.trim() && (
+        {hasContent && (
           <div className="flex gap-1">
             <Button
               size="sm"
               variant="ghost"
-              onClick={onCopy}
+              onClick={activeTab === 'review' ? onCopy : handleCopyOutput}
               className="gap-1 text-xs"
             >
               <Copy className="size-3.5" />
@@ -45,7 +73,7 @@ export function WritingOutputPanel({
             <Button
               size="sm"
               variant="ghost"
-              onClick={onDownload}
+              onClick={activeTab === 'review' ? onDownload : handleDownloadOutput}
               className="gap-1 text-xs"
             >
               <Download className="size-3.5" />
@@ -87,9 +115,22 @@ export function WritingOutputPanel({
           )}
         </div>
       ) : (
-        <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm">
-          {output || (reviewStreaming ? t('common.generating') : '—')}
-        </pre>
+        <div className="max-h-96 overflow-y-auto rounded-lg border border-border bg-background p-4">
+          {output.trim() ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+                {output}
+              </ReactMarkdown>
+            </div>
+          ) : reviewStreaming ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              {t('common.generating', '正在生成...')}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">—</p>
+          )}
+        </div>
       )}
     </div>
   );

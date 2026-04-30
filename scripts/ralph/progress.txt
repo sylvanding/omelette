@@ -2,6 +2,22 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 23:25 - AUTO-024
+- Replaced raw `<pre>` element in WritingOutputPanel with ReactMarkdown rendering for summarize, cite, outline, and gap analysis tabs
+- Uses same markdown plugins as NotesPanel: remarkGfm (tables, strikethrough), remarkMath (LaTeX), rehypeKatex (math rendering), rehypeHighlight (code highlighting)
+- Added copy and download buttons for non-review tabs — operates on raw text output
+- Review tab rendering unchanged (remains plain text with whitespace-pre-wrap)
+- 11 new tests: empty state, markdown headings, lists, inline code, copy/download button visibility, clipboard copy, download trigger, review tab plain text, streaming state, citations section
+- All 275 frontend tests pass, 827 backend tests pass, TypeScript clean, ESLint clean
+- Files changed:
+  - frontend/src/pages/project/writing/WritingOutputPanel.tsx (added ReactMarkdown, copy/download for non-review tabs)
+  - frontend/src/pages/project/writing/__tests__/WritingOutputPanel.test.tsx (new, 11 tests)
+- **Learnings for future iterations:**
+  - JSX treats strings starting with `-` as potential JSX elements — use `{}` wrapping for such strings in TSX test files
+  - The panel title uses an `h2` element, so markdown heading tests need to query within the output content area to avoid matching the panel header
+  - i18n keys like `common.copy` fall back to Chinese text (复制) in tests since no translation mock is set up
+---
+
 ## 2026-04-30 23:18 - AUTO-023
 - Implemented custom user-defined tags with bulk tagging
 - Backend: Added `tags` filter parameter to list_papers endpoint (papers.py)

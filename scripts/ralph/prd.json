@@ -52,7 +52,7 @@
         "Copy and download buttons still work with raw text"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "WritingPage.tsx renders non-review tab outputs in a raw <pre> element. The MarkdownPreview component (lazy-loaded in NotesPanel) can be reused. The copy/download functionality operates on raw text, which should remain accessible."
     },
     {
