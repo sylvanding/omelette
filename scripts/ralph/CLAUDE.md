@@ -91,8 +91,12 @@ If no browser tools are available, note in your progress report that manual brow
 
 After completing a user story, check if ALL stories have `passes: true`.
 
-If ALL stories are complete and passing, reply with:
-<promise>COMPLETE</promise>
+If ALL stories are complete and passing:
+1. **Do NOT reply with COMPLETE** — instead, start a NEW cycle of self-directed improvements
+2. Browse the running app, audit the codebase, or research competing products online
+3. Write a NEW PRD to `prd.json` with a fresh `branchName`, description, and 3-5 new user stories (all `passes: false`)
+4. Update `progress.txt` with a new section documenting what you're improving next and why
+5. End your response — the next iteration will pick up the first new story
 
 If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
 

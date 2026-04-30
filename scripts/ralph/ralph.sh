@@ -91,8 +91,24 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   if [[ "$TOOL" == "amp" ]]; then
     OUTPUT=$(cat "$SCRIPT_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
   else
-    # Claude Code: use --dangerously-skip-permissions for autonomous operation, --print for output
-    OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
+    # Claude Code: use --dangerously-skip-permissions for autonomous operation
+    # Use stream-json for real-time output; background tailer extracts text from JSON stream
+    LOG_FILE="$SCRIPT_DIR/ralph.log"
+    : > "$LOG_FILE"  # truncate
+    (python3 -c "
+import sys, json
+for line in sys.stdin:
+    try:
+        obj = json.loads(line)
+        if obj.get('type') == 'message' and obj.get('message', {}).get('role') == 'assistant':
+            for block in obj['message'].get('content', []):
+                if block.get('type') == 'text':
+                    print(block['text'], end='', flush=True)
+                    with open('$LOG_FILE', 'a') as f: f.write(block['text'])
+    except json.JSONDecodeError:
+        pass
+" &)
+    OUTPUT=$(claude --dangerously-skip-permissions --verbose --output-format stream-json < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
   fi
 
   # Check for completion signal
