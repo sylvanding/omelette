@@ -890,4 +890,29 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Impact Scores
+  http.get(`${apiBase}/projects/:id/analysis/impact-scores`, () =>
+    HttpResponse.json(
+      mockResponse({
+        scores: [
+          {
+            paper_id: 1,
+            title: mockPaper.title,
+            score: 72.5,
+            factors: {
+              citations: { raw: mockPaper.citation_count, normalized: 0.8, weight: 0.3 },
+              recency: { year: mockPaper.year, normalized: 0.9, weight: 0.2 },
+              journal: { name: mockPaper.journal, normalized: 0.6, weight: 0.2 },
+              evidence_consensus: { quality_tags: mockPaper.quality_tags, normalized: 0.5, weight: 0.15 },
+              field_percentile: { percentile: 0.75, normalized: 0.75, weight: 0.15 },
+            },
+          },
+        ],
+        total: 1,
+        avg_score: 72.5,
+        top_paper_id: 1,
+      }),
+    ),
+  ),
 ];

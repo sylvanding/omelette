@@ -1031,3 +1031,36 @@ export const versionTrackingApi = {
       `/projects/${projectId}/papers/${paperId}/versions/${versionId}/upgrade`,
     ).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Impact Score API
+// ---------------------------------------------------------------------------
+
+export interface ImpactFactor {
+  raw?: number | null;
+  year?: number | null;
+  name?: string | null;
+  quality_tags?: string[] | null;
+  normalized: number;
+  percentile?: number | null;
+  weight: number;
+}
+
+export interface ImpactScoreEntry {
+  paper_id: number;
+  title: string;
+  score: number;
+  factors: Record<string, ImpactFactor>;
+}
+
+export interface ImpactScoreResponse {
+  scores: ImpactScoreEntry[];
+  total: number;
+  avg_score: number;
+  top_paper_id: number | null;
+}
+
+export const impactScoresApi = {
+  get: (projectId: number) =>
+    api.get<ImpactScoreResponse>(`/projects/${projectId}/analysis/impact-scores`).then(r => r.data),
+};

@@ -76,4 +76,7 @@ export const queryKeys = {
   paperVersions: {
     all: (projectId: number, paperId: number) => ['paper-versions', projectId, paperId] as const,
   },
+  impactScores: {
+    all: (projectId: number) => ['impact-scores', projectId] as const,
+  },
 } as const;

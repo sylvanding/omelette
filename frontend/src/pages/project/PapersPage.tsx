@@ -6,7 +6,7 @@ import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { toast } from 'sonner';
 import { FileText } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
-import { paperApi, projectApi, paperProcessApi } from '@/services/api';
+import { paperApi, projectApi, paperProcessApi, impactScoresApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
 import type { Paper, PaperStatus, ReadingStatus } from '@/types';
@@ -53,6 +53,20 @@ export default function PapersPage() {
   const [showAudioOverview, setShowAudioOverview] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
+
+  const { data: impactData } = useQuery({
+    queryKey: queryKeys.impactScores.all(pid),
+    queryFn: () => impactScoresApi.get(pid),
+    enabled: !!pid,
+  });
+
+  const impactScoreMap = useMemo(() => {
+    const map = new Map<number, { score: number; factors: Record<string, import('@/services/api').ImpactFactor> }>();
+    for (const entry of impactData?.scores ?? []) {
+      map.set(entry.paper_id, { score: entry.score, factors: entry.factors });
+    }
+    return map;
+  }, [impactData]);
 
   const filters = useMemo(
     () => ({
@@ -209,6 +223,7 @@ export default function PapersPage() {
     handleRetry,
     setGraphPaperId,
     onRatingChange: handleRatingChange,
+    impactScores: impactScoreMap,
   });
 
   const subtitle = projectData && (

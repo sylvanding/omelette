@@ -295,6 +295,7 @@
     "searchPlaceholder": "Search title or abstract...",
     "journal": "Journal",
     "citations": "Citations",
+    "impactScore": "Impact",
     "abstract": "Abstract:",
     "authors": "Authors:",
     "downloadPdf": "Download PDF",

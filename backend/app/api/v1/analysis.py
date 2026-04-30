@@ -165,6 +165,36 @@ class GapResponse(BaseModel):
     summary: GapSummary
 
 
+class ImpactFactor(BaseModel):
+    """Breakdown of a single impact score factor."""
+
+    raw: int | None = None
+    year: int | None = None
+    name: str | None = None
+    quality_tags: list[str] | None = None
+    normalized: float
+    percentile: float | None = None
+    weight: float
+
+
+class ImpactScoreEntry(BaseModel):
+    """Impact score for a single paper."""
+
+    paper_id: int
+    title: str
+    score: float
+    factors: dict[str, ImpactFactor]
+
+
+class ImpactScoreResponse(BaseModel):
+    """Response from impact score computation."""
+
+    scores: list[ImpactScoreEntry]
+    total: int
+    avg_score: float
+    top_paper_id: int | None
+
+
 @router.post(
     "/contradictions",
     response_model=ApiResponse[ContradictionResponse],
@@ -295,5 +325,37 @@ async def detect_gaps(
             gaps=[GapEntry(**g) for g in result_data["gaps"]],
             research_questions=[GapResearchQuestion(**q) for q in result_data["research_questions"]],
             summary=GapSummary(**result_data["summary"]),
+        )
+    )
+
+
+@router.get(
+    "/impact-scores",
+    response_model=ApiResponse[ImpactScoreResponse],
+    summary="Get citation impact scores for project papers",
+)
+async def get_impact_scores(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Compute Omelette Impact Score (0-100) for each paper in the project."""
+    from app.services.impact_score_service import ImpactScoreService
+
+    svc = ImpactScoreService(db)
+    scores = await svc.compute_scores(project_id)
+
+    if not scores:
+        return ApiResponse(data=ImpactScoreResponse(scores=[], total=0, avg_score=0.0, top_paper_id=None))
+
+    avg_score = round(sum(s["score"] for s in scores) / len(scores), 1)
+    top_paper = max(scores, key=lambda s: s["score"])
+
+    return ApiResponse(
+        data=ImpactScoreResponse(
+            scores=scores,
+            total=len(scores),
+            avg_score=avg_score,
+            top_paper_id=top_paper["paper_id"],
         )
     )
