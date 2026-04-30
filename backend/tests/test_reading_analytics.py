@@ -160,6 +160,8 @@ class TestEnhancedAnalyticsAPI:
         assert "papers_per_week" in data
         assert "avg_read_time_seconds" in data
         assert "reading_streak_days" in data
+        assert "reading_activity_days" in data
+        assert "papers_by_date" in data
         assert "domain_coverage" in data
         assert "citation_impact" in data
         assert "total" in data
@@ -174,6 +176,10 @@ class TestEnhancedAnalyticsAPI:
         assert data["avg_read_time_seconds"] == 0.0
         assert data["reading_streak_days"] == 0
         assert data["papers_per_week"] == 0.0
+        # Always returns 90 days, but all counts are zero
+        assert len(data["reading_activity_days"]) == 90
+        assert all(d["count"] == 0 for d in data["reading_activity_days"])
+        assert data["papers_by_date"] == {}
 
     async def test_analytics_papers_per_week(self, client: AsyncClient, project_id: int):
         """Verify papers_per_week computes correctly across weeks."""
@@ -223,6 +229,72 @@ class TestEnhancedAnalyticsAPI:
         assert ci["min"] == 10
         assert ci["max"] == 50
         assert ci["mean"] == 30.0
+
+    async def test_analytics_reading_activity_days(self, client: AsyncClient, project_id: int):
+        """Verify reading_activity_days returns 90 entries with correct counts."""
+        now = datetime.now()
+        paper_ids = []
+        for i in range(3):
+            paper_resp = await client.post(
+                f"/api/v1/projects/{project_id}/papers",
+                json={"title": f"Activity Paper {i}", "doi": f"10.{i + 50}/test"},
+            )
+            pid = paper_resp.json()["data"]["id"]
+            paper_ids.append(pid)
+            await client.put(
+                f"/api/v1/projects/{project_id}/papers/{pid}",
+                json={"reading_status": "read"},
+            )
+
+        from sqlalchemy import update
+
+        from app.api.deps import get_db
+        from app.models.paper import Paper
+
+        async for db in get_db():
+            for i, pid in enumerate(paper_ids):
+                read_at = now - timedelta(days=i)
+                stmt = update(Paper).where(Paper.id == pid).values(reading_status="read", read_at=read_at)
+                await db.execute(stmt)
+            await db.commit()
+            break
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/analytics")
+        data = resp.json()["data"]
+        activity = data["reading_activity_days"]
+        assert len(activity) == 90
+        assert all("date" in d and "count" in d for d in activity)
+
+    async def test_analytics_papers_by_date(self, client: AsyncClient, project_id: int):
+        """Verify papers_by_date maps dates to paper summaries."""
+        paper_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "PapersByDate Paper", "doi": "10.60/test"},
+        )
+        paper_id = paper_resp.json()["data"]["id"]
+        await client.put(
+            f"/api/v1/projects/{project_id}/papers/{paper_id}",
+            json={"reading_status": "read"},
+        )
+
+        from sqlalchemy import update
+
+        from app.api.deps import get_db
+        from app.models.paper import Paper
+
+        now = datetime.now()
+        async for db in get_db():
+            stmt = update(Paper).where(Paper.id == paper_id).values(reading_status="read", read_at=now)
+            await db.execute(stmt)
+            await db.commit()
+            break
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/papers/analytics")
+        data = resp.json()["data"]
+        today = now.strftime("%Y-%m-%d")
+        assert today in data["papers_by_date"]
+        papers = data["papers_by_date"][today]
+        assert any(p["id"] == paper_id for p in papers)
 
 
 # ---------------------------------------------------------------------------

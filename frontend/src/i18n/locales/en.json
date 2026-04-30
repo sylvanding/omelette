@@ -390,7 +390,14 @@
     "noData": "No data available",
     "noReadData": "No papers have been marked as read yet",
     "noJournalData": "No journal data available",
-    "loadFailed": "Failed to load analytics data"
+    "loadFailed": "Failed to load analytics data",
+    "readingHeatmap": "Reading Activity",
+    "streakDays": "day streak",
+    "less": "Less",
+    "more": "More",
+    "noActivity": "No papers read",
+    "papersReadCount": "{{count}} paper(s) read",
+    "noPapersThisDay": "No papers were read on this day"
   },
   "timeline": {
     "title": "Timeline",

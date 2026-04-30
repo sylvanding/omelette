@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from sqlalchemy import func, select
@@ -80,6 +80,35 @@ class AnalyticsService:
             else:
                 break
         return streak
+
+    async def compute_reading_activity_days(self, project_id: int, days: int = 90) -> list[dict]:
+        """Return per-day reading activity for the last N days.
+
+        Each entry has: { date: 'YYYY-MM-DD', count: int }.
+        Days with no reading activity are included with count=0.
+        """
+        cutoff = (date.today() - timedelta(days=days - 1)).isoformat()
+        result = await self.db.execute(
+            select(
+                func.strftime("%Y-%m-%d", Paper.read_at).label("day"),
+                func.count().label("cnt"),
+            )
+            .where(
+                Paper.project_id == project_id,
+                Paper.reading_status == "read",
+                Paper.read_at.isnot(None),
+                func.strftime("%Y-%m-%d", Paper.read_at) >= cutoff,
+            )
+            .group_by("day")
+            .order_by("day")
+        )
+        active_days = {r[0]: r[1] for r in result.all() if r[0]}
+
+        output: list[dict] = []
+        for i in range(days):
+            d = date.today() - timedelta(days=days - 1 - i)
+            output.append({"date": d.isoformat(), "count": active_days.get(d.isoformat(), 0)})
+        return output
 
     async def compute_domain_coverage(self, project_id: int) -> float:
         """Return domain coverage score based on journal diversity.

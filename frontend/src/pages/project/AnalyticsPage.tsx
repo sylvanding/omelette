@@ -8,6 +8,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { LoadingState } from '@/components/ui/loading-state';
 import PageLayout from '@/components/layout/PageLayout';
 import { formatReadingTime } from '@/hooks/useReadingTimer';
+import { ReadingStreakHeatmap } from '@/components/analytics/ReadingStreakHeatmap';
 
 const STATUS_COLORS: Record<string, string> = {
   unread: '#94a3b8',
@@ -264,6 +265,15 @@ export default function AnalyticsPage() {
 
         {/* Productivity metrics */}
         <ProductivityCards data={data} />
+
+        {/* Reading streak heatmap */}
+        <ChartCard title={t('analytics.readingHeatmap', 'Reading Activity')}>
+          <ReadingStreakHeatmap
+            activityDays={data.reading_activity_days ?? []}
+            streakDays={data.reading_streak_days ?? 0}
+            papersByDate={data.papers_by_date ?? {}}
+          />
+        </ChartCard>
 
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">

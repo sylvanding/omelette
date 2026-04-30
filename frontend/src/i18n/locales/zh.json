@@ -389,7 +389,14 @@
     "noData": "暂无数据",
     "noReadData": "暂无已读论文",
     "noJournalData": "暂无期刊数据",
-    "loadFailed": "加载分析数据失败"
+    "loadFailed": "加载分析数据失败",
+    "readingHeatmap": "阅读活动",
+    "streakDays": "天连续",
+    "less": "少",
+    "more": "多",
+    "noActivity": "未阅读论文",
+    "papersReadCount": "阅读了 {{count}} 篇论文",
+    "noPapersThisDay": "这天没有阅读论文"
   },
   "timeline": {
     "title": "时间线",

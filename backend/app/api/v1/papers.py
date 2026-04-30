@@ -245,9 +245,18 @@ async def get_reading_analytics(
 
     read_papers = [p for p in papers if p.reading_status == "read" and p.read_at]
     read_by_week: dict[str, int] = {}
+    papers_by_date: dict[str, list[dict]] = {}
     for p in read_papers:
         week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
         read_by_week[week] = read_by_week.get(week, 0) + 1
+        day_str = p.read_at.strftime("%Y-%m-%d")
+        papers_by_date.setdefault(day_str, []).append(
+            {
+                "id": p.id,
+                "title": p.title,
+                "read_at": p.read_at.isoformat(),
+            }
+        )
 
     journal_counts: dict[str, int] = {}
     for p in papers:
@@ -258,6 +267,7 @@ async def get_reading_analytics(
     papers_per_week = await svc.compute_papers_per_week(project_id)
     avg_read_time = await svc.compute_avg_read_time(project_id)
     reading_streak = await svc.compute_reading_streak(project_id)
+    reading_activity = await svc.compute_reading_activity_days(project_id)
     domain_coverage = await svc.compute_domain_coverage(project_id)
     citation_impact = await svc.compute_citation_impact(project_id)
 
@@ -270,6 +280,8 @@ async def get_reading_analytics(
             "papers_per_week": papers_per_week,
             "avg_read_time_seconds": avg_read_time,
             "reading_streak_days": reading_streak,
+            "reading_activity_days": reading_activity,
+            "papers_by_date": papers_by_date,
             "domain_coverage": domain_coverage,
             "citation_impact": citation_impact,
         }
