@@ -364,6 +364,13 @@
       "removeTags": "移除标签",
       "applySuccess": "已为 {{count}} 篇论文添加标签"
     },
+    "exportNotes": "导出笔记",
+    "exportNotesTitle": "导出所有笔记",
+    "exportNotesDesc": "将所有论文的笔记导出为单个 Markdown 文件。",
+    "noNotesToExport": "未找到有笔记的论文。",
+    "notesCount": "{{count}} 篇论文有笔记",
+    "downloadAllNotes": "下载所有笔记",
+    "audioOverviewRange": "选择 1-10 篇论文",
     "related": {
       "tab": "相关",
       "empty": "未找到相关论文",

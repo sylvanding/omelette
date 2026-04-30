@@ -369,7 +369,14 @@
       "addTags": "Add tags",
       "removeTags": "Remove tags",
       "applySuccess": "Tags applied to {{count}} papers"
-    }
+    },
+    "exportNotes": "Export Notes",
+    "exportNotesTitle": "Export All Notes",
+    "exportNotesDesc": "Export notes from all papers as a single Markdown file.",
+    "noNotesToExport": "No papers with notes found in this project.",
+    "notesCount": "{{count}} papers with notes",
+    "downloadAllNotes": "Download All Notes",
+    "audioOverviewRange": "Select 1-10 papers"
   },
   "analytics": {
     "title": "Reading Analytics",

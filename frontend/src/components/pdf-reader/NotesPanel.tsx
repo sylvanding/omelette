@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
+import { Download } from 'lucide-react';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import type { SaveStatus } from '@/hooks/useDebouncedSave';
 import 'katex/dist/katex.min.css';
@@ -13,6 +14,7 @@ interface NotesPanelProps {
   paperId: number;
   projectId: number;
   notes: string;
+  paperTitle: string;
   onSave: (notes: string) => Promise<void>;
 }
 
@@ -32,7 +34,19 @@ const SAVE_STATUS_COLORS: Record<SaveStatus, string> = {
   error: 'text-red-600',
 };
 
-export default function NotesPanel({ notes, onSave }: NotesPanelProps) {
+function downloadAsMarkdown(title: string, content: string) {
+  const date = new Date().toISOString().split('T')[0];
+  const markdown = `# ${title}\n\n> Exported on ${date}\n\n---\n\n${content}`;
+  const blob = new Blob([markdown], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title.replace(/[^a-zA-Z0-9\s-]/g, '').trim()}-notes.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export default function NotesPanel({ notes, paperTitle, onSave }: NotesPanelProps) {
   const { t } = useTranslation();
   const [content, setContent] = useState(notes);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
@@ -58,7 +72,7 @@ export default function NotesPanel({ notes, onSave }: NotesPanelProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1">
           <button
             className={`rounded-md px-2 py-1 text-xs transition-colors ${
               activeTab === 'edit'
@@ -84,9 +98,18 @@ export default function NotesPanel({ notes, onSave }: NotesPanelProps) {
             {t('notes.preview', 'Preview')}
           </button>
         </div>
-        <span className={`text-xs ${SAVE_STATUS_COLORS[status]}`}>
-          {SAVE_STATUS_LABELS[status]}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground"
+            onClick={() => downloadAsMarkdown(paperTitle, content)}
+            title={t('notes.export', 'Export as Markdown')}
+          >
+            <Download className="size-3.5" />
+          </button>
+          <span className={`text-xs ${SAVE_STATUS_COLORS[status]}`}>
+            {SAVE_STATUS_LABELS[status]}
+          </span>
+        </div>
       </div>
 
       {/* Content */}

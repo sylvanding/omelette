@@ -74,4 +74,19 @@ Focus: i18n coverage gaps, keyboard shortcuts, contradiction integration, notes 
   - The contradictions API is project-level; filter by paper_a_id/paper_b_id for paper-specific view
   - PDFReaderLayout tabs use react-resizable-panels for the split layout
   - New sidebar panels should follow the same pattern: useQuery with enabled: false for on-demand loading
+
+## 2026-05-01 - AUTO-030
+- Added notes export from PDF reader (single paper + batch export)
+- Files changed:
+  - frontend/src/components/pdf-reader/NotesPanel.tsx: Added export button with markdown download
+  - frontend/src/components/pdf-reader/NotesExportDialog.tsx: New dialog for batch notes export
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx: Pass paperTitle to NotesPanel
+  - frontend/src/pages/project/papers/PapersToolbar.tsx: Added NotesExportDialog button
+  - frontend/src/i18n/locales/en.json: Added notes export translations
+  - frontend/src/i18n/locales/zh.json: Added Chinese translations
+- **Learnings for future iterations:**
+  - Single paper export includes paper title, export date, and notes content
+  - Batch export aggregates all papers with notes into one Markdown file with headers
+  - File download uses Blob + URL.createObjectURL pattern (no server needed)
+  - NotesPanel needs paperTitle prop which must be passed through from PDFReaderLayout
 ---

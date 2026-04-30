@@ -135,6 +135,7 @@ export default function PDFReaderLayout({
                 <NotesPanel
                   paperId={paperId}
                   projectId={projectId}
+                  paperTitle={paperTitle}
                   notes={notes}
                   onSave={handleSaveNotes}
                 />

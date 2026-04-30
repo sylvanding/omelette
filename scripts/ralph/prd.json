@@ -66,7 +66,7 @@
         "Supports batch export of notes across all papers in project"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "NotesPanel.tsx in pdf-reader components. Add an export button that creates a markdown blob and triggers download. For batch export, use the projects API to fetch all papers with notes."
     }
   ]

@@ -3,6 +3,7 @@ import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen, Network, Boo
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PapersExportDropdown } from './PapersExportDropdown';
+import NotesExportDialog from '@/components/pdf-reader/NotesExportDialog';
 import {
   Tooltip,
   TooltipContent,
@@ -101,6 +102,7 @@ export function PapersToolbar({
         <Network className="size-4" />
         {t('papers.authorNetwork')}
       </Button>
+      <NotesExportDialog projectId={projectId} />
       {selectedRows.size > 0 && (
         <TooltipProvider>
           <Tooltip>
