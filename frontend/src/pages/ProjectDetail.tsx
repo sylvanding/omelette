@@ -8,6 +8,10 @@ import {
   ArrowLeft,
   Clock,
   Activity,
+  Table2,
+  Network,
+  FolderOpen,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -22,6 +26,10 @@ export default function ProjectDetail() {
   const navItems = [
     { path: '', label: t('project.papers'), icon: FileText },
     { path: 'discovery', label: t('discovery.title'), icon: Compass },
+    { path: 'reviews', label: 'Reviews', icon: Table2 },
+    { path: 'concepts', label: 'Concepts', icon: Network },
+    { path: 'library', label: 'Library', icon: FolderOpen },
+    { path: 'feed', label: 'Feed', icon: Sparkles },
     { path: 'writing', label: t('project.writing'), icon: PenLine },
     { path: 'timeline', label: t('project.timeline'), icon: Clock },
     { path: 'activity', label: t('project.activity'), icon: Activity },

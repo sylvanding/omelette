@@ -80,3 +80,120 @@ export interface ActivityLog {
   details: Record<string, unknown> | null;
   created_at: string;
 }
+
+export interface Collection {
+  id: number;
+  project_id: number;
+  name: string;
+  description: string;
+  color: string;
+  sort_order: number;
+  paper_count: number;
+}
+
+export interface CollectionPaper {
+  paper_id: number;
+  title: string;
+  doi: string | null;
+  year: number | null;
+  citation_count: number;
+}
+
+export interface CollectionDetail {
+  collection: Collection;
+  papers: CollectionPaper[];
+}
+
+export interface PaperTagSuggestion {
+  paper_id: number;
+  suggested_tags: string[];
+}
+
+export interface ReviewColumn {
+  name: string;
+  description: string;
+}
+
+export interface Review {
+  id: number;
+  project_id: number;
+  title: string;
+  research_question: string;
+  columns: ReviewColumn[];
+  paper_ids: number[];
+  extraction_status: string;
+}
+
+export interface ExtractionResult {
+  paper_id: number;
+  extracted_data: Record<string, unknown>;
+  status: string;
+  confidence: number;
+}
+
+export interface ExtractionProgress {
+  review_id: number;
+  status: string;
+  total_papers: number;
+  completed: number;
+  results: ExtractionResult[];
+}
+
+export interface ConceptNode {
+  name: string;
+  definition: string;
+  frequency: number;
+  related_papers: number[];
+  related_concepts: string[];
+}
+
+export interface ConceptEdge {
+  source: string;
+  target: string;
+  relation_type: string;
+  description: string;
+}
+
+export interface TopicPage {
+  concept_name: string;
+  definition: string;
+  overview: string;
+  key_findings: string[];
+  related_topics: string[];
+  research_directions: string[];
+}
+
+export interface PaperIssue {
+  paper_id: number;
+  title: string;
+  issues: string[];
+  issue_count: number;
+}
+
+export interface LibraryHealth {
+  total_papers: number;
+  papers_with_issues: number;
+  healthy_papers: number;
+  issues: PaperIssue[];
+}
+
+export interface PaperCluster {
+  name: string;
+  description: string;
+  paper_ids: number[];
+}
+
+export interface FeedRecommendation {
+  title: string;
+  authors: string;
+  year: number | null;
+  abstract: string;
+  doi: string;
+  relevance_score: number;
+  reason: string;
+}
+
+export interface FeedResponse {
+  recommendations: FeedRecommendation[];
+  total: number;
+}

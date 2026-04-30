@@ -4,17 +4,24 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     activities,
+    analysis,
+    analytics,
     chat,
+    collections,
+    concepts,
     conversations,
     crawler,
     dedup,
+    feed,
     gpu,
     keywords,
+    library,
     ocr,
     papers,
     pipelines,
     projects,
     rag,
+    reviews,
     rewrite,
     search,
     settings_api,
@@ -29,6 +36,7 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(projects.router, prefix="/projects")
 api_router.include_router(papers.router, prefix="/projects/{project_id}/papers")
 api_router.include_router(upload.router, prefix="/projects/{project_id}/papers")
+api_router.include_router(collections.router, prefix="/projects/{project_id}/collections")
 api_router.include_router(activities.router, prefix="/projects/{project_id}/activities")
 api_router.include_router(keywords.router)
 api_router.include_router(search.router)
@@ -45,3 +53,9 @@ api_router.include_router(chat.router)
 api_router.include_router(rewrite.router)
 api_router.include_router(pipelines.router)
 api_router.include_router(gpu.router)
+api_router.include_router(analysis.router, prefix="/projects/{project_id}/analysis")
+api_router.include_router(reviews.router, prefix="/projects/{project_id}/reviews")
+api_router.include_router(concepts.router, prefix="/projects/{project_id}/concepts")
+api_router.include_router(library.router, prefix="/projects/{project_id}/library")
+api_router.include_router(analytics.router, prefix="/projects/{project_id}/analytics")
+api_router.include_router(feed.router, prefix="/projects/{project_id}/feed")

@@ -38,6 +38,31 @@ class RAGQueryResponse(BaseModel):
     confidence: float = 0.0
 
 
+class EvidencePaperFinding(BaseModel):
+    """A single paper's stance and finding."""
+
+    paper_id: int
+    paper_title: str
+    stance: str
+    finding: str
+    source_quote: str
+    confidence: float
+
+
+class EvidenceConsensusResponse(BaseModel):
+    """Response from evidence consensus analysis."""
+
+    support_count: int
+    contradict_count: int
+    mixed_count: int
+    total_papers: int
+    support_percentage: float
+    contradict_percentage: float
+    mixed_percentage: float
+    papers: list[EvidencePaperFinding]
+    overall_confidence: float
+
+
 def get_rag_service(llm: LLMClient = Depends(get_llm)) -> RAGService:
     return RAGService(llm=llm)
 
@@ -238,3 +263,59 @@ async def delete_index(
     """Delete the vector index for the project."""
     result = await rag.delete_index(project_id=project_id)
     return ApiResponse(data=result)
+
+
+class EvidenceConsensusRequest(BaseModel):
+    question: str
+    top_k: int = Field(default=10, ge=1, le=50)
+
+
+@router.post(
+    "/evidence-consensus",
+    response_model=ApiResponse[EvidenceConsensusResponse],
+    summary="Analyze evidence consensus",
+)
+async def evidence_consensus(
+    project_id: int,
+    body: EvidenceConsensusRequest,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Analyze how papers support or contradict a research question."""
+    from app.services.evidence_consensus_service import EvidenceConsensusService
+
+    rag = RAGService()
+    sources = await rag.retrieve_only(
+        project_id=project_id,
+        question=body.question,
+        top_k=body.top_k,
+    )
+
+    if not sources:
+        return ApiResponse(
+            data=EvidenceConsensusResponse(
+                support_count=0,
+                contradict_count=0,
+                mixed_count=0,
+                total_papers=0,
+                support_percentage=0.0,
+                contradict_percentage=0.0,
+                mixed_percentage=0.0,
+                papers=[],
+                overall_confidence=0.0,
+            )
+        )
+
+    papers_for_analysis = [
+        {
+            "paper_id": s["paper_id"],
+            "title": s.get("paper_title", ""),
+            "content": s.get("excerpt", ""),
+        }
+        for s in sources
+    ]
+
+    llm = get_llm()
+    svc = EvidenceConsensusService(llm)
+    result = await svc.analyze_consensus(body.question, papers_for_analysis)
+    return ApiResponse(data=EvidenceConsensusResponse(**result))

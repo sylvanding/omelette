@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Filter } from 'lucide-react';
+import { Loader2, Filter, GitBranch, ArrowUpRight, ArrowDownLeft, Network } from 'lucide-react';
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, type SimulationNodeDatum, type SimulationLinkDatum } from 'd3-force';
 import { select } from 'd3-selection';
 import { drag } from 'd3-drag';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getCSSVariable } from '@/design-tokens/tokens';
 import NodeDetailPanel from './NodeDetailPanel';
+
+export type GraphMode = 'all' | 'prior' | 'derivative' | 'similarity';
 
 export interface GraphNode extends SimulationNodeDatum {
   id: string;
@@ -24,13 +26,15 @@ export interface GraphNode extends SimulationNodeDatum {
 export interface GraphLink extends SimulationLinkDatum<GraphNode> {
   source: string | GraphNode;
   target: string | GraphNode;
-  type: 'cites' | 'cited_by';
+  type: 'cites' | 'cited_by' | 'similar';
+  similarity?: number;
 }
 
 export interface GraphData {
   nodes: GraphNode[];
   edges: GraphLink[];
   center_id: string | null;
+  mode?: GraphMode;
   error?: string;
 }
 
@@ -38,7 +42,17 @@ interface CitationGraphViewProps {
   data: GraphData;
   isLoading?: boolean;
   projectId: number;
+  mode?: GraphMode;
+  onModeChange?: (mode: GraphMode) => void;
+  onNodeClick?: (paperId: number | null) => void;
 }
+
+const MODES: { value: GraphMode; label: string; icon: typeof GitBranch }[] = [
+  { value: 'all', label: 'All', icon: GitBranch },
+  { value: 'prior', label: 'Prior Works', icon: ArrowDownLeft },
+  { value: 'derivative', label: 'Derivative', icon: ArrowUpRight },
+  { value: 'similarity', label: 'Similarity', icon: Network },
+];
 
 function GraphSkeleton() {
   return (
@@ -48,7 +62,14 @@ function GraphSkeleton() {
   );
 }
 
-export default function CitationGraphView({ data, isLoading, projectId }: CitationGraphViewProps) {
+export default function CitationGraphView({
+  data,
+  isLoading,
+  projectId,
+  mode = 'all',
+  onModeChange,
+  onNodeClick,
+}: CitationGraphViewProps) {
   const { t } = useTranslation();
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [showLocalOnly, setShowLocalOnly] = useState(false);
@@ -83,6 +104,14 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
   function getNodeRadius(node: GraphNode): number {
     return Math.log10((node.citation_count || 0) + 1) * 4 + 4;
   }
+
+  const handleNodeClick = useCallback((node: GraphNode) => {
+    if (onNodeClick && node.paper_id) {
+      onNodeClick(node.paper_id);
+    } else {
+      setSelectedNode(node);
+    }
+  }, [onNodeClick]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || !graphData.nodes.length) return;
@@ -121,21 +150,27 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
     const linkGroup = g.append('g').attr('class', 'links');
     const nodeGroup = g.append('g').attr('class', 'nodes');
 
+    const edgeColor = (type: string) => {
+      if (type === 'cites') return getCSSVariable('--chart-1') || '#93c5fd';
+      if (type === 'cited_by') return getCSSVariable('--chart-5') || '#fdba74';
+      return getCSSVariable('--chart-4') || '#c084fc';
+    };
+
     const links = linkGroup
       .selectAll('line')
       .data(graphData.edges)
       .join('line')
-      .attr('stroke', (d) => d.type === 'cites' ? (getCSSVariable('--chart-1') || '#93c5fd') : (getCSSVariable('--chart-5') || '#fdba74'))
-      .attr('stroke-width', 1)
+      .attr('stroke', (d) => edgeColor(d.type))
+      .attr('stroke-width', (d) => d.type === 'similar' ? Math.max(1, (d.similarity ?? 0.5) * 3) : 1)
       .attr('stroke-opacity', 0.6)
-      .attr('marker-end', 'url(#arrow-cites)');
+      .attr('marker-end', (d) => d.type === 'similar' ? undefined : 'url(#arrow-cites)');
 
     const nodeContainer = nodeGroup
       .selectAll<SVGGElement, GraphNode>('g')
       .data(graphData.nodes)
       .join('g')
-      .attr('cursor', 'pointer')
-      .on('click', (_, d) => setSelectedNode(d));
+      .attr('cursor', onNodeClick ? 'pointer' : 'pointer')
+      .on('click', (_, d) => handleNodeClick(d));
 
     nodeContainer
       .append('circle')
@@ -169,7 +204,7 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
     const sim = forceSimulation<GraphNode>(graphData.nodes)
       .force('link', forceLink<GraphNode, GraphLink>(graphData.edges)
         .id(d => d.id)
-        .distance(80)
+        .distance(d => d.type === 'similar' ? 60 : 80)
         .strength(0.5))
       .force('charge', forceManyBody<GraphNode>().strength(-400).theta(0.8))
       .force('center', forceCenter(0, 0))
@@ -199,7 +234,7 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
       sim.stop();
       simulationRef.current = null;
     };
-  }, [graphData, data.center_id, getNodeColor]);
+  }, [graphData, data.center_id, getNodeColor, handleNodeClick, onNodeClick]);
 
   if (isLoading) return <GraphSkeleton />;
 
@@ -212,9 +247,13 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
   }
 
   if (!data.nodes.length) {
+    const modeHint = mode === 'similarity'
+      ? t('papers.citationGraph.noSimilarity', 'No similar papers found in this project')
+      : t('papers.citationGraph.empty', 'No citation data available');
+
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-        <p>{t('papers.citationGraph.empty', 'No citation data available')}</p>
+        <p>{modeHint}</p>
       </div>
     );
   }
@@ -224,6 +263,21 @@ export default function CitationGraphView({ data, isLoading, projectId }: Citati
   return (
     <div ref={containerRef} className="relative h-full w-full">
       <div className="absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2">
+        {MODES.map(({ value, label, icon: Icon }) => (
+          <Button
+            key={value}
+            size="sm"
+            variant={mode === value ? 'default' : 'outline'}
+            className="h-7 text-xs"
+            onClick={() => onModeChange?.(value)}
+          >
+            <Icon className="mr-1 size-3" />
+            {t(`papers.citationGraph.modes.${value}`, label)}
+          </Button>
+        ))}
+      </div>
+
+      <div className="absolute left-3 top-12 z-10 flex flex-wrap items-center gap-2">
         <Badge variant="outline" className="text-xs">
           {data.nodes.length} {t('papers.citationGraph.nodes', 'nodes')}
         </Badge>

@@ -11,14 +11,18 @@ export const queryKeys = {
       ['papers', projectId, filters] as const,
     detail: (projectId: number, paperId: number) =>
       ['paper', projectId, paperId] as const,
-    citationGraph: (projectId: number, paperId: number) =>
-      ['citation-graph', projectId, paperId] as const,
+    citationGraph: (projectId: number, paperId: number, mode?: string) =>
+      ['citation-graph', projectId, paperId, mode ?? 'all'] as const,
     chunks: (projectId: number, paperId: number, params?: PaginationParams) =>
       ['chunks', projectId, paperId, params] as const,
     analytics: (projectId: number) =>
       ['paper-analytics', projectId] as const,
     related: (projectId: number, paperId: number) =>
       ['related-papers', projectId, paperId] as const,
+  analytics: {
+    knowledgeGaps: (projectId: number) =>
+      ['knowledge-gaps', projectId] as const,
+  },
   },
   keywords: {
     list: (projectId: number, level?: number) =>

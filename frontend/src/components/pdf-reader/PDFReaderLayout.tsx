@@ -1,13 +1,17 @@
 import { lazy, Suspense, useState, useCallback } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SelectionQA } from './SelectionQA';
 import NotesPanel from './NotesPanel';
 import RelatedPapers from './RelatedPapers';
-import { paperApi } from '@/services/api';
+import HighlightOverlay from './HighlightOverlay';
+import CitationCardPanel from './CitationCardPanel';
+import { paperApi, augmentedReadingApi } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
+import { useReadingTimer, formatReadingTime } from '@/hooks/useReadingTimer';
 
 const PDFViewer = lazy(() => import('./PDFViewer'));
 
@@ -33,6 +37,8 @@ export default function PDFReaderLayout({
   const [selectedPage, setSelectedPage] = useState(1);
   const [activeTab, setActiveTab] = useState('notes');
 
+  const { elapsedSeconds } = useReadingTimer({ projectId, paperId });
+
   const handleTextSelect = useCallback((text: string, pageNumber: number) => {
     setSelectedText(text);
     setSelectedPage(pageNumber);
@@ -40,6 +46,37 @@ export default function PDFReaderLayout({
 
   const handleSaveNotes = async (content: string) => {
     await paperApi.update(projectId, paperId, { notes: content });
+  };
+
+  // Augmented reading data
+  const highlightsQuery = useQuery({
+    queryKey: ['highlights', projectId, paperId],
+    queryFn: async () => {
+      const content = `Title: ${paperTitle}\nAbstract: `;
+      return augmentedReadingApi.getHighlights(projectId, paperId, content);
+    },
+    enabled: activeTab === 'highlights',
+  });
+
+  const citationCardsQuery = useQuery({
+    queryKey: ['citation-cards', projectId, paperId],
+    queryFn: () => augmentedReadingApi.getCitationCards(projectId, paperId),
+    enabled: activeTab === 'citations',
+  });
+
+  const definitionsQuery = useQuery({
+    queryKey: ['definitions', projectId, paperId],
+    queryFn: () => augmentedReadingApi.getDefinitions(projectId, paperId),
+    enabled: activeTab === 'citations',
+  });
+
+  const handleRefreshHighlights = () => {
+    highlightsQuery.refetch();
+  };
+
+  const handleRefreshCitations = () => {
+    citationCardsQuery.refetch();
+    definitionsQuery.refetch();
   };
 
   return (
@@ -50,6 +87,10 @@ export default function PDFReaderLayout({
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="line-clamp-1 flex-1 text-sm font-medium">{paperTitle}</h1>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Reading time">
+          <Clock className="size-3" />
+          <span>{formatReadingTime(elapsedSeconds)}</span>
+        </div>
       </div>
 
       {/* Main content */}
@@ -73,6 +114,8 @@ export default function PDFReaderLayout({
                   <TabsTrigger value="notes" className="text-xs">{t('notes.tab', 'Notes')}</TabsTrigger>
                   <TabsTrigger value="qa" className="text-xs">{t('notes.qa', 'Q&A')}</TabsTrigger>
                   <TabsTrigger value="related" className="text-xs">{t('papers.related.tab', 'Related')}</TabsTrigger>
+                  <TabsTrigger value="highlights" className="text-xs">Highlights</TabsTrigger>
+                  <TabsTrigger value="citations" className="text-xs">Citations</TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent value="notes" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
@@ -94,6 +137,21 @@ export default function PDFReaderLayout({
               </TabsContent>
               <TabsContent value="related" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
                 <RelatedPapers projectId={projectId} paperId={paperId} />
+              </TabsContent>
+              <TabsContent value="highlights" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <HighlightOverlay
+                  highlights={highlightsQuery.data?.highlights ?? []}
+                  loading={highlightsQuery.isFetching}
+                  onRefresh={handleRefreshHighlights}
+                />
+              </TabsContent>
+              <TabsContent value="citations" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <CitationCardPanel
+                  cards={citationCardsQuery.data?.cards ?? []}
+                  definitions={definitionsQuery.data?.definitions ?? []}
+                  loading={citationCardsQuery.isFetching || definitionsQuery.isFetching}
+                  onRefresh={handleRefreshCitations}
+                />
               </TabsContent>
             </Tabs>
           </Panel>

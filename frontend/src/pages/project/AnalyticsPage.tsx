@@ -2,10 +2,12 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { paperApi } from '@/services/api';
+import { Clock, BookOpen, Flame, BookMarked, BookText } from 'lucide-react';
+import { paperApi, knowledgeGapsApi } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import { LoadingState } from '@/components/ui/loading-state';
 import PageLayout from '@/components/layout/PageLayout';
+import { formatReadingTime } from '@/hooks/useReadingTimer';
 
 const STATUS_COLORS: Record<string, string> = {
   unread: '#94a3b8',
@@ -101,6 +103,108 @@ function TopJournalsList({ data }: { data: Array<{ journal: string; count: numbe
   );
 }
 
+function ProductivityCards({ data }: { data: ReturnType<typeof paperApi.getAnalytics> extends Promise<infer T> ? Awaited<T> : never }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <BookOpen className="size-4" />
+          {t('analytics.papersPerWeek', 'Papers per Week')}
+        </div>
+        <div className="mt-1 text-2xl font-bold">{data.papers_per_week ?? 0}</div>
+      </div>
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="size-4" />
+          {t('analytics.avgReadTime', 'Avg. Read Time')}
+        </div>
+        <div className="mt-1 text-2xl font-bold">
+          {formatReadingTime(Math.round(data.avg_read_time_seconds ?? 0))}
+        </div>
+      </div>
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Flame className="size-4" />
+          {t('analytics.readingStreak', 'Reading Streak')}
+        </div>
+        <div className="mt-1 text-2xl font-bold">
+          {data.reading_streak_days ?? 0} <span className="text-sm font-normal text-muted-foreground">{t('analytics.days', 'days')}</span>
+        </div>
+      </div>
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <BookMarked className="size-4" />
+          {t('analytics.domainCoverage', 'Domain Coverage')}
+        </div>
+        <div className="mt-1 text-2xl font-bold">
+          {Math.round((data.domain_coverage ?? 0) * 100)}%
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CitationImpactChart({ data }: { data: { min: number; max: number; mean: number; median: number; p75: number } }) {
+  const chartData = [
+    { name: 'Min', value: data.min },
+    { name: 'Mean', value: data.mean },
+    { name: 'Median', value: data.median },
+    { name: 'P75', value: data.p75 },
+    { name: 'Max', value: data.max },
+  ];
+
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+        <YAxis tick={{ fontSize: 12 }} />
+        <Tooltip />
+        <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function KnowledgeGapList({ projectId }: { projectId: number }) {
+  const { t } = useTranslation();
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.analytics.knowledgeGaps(projectId),
+    queryFn: () => knowledgeGapsApi.get(projectId),
+  });
+
+  if (isLoading) {
+    return <div className="py-8 text-center text-sm text-muted-foreground">{t('analytics.loading', 'Loading...')}</div>;
+  }
+
+  if (!data || data.gaps.length === 0) {
+    return (
+      <div className="flex items-center gap-2 py-8 text-center text-sm text-muted-foreground justify-center">
+        <BookText className="size-4" />
+        {t('analytics.knowledgeGapsEmpty', 'Extract concepts first to identify knowledge gaps')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {data.gaps.map((gap) => (
+        <div key={gap.topic} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+          <span className="truncate text-sm font-medium">{gap.topic}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">{gap.paper_count} papers</span>
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              {(gap.relevance_score * 100).toFixed(0)}%
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -158,6 +262,9 @@ export default function AnalyticsPage() {
           <SummaryCard label={t('papers.readingStatuses.read')} value={byStatus.read ?? 0} color="text-green-500" />
         </div>
 
+        {/* Productivity metrics */}
+        <ProductivityCards data={data} />
+
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
           <ChartCard title={t('analytics.readingProgress')}>
@@ -168,8 +275,19 @@ export default function AnalyticsPage() {
           </ChartCard>
         </div>
 
-        <ChartCard title={t('analytics.topJournals')}>
-          <TopJournalsList data={topJournals} />
+        {/* Citation impact and domain coverage */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <ChartCard title={t('analytics.citationImpact', 'Citation Impact')}>
+            <CitationImpactChart data={data.citation_impact ?? { min: 0, max: 0, mean: 0, median: 0, p75: 0 }} />
+          </ChartCard>
+          <ChartCard title={t('analytics.topJournals')}>
+            <TopJournalsList data={topJournals} />
+          </ChartCard>
+        </div>
+
+        {/* Knowledge gaps */}
+        <ChartCard title={t('analytics.knowledgeGaps', 'Knowledge Gaps')}>
+          <KnowledgeGapList projectId={pid} />
         </ChartCard>
       </div>
     </PageLayout>
