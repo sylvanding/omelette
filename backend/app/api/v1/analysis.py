@@ -74,6 +74,63 @@ class ContradictionResponse(BaseModel):
     total_contradictions: int
 
 
+class YearlyCount(BaseModel):
+    """Count of papers for a single year."""
+
+    year: int
+    count: int
+
+
+class TopicTrend(BaseModel):
+    """Trend data for a single research topic."""
+
+    topic: str
+    slope: float
+    r_squared: float
+    trend: str
+    total_papers: int
+    first_year: int
+    last_year: int
+    yearly_counts: list[YearlyCount]
+
+
+class EmergingTopic(BaseModel):
+    """A topic with significant year-over-year growth."""
+
+    topic: str
+    yoy_growth: float
+
+
+class SummaryStats(BaseModel):
+    """Summary statistics for trend analysis."""
+
+    total_papers: int
+    year_span: int
+    first_year: int | None
+    last_year: int | None
+    total_topics: int
+    emerging_count: int
+    declining_count: int
+
+
+class PublicationTimelineEntry(BaseModel):
+    """Publication volume and citations for a single year."""
+
+    year: int
+    count: int
+    citations: int
+
+
+class TrendResponse(BaseModel):
+    """Response from trend analysis."""
+
+    publication_timeline: list[PublicationTimelineEntry]
+    topic_trends: list[TopicTrend]
+    emerging_topics: list[EmergingTopic]
+    declining_topics: list[EmergingTopic]
+    summary_stats: SummaryStats
+
+
 @router.post(
     "/contradictions",
     response_model=ApiResponse[ContradictionResponse],
@@ -140,3 +197,22 @@ async def get_author_network(
     )
 
     return ApiResponse(data=AuthorNetworkResponse(**data))
+
+
+@router.get(
+    "/trends",
+    response_model=ApiResponse[TrendResponse],
+    summary="Get research trend analysis for project papers",
+)
+async def get_research_trends(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Analyze how research topics have evolved over time with trend detection."""
+    from app.services.trend_service import TrendService
+
+    svc = TrendService(db)
+    data = await svc.compute_trends(project_id)
+
+    return ApiResponse(data=TrendResponse(**data))

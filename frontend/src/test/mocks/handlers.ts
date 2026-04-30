@@ -685,4 +685,83 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Research Trends
+  http.get(`${apiBase}/projects/:id/analysis/trends`, () =>
+    HttpResponse.json(
+      mockResponse({
+        publication_timeline: [
+          { year: 2020, count: 2, citations: 80 },
+          { year: 2021, count: 3, citations: 120 },
+          { year: 2022, count: 5, citations: 200 },
+          { year: 2023, count: 4, citations: 180 },
+          { year: 2024, count: 6, citations: 250 },
+        ],
+        topic_trends: [
+          {
+            topic: 'deep learning',
+            slope: 0.8,
+            r_squared: 0.92,
+            trend: 'rising',
+            total_papers: 12,
+            first_year: 2020,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2020, count: 2 },
+              { year: 2021, count: 3 },
+              { year: 2022, count: 4 },
+              { year: 2023, count: 2 },
+              { year: 2024, count: 1 },
+            ],
+          },
+          {
+            topic: 'transformers',
+            slope: 1.2,
+            r_squared: 0.95,
+            trend: 'rising',
+            total_papers: 8,
+            first_year: 2021,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2021, count: 1 },
+              { year: 2022, count: 2 },
+              { year: 2023, count: 3 },
+              { year: 2024, count: 2 },
+            ],
+          },
+          {
+            topic: 'reinforcement learning',
+            slope: -0.3,
+            r_squared: 0.65,
+            trend: 'declining',
+            total_papers: 4,
+            first_year: 2020,
+            last_year: 2024,
+            yearly_counts: [
+              { year: 2020, count: 2 },
+              { year: 2021, count: 1 },
+              { year: 2022, count: 1 },
+              { year: 2023, count: 0 },
+              { year: 2024, count: 0 },
+            ],
+          },
+        ],
+        emerging_topics: [
+          { topic: 'transformers', yoy_growth: 0.67 },
+        ],
+        declining_topics: [
+          { topic: 'reinforcement learning', yoy_growth: -1.0 },
+        ],
+        summary_stats: {
+          total_papers: 20,
+          year_span: 5,
+          first_year: 2020,
+          last_year: 2024,
+          total_topics: 3,
+          emerging_count: 1,
+          declining_count: 1,
+        },
+      }),
+    ),
+  ),
 ];

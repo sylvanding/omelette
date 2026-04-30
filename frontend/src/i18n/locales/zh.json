@@ -551,5 +551,21 @@
     "coAuthors": "合作者",
     "hIndex": "预估 h-index",
     "topCoauthors": "合作者列表"
+  },
+  "trends": {
+    "title": "研究趋势分析",
+    "close": "关闭趋势分析",
+    "empty": "暂无趋势数据。请添加带年份的论文以查看趋势。",
+    "totalPapers": "论文总数",
+    "yearSpan": "年份跨度",
+    "emerging": "新兴",
+    "declining": "衰退",
+    "exportCsv": "导出 CSV",
+    "publicationVolume": "发表量",
+    "papers": "论文",
+    "citations": "引用",
+    "topicTrends": "主题趋势",
+    "emergingTopics": "新兴主题",
+    "decliningTopics": "衰退主题"
   }
 }

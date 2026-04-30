@@ -603,5 +603,30 @@
     "error": "Failed to load author network. Please try again.",
     "centrality": "Centrality",
     "exportPNG": "Export PNG"
+  },
+  "trends": {
+    "title": "Research Trends",
+    "close": "Close trend analysis",
+    "empty": "No trend data available. Add papers with years to see trends.",
+    "totalPapers": "Total Papers",
+    "yearSpan": "Year Span",
+    "emerging": "Emerging",
+    "declining": "Declining",
+    "exportCsv": "Export CSV",
+    "publicationVolume": "Publication Volume",
+    "citationsOverTime": "Citations Over Time",
+    "papers": "Papers",
+    "citations": "Citations",
+    "topicTrends": "Topic Trends",
+    "emergingTopics": "Emerging Topics",
+    "emergingTopicsTitle": "Emerging Topics",
+    "decliningTopics": "Declining Topics",
+    "decliningTopicsTitle": "Declining Topics",
+    "noVolumeData": "No publication data available",
+    "noCitationData": "No citation data available",
+    "noTopicData": "No topic trend data available",
+    "noEmergingTopics": "No emerging topics detected",
+    "noDecliningTopics": "No declining topics detected",
+    "loadFailed": "Failed to load trend analysis data"
   }
 }

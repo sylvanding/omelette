@@ -897,3 +897,57 @@ export const authorNetworkApi = {
       },
     }).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Research Trends API
+// ---------------------------------------------------------------------------
+
+export interface TrendYearlyCount {
+  year: number;
+  count: number;
+}
+
+export interface TrendTopicTrend {
+  topic: string;
+  slope: number;
+  r_squared: number;
+  trend: 'rising' | 'declining' | 'stable';
+  total_papers: number;
+  first_year: number;
+  last_year: number;
+  yearly_counts: TrendYearlyCount[];
+}
+
+export interface TrendEmergingTopic {
+  topic: string;
+  yoy_growth: number;
+}
+
+export interface TrendSummaryStats {
+  total_papers: number;
+  year_span: number;
+  first_year: number | null;
+  last_year: number | null;
+  total_topics: number;
+  emerging_count: number;
+  declining_count: number;
+}
+
+export interface TrendPublicationEntry {
+  year: number;
+  count: number;
+  citations: number;
+}
+
+export interface TrendAnalysisData {
+  publication_timeline: TrendPublicationEntry[];
+  topic_trends: TrendTopicTrend[];
+  emerging_topics: TrendEmergingTopic[];
+  declining_topics: TrendEmergingTopic[];
+  summary_stats: TrendSummaryStats;
+}
+
+export const trendsApi = {
+  get: (projectId: number) =>
+    api.get<TrendAnalysisData>(`/projects/${projectId}/analysis/trends`).then(r => r.data),
+};
