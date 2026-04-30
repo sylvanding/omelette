@@ -90,3 +90,18 @@ Focus: i18n coverage gaps, keyboard shortcuts, contradiction integration, notes 
   - File download uses Blob + URL.createObjectURL pattern (no server needed)
   - NotesPanel needs paperTitle prop which must be passed through from PDFReaderLayout
 ---
+
+## Cycle 7 Started: 2026-05-01
+Focus: completing i18n coverage, accessibility, performance, keyboard shortcuts
+- AUTO-031: i18n for FeedPage, GapAnalysisPage, LibraryPage (priority 1)
+- AUTO-032: i18n for key shared components (priority 2)
+- AUTO-033: Accessibility audit and fixes (priority 3)
+- AUTO-034: Performance optimization for analytics/trends pages (priority 4)
+- AUTO-035: Keyboard shortcuts for remaining pages (priority 5)
+
+**Audit findings driving Cycle 7:**
+- 3 pages still have hardcoded strings: FeedPage, GapAnalysisPage, LibraryPage
+- ~20 shared components lack i18n (AudioPlayer, CollectionSidebar, EvidenceConsensus, etc.)
+- 0 pages have unit test coverage — 23 page components untested
+- Accessibility not yet systematically audited
+- Analytics/Trends pages use heavy recharts that may benefit from memoization

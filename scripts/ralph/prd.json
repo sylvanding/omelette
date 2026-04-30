@@ -1,73 +1,79 @@
 {
-  "project": "Omelette - Self-Directed Improvements (Cycle 6)",
-  "branchName": "ralph/cycle-6",
-  "description": "Sixth cycle of autonomous improvements. Focus on i18n coverage for missing pages, keyboard shortcuts for common actions, contradiction detection integration, notes export, and additional test coverage.",
+  "project": "Omelette - Self-Directed Improvements (Cycle 7)",
+  "branchName": "ralph/cycle-7",
+  "description": "Seventh cycle of autonomous improvements. Focus on completing i18n coverage for remaining pages and key components, accessibility audit and fixes, and performance optimization for analytics pages.",
   "userStories": [
     {
-      "id": "AUTO-026",
-      "title": "Add i18n translations for ReviewsPage",
+      "id": "AUTO-031",
+      "title": "Add i18n translations for FeedPage, GapAnalysisPage, and LibraryPage",
       "acceptanceCriteria": [
-        "All hardcoded English strings in ReviewsPage.tsx replaced with t() calls",
+        "All hardcoded English strings in FeedPage.tsx replaced with t() calls",
+        "All hardcoded English strings in GapAnalysisPage.tsx replaced with t() calls",
+        "All hardcoded English strings in LibraryPage.tsx replaced with t() calls",
         "English and Chinese translations added to locale files",
-        "Extraction table headers, status labels, and buttons all translated",
-        "Consistent with existing i18n naming conventions"
+        "Action button labels (Health Check, Repair Metadata, Auto-Tag, Cluster Papers) translated"
       ],
       "priority": 1,
-      "passes": true,
-      "notes": "ReviewsPage.tsx has many hardcoded strings: 'Systematic Reviews', 'Create systematic reviews...', 'New Review', 'Create New Review', extraction column labels, status labels ('pending', 'in_progress', 'complete', 'failed'), 'Run Extraction', 'Extracting...', 'Export CSV', table headers. Add to the 'reviews' namespace in both en.json and zh.json."
+      "passes": false,
+      "notes": "FeedPage has 'Research Feed', 'No recommendations yet...', 'Refresh' strings. GapAnalysisPage has 'Metadata Health', 'Total Papers', 'Healthy' stat labels, action buttons. LibraryPage has page title and filter labels. Use existing patterns: dynamic keys with fallback for status labels, i18next interpolation for counts."
     },
     {
-      "id": "AUTO-027",
-      "title": "Add i18n translations for ConceptsPage",
+      "id": "AUTO-032",
+      "title": "Add i18n translations for key shared components",
       "acceptanceCriteria": [
-        "All hardcoded English strings in ConceptsPage.tsx replaced with t() calls",
-        "English and Chinese translations added to locale files",
-        "Topic page section headers translated",
-        "Relation type labels translated (prerequisite, applies_to, contrasts_with)"
+        "AudioPlayer component strings translated (play, pause, speed controls)",
+        "CollectionSidebar component strings translated",
+        "EvidenceConsensus component strings translated",
+        "PDF reader CitationCardPanel and HighlightOverlay strings translated",
+        "ExportDialog component strings translated",
+        "playground MessageBubble and CompletionSuggestion strings translated"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "ConceptsPage.tsx has hardcoded strings: 'Back to Concepts', 'Generating topic page...', 'Overview', 'Key Findings', 'Related Topics', 'Research Directions', 'Concept Knowledge Graph', 'concepts', 'relationships', 'Search concepts...', 'No concepts extracted yet...'. Relation types in relationTypeColor() are hardcoded. Add to a 'concepts' namespace."
+      "passes": false,
+      "notes": "These components are reused across multiple pages, so i18n here has high leverage. Check each component for hardcoded user-facing strings. Follow the existing naming convention: namespace matches component area (e.g., 'audio', 'collections', 'evidence')."
     },
     {
-      "id": "AUTO-028",
-      "title": "Add keyboard shortcuts for common actions",
+      "id": "AUTO-033",
+      "title": "Accessibility audit and fixes for critical user flows",
       "acceptanceCriteria": [
-        "Global keyboard hook registered (Cmd/Ctrl+K for search/command palette)",
-        "Cmd/Ctrl+N for new chat in PlaygroundPage",
-        "Escape to close dialogs/sheets",
-        "Cmd/Ctrl+Enter to submit forms in writing and chat inputs",
-        "Visual keyboard shortcuts indicator in settings or help dialog"
+        "All interactive elements have keyboard navigation (Tab order, Enter/Space activation)",
+        "Images and icons have meaningful alt/aria-label text",
+        "Color contrast meets WCAG AA standards (4.5:1 for normal text)",
+        "Form inputs have associated labels",
+        "ARIA live regions for dynamic content updates (toast notifications, loading states)",
+        "Screen reader can navigate main pages (PapersPage, PlaygroundPage, AnalyticsPage)"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "Create a useKeyboardShortcuts hook in frontend/src/hooks/. Use react-hotkeys-hook if available, or implement with native event listeners. Check package.json for existing dependencies first."
+      "passes": false,
+      "notes": "Focus on the most-used pages first: Playground (chat), Papers (list view), Analytics (charts). Use Playwright or manual audit to identify gaps. Fix critical issues: missing labels, keyboard traps, insufficient contrast on badges/links."
     },
     {
-      "id": "AUTO-029",
-      "title": "Integrate contradiction detection into PDF reader",
+      "id": "AUTO-034",
+      "title": "Performance optimization for analytics and trends pages",
       "acceptanceCriteria": [
-        "ContradictionReport component accessible from PDF reader sidebar",
-        "Shows contradictions between current paper and other papers in project",
-        "Click on contradiction navigates to relevant paper",
-        "Empty state shown when no contradictions found"
+        "AnalyticsPage charts use useMemo for expensive data transformations",
+        "Reading streak heatmap (from AUTO-025) renders efficiently with 365+ data points",
+        "TrendsPage with multiple recharts graphs does not re-render on unrelated state changes",
+        "Large paper lists use virtualization or pagination (500+ papers)",
+        "No unnecessary re-renders detected by React DevTools profiler on typical interactions"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "The ContradictionReport component exists at frontend/src/components/contradiction/ContradictionReport.tsx. The backend has a contradictions endpoint (check backend/app/api/). Wire it into PDFReaderLayout sidebar as a new tab alongside Notes and Related papers."
+      "passes": false,
+      "notes": "AnalyticsPage and TrendsPage use recharts which can be heavy with many data points. The reading streak heatmap from AUTO-025 renders a calendar grid. Check for missing React.memo on pure display components, useMemo for data transformations, and React Query staleTime configuration for caching."
     },
     {
-      "id": "AUTO-030",
-      "title": "Add notes export from PDF reader",
+      "id": "AUTO-035",
+      "title": "Add keyboard shortcuts to remaining pages",
       "acceptanceCriteria": [
-        "Export button in NotesPanel of PDF reader",
-        "Export as markdown file download",
-        "Export includes paper title, date, and all notes",
-        "Supports batch export of notes across all papers in project"
+        "PapersPage: Ctrl+K for search focus, Delete for selected papers",
+        "AnalyticsPage: 1/2/3 number keys to switch between chart views",
+        "DiscoveryPage: Ctrl+R to refresh recommendations",
+        "WritingPage: Ctrl+S to save draft (if not already present)",
+        "SettingsPage: Escape to close any open section"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "NotesPanel.tsx in pdf-reader components. Add an export button that creates a markdown blob and triggers download. For batch export, use the projects API to fetch all papers with notes."
+      "passes": false,
+      "notes": "AUTO-028 added keyboard shortcuts to PlaygroundPage and WritingPage. Extend to other frequently-used pages. Use the existing useKeyboardShortcuts hook from frontend/src/hooks/. Add visual hints in the UI (e.g., ^K next to search icon) so users can discover shortcuts."
     }
   ]
 }
