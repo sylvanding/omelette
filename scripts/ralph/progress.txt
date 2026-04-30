@@ -190,3 +190,68 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - The extract endpoint processes papers one-by-one (no SSE streaming implemented yet)
   - Frontend uses native table for extraction display rather than DataTable component
   - useTranslation import creates unused variable warnings if `t` isn't actually used
+
+---
+
+## [2026-04-30 09:30] - FEAT-007
+- Implemented concept knowledge graph and topic pages
+- Backend: Created concept_service.py with extract_concepts(), build_concept_graph(), and get_topic_page() methods
+- Backend: Added concepts.py router with POST /extract, GET /graph, GET /{name}/page endpoints
+- Backend: Registered concepts router in __init__.py with prefix /projects/{project_id}/concepts
+- Backend: Added mock LLM responses for concept_extraction, concept_graph_building, topic_page_generation
+- Backend: Added 10 tests (6 service unit + 4 API endpoint tests)
+- Frontend: Created ConceptsPage with searchable concept card grid, relationship display, and clickable topic page viewer
+- Frontend: Added ConceptNode, ConceptEdge, TopicPage types to services/api.ts and types/index.ts
+- Frontend: Added /concepts route and "Concepts" navigation link (Network icon) in ProjectDetail sidebar
+- Files changed:
+  - backend/app/services/concept_service.py (new)
+  - backend/app/api/v1/concepts.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_concepts.py (new)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/types/index.ts (modified)
+  - frontend/src/pages/project/ConceptsPage.tsx (new)
+  - frontend/src/App.tsx (modified)
+  - frontend/src/pages/ProjectDetail.tsx (modified)
+- **Learnings for future iterations:**
+  - Concept extraction limits to 30 papers and 1500 chars per abstract to avoid token overflow
+  - Topic page generation filters related papers by paper_id match from concept extraction
+  - Frontend concept cards use native button elements with onClick instead of Link for topic page navigation
+  - The same extract+build pipeline is reused for both POST /extract and GET /graph endpoints (no caching yet)
+
+---
+
+## [2026-04-30 10:00] - FEAT-008
+- Implemented AI library organization with auto-tagging and metadata repair
+- Backend: Created library_service.py with check_health(), repair_metadata(), suggest_tags(), and cluster_papers() methods
+- Backend: Added library.py router with GET /health, POST /repair, POST /auto-tag, POST /clusters endpoints
+- Backend: Health check scans papers for missing abstract, authors, year, journal, doi, citation_count fields
+- Backend: Repair queries Semantic Scholar API by DOI first, then falls back to title search
+- Backend: Auto-tag uses LLM to suggest 3-5 descriptive tags per paper
+- Backend: Clustering uses LLM to group papers into 3-7 thematic clusters
+- Backend: Registered library router in __init__.py with prefix /projects/{project_id}/library
+- Backend: Added mock LLM responses for library_auto_tag, library_cluster_analysis task types
+- Backend: Added 17 tests (10 service unit + 7 API endpoint tests)
+- Frontend: Added LibraryHealth, RepairResult, AutoTagResult, ClusterResult types
+- Frontend: Added libraryApi with health/repair/autoTag/clusters methods
+- Frontend: Created LibraryPage with tabbed interface (Health Check, Repair, Auto-Tag, Cluster)
+- Frontend: Added /library route and "Library" navigation link (FolderOpen icon) in ProjectDetail sidebar
+- Files changed:
+  - backend/app/services/library_service.py (new)
+  - backend/app/api/v1/library.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_library.py (new)
+  - frontend/src/types/index.ts (modified)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/pages/project/LibraryPage.tsx (new)
+  - frontend/src/App.tsx (modified)
+  - frontend/src/pages/ProjectDetail.tsx (modified)
+- **Learnings for future iterations:**
+  - ESLint catches unused imports/variables — check imports before committing
+  - The repair_metadata endpoint identifies papers needing repair automatically (no body needed) — it scans for null/empty fields
+  - Semantic Scholar lookup by DOI is more reliable than title search — try DOI first, fall back to title
+  - LibraryService.check_health() is synchronous (no LLM needed) — pass None for llm parameter
+  - httpx.AsyncClient proxy uses settings.http_proxy via _get_proxy() helper for consistency with search_service
+  - Tab-based UI pattern: use state for activeTab, conditionally render sections, each tab has its own mutation

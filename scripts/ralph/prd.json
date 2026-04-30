@@ -123,7 +123,7 @@
         "Tests: verify concept graph relationships"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Add concept_service.py. Extract concepts via LLM, build graph via co-occurrence. Topic pages: LLM overview."
     },
     {
@@ -140,7 +140,7 @@
         "Tests: verify clustering produces coherent groups"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Add library_service.py. Health: scan for null fields. Repair: call Semantic Scholar API. Clustering: embedding K-means."
     },
     {
