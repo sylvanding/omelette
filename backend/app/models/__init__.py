@@ -12,6 +12,7 @@ from app.models.reading_session import ReadingSession
 from app.models.review import Review, ReviewExtraction
 from app.models.subscription import Subscription
 from app.models.task import Task, TaskStatus, TaskType
+from app.models.team_member import TeamMember, TeamMemberRole
 from app.models.user_settings import UserSettings
 
 __all__ = [
@@ -32,5 +33,7 @@ __all__ = [
     "Task",
     "TaskStatus",
     "TaskType",
+    "TeamMember",
+    "TeamMemberRole",
     "UserSettings",
 ]

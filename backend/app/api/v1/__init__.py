@@ -30,6 +30,7 @@ from app.api.v1 import (
     settings_api,
     subscription,
     tasks,
+    team_members,
     upload,
     writing,
 )
@@ -65,3 +66,4 @@ api_router.include_router(library.router, prefix="/projects/{project_id}/library
 api_router.include_router(analytics.router, prefix="/projects/{project_id}/analytics")
 api_router.include_router(feed.router, prefix="/projects/{project_id}/feed")
 api_router.include_router(export.router)
+api_router.include_router(team_members.router, prefix="/projects/{project_id}/members")
