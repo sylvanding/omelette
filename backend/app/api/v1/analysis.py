@@ -131,6 +131,40 @@ class TrendResponse(BaseModel):
     summary_stats: SummaryStats
 
 
+class GapResearchQuestion(BaseModel):
+    """A candidate research question for filling a literature gap."""
+
+    question: str
+    addresses_gap: str
+    novelty_score: float
+    feasibility_score: float
+
+
+class GapEntry(BaseModel):
+    """A single identified research gap."""
+
+    topic: str
+    description: str
+    evidence: str
+    related_paper_ids: list[int]
+    gap_score: float
+
+
+class GapSummary(BaseModel):
+    """Summary of gap analysis results."""
+
+    total_gaps: int
+    total_questions: int
+
+
+class GapResponse(BaseModel):
+    """Response from gap analysis."""
+
+    gaps: list[GapEntry]
+    research_questions: list[GapResearchQuestion]
+    summary: GapSummary
+
+
 @router.post(
     "/contradictions",
     response_model=ApiResponse[ContradictionResponse],
@@ -216,3 +250,50 @@ async def get_research_trends(
     data = await svc.compute_trends(project_id)
 
     return ApiResponse(data=TrendResponse(**data))
+
+
+@router.post(
+    "/gaps",
+    response_model=ApiResponse[GapResponse],
+    summary="Detect literature gaps and research opportunities",
+)
+async def detect_gaps(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Analyze papers to identify under-researched areas and generate research questions."""
+    from app.api.deps import get_llm
+    from app.services.gap_service import GapService
+
+    stmt = select(Paper).where(Paper.project_id == project_id)
+    result = await db.execute(stmt)
+    papers = result.scalars().all()
+
+    if len(papers) < 2:
+        return ApiResponse(
+            data=GapResponse(gaps=[], research_questions=[], summary=GapSummary(total_gaps=0, total_questions=0))
+        )
+
+    papers_for_analysis = [
+        {
+            "paper_id": p.id,
+            "title": p.title or "",
+            "abstract": p.abstract or "",
+            "tags": p.tags or [],
+            "year": p.year,
+        }
+        for p in papers
+    ]
+
+    llm = get_llm()
+    svc = GapService(llm)
+    result_data = await svc.analyze_gaps(papers_for_analysis)
+
+    return ApiResponse(
+        data=GapResponse(
+            gaps=[GapEntry(**g) for g in result_data["gaps"]],
+            research_questions=[GapResearchQuestion(**q) for q in result_data["research_questions"]],
+            summary=GapSummary(**result_data["summary"]),
+        )
+    )

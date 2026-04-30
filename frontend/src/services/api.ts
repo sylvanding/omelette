@@ -951,3 +951,34 @@ export const trendsApi = {
   get: (projectId: number) =>
     api.get<TrendAnalysisData>(`/projects/${projectId}/analysis/trends`).then(r => r.data),
 };
+
+export interface GapEntry {
+  topic: string;
+  description: string;
+  evidence: string;
+  related_paper_ids: number[];
+  gap_score: number;
+}
+
+export interface GapResearchQuestion {
+  question: string;
+  addresses_gap: string;
+  novelty_score: number;
+  feasibility_score: number;
+}
+
+export interface GapSummary {
+  total_gaps: number;
+  total_questions: number;
+}
+
+export interface GapAnalysisData {
+  gaps: GapEntry[];
+  research_questions: GapResearchQuestion[];
+  summary: GapSummary;
+}
+
+export const gapApi = {
+  analyze: (projectId: number) =>
+    api.post<GapAnalysisData>(`/projects/${projectId}/analysis/gaps`).then(r => r.data),
+};

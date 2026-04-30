@@ -567,5 +567,19 @@
     "topicTrends": "主题趋势",
     "emergingTopics": "新兴主题",
     "decliningTopics": "衰退主题"
+  },
+  "gaps": {
+    "title": "文献缺口分析",
+    "close": "关闭缺口分析",
+    "empty": "暂无缺口分析结果。请添加带摘要的论文以查看研究机会。",
+    "totalGaps": "研究缺口",
+    "totalQuestions": "研究问题",
+    "identifiedGaps": "已识别的研究缺口",
+    "researchQuestions": "候选研究问题",
+    "gapScore": "缺口评分",
+    "addresses": "解决",
+    "novelty": "创新性",
+    "feasibility": "可行性",
+    "loadFailed": "加载缺口分析数据失败"
   }
 }

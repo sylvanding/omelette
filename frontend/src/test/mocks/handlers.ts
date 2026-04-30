@@ -764,4 +764,47 @@ export const handlers = [
       }),
     ),
   ),
+  http.post(`${apiBase}/projects/:id/analysis/gaps`, () =>
+    HttpResponse.json(
+      mockResponse({
+        gaps: [
+          {
+            topic: 'Long-term clinical outcomes',
+            description: 'No papers evaluate the long-term effectiveness of the proposed methods in clinical settings.',
+            evidence: 'Papers 1 and 3 focus on short-term metrics without follow-up studies.',
+            related_paper_ids: [1, 3],
+            gap_score: 0.82,
+          },
+          {
+            topic: 'Cross-modal validation',
+            description: 'Methods are validated only on single modalities; no cross-modal transfer studies exist.',
+            evidence: 'Papers 1 and 2 each test on one modality only.',
+            related_paper_ids: [1, 2],
+            gap_score: 0.71,
+          },
+        ],
+        research_questions: [
+          {
+            question: 'How do deep learning-based methods perform in longitudinal studies over 12+ months?',
+            addresses_gap: 'Long-term clinical outcomes',
+            novelty_score: 0.85,
+            feasibility_score: 0.6,
+          },
+          {
+            question: 'Can a single model achieve state-of-the-art results across multiple modalities?',
+            addresses_gap: 'Cross-modal validation',
+            novelty_score: 0.78,
+            feasibility_score: 0.55,
+          },
+          {
+            question: 'What is the trade-off between reconstruction quality and inference time?',
+            addresses_gap: 'Cross-modal validation',
+            novelty_score: 0.6,
+            feasibility_score: 0.8,
+          },
+        ],
+        summary: { total_gaps: 2, total_questions: 3 },
+      }),
+    ),
+  ),
 ];

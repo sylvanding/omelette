@@ -628,5 +628,19 @@
     "noEmergingTopics": "No emerging topics detected",
     "noDecliningTopics": "No declining topics detected",
     "loadFailed": "Failed to load trend analysis data"
+  },
+  "gaps": {
+    "title": "Literature Gap Analysis",
+    "close": "Close gap analysis",
+    "empty": "No gap analysis results. Add papers with abstracts to see research opportunities.",
+    "totalGaps": "Research Gaps",
+    "totalQuestions": "Research Questions",
+    "identifiedGaps": "Identified Research Gaps",
+    "researchQuestions": "Candidate Research Questions",
+    "gapScore": "Gap Score",
+    "addresses": "Addresses",
+    "novelty": "Novelty",
+    "feasibility": "Feasibility",
+    "loadFailed": "Failed to load gap analysis data"
   }
 }

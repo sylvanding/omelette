@@ -18,6 +18,7 @@ const DiscoveryPage = lazy(() => import('@/pages/project/DiscoveryPage'));
 const PDFReaderPage = lazy(() => import('@/pages/project/PDFReaderPage'));
 const AnalyticsPage = lazy(() => import('@/pages/project/AnalyticsPage'));
 const TrendsPage = lazy(() => import('@/pages/project/TrendsPage'));
+const GapAnalysisPage = lazy(() => import('@/pages/project/GapAnalysisPage'));
 const ReviewsPage = lazy(() => import('@/pages/project/ReviewsPage'));
 const ConceptsPage = lazy(() => import('@/pages/project/ConceptsPage'));
 const LibraryPage = lazy(() => import('@/pages/project/LibraryPage'));
@@ -65,6 +66,9 @@ function App() {
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="trends" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><TrendsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="gaps" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><GapAnalysisPage /></Suspense></ErrorBoundary>
               } />
               <Route path="reviews" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ReviewsPage /></Suspense></ErrorBoundary>

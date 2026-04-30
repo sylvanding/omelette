@@ -70,4 +70,7 @@ export const queryKeys = {
   trends: {
     all: (projectId: number) => ['trends', projectId] as const,
   },
+  gaps: {
+    all: (projectId: number) => ['gaps', projectId] as const,
+  },
 } as const;
