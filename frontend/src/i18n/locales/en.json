@@ -726,5 +726,25 @@
         "description": "Main results or findings"
       }
     }
+  },
+  "concepts": {
+    "title": "Concept Knowledge Graph",
+    "subtitle": "{{count}} concepts, {{edges}} relationships",
+    "searchPlaceholder": "Search concepts...",
+    "backToGraph": "Back to Concepts",
+    "empty": "No concepts extracted yet. Run concept extraction to get started.",
+    "generatingTopic": "Generating topic page...",
+    "overview": "Overview",
+    "keyFindings": "Key Findings",
+    "relatedTopics": "Related Topics",
+    "researchDirections": "Research Directions",
+    "paperCount": "{{count}} paper{{plural}}",
+    "relationships": "Relationships",
+    "relationTypes": {
+      "prerequisite": "Prerequisite",
+      "applies_to": "Applies to",
+      "contrasts_with": "Contrasts with",
+      "related_to": "Related to"
+    }
   }
 }

@@ -38,4 +38,15 @@ Focus: i18n coverage gaps, keyboard shortcuts, contradiction integration, notes 
   - Status labels use dynamic key pattern: `t('reviews.status.${status}', status)` with fallback
   - Interpolated strings use i18next format: `t('reviews.paperCount', { count: N, cols: M })`
   - When adding i18n to a page, import `useTranslation` from 'react-i18next' at the top
+
+## 2026-05-01 - AUTO-027
+- Added i18n translations for ConceptsPage (concept knowledge graph)
+- Files changed:
+  - frontend/src/i18n/locales/en.json: Added 'concepts' namespace
+  - frontend/src/i18n/locales/zh.json: Added Chinese translations
+  - frontend/src/pages/project/ConceptsPage.tsx: Replaced all hardcoded strings with t() calls
+- **Learnings for future iterations:**
+  - Relation type badges use dynamic keys with fallback: `t('concepts.relationTypes.${type}', fallback)`
+  - The `plural` variable is used for simple English pluralization in interpolation
+  - Topics page sections (Overview, Key Findings, etc.) are common patterns worth sharing with other detail pages
 ---

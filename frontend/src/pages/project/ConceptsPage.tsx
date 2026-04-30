@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Network, BookOpen, ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { conceptsApi } from '@/services/api';
 import type { ConceptNode, TopicPage } from '@/services/api';
 
 export default function ConceptsPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId);
 
@@ -70,14 +72,14 @@ export default function ConceptsPage() {
         <div className="mb-6 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={handleBackToGraph}>
             <ArrowLeft className="mr-2 size-4" />
-            Back to Concepts
+            {t('concepts.backToGraph')}
           </Button>
         </div>
 
         {isFetchingTopic && (
           <div className="mb-4 flex items-center gap-2 text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Generating topic page...
+            {t('concepts.generatingTopic')}
           </div>
         )}
 
@@ -94,13 +96,13 @@ export default function ConceptsPage() {
           )}
 
           <div className="mb-6">
-            <h3 className="mb-2 text-sm font-semibold">Overview</h3>
+            <h3 className="mb-2 text-sm font-semibold">{t('concepts.overview')}</h3>
             <p className="text-sm leading-relaxed">{topicPageData.overview}</p>
           </div>
 
           {topicPageData.key_findings.length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-2 text-sm font-semibold">Key Findings</h3>
+              <h3 className="mb-2 text-sm font-semibold">{t('concepts.keyFindings')}</h3>
               <ul className="space-y-1">
                 {topicPageData.key_findings.map((finding, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -114,7 +116,7 @@ export default function ConceptsPage() {
 
           {topicPageData.related_topics.length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-2 text-sm font-semibold">Related Topics</h3>
+              <h3 className="mb-2 text-sm font-semibold">{t('concepts.relatedTopics')}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {topicPageData.related_topics.map((topic) => (
                   <Badge key={topic} variant="secondary" className="text-xs">
@@ -127,7 +129,7 @@ export default function ConceptsPage() {
 
           {topicPageData.research_directions.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold">Research Directions</h3>
+              <h3 className="mb-2 text-sm font-semibold">{t('concepts.researchDirections')}</h3>
               <ul className="space-y-1">
                 {topicPageData.research_directions.map((direction, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -147,7 +149,7 @@ export default function ConceptsPage() {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
         <Network className="size-12 text-muted-foreground/50" />
-        <p className="text-sm">No concepts extracted yet. Run concept extraction to get started.</p>
+        <p className="text-sm">{t('concepts.empty')}</p>
       </div>
     );
   }
@@ -158,9 +160,9 @@ export default function ConceptsPage() {
         <div className="flex items-center gap-3">
           <Network className="size-5 text-primary" />
           <div>
-            <h2 className="text-lg font-semibold">Concept Knowledge Graph</h2>
+            <h2 className="text-lg font-semibold">{t('concepts.title')}</h2>
             <p className="text-sm text-muted-foreground">
-              {graphData.total_concepts} concepts, {graphData.edges.length} relationships
+              {t('concepts.subtitle', { count: graphData.total_concepts, edges: graphData.edges.length })}
             </p>
           </div>
         </div>
@@ -169,7 +171,7 @@ export default function ConceptsPage() {
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search concepts..."
+              placeholder={t('concepts.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-64 pl-9"
@@ -189,7 +191,7 @@ export default function ConceptsPage() {
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-medium">{node.name}</h3>
               <Badge variant="secondary" className="text-xs">
-                {node.frequency} paper{node.frequency !== 1 ? 's' : ''}
+                {t('concepts.paperCount', { count: node.frequency, plural: node.frequency !== 1 ? 's' : '' })}
               </Badge>
             </div>
 
@@ -217,14 +219,14 @@ export default function ConceptsPage() {
 
       {graphData.edges.length > 0 && (
         <div className="mt-8 rounded-lg border bg-card p-4">
-          <h3 className="mb-3 text-sm font-semibold">Relationships</h3>
+          <h3 className="mb-3 text-sm font-semibold">{t('concepts.relationships')}</h3>
           <div className="space-y-2">
             {graphData.edges.map((edge, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <Badge variant="outline">{edge.source}</Badge>
                 <span className="text-muted-foreground">
                   <Badge className={relationTypeColor(edge.relation_type)}>
-                    {edge.relation_type.replace('_', ' ')}
+                    {t(`concepts.relationTypes.${edge.relation_type}`, edge.relation_type.replace('_', ' '))}
                   </Badge>
                 </span>
                 <Badge variant="outline">{edge.target}</Badge>

@@ -26,7 +26,7 @@
         "Relation type labels translated (prerequisite, applies_to, contrasts_with)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "ConceptsPage.tsx has hardcoded strings: 'Back to Concepts', 'Generating topic page...', 'Overview', 'Key Findings', 'Related Topics', 'Research Directions', 'Concept Knowledge Graph', 'concepts', 'relationships', 'Search concepts...', 'No concepts extracted yet...'. Relation types in relationTypeColor() are hardcoded. Add to a 'concepts' namespace."
     },
     {

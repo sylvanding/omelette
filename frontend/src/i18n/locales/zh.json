@@ -665,5 +665,25 @@
         "description": "主要结果或发现"
       }
     }
+  },
+  "concepts": {
+    "title": "概念知识图谱",
+    "subtitle": "{{count}} 个概念，{{edges}} 条关系",
+    "searchPlaceholder": "搜索概念...",
+    "backToGraph": "返回概念图",
+    "empty": "尚未提取概念。运行概念提取以开始。",
+    "generatingTopic": "正在生成主题页面...",
+    "overview": "概述",
+    "keyFindings": "主要发现",
+    "relatedTopics": "相关主题",
+    "researchDirections": "研究方向",
+    "paperCount": "{{count}} 篇论文",
+    "relationships": "关系",
+    "relationTypes": {
+      "prerequisite": "前置条件",
+      "applies_to": "应用于",
+      "contrasts_with": "对比",
+      "related_to": "相关"
+    }
   }
 }
