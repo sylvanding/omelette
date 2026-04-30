@@ -11,6 +11,10 @@ describe('PapersToolbar', () => {
     onProcessAll: vi.fn(),
     onAddPaper: vi.fn(),
     onCompare: vi.fn(),
+    onAudioOverview: vi.fn(),
+    onExport: vi.fn(),
+    onBulkCitation: vi.fn(),
+    onAuthorNetwork: vi.fn(),
     projectId: 1,
     paperFilters: {},
     paperCount: 0,
@@ -74,5 +78,33 @@ describe('PapersToolbar', () => {
     button.click();
 
     expect(onCompare).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides Citation Export button when no rows selected', () => {
+    renderWithProviders(<PapersToolbar {...defaultProps} />);
+
+    expect(screen.queryByRole('button', { name: /Citation Export|引用导出/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Citation Export button when rows are selected', () => {
+    renderWithProviders(
+      <PapersToolbar {...defaultProps} selectedRows={new Set([1])} />,
+    );
+
+    const button = screen.getByRole('button', { name: /Citation Export|引用导出/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveTextContent('(1)');
+  });
+
+  it('calls onBulkCitation when Citation Export button is clicked', () => {
+    const onBulkCitation = vi.fn();
+    renderWithProviders(
+      <PapersToolbar {...defaultProps} selectedRows={new Set([1, 2])} onBulkCitation={onBulkCitation} />,
+    );
+
+    const button = screen.getByRole('button', { name: /Citation Export|引用导出/i });
+    button.click();
+
+    expect(onBulkCitation).toHaveBeenCalledTimes(1);
   });
 });

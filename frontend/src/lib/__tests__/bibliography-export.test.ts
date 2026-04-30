@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { toBibTeX, toRIS, toEndNote, downloadExport } from '../bibliography-export';
+import { toBibTeX, toRIS, toEndNote, toAPA, toMLA, downloadExport } from '../bibliography-export';
 import type { Paper } from '@/types';
 
 const now = new Date().toISOString();
@@ -147,6 +147,84 @@ describe('toEndNote', () => {
     expect(output).toContain('<title>Transformer Architectures</title>');
     expect(output).not.toContain('<journal>');
     expect(output).not.toContain('<doi>');
+  });
+});
+
+describe('toAPA', () => {
+  it('produces APA 7th edition format for single author', () => {
+    const output = toAPA([mockPapers[1]]);
+    expect(output).toContain('Wang, A.');
+    expect(output).toContain('(2023)');
+    expect(output).toContain('Transformer Architectures');
+  });
+
+  it('formats two authors with ampersand', () => {
+    const output = toAPA([mockPapers[0]]);
+    expect(output).toContain('Doe, J., & Smith, J.');
+    expect(output).toContain('(2024)');
+    expect(output).toContain('Deep Learning for NLP');
+    expect(output).toContain('*Journal of AI Research*');
+    expect(output).toContain('https://doi.org/10.1234/example');
+  });
+
+  it('handles missing year with n.d.', () => {
+    const paperNoYear: Paper = { ...mockPapers[0], year: null };
+    const output = toAPA([paperNoYear]);
+    expect(output).toContain('(n.d.)');
+  });
+
+  it('handles null authors', () => {
+    const paperNoAuthors: Paper = { ...mockPapers[0], authors: null };
+    const output = toAPA([paperNoAuthors]);
+    expect(output).toContain('Unknown');
+  });
+
+  it('separates multiple entries with blank lines', () => {
+    const output = toAPA(mockPapers);
+    const entries = output.split('\n\n');
+    expect(entries.length).toBe(2);
+  });
+});
+
+describe('toMLA', () => {
+  it('produces MLA 9th edition format for single author', () => {
+    const output = toMLA([mockPapers[1]]);
+    expect(output).toContain('Wang, Alice');
+    expect(output).toContain('"Transformer Architectures."');
+    expect(output).toContain('2023');
+  });
+
+  it('formats two authors with "and"', () => {
+    const output = toMLA([mockPapers[0]]);
+    expect(output).toContain('Doe, Jane, and Smith, John');
+    expect(output).toContain('"Deep Learning for NLP."');
+    expect(output).toContain('*Journal of AI Research*');
+    expect(output).toContain('https://doi.org/10.1234/example');
+  });
+
+  it('uses et al. for three or more authors', () => {
+    const paperWithManyAuthors: Paper = {
+      ...mockPapers[0],
+      authors: [
+        { name: 'Jane Doe' },
+        { name: 'John Smith' },
+        { name: 'Alice Wang' },
+      ],
+    };
+    const output = toMLA([paperWithManyAuthors]);
+    expect(output).toContain('Doe, Jane, et al.');
+  });
+
+  it('handles missing year with n.d.', () => {
+    const paperNoYear: Paper = { ...mockPapers[0], year: null };
+    const output = toMLA([paperNoYear]);
+    expect(output).toContain('n.d.');
+  });
+
+  it('separates multiple entries with blank lines', () => {
+    const output = toMLA(mockPapers);
+    const entries = output.split('\n\n');
+    expect(entries.length).toBe(2);
   });
 });
 

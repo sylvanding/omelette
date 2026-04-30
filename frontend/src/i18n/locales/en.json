@@ -355,7 +355,8 @@
       "empty": "No related papers found",
       "emptyHint": "Index paper content to enable semantic similarity matching"
     },
-    "authorNetwork": "Author Network"
+    "authorNetwork": "Author Network",
+    "bulkCitation": "Citation Export"
   },
   "analytics": {
     "title": "Reading Analytics",

@@ -24,6 +24,7 @@ import { CitationGraphDialog } from './CitationGraphDialog';
 import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
 import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 import { ExportDialog } from '@/components/export/ExportDialog';
+import { BulkCitationDialog } from '@/components/export/BulkCitationDialog';
 import { AuthorNetworkDialog } from '@/components/author-network/AuthorNetworkDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
@@ -52,6 +53,7 @@ export default function PapersPage() {
   const [showComparison, setShowComparison] = useState(false);
   const [showAudioOverview, setShowAudioOverview] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showBulkCitation, setShowBulkCitation] = useState(false);
   const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
 
   const { data: impactData } = useQuery({
@@ -245,6 +247,7 @@ export default function PapersPage() {
       onCompare={() => setShowComparison(true)}
       onAudioOverview={() => setShowAudioOverview(true)}
       onExport={() => setShowExport(true)}
+      onBulkCitation={() => setShowBulkCitation(true)}
       onAuthorNetwork={() => setShowAuthorNetwork(true)}
       projectId={pid}
       paperFilters={{
@@ -430,6 +433,13 @@ export default function PapersPage() {
             papers={papers}
             projectName={projectData?.name ?? ''}
             onClose={() => setShowExport(false)}
+          />
+        )}
+
+        {showBulkCitation && (
+          <BulkCitationDialog
+            papers={papers.filter((p) => selectedRows.has(p.id))}
+            onClose={() => setShowBulkCitation(false)}
           />
         )}
 

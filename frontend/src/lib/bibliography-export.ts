@@ -54,6 +54,92 @@ ${[journal, year, doi, abstract].filter(Boolean).join('\n')}
 }
 
 /**
+ * Convert papers to APA 7th edition format string.
+ */
+export function toAPA(papers: Paper[]): string {
+  return papers
+    .map((paper) => {
+      const names = getAuthorNames(paper.authors);
+      const formatted = formatAPAAuthors(names);
+      const year = paper.year ? `(${paper.year})` : '(n.d.)';
+      const title = paper.title;
+      const journal = paper.journal ? `*${paper.journal}*` : '';
+      const doi = paper.doi ? `https://doi.org/${paper.doi}` : '';
+
+      const parts = [`${formatted} ${year}. ${title}.`];
+      if (journal) parts.push(` ${journal}.`);
+      if (doi) parts.push(` ${doi}`);
+
+      return parts.join('');
+    })
+    .join('\n\n');
+}
+
+function formatAPAAuthors(names: string[]): string {
+  if (names.length === 0) return 'Unknown';
+  if (names.length === 1) return formatAuthorName(names[0]);
+  if (names.length === 2) return `${formatAuthorName(names[0])}, & ${formatAuthorName(names[1])}`;
+  if (names.length <= 20) {
+    const formatted = names.slice(0, -1).map(formatAuthorName).join(', ');
+    return `${formatted}, & ${formatAuthorName(names[names.length - 1])}`;
+  }
+  // 21+ authors: first 19 + ellipsis + last author
+  const first19 = names.slice(0, 19).map(formatAuthorName).join(', ');
+  return `${first19}, ..., ${formatAuthorName(names[names.length - 1])}`;
+}
+
+function formatAuthorName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) return name.trim();
+  const lastName = parts[parts.length - 1];
+  const initials = parts
+    .slice(0, -1)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+  return `${lastName}, ${initials}.`;
+}
+
+/**
+ * Convert papers to MLA 9th edition format string.
+ */
+export function toMLA(papers: Paper[]): string {
+  return papers
+    .map((paper) => {
+      const names = getAuthorNames(paper.authors);
+      const formatted = formatMLAAuthors(names);
+      const title = `"${paper.title}."`;
+      const journal = paper.journal ? `*${paper.journal}*` : '';
+      const year = paper.year ? `${paper.year}` : 'n.d.';
+      const doi = paper.doi ? `https://doi.org/${paper.doi}` : '';
+
+      const parts = [`${formatted} ${title}`];
+      if (journal) parts.push(` ${journal},`);
+      parts.push(` ${year}`);
+      if (doi) parts.push(`, ${doi}`);
+      parts.push('.');
+
+      return parts.join('');
+    })
+    .join('\n\n');
+}
+
+function formatMLAAuthors(names: string[]): string {
+  if (names.length === 0) return 'Unknown';
+  if (names.length === 1) return formatMLAAuthorName(names[0]);
+  if (names.length === 2)
+    return `${formatMLAAuthorName(names[0])}, and ${formatMLAAuthorName(names[1])}`;
+  return `${formatMLAAuthorName(names[0])}, et al.`;
+}
+
+function formatMLAAuthorName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length <= 1) return name.trim();
+  const lastName = parts[parts.length - 1];
+  const firstName = parts.slice(0, -1).join(' ');
+  return `${lastName}, ${firstName}`;
+}
+
+/**
  * Convert papers to RIS format string.
  */
 export function toRIS(papers: Paper[]): string {

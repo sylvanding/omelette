@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen, Network } from 'lucide-react';
+import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen, Network, BookText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PapersExportDropdown } from './PapersExportDropdown';
@@ -20,6 +20,7 @@ interface PapersToolbarProps {
   onCompare: () => void;
   onAudioOverview: () => void;
   onExport: () => void;
+  onBulkCitation: () => void;
   onAuthorNetwork: () => void;
   projectId: number;
   paperFilters: {
@@ -40,6 +41,7 @@ export function PapersToolbar({
   onCompare,
   onAudioOverview,
   onExport,
+  onBulkCitation,
   onAuthorNetwork,
   projectId,
   paperFilters,
@@ -66,6 +68,17 @@ export function PapersToolbar({
         <BookOpen className="size-4" />
         Reference Export
       </Button>
+      {selectedRows.size > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBulkCitation}
+          className="gap-1.5"
+        >
+          <BookText className="size-4" />
+          {t('papers.bulkCitation')} ({selectedRows.size})
+        </Button>
+      )}
       <Button
         variant="outline"
         size="sm"

@@ -350,6 +350,7 @@
     "compare": "对比",
     "compareTooMany": "请选择 2-5 篇论文进行对比",
     "compareTitle": "论文对比",
+    "bulkCitation": "引用导出",
     "related": {
       "tab": "相关",
       "empty": "未找到相关论文",

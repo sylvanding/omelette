@@ -295,3 +295,17 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - frontend/src/pages/ProjectDetail.tsx (added nav item)
   - frontend/src/i18n/locales/en.json, zh.json (added gaps translations)
   - frontend/src/test/mocks/handlers.ts (added gaps mock handler)
+
+---
+## 2026-04-30 - AUTO-021
+- Added toAPA() and toMLA() formatters to bibliography-export.ts following APA 7th and MLA 9th edition standards
+- Created BulkCitationDialog component with format tabs (BibTeX, APA 7th, MLA 9th), preview, copy to clipboard, and download buttons
+- Wired bulk citation export button to PapersToolbar — shows when papers are selected with count badge
+- Added i18n keys for en/zh locales
+- 11 new tests: 10 for APA/MLA formatters, 7 for BulkCitationDialog, 3 for PapersToolbar citation button
+- **Files changed:** bibliography-export.ts, BulkCitationDialog.tsx (new), BulkCitationDialog.test.tsx (new), PapersToolbar.tsx, PapersPage.tsx, bibliography-export.test.ts, PapersToolbar.test.tsx, en.json, zh.json
+- **Learnings for future iterations:**
+  - The BulkCitationDialog operates on currently-visible page selection (selectedRows) — cross-page selection would need effectiveSelectedIds pattern from AUTO-018
+  - APA and MLA formatters reuse the existing getAuthorNames() helper which handles both object and string author formats
+  - The close button in custom dialogs needs an explicit aria-label for accessibility tests to find it by role
+---
