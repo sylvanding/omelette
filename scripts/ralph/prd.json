@@ -53,7 +53,7 @@
         "Empty state shown when no contradictions found"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "The ContradictionReport component exists at frontend/src/components/contradiction/ContradictionReport.tsx. The backend has a contradictions endpoint (check backend/app/api/). Wire it into PDFReaderLayout sidebar as a new tab alongside Notes and Related papers."
     },
     {

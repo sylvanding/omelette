@@ -62,4 +62,16 @@ Focus: i18n coverage gaps, keyboard shortcuts, contradiction integration, notes 
   - Shortcuts match when ALL specified modifiers (metaKey, ctrlKey, shiftKey) match
   - The hook handles cleanup automatically via useEffect return
   - For page-specific shortcuts, import the hook and pass an array of shortcut objects
+
+## 2026-05-01 - AUTO-029
+- Integrated contradiction detection into PDF reader sidebar
+- Files changed:
+  - frontend/src/components/pdf-reader/ContradictionPanel.tsx: New panel component
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx: Added Contradictions tab
+  - frontend/src/i18n/locales/en.json: Added 'contradictions' and 'pdf' namespaces
+  - frontend/src/i18n/locales/zh.json: Added Chinese translations
+- **Learnings for future iterations:**
+  - The contradictions API is project-level; filter by paper_a_id/paper_b_id for paper-specific view
+  - PDFReaderLayout tabs use react-resizable-panels for the split layout
+  - New sidebar panels should follow the same pattern: useQuery with enabled: false for on-demand loading
 ---

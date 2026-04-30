@@ -746,5 +746,19 @@
       "contrasts_with": "Contrasts with",
       "related_to": "Related to"
     }
+  },
+  "contradictions": {
+    "title": "Contradictions",
+    "detect": "Detect",
+    "analyzing": "Analyzing...",
+    "empty": "No analysis yet",
+    "emptyDesc": "Click Detect to find contradictory claims between this paper and others.",
+    "noneFound": "No contradictions found",
+    "noneDesc": "This paper does not contradict any other papers in the project.",
+    "contradiction": "Contradiction",
+    "confidence": "Confidence"
+  },
+  "pdf": {
+    "back": "Back"
   }
 }

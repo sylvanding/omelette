@@ -9,6 +9,7 @@ import NotesPanel from './NotesPanel';
 import RelatedPapers from './RelatedPapers';
 import HighlightOverlay from './HighlightOverlay';
 import CitationCardPanel from './CitationCardPanel';
+import ContradictionPanel from './ContradictionPanel';
 import { paperApi, augmentedReadingApi } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 import { useReadingTimer, formatReadingTime } from '@/hooks/useReadingTimer';
@@ -125,6 +126,7 @@ export default function PDFReaderLayout({
                   <TabsTrigger value="notes" className="text-xs">{t('notes.tab', 'Notes')}</TabsTrigger>
                   <TabsTrigger value="qa" className="text-xs">{t('notes.qa', 'Q&A')}</TabsTrigger>
                   <TabsTrigger value="related" className="text-xs">{t('papers.related.tab', 'Related')}</TabsTrigger>
+                  <TabsTrigger value="contradictions" className="text-xs">{t('contradictions.title', 'Contradictions')}</TabsTrigger>
                   <TabsTrigger value="highlights" className="text-xs">Highlights</TabsTrigger>
                   <TabsTrigger value="citations" className="text-xs">Citations</TabsTrigger>
                 </TabsList>
@@ -148,6 +150,9 @@ export default function PDFReaderLayout({
               </TabsContent>
               <TabsContent value="related" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
                 <RelatedPapers projectId={projectId} paperId={paperId} />
+              </TabsContent>
+              <TabsContent value="contradictions" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+                <ContradictionPanel projectId={projectId} paperId={paperId} />
               </TabsContent>
               <TabsContent value="highlights" className="m-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
                 <HighlightOverlay

@@ -685,5 +685,19 @@
       "contrasts_with": "对比",
       "related_to": "相关"
     }
+  },
+  "contradictions": {
+    "title": "矛盾点",
+    "detect": "检测",
+    "analyzing": "分析中...",
+    "empty": "尚未分析",
+    "emptyDesc": "点击检测以查找本文与其他论文的矛盾观点。",
+    "noneFound": "未发现矛盾",
+    "noneDesc": "本文与项目中其他论文没有矛盾之处。",
+    "contradiction": "矛盾",
+    "confidence": "置信度"
+  },
+  "pdf": {
+    "back": "返回"
   }
 }
