@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -25,13 +26,13 @@ interface StatusPieData {
 
 function ReadingStatusPie({ data }: { data: Record<string, number> }) {
   const { t } = useTranslation();
-  const chartData: StatusPieData[] = Object.entries(data)
+  const chartData: StatusPieData[] = useMemo(() => Object.entries(data)
     .filter(([, count]) => count > 0)
     .map(([status, count]) => ({
       name: t(`papers.readingStatuses.${status}`),
       value: count,
       color: STATUS_COLORS[status] ?? '#94a3b8',
-    }));
+    })), [data, t]);
 
   if (chartData.length === 0) {
     return <EmptyChart message={t('analytics.noData')} />;
@@ -61,10 +62,10 @@ function ReadingStatusPie({ data }: { data: Record<string, number> }) {
 
 function WeeklyReadBar({ data }: { data: Record<string, number> }) {
   const { t } = useTranslation();
-  const chartData = Object.entries(data).map(([week, count]) => ({
+  const chartData = useMemo(() => Object.entries(data).map(([week, count]) => ({
     week: formatWeekLabel(week),
     count,
-  }));
+  })), [data]);
 
   if (chartData.length === 0) {
     return <EmptyChart message={t('analytics.noReadData')} />;
@@ -148,13 +149,13 @@ function ProductivityCards({ data }: { data: ReturnType<typeof paperApi.getAnaly
 }
 
 function CitationImpactChart({ data }: { data: { min: number; max: number; mean: number; median: number; p75: number } }) {
-  const chartData = [
+  const chartData = useMemo(() => [
     { name: 'Min', value: data.min },
     { name: 'Mean', value: data.mean },
     { name: 'Median', value: data.median },
     { name: 'P75', value: data.p75 },
     { name: 'Max', value: data.max },
-  ];
+  ], [data]);
 
   return (
     <ResponsiveContainer width="100%" height={200}>

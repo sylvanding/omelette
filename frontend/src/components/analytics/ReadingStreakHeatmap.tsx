@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Flame } from 'lucide-react';
 import {
@@ -97,28 +97,48 @@ export function ReadingStreakHeatmap({
   const rowHeight = cellSize + cellGap;
 
   // Organize into weeks (columns)
-  // Each week is an array of 7 (one per day of week, Sun=0..Sat=6)
-  const weeks: (ActivityDay | null)[][] = [];
-  let currentWeek: (ActivityDay | null)[] = Array(7).fill(null);
+  const { weeks, maxCount } = useMemo(() => {
+    const weeksArr: (ActivityDay | null)[][] = [];
+    let currentWeek: (ActivityDay | null)[] = Array(7).fill(null);
+    let max = 1;
 
-  for (const day of activityDays) {
-    const dow = getDayOfWeek(day.date);
-    currentWeek[dow] = day;
+    for (const day of activityDays) {
+      const dow = getDayOfWeek(day.date);
+      currentWeek[dow] = day;
+      if (day.count > max) max = day.count;
 
-    // When we hit Saturday or it's the last day, finalize the week
-    if (dow === 6 || day === activityDays[activityDays.length - 1]) {
-      weeks.push([...currentWeek]);
-      if (day !== activityDays[activityDays.length - 1]) {
-        currentWeek = Array(7).fill(null);
+      if (dow === 6 || day === activityDays[activityDays.length - 1]) {
+        weeksArr.push([...currentWeek]);
+        if (day !== activityDays[activityDays.length - 1]) {
+          currentWeek = Array(7).fill(null);
+        }
       }
     }
-  }
-  // Handle trailing partial week
-  if (currentWeek.some(Boolean)) {
-    weeks.push([...currentWeek]);
-  }
+    if (currentWeek.some(Boolean)) {
+      weeksArr.push([...currentWeek]);
+    }
 
-  const maxCount = Math.max(...activityDays.map((d) => d.count), 1);
+    return { weeks: weeksArr, maxCount: max };
+  }, [activityDays]);
+
+  const monthLabels = useMemo(() => {
+    const labels: Array<{ colIdx: number; monthName: string }> = [];
+    const seenMonths = new Set<number>();
+
+    weeks.forEach((week, colIdx) => {
+      const firstActive = week.find(Boolean);
+      if (!firstActive) return;
+      const month = parseDate(firstActive.date).getMonth();
+      if (seenMonths.has(month)) return;
+      seenMonths.add(month);
+      const monthName = parseDate(firstActive.date).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+        month: 'short',
+      });
+      labels.push({ colIdx, monthName });
+    });
+
+    return labels;
+  }, [weeks, locale]);
 
   const svgWidth = weeks.length * (cellSize + cellGap) + 28;
   const svgHeight = 7 * rowHeight;
@@ -161,31 +181,17 @@ export function ReadingStreakHeatmap({
           ))}
 
           {/* Month labels */}
-          {(() => {
-            let lastMonth = -1;
-            return weeks.map((week, colIdx) => {
-              const firstActive = week.find(Boolean);
-              if (!firstActive) return null;
-              const month = parseDate(firstActive.date).getMonth();
-              if (month === lastMonth) return null;
-              lastMonth = month;
-              const d = parseDate(firstActive.date);
-              const monthName = d.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-                month: 'short',
-              });
-              return (
-                <text
-                  key={colIdx}
-                  x={28 + colIdx * (cellSize + cellGap)}
-                  y={-6}
-                  fontSize={9}
-                  fill="currentColor"
-                >
-                  {monthName}
-                </text>
-              );
-            });
-          })()}
+          {monthLabels.map(({ colIdx, monthName }) => (
+            <text
+              key={colIdx}
+              x={28 + colIdx * (cellSize + cellGap)}
+              y={-6}
+              fontSize={9}
+              fill="currentColor"
+            >
+              {monthName}
+            </text>
+          ))}
 
           {/* Cells */}
           {weeks.map((week, colIdx) =>

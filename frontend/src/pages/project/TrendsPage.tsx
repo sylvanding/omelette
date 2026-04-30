@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -72,23 +73,26 @@ function CitationTimelineChart({ data }: { data: Array<{ year: number; count: nu
 function TopicTrendLines({ topicTrends }: { topicTrends: Array<{ topic: string; yearly_counts: Array<{ year: number; count: number }>; trend: string }> }) {
   const { t } = useTranslation();
 
+  // Build unified year data for all topics
+  const chartData = useMemo(() => {
+    if (topicTrends.length === 0) return [];
+    const allYears = new Set<number>();
+    topicTrends.forEach((t) => t.yearly_counts.forEach((yc) => allYears.add(yc.year)));
+    const sortedYears = Array.from(allYears).sort();
+
+    return sortedYears.map((year) => {
+      const entry: Record<string, number> = { year };
+      topicTrends.forEach((tt) => {
+        const found = tt.yearly_counts.find((yc) => yc.year === year);
+        entry[tt.topic] = found?.count ?? 0;
+      });
+      return entry;
+    });
+  }, [topicTrends]);
+
   if (topicTrends.length === 0) {
     return <EmptyChart message={t('trends.noTopicData', 'No topic trend data available')} />;
   }
-
-  // Build unified year data for all topics
-  const allYears = new Set<number>();
-  topicTrends.forEach((t) => t.yearly_counts.forEach((yc) => allYears.add(yc.year)));
-  const sortedYears = Array.from(allYears).sort();
-
-  const chartData = sortedYears.map((year) => {
-    const entry: Record<string, number> = { year };
-    topicTrends.forEach((tt) => {
-      const found = tt.yearly_counts.find((yc) => yc.year === year);
-      entry[tt.topic] = found?.count ?? 0;
-    });
-    return entry;
-  });
 
   const colors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
