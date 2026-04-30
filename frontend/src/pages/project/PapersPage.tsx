@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { toast } from 'sonner';
 import { FileText } from 'lucide-react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { DataTable } from '@/components/ui/data-table';
 import { paperApi, projectApi, paperProcessApi, impactScoresApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
@@ -58,6 +59,7 @@ export default function PapersPage() {
   const [showBulkCitation, setShowBulkCitation] = useState(false);
   const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
   const [showBulkTag, setShowBulkTag] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { data: impactData } = useQuery({
     queryKey: queryKeys.impactScores.all(pid),
@@ -313,6 +315,25 @@ export default function PapersPage() {
     />
   );
 
+  const focusSearch = useCallback(() => {
+    searchRef.current?.focus();
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedRows.size > 0) {
+      batchDeleteMutation.mutate(Array.from(selectedRows).map(Number));
+      setSelectedRows(new Set());
+    }
+  }, [selectedRows, batchDeleteMutation]);
+
+  useKeyboardShortcuts(
+    [
+      { key: 'k', ctrlKey: true, callback: focusSearch },
+      { key: 'Delete', callback: handleDeleteSelected },
+    ],
+    [focusSearch, handleDeleteSelected],
+  );
+
   return (
     <PageLayout
       title={t('papers.title')}
@@ -339,6 +360,7 @@ export default function PapersPage() {
 
         <PapersFilterBar
           search={search}
+          searchRef={searchRef}
           status={status}
           readingStatus={readingStatus}
           qualityTag={qualityTag}

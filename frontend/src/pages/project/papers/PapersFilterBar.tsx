@@ -1,3 +1,4 @@
+import { type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import type { PaperStatus, ReadingStatus } from '@/types';
 
 interface PapersFilterBarProps {
   search: string;
+  searchRef?: RefObject<HTMLInputElement | null>;
   status: PaperStatus | '';
   readingStatus: ReadingStatus | '';
   qualityTag: string;
@@ -33,6 +35,7 @@ interface PapersFilterBarProps {
 
 export function PapersFilterBar({
   search,
+  searchRef,
   status,
   readingStatus,
   qualityTag,
@@ -85,6 +88,7 @@ export function PapersFilterBar({
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchRef}
             placeholder={t('papers.searchPlaceholder')}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
