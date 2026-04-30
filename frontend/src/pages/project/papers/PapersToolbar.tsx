@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen } from 'lucide-react';
+import { Trash2, Zap, Plus, GitCompareArrows, Headphones, BookOpen, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PapersExportDropdown } from './PapersExportDropdown';
@@ -20,6 +20,7 @@ interface PapersToolbarProps {
   onCompare: () => void;
   onAudioOverview: () => void;
   onExport: () => void;
+  onAuthorNetwork: () => void;
   projectId: number;
   paperFilters: {
     q?: string;
@@ -39,6 +40,7 @@ export function PapersToolbar({
   onCompare,
   onAudioOverview,
   onExport,
+  onAuthorNetwork,
   projectId,
   paperFilters,
   paperCount,
@@ -63,6 +65,15 @@ export function PapersToolbar({
       >
         <BookOpen className="size-4" />
         Reference Export
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onAuthorNetwork}
+        className="gap-1.5"
+      >
+        <Network className="size-4" />
+        {t('papers.authorNetwork')}
       </Button>
       {selectedRows.size > 0 && (
         <TooltipProvider>

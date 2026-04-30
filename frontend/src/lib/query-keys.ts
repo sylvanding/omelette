@@ -64,4 +64,7 @@ export const queryKeys = {
   apiKeys: {
     all: ['api-keys'] as const,
   },
+  authorNetwork: {
+    all: (projectId: number) => ['author-network', projectId] as const,
+  },
 } as const;

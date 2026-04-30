@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,42 @@ from app.schemas.common import ApiResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["analysis"])
+
+
+class AuthorNode(BaseModel):
+    """A single author node in the collaboration network."""
+
+    name: str
+    paper_count: int
+    paper_ids: list[int]
+    coauthors: list[str]
+    h_index_estimate: int
+
+
+class AuthorEdge(BaseModel):
+    """A co-authorship edge between two authors."""
+
+    source: str
+    target: str
+    collaboration_count: int
+
+
+class NetworkMetrics(BaseModel):
+    """Summary metrics for the author network."""
+
+    total_authors: int
+    total_edges: int
+    density: float
+    top_authors: list[dict[str, object]]
+
+
+class AuthorNetworkResponse(BaseModel):
+    """Response from author network analysis."""
+
+    nodes: list[AuthorNode]
+    edges: list[AuthorEdge]
+    metrics: NetworkMetrics
+    total_authors: int
 
 
 class ContradictionPair(BaseModel):
@@ -79,3 +115,28 @@ async def detect_contradictions(
     result_data = await svc.detect_contradictions(papers_for_analysis)
 
     return ApiResponse(data=ContradictionResponse(**result_data))
+
+
+@router.get(
+    "/author-network",
+    response_model=ApiResponse[AuthorNetworkResponse],
+    summary="Get author collaboration network for project papers",
+)
+async def get_author_network(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+    min_collaborations: int = Query(1, ge=1, description="Minimum co-authorship count for an edge"),
+    max_nodes: int = Query(100, ge=10, le=500, description="Maximum author nodes to return"),
+):
+    """Build a co-authorship collaboration graph from all papers in a project."""
+    from app.services.author_network_service import AuthorNetworkService
+
+    svc = AuthorNetworkService(db)
+    data = await svc.build_network(
+        project_id,
+        min_collaborations=min_collaborations,
+        max_nodes=max_nodes,
+    )
+
+    return ApiResponse(data=AuthorNetworkResponse(**data))

@@ -353,7 +353,8 @@
       "tab": "Related",
       "empty": "No related papers found",
       "emptyHint": "Index paper content to enable semantic similarity matching"
-    }
+    },
+    "authorNetwork": "Author Network"
   },
   "analytics": {
     "title": "Reading Analytics",
@@ -583,5 +584,24 @@
     "revoked": "Revoked",
     "neverUsed": "Never used",
     "usedRecently": "Used recently"
+  },
+  "authorNetwork": {
+    "title": "Author collaboration network",
+    "close": "Close author network",
+    "empty": "No collaboration data found. Add more papers to the project.",
+    "authors": "authors",
+    "collaborations": "collaborations",
+    "density": "Density",
+    "minCollab": "Min collab",
+    "exportSvg": "Export SVG",
+    "papers": "Papers",
+    "coAuthors": "Co-authors",
+    "hIndex": "h-index est",
+    "topCoauthors": "Co-authors",
+    "activeOnly": "Active only",
+    "loading": "Building author network...",
+    "error": "Failed to load author network. Please try again.",
+    "centrality": "Centrality",
+    "exportPNG": "Export PNG"
   }
 }

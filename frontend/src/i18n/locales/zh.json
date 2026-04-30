@@ -537,5 +537,19 @@
       "status_changed": "状态变更",
       "writing_generated": "生成写作"
     }
+  },
+  "authorNetwork": {
+    "title": "作者合作网络",
+    "close": "关闭作者网络",
+    "empty": "暂无合作数据。请向项目添加更多论文。",
+    "authors": "位作者",
+    "collaborations": "次合作",
+    "density": "网络密度",
+    "minCollab": "最低合作次数",
+    "exportSvg": "导出 SVG",
+    "papers": "论文数",
+    "coAuthors": "合作者",
+    "hIndex": "预估 h-index",
+    "topCoauthors": "合作者列表"
   }
 }

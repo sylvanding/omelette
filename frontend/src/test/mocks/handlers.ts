@@ -639,4 +639,50 @@ export const handlers = [
   http.delete(`${apiBase}/api-keys/:keyId`, () =>
     HttpResponse.json(mockResponse(null)),
   ),
+
+  // Author Network
+  http.get(`${apiBase}/projects/:id/analysis/author-network`, () =>
+    HttpResponse.json(
+      mockResponse({
+        nodes: [
+          {
+            name: 'Jane Smith',
+            paper_count: 5,
+            paper_ids: [1, 2, 3, 4, 5],
+            coauthors: ['John Doe', 'Alice Wang'],
+            h_index_estimate: 2,
+          },
+          {
+            name: 'John Doe',
+            paper_count: 3,
+            paper_ids: [1, 2, 6],
+            coauthors: ['Jane Smith'],
+            h_index_estimate: 1,
+          },
+          {
+            name: 'Alice Wang',
+            paper_count: 2,
+            paper_ids: [3, 7],
+            coauthors: ['Jane Smith'],
+            h_index_estimate: 1,
+          },
+        ],
+        edges: [
+          { source: 'Jane Smith', target: 'John Doe', collaboration_count: 2 },
+          { source: 'Jane Smith', target: 'Alice Wang', collaboration_count: 1 },
+        ],
+        metrics: {
+          total_authors: 3,
+          total_edges: 2,
+          density: 0.667,
+          top_authors: [
+            { name: 'Jane Smith', degree: 2 },
+            { name: 'John Doe', degree: 1 },
+            { name: 'Alice Wang', degree: 1 },
+          ],
+        },
+        total_authors: 3,
+      }),
+    ),
+  ),
 ];

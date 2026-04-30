@@ -855,3 +855,45 @@ export const apiKeysApi = {
   delete: (keyId: number) =>
     api.delete<null>(`/api-keys/${keyId}`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Author Network API
+// ---------------------------------------------------------------------------
+
+export interface AuthorNetworkNode {
+  name: string;
+  paper_count: number;
+  paper_ids: number[];
+  coauthors: string[];
+  h_index_estimate: number;
+}
+
+export interface AuthorNetworkEdge {
+  source: string;
+  target: string;
+  collaboration_count: number;
+}
+
+export interface AuthorNetworkMetrics {
+  total_authors: number;
+  total_edges: number;
+  density: number;
+  top_authors: Array<{ name: string; degree: number }>;
+}
+
+export interface AuthorNetworkData {
+  nodes: AuthorNetworkNode[];
+  edges: AuthorNetworkEdge[];
+  metrics: AuthorNetworkMetrics;
+  total_authors: number;
+}
+
+export const authorNetworkApi = {
+  get: (projectId: number, params?: { min_collaborations?: number; max_nodes?: number }) =>
+    api.get<AuthorNetworkData>(`/projects/${projectId}/analysis/author-network`, {
+      params: {
+        min_collaborations: params?.min_collaborations,
+        max_nodes: params?.max_nodes,
+      },
+    }).then(r => r.data),
+};

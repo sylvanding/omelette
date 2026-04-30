@@ -100,7 +100,7 @@
         "Tests: verify AuthorNetwork component renders correctly"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: author_network_service.py extracts authors, builds co-authorship matrix, computes centrality metrics. Frontend: AuthorNetworkDialog reusing d3-force from citation-graph."
     },
     {

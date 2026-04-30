@@ -24,6 +24,7 @@ import { CitationGraphDialog } from './CitationGraphDialog';
 import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
 import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 import { ExportDialog } from '@/components/export/ExportDialog';
+import { AuthorNetworkDialog } from '@/components/author-network/AuthorNetworkDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -51,6 +52,7 @@ export default function PapersPage() {
   const [showComparison, setShowComparison] = useState(false);
   const [showAudioOverview, setShowAudioOverview] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -228,6 +230,7 @@ export default function PapersPage() {
       onCompare={() => setShowComparison(true)}
       onAudioOverview={() => setShowAudioOverview(true)}
       onExport={() => setShowExport(true)}
+      onAuthorNetwork={() => setShowAuthorNetwork(true)}
       projectId={pid}
       paperFilters={{
         q: search || undefined,
@@ -412,6 +415,13 @@ export default function PapersPage() {
             papers={papers}
             projectName={projectData?.name ?? ''}
             onClose={() => setShowExport(false)}
+          />
+        )}
+
+        {showAuthorNetwork && (
+          <AuthorNetworkDialog
+            projectId={pid}
+            onClose={() => setShowAuthorNetwork(false)}
           />
         )}
       </div>

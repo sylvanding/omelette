@@ -2,6 +2,31 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 14:42 - FEAT-016
+- AuthorNetworkDialog component with d3-force directed graph visualization
+- Force-directed graph with authors as nodes, co-authorship as edges
+- Node size reflects publication count, color reflects centrality
+- Author detail panel shows papers, h-index estimate, co-authors list
+- PNG export functionality via canvas rendering
+- "Active only" filter to show only authors with collaborations
+- Toolbar button on PapersPage to open the author network view
+- Backend service and endpoint already existed (author_network_service.py, analysis.py)
+- MSW mock handler already existed
+- Files changed:
+  - frontend/src/components/author-network/AuthorNetworkDialog.tsx (new)
+  - frontend/src/components/author-network/__tests__/AuthorNetworkDialog.test.tsx (new, 7 tests)
+  - frontend/src/pages/project/PapersPage.tsx (wired up dialog)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added Author Network button)
+  - frontend/src/i18n/locales/en.json (added authorNetwork translations)
+- Tests: 7 frontend tests pass, 9 backend tests pass
+- **Learnings for future iterations:**
+  - D3 modules (d3-force, d3-selection, d3-drag, d3-zoom, d3-scale) must be mocked in frontend tests
+  - The backend author network service and endpoint were already implemented in a previous iteration
+  - MSW mock handler for author-network was already present in handlers.ts
+  - i18n translations for authorNetwork were partially present; added missing keys
+  - Query key `authorNetwork` already existed in query-keys.ts
+---
+
 ## 2026-04-30 14:30 - FEAT-015
 - Created APIKey model with hashed key storage (SHA-256), scope, and prefix display
 - Created Alembic migration for api_keys table with index on key_hash
