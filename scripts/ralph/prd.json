@@ -106,7 +106,7 @@
         "Tests: verify extraction returns structured data"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "New model: review.py. New service: review_service.py. Extraction: LLM with paper content + column definitions. Frontend: new /projects/:projectId/reviews route."
     },
     {

@@ -153,3 +153,40 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - Pre-commit hooks run ruff and ruff-format which modify files — need to re-stage after first commit failure
   - CollectionPaper junction table uses separate model (not SQLAlchemy association proxy) for easier CRUD operations
   - When filtering papers by collection, need to JOIN CollectionPaper on both the base query AND count query
+- Avoid MySQL-specific types like LONGTEXT in models when tests run on SQLite — use Text instead
+- The extraction endpoint POST /reviews/{id}/extract runs LLM for each paper, so tests need mock LLM responses
+---
+
+## [2026-04-30 09:10] - FEAT-006
+- Implemented systematic review workflow with data extraction tables
+- Backend: Created Review and ReviewExtraction models with JSON-stored columns and paper_ids
+- Backend: Created review_service.py with LLM-based extraction (per-paper) and CSV export
+- Backend: Added reviews.py router with full CRUD + extract + extractions + export endpoints
+- Backend: Export endpoint uses StreamingResponse for CSV download
+- Backend: Added mock LLM response for review_extraction task type
+- Backend: Created Alembic migration for reviews and review_extractions tables
+- Backend: Added 13 tests (4 service unit + 6 review API + 3 extraction API)
+- Frontend: Added Review, ReviewColumn, ExtractionResult, ExtractionProgress types
+- Frontend: Added reviewsApi with list/create/update/delete/extract/getExtractions methods
+- Frontend: Created ReviewsPage with column builder, extraction table, and CSV export
+- Frontend: Added /reviews route and navigation link in ProjectDetail sidebar
+- Files changed:
+  - backend/app/models/review.py (new)
+  - backend/app/models/__init__.py (modified)
+  - backend/alembic/versions/f0a1b2c3d4e5_add_reviews_tables.py (new)
+  - backend/app/services/review_service.py (new)
+  - backend/app/api/v1/reviews.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_reviews.py (new)
+  - frontend/src/types/index.ts (modified)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/pages/project/ReviewsPage.tsx (new)
+  - frontend/src/App.tsx (modified)
+  - frontend/src/pages/ProjectDetail.tsx (modified)
+- **Learnings for future iterations:**
+  - MySQL-specific types like LONGTEXT fail on SQLite test databases — use Text instead
+  - Export endpoints return StreamingResponse, not ApiResponse envelope
+  - The extract endpoint processes papers one-by-one (no SSE streaming implemented yet)
+  - Frontend uses native table for extraction display rather than DataTable component
+  - useTranslation import creates unused variable warnings if `t` isn't actually used
