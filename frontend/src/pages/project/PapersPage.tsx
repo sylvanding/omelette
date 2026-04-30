@@ -22,6 +22,7 @@ import { usePapersColumns } from './papers/papers-columns';
 import { PaperStatusBanner } from './PaperStatusBanner';
 import { CitationGraphDialog } from './CitationGraphDialog';
 import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
+import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -47,6 +48,7 @@ export default function PapersPage() {
   const [conflicts, setConflicts] = useState<DedupConflictPair[]>([]);
   const [graphPaperId, setGraphPaperId] = useState<number | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [showAudioOverview, setShowAudioOverview] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -222,6 +224,7 @@ export default function PapersPage() {
       onProcessAll={handleProcessAll}
       onAddPaper={() => setShowAddPaper(true)}
       onCompare={() => setShowComparison(true)}
+      onAudioOverview={() => setShowAudioOverview(true)}
       projectId={pid}
       paperFilters={{
         q: search || undefined,
@@ -386,6 +389,17 @@ export default function PapersPage() {
             projectId={pid}
             paperIds={Array.from(selectedRows).map(Number)}
             onClose={() => setShowComparison(false)}
+          />
+        )}
+
+        {showAudioOverview && (
+          <AudioOverviewDialog
+            projectId={pid}
+            paperIds={Array.from(selectedRows).map(Number)}
+            paperTitles={papers
+              .filter((p) => selectedRows.has(p.id))
+              .map((p) => p.title || 'Untitled')}
+            onClose={() => setShowAudioOverview(false)}
           />
         )}
       </div>

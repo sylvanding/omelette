@@ -497,4 +497,20 @@ export const handlers = [
   http.get(`${apiBase}/projects/:id/activities`, () =>
     HttpResponse.json(mockResponse(mockActivityLogList)),
   ),
+
+  // Audio Overviews
+  http.post(`${apiBase}/projects/:id/audio-overviews`, () =>
+    HttpResponse.json(
+      mockResponse({
+        title: 'Audio Overview',
+        duration_estimate: '1 min',
+        summary: 'Mock audio overview summary.',
+        script: [
+          { speaker: 'Alex', text: 'Welcome to our discussion.' },
+          { speaker: 'Jordan', text: "Today we're exploring key findings." },
+        ],
+        paper_count: 2,
+      }),
+    ),
+  ),
 ];

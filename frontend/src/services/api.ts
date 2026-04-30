@@ -721,3 +721,31 @@ export const feedApi = {
   feedback: (projectId: number, paperId: number, feedback: string) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/feed/${paperId}/feedback`, { feedback }).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Audio Overviews API
+// ---------------------------------------------------------------------------
+
+export interface DialogueEntry {
+  speaker: string;
+  text: string;
+}
+
+export interface AudioOverviewResponse {
+  title: string;
+  duration_estimate: string;
+  summary: string;
+  script: DialogueEntry[];
+  paper_count: number;
+}
+
+export interface AudioOverviewRequest {
+  paper_ids: number[];
+  tone?: 'formal' | 'conversational';
+  focus_areas?: string[];
+}
+
+export const audioOverviewsApi = {
+  generate: (projectId: number, data: AudioOverviewRequest) =>
+    api.post<AudioOverviewResponse>(`/projects/${projectId}/audio-overviews`, data).then(r => r.data),
+};
