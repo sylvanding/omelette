@@ -15,6 +15,9 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
 - Frontend uses `@tanstack/react-query` for data fetching with `useQuery`
 - shadcn/ui components may not exist for everything — use native HTML elements when missing (e.g., `<input type="range">` instead of missing Slider)
 - Endpoint tests that query DB should use `app.dependency_overrides[get_db]` for mock session injection
+- Use `func` from `sqlalchemy` for aggregate functions, NOT `db.func` (AsyncSession has no `func` attribute)
+- httpx AsyncClient DELETE doesn't support `json` or `content` params — use `client.request("DELETE", ..., content=...)` for DELETE with body
+- Pre-commit hooks (ruff, ruff-format) modify files in-place — always stage after first commit attempt
 
 ---
 
@@ -117,3 +120,36 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - When ChromaDB is unavailable, similarity mode returns empty graph gracefully rather than erroring
   - Query keys must include mode parameter to avoid stale cache when switching between modes
 ---
+
+## [2026-04-30 08:45] - FEAT-005
+- Implemented paper collections and smart tagging within projects
+- Backend: Created Collection and CollectionPaper models with proper relationships and indexes
+- Backend: Created collection_service.py with AI smart tagging via LLM (suggest_tags method)
+- Backend: Added collections.py router with full CRUD + paper association + tag suggestion endpoints
+- Backend: Added collection_id filter to existing papers list endpoint
+- Backend: Registered collections router in __init__.py with prefix /projects/{project_id}/collections
+- Backend: Added mock LLM response for smart_tagging task type
+- Backend: Added 17 tests (4 service unit tests + 9 collection API tests + 2 smart tagging tests + 2 paper filter tests)
+- Backend: Created Alembic migration for collections and collection_papers tables
+- Frontend: Added Collection, CollectionPaper, CollectionDetail, PaperTagSuggestion types
+- Frontend: Added collectionsApi with list/create/update/delete/getDetail/addPapers/removePapers/suggestTags
+- Frontend: Created CollectionSidebar component with create/rename/delete/inline-edit and AI tag suggestion button
+- Files changed:
+  - backend/app/models/collection.py (new)
+  - backend/app/models/__init__.py (modified)
+  - backend/alembic/versions/a2b3c4d5e6f7_add_collections_tables.py (new)
+  - backend/app/services/collection_service.py (new)
+  - backend/app/api/v1/collections.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/api/v1/papers.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_collections.py (new)
+  - frontend/src/types/index.ts (modified)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/components/collections/CollectionSidebar.tsx (new)
+- **Learnings for future iterations:**
+  - Use `func` imported from `sqlalchemy`, NOT `db.func` — AsyncSession doesn't expose `func`
+  - httpx AsyncClient DELETE doesn't accept `json` param — use `client.request("DELETE", url, content=..., headers=...)`
+  - Pre-commit hooks run ruff and ruff-format which modify files — need to re-stage after first commit failure
+  - CollectionPaper junction table uses separate model (not SQLAlchemy association proxy) for easier CRUD operations
+  - When filtering papers by collection, need to JOIN CollectionPaper on both the base query AND count query

@@ -88,7 +88,7 @@
         "Tests: verify smart tagging returns tags"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "New model: collection.py. New service: collection_service.py. Smart tagging: LLM with title+abstract. Frontend: sidebar panel."
     },
     {
