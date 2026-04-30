@@ -706,5 +706,64 @@
   },
   "pdf": {
     "back": "返回"
+  },
+  "feed": {
+    "title": "研究推荐",
+    "subtitle": "基于您的文献库提供个性化论文推荐",
+    "refresh": "刷新推荐",
+    "refreshing": "刷新中...",
+    "loading": "生成推荐中...",
+    "empty": "暂无推荐。向文献库添加论文以开始使用。",
+    "hideAbstract": "收起摘要",
+    "showAbstract": "显示摘要",
+    "relevant": "相关",
+    "notRelevant": "不相关"
+  },
+  "library": {
+    "healthCheck": "健康检查",
+    "repairMetadata": "修复元数据",
+    "autoTag": "自动标签",
+    "clusterPapers": "聚类分析",
+    "health": {
+      "title": "元数据健康",
+      "subtitle": "扫描论文缺失的元数据字段",
+      "refresh": "刷新",
+      "scanning": "扫描文献库中...",
+      "totalPapers": "论文总数",
+      "healthy": "健康",
+      "withIssues": "存在问题",
+      "allOk": "所有论文元数据完整",
+      "issueCount": "{{count}}个问题"
+    },
+    "repair": {
+      "title": "修复元数据",
+      "subtitle": "通过查询Semantic Scholar修复缺失字段",
+      "description": "将扫描缺少摘要、作者、期刊、年份或DOI的论文，并尝试使用Semantic Scholar数据进行补充。",
+      "start": "开始修复",
+      "repairing": "修复中...",
+      "attempted": "已尝试",
+      "repaired": "已修复",
+      "failed": "失败",
+      "successTitle": "修复成功",
+      "failedTitle": "修复失败"
+    },
+    "tag": {
+      "title": "自动标签",
+      "subtitle": "AI建议标签以组织您的文献库",
+      "description": "分析论文标题和摘要，为每篇论文生成描述性标签。",
+      "generate": "生成标签",
+      "analyzing": "分析中...",
+      "resultsDesc": "已为{{count}}篇论文生成标签",
+      "paperLabel": "论文#{{id}}"
+    },
+    "cluster": {
+      "title": "论文聚类",
+      "subtitle": "将论文分组为主题聚类",
+      "description": "AI分析论文内容以识别主题分组。",
+      "analyze": "分析聚类",
+      "clustering": "聚类中...",
+      "resultsCount": "发现{{count}}个聚类",
+      "paperBadge": "论文#{{id}}"
+    }
   }
 }

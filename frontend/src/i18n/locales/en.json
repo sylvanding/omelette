@@ -767,5 +767,64 @@
   },
   "pdf": {
     "back": "Back"
+  },
+  "feed": {
+    "title": "Research Feed",
+    "subtitle": "Personalized paper recommendations based on your library",
+    "refresh": "Refresh Feed",
+    "refreshing": "Refreshing...",
+    "loading": "Generating recommendations...",
+    "empty": "No recommendations yet. Add papers to your library to get started.",
+    "hideAbstract": "Hide abstract",
+    "showAbstract": "Show abstract",
+    "relevant": "Relevant",
+    "notRelevant": "Not relevant"
+  },
+  "library": {
+    "healthCheck": "Health Check",
+    "repairMetadata": "Repair Metadata",
+    "autoTag": "Auto-Tag",
+    "clusterPapers": "Cluster Papers",
+    "health": {
+      "title": "Metadata Health",
+      "subtitle": "Scan papers for missing metadata fields",
+      "refresh": "Refresh",
+      "scanning": "Scanning library...",
+      "totalPapers": "Total Papers",
+      "healthy": "Healthy",
+      "withIssues": "With Issues",
+      "allOk": "All papers have complete metadata",
+      "issueCount": "{{count}} issue{{plural}}"
+    },
+    "repair": {
+      "title": "Repair Metadata",
+      "subtitle": "Fix missing fields by querying Semantic Scholar",
+      "description": "This will scan papers with missing abstracts, authors, journal, year, or DOI and attempt to fill them in using Semantic Scholar data.",
+      "start": "Start Repair",
+      "repairing": "Repairing...",
+      "attempted": "Attempted",
+      "repaired": "Repaired",
+      "failed": "Failed",
+      "successTitle": "Successfully Repaired",
+      "failedTitle": "Failed"
+    },
+    "tag": {
+      "title": "Auto-Tag Papers",
+      "subtitle": "AI-suggested tags for organizing your library",
+      "description": "Analyze paper titles and abstracts to generate descriptive tags for each paper.",
+      "generate": "Generate Tags",
+      "analyzing": "Analyzing...",
+      "resultsDesc": "Generated tags for {{count}} papers",
+      "paperLabel": "Paper #{{id}}"
+    },
+    "cluster": {
+      "title": "Cluster Papers",
+      "subtitle": "Group papers into thematic clusters",
+      "description": "AI analysis of paper content to identify thematic groupings.",
+      "analyze": "Analyze Clusters",
+      "clustering": "Clustering...",
+      "resultsCount": "Found {{count}} clusters",
+      "paperBadge": "Paper #{{id}}"
+    }
   }
 }

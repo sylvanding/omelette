@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Loader2,
   RefreshCw,
@@ -20,6 +21,7 @@ interface PaperFeedback {
 }
 
 export default function FeedPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId);
 
@@ -92,15 +94,15 @@ export default function FeedPage() {
         <div className="flex items-center gap-3">
           <Sparkles className="size-5 text-primary" />
           <div>
-            <h2 className="text-lg font-semibold">Research Feed</h2>
+            <h2 className="text-lg font-semibold">{t('feed.title')}</h2>
             <p className="text-sm text-muted-foreground">
-              Personalized paper recommendations based on your library
+              {t('feed.subtitle')}
             </p>
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshMutation.isPending}>
           {refreshMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-          {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Feed'}
+          {refreshMutation.isPending ? t('feed.refreshing') : t('feed.refresh')}
           <RefreshCw className="ml-2 size-4" />
         </Button>
       </div>
@@ -108,14 +110,14 @@ export default function FeedPage() {
       {isLoading && (
         <div className="flex items-center gap-2 py-8 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
-          Generating recommendations...
+          {t('feed.loading')}
         </div>
       )}
 
       {recommendations.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
           <Sparkles className="size-12" />
-          <p className="text-sm">No recommendations yet. Add papers to your library to get started.</p>
+          <p className="text-sm">{t('feed.empty')}</p>
         </div>
       )}
 
@@ -158,7 +160,7 @@ export default function FeedPage() {
               ) : (
                 <ChevronDown className="size-4" />
               )}
-              {expandedCards.has(index) ? 'Hide' : 'Show'} abstract
+              {expandedCards.has(index) ? t('feed.hideAbstract') : t('feed.showAbstract')}
             </button>
 
             {expandedCards.has(index) && (
@@ -175,7 +177,7 @@ export default function FeedPage() {
                 onClick={() => handleFeedback(index, 'like')}
               >
                 <ThumbsUp className="mr-1 size-3.5" />
-                Relevant
+                {t('feed.relevant')}
               </Button>
               <Button
                 variant={getFeedbackForPaper(feedbacks, rec.title) === 'dislike' ? 'destructive' : 'outline'}
@@ -183,7 +185,7 @@ export default function FeedPage() {
                 onClick={() => handleFeedback(index, 'dislike')}
               >
                 <ThumbsDown className="mr-1 size-3.5" />
-                Not relevant
+                {t('feed.notRelevant')}
               </Button>
             </div>
           </div>

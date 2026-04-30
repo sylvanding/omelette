@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Loader2,
   ShieldCheck,
@@ -19,6 +20,7 @@ import type { PaperCluster } from '@/services/api';
 type TabKey = 'health' | 'repair' | 'tag' | 'cluster';
 
 export default function LibraryPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId);
 
@@ -61,10 +63,10 @@ export default function LibraryPage() {
   };
 
   const tabs: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-    { key: 'health', label: 'Health Check', icon: <ShieldCheck className="size-4" /> },
-    { key: 'repair', label: 'Repair Metadata', icon: <Wrench className="size-4" /> },
-    { key: 'tag', label: 'Auto-Tag', icon: <Tag className="size-4" /> },
-    { key: 'cluster', label: 'Cluster Papers', icon: <Layers className="size-4" /> },
+    { key: 'health', label: t('library.healthCheck'), icon: <ShieldCheck className="size-4" /> },
+    { key: 'repair', label: t('library.repairMetadata'), icon: <Wrench className="size-4" /> },
+    { key: 'tag', label: t('library.autoTag'), icon: <Tag className="size-4" /> },
+    { key: 'cluster', label: t('library.clusterPapers'), icon: <Layers className="size-4" /> },
   ];
 
   return (
@@ -95,22 +97,22 @@ export default function LibraryPage() {
             <div className="flex items-center gap-3">
               <ShieldCheck className="size-5 text-primary" />
               <div>
-                <h2 className="text-lg font-semibold">Metadata Health</h2>
+                <h2 className="text-lg font-semibold">{t('library.health.title')}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Scan papers for missing metadata fields
+                  {t('library.health.subtitle')}
                 </p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => refetchHealth()}>
               <RefreshCw className="mr-2 size-4" />
-              Refresh
+              {t('library.health.refresh')}
             </Button>
           </div>
 
           {isLoadingHealth && (
             <div className="flex items-center gap-2 py-8 text-muted-foreground">
               <Loader2 className="size-5 animate-spin" />
-              Scanning library...
+              {t('library.health.scanning')}
             </div>
           )}
 
@@ -119,17 +121,17 @@ export default function LibraryPage() {
               {/* Summary cards */}
               <div className="mb-6 grid grid-cols-3 gap-4">
                 <SummaryCard
-                  label="Total Papers"
+                  label={t('library.health.totalPapers')}
                   value={healthResponse.total_papers}
                   color="text-foreground"
                 />
                 <SummaryCard
-                  label="Healthy"
+                  label={t('library.health.healthy')}
                   value={healthResponse.healthy_papers}
                   color="text-green-500"
                 />
                 <SummaryCard
-                  label="With Issues"
+                  label={t('library.health.withIssues')}
                   value={healthResponse.papers_with_issues}
                   color={healthResponse.papers_with_issues > 0 ? 'text-red-500' : 'text-green-500'}
                 />
@@ -154,7 +156,7 @@ export default function LibraryPage() {
                         </div>
                       </div>
                       <Badge className={issueColor(issue.issue_count)}>
-                        {issue.issue_count} issue{issue.issue_count !== 1 ? 's' : ''}
+                        {t('library.health.issueCount', { count: issue.issue_count, plural: issue.issue_count !== 1 ? 's' : '' })}
                       </Badge>
                     </div>
                   ))}
@@ -162,7 +164,7 @@ export default function LibraryPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                   <CheckCircle2 className="size-12 text-green-500" />
-                  <p className="text-sm">All papers have complete metadata</p>
+                  <p className="text-sm">{t('library.health.allOk')}</p>
                 </div>
               )}
             </>
@@ -176,17 +178,16 @@ export default function LibraryPage() {
           <div className="mb-4 flex items-center gap-3">
             <Wrench className="size-5 text-primary" />
             <div>
-              <h2 className="text-lg font-semibold">Repair Metadata</h2>
+              <h2 className="text-lg font-semibold">{t('library.repair.title')}</h2>
               <p className="text-sm text-muted-foreground">
-                Fix missing fields by querying Semantic Scholar
+                {t('library.repair.subtitle')}
               </p>
             </div>
           </div>
 
           <div className="mb-6 rounded-lg border bg-card p-6">
             <p className="mb-4 text-sm text-muted-foreground">
-              This will scan papers with missing abstracts, authors, journal, year, or DOI and attempt
-              to fill them in using Semantic Scholar data.
+              {t('library.repair.description')}
             </p>
             <Button
               onClick={handleRepair}
@@ -195,7 +196,7 @@ export default function LibraryPage() {
               {repairMutation.isPending && (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               )}
-              {repairMutation.isPending ? 'Repairing...' : 'Start Repair'}
+              {repairMutation.isPending ? t('library.repair.repairing') : t('library.repair.start')}
             </Button>
           </div>
 
@@ -203,17 +204,17 @@ export default function LibraryPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <SummaryCard
-                  label="Attempted"
+                  label={t('library.repair.attempted')}
                   value={repairMutation.data.total_attempted}
                   color="text-foreground"
                 />
                 <SummaryCard
-                  label="Repaired"
+                  label={t('library.repair.repaired')}
                   value={repairMutation.data.success_count}
                   color="text-green-500"
                 />
                 <SummaryCard
-                  label="Failed"
+                  label={t('library.repair.failed')}
                   value={repairMutation.data.failure_count}
                   color={repairMutation.data.failure_count > 0 ? 'text-red-500' : 'text-green-500'}
                 />
@@ -221,7 +222,7 @@ export default function LibraryPage() {
 
               {repairMutation.data.repaired.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Successfully Repaired</h3>
+                  <h3 className="text-sm font-semibold">{t('library.repair.successTitle')}</h3>
                   {repairMutation.data.repaired.slice(0, 10).map((p) => (
                     <div
                       key={p.paper_id}
@@ -236,7 +237,7 @@ export default function LibraryPage() {
 
               {repairMutation.data.failed.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Failed</h3>
+                  <h3 className="text-sm font-semibold">{t('library.repair.failedTitle')}</h3>
                   {repairMutation.data.failed.map((f) => (
                     <div
                       key={f.paper_id}
@@ -259,29 +260,29 @@ export default function LibraryPage() {
           <div className="mb-4 flex items-center gap-3">
             <Tag className="size-5 text-primary" />
             <div>
-              <h2 className="text-lg font-semibold">Auto-Tag Papers</h2>
+              <h2 className="text-lg font-semibold">{t('library.tag.title')}</h2>
               <p className="text-sm text-muted-foreground">
-                AI-suggested tags for organizing your library
+                {t('library.tag.subtitle')}
               </p>
             </div>
           </div>
 
           <div className="mb-6 rounded-lg border bg-card p-6">
             <p className="mb-4 text-sm text-muted-foreground">
-              Analyze paper titles and abstracts to generate descriptive tags for each paper.
+              {t('library.tag.description')}
             </p>
             <Button onClick={handleAutoTag} disabled={tagMutation.isPending}>
               {tagMutation.isPending && (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               )}
-              {tagMutation.isPending ? 'Analyzing...' : 'Generate Tags'}
+              {tagMutation.isPending ? t('library.tag.analyzing') : t('library.tag.generate')}
             </Button>
           </div>
 
           {tagMutation.isSuccess && tagMutation.data && (
             <>
               <p className="mb-4 text-sm text-muted-foreground">
-                Generated tags for {tagMutation.data.total_tagged} papers
+                {t('library.tag.resultsDesc', { count: tagMutation.data.total_tagged })}
               </p>
               <div className="space-y-3">
                 {tagMutation.data.tags.map((t) => (
@@ -289,7 +290,7 @@ export default function LibraryPage() {
                     key={t.paper_id}
                     className="rounded-lg border bg-card p-4"
                   >
-                    <p className="mb-2 text-sm font-medium">Paper #{t.paper_id}</p>
+                    <p className="mb-2 text-sm font-medium">{t('library.tag.paperLabel', { id: t.paper_id })}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {t.suggested_tags.map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-xs">
@@ -311,29 +312,29 @@ export default function LibraryPage() {
           <div className="mb-4 flex items-center gap-3">
             <Layers className="size-5 text-primary" />
             <div>
-              <h2 className="text-lg font-semibold">Cluster Papers</h2>
+              <h2 className="text-lg font-semibold">{t('library.cluster.title')}</h2>
               <p className="text-sm text-muted-foreground">
-                Group papers into thematic clusters
+                {t('library.cluster.subtitle')}
               </p>
             </div>
           </div>
 
           <div className="mb-6 rounded-lg border bg-card p-6">
             <p className="mb-4 text-sm text-muted-foreground">
-              AI analysis of paper content to identify thematic groupings.
+              {t('library.cluster.description')}
             </p>
             <Button onClick={handleCluster} disabled={clusterMutation.isPending}>
               {clusterMutation.isPending && (
                 <Loader2 className="mr-2 size-4 animate-spin" />
               )}
-              {clusterMutation.isPending ? 'Clustering...' : 'Analyze Clusters'}
+              {clusterMutation.isPending ? t('library.cluster.clustering') : t('library.cluster.analyze')}
             </Button>
           </div>
 
           {clusterMutation.isSuccess && clusterMutation.data && (
             <>
               <p className="mb-4 text-sm text-muted-foreground">
-                Found {clusterMutation.data.total_clusters} clusters
+                {t('library.cluster.resultsCount', { count: clusterMutation.data.total_clusters })}
               </p>
               <div className="space-y-4">
                 {clusterMutation.data.clusters.map((cluster: PaperCluster) => (
@@ -346,7 +347,7 @@ export default function LibraryPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {cluster.paper_ids.map((id) => (
                         <Badge key={id} variant="outline" className="text-xs">
-                          Paper #{id}
+                          {t('library.cluster.paperBadge', { id })}
                         </Badge>
                       ))}
                     </div>
