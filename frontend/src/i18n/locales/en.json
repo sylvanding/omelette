@@ -537,5 +537,24 @@
       "status_changed": "Status changed",
       "writing_generated": "Writing generated"
     }
+  },
+  "team": {
+    "title": "Team Members",
+    "noMembers": "No team members yet",
+    "noMembersDesc": "Invite team members to collaborate on this project.",
+    "inviteFirst": "Invite Member",
+    "invite": "Invite",
+    "inviteTitle": "Invite Team Member",
+    "inviteSuccess": "Member invited successfully",
+    "roleUpdated": "Role updated successfully",
+    "memberRemoved": "Member removed successfully",
+    "email": "Email Address",
+    "emailPlaceholder": "colleague@example.com",
+    "role": "Role",
+    "owner": "Owner",
+    "admin": "Admin",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "active": "Active"
   }
 }

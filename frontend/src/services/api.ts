@@ -804,3 +804,29 @@ export const exportReferenceApi = {
       { collection_name: collectionName },
     ).then(r => r.data.data),
 };
+
+// ---------------------------------------------------------------------------
+// Team Members API
+// ---------------------------------------------------------------------------
+
+export type TeamMemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export interface TeamMember {
+  id: number;
+  email: string;
+  role: TeamMemberRole;
+  status: string;
+  invited_by: string | null;
+  created_at: string;
+}
+
+export const teamMembersApi = {
+  list: (projectId: number) =>
+    api.get<TeamMember[]>(`/projects/${projectId}/members`).then(r => r.data),
+  invite: (projectId: number, email: string, role: TeamMemberRole = 'viewer') =>
+    api.post<TeamMember>(`/projects/${projectId}/members`, { email, role }).then(r => r.data),
+  updateRole: (projectId: number, memberId: number, role: TeamMemberRole) =>
+    api.put<TeamMember>(`/projects/${projectId}/members/${memberId}`, { role }).then(r => r.data),
+  remove: (projectId: number, memberId: number) =>
+    api.delete<null>(`/projects/${projectId}/members/${memberId}`).then(r => r.data),
+};

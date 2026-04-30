@@ -547,4 +547,49 @@ export const handlers = [
       }),
     );
   }),
+
+  // Team Members
+  http.get(`${apiBase}/projects/:id/members`, () =>
+    HttpResponse.json(
+      mockResponse([
+        {
+          id: 1,
+          email: 'owner@example.com',
+          role: 'owner',
+          status: 'active',
+          invited_by: null,
+          created_at: new Date().toISOString(),
+        },
+      ]),
+    ),
+  ),
+  http.post(`${apiBase}/projects/:id/members`, async ({ request }) => {
+    const body = (await request.json()) as { email?: string; role?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        email: body.email ?? 'new@example.com',
+        role: body.role ?? 'viewer',
+        status: 'active',
+        invited_by: null,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.put(`${apiBase}/projects/:id/members/:memberId`, async ({ request }) => {
+    const body = (await request.json()) as { role?: string };
+    return HttpResponse.json(
+      mockResponse({
+        id: 99,
+        email: 'updated@example.com',
+        role: body.role ?? 'viewer',
+        status: 'active',
+        invited_by: null,
+        created_at: new Date().toISOString(),
+      }),
+    );
+  }),
+  http.delete(`${apiBase}/projects/:id/members/:memberId`, () =>
+    HttpResponse.json(mockResponse(null)),
+  ),
 ];

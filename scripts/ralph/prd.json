@@ -65,7 +65,7 @@
         "Tests: verify RBAC blocks unauthorized access"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "New model: team_member.py. New service: team_service.py. RBAC middleware for existing endpoints. Frontend: InviteModal, MemberList, role selector."
     },
     {

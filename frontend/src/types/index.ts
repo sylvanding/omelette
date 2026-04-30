@@ -197,3 +197,14 @@ export interface FeedResponse {
   recommendations: FeedRecommendation[];
   total: number;
 }
+
+export type TeamMemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export interface TeamMember {
+  id: number;
+  email: string;
+  role: TeamMemberRole;
+  status: string;
+  invited_by: string | null;
+  created_at: string;
+}
