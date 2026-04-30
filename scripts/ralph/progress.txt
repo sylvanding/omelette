@@ -8,6 +8,44 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
 - `downloadExport()` in `bibliography-export.ts` handles client-side file downloads for BibTeX/RIS/EndNote
 - Export dialog uses two-tab pattern (Download + Zotero) with paper preview
 
+## Codebase Patterns
+- Team member model uses `email` (not `user_id`) since the app is currently single-user; invites are tracked by email
+- RBAC middleware uses `X-User-Email` header for identity; without it, single-user mode is assumed and access is granted
+- API error responses use `{ code, message, data }` format (not FastAPI's default `{ detail }`)
+- Error responses from HTTPException are wrapped by a custom exception handler in the main app
+- Team members cascade-delete when their project is deleted (`ondelete="CASCADE"`)
+
+## 2026-04-30 14:07 - FEAT-014
+- Created TeamMember model with email, role, status, invite_code fields
+- Created Alembic migration for team_members table
+- Created TeamService with invite, update_role, remove, list operations
+- Created API endpoints: GET/POST /projects/{id}/members, PUT/DELETE /projects/{id}/members/{memberId}
+- Created RBAC middleware in deps.py: require_role() factory, get_current_user_role() dependency
+- Created frontend TeamMembersManager component with member list, invite dialog, role selector
+- Added i18n translations for team member UI strings
+- Files changed:
+  - backend/app/models/team_member.py (new)
+  - backend/app/models/__init__.py (added TeamMember, TeamMemberRole)
+  - backend/app/models/project.py (added team_members relationship)
+  - backend/app/services/team_service.py (new)
+  - backend/app/api/v1/team_members.py (new, 4 endpoints)
+  - backend/app/api/v1/__init__.py (registered team_members router)
+  - backend/app/api/deps.py (added RBAC: require_role, get_current_user_role)
+  - backend/alembic/versions/a1b2c3d4e5f7_add_team_members_table.py (new)
+  - backend/tests/test_team_members.py (new, 16 tests)
+  - frontend/src/components/team/TeamMembersManager.tsx (new)
+  - frontend/src/components/team/__tests__/TeamMembersManager.test.tsx (new, 6 tests)
+  - frontend/src/services/api.ts (added teamMembersApi, TeamMember types)
+  - frontend/src/types/index.ts (added TeamMember, TeamMemberRole)
+  - frontend/src/test/mocks/handlers.ts (added team members mock handlers)
+  - frontend/src/i18n/locales/en.json (added team translations)
+- **Learnings for future iterations:**
+  - This codebase wraps HTTPException responses in ApiResponse format with `message` field (not `detail`)
+  - The `EmailStr` Pydantic type from `pydantic` provides built-in email validation
+  - Alembic migrations have a cycle issue — existing migrations reference each other in a loop; new migrations should still use the latest head as down_revision
+  - Frontend tests use `fireEvent` from `@testing-library/react` directly (not exported from test utils)
+---
+
 ## 2026-04-30 13:44 - FEAT-013
 - Implemented POST /projects/{id}/export/bibtex and /ris endpoints returning downloadable bibliography files
 - Implemented POST /projects/{id}/export/zotero for direct Zotero collection creation with API
