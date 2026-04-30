@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, FastForward } from 'lucide-react';
 import type { DialogueEntry } from '@/services/api';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ interface AudioPlayerProps {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 export function AudioPlayer({ script, summary }: AudioPlayerProps) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [speed, setSpeed] = useState<number>(1);
@@ -110,7 +112,7 @@ export function AudioPlayer({ script, summary }: AudioPlayerProps) {
           onClick={skipBack}
           disabled={currentIndex === 0}
           className="rounded-full p-2 hover:bg-secondary disabled:opacity-30"
-          aria-label="Previous line"
+          aria-label={t('audio.previousLine')}
         >
           <SkipBack className="size-4" />
         </button>
@@ -118,7 +120,7 @@ export function AudioPlayer({ script, summary }: AudioPlayerProps) {
         <button
           onClick={togglePlay}
           className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
+          aria-label={isPlaying ? t('audio.pause') : t('audio.play')}
         >
           {isPlaying ? <Pause className="size-5" /> : <Play className="size-5 ml-0.5" />}
         </button>
@@ -127,7 +129,7 @@ export function AudioPlayer({ script, summary }: AudioPlayerProps) {
           onClick={skipForward}
           disabled={currentIndex >= script.length - 1}
           className="rounded-full p-2 hover:bg-secondary disabled:opacity-30"
-          aria-label="Next line"
+          aria-label={t('audio.nextLine')}
         >
           <SkipForward className="size-4" />
         </button>
@@ -135,7 +137,7 @@ export function AudioPlayer({ script, summary }: AudioPlayerProps) {
         <button
           onClick={cycleSpeed}
           className="ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-secondary"
-          aria-label={`Speed: ${speed}x`}
+          aria-label={t('audio.speed', { speed })}
         >
           <FastForward className="size-3" />
           {speed}x
@@ -144,7 +146,7 @@ export function AudioPlayer({ script, summary }: AudioPlayerProps) {
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="rounded-full p-2 hover:bg-secondary"
-          aria-label={isMuted ? 'Unmute' : 'Mute'}
+          aria-label={isMuted ? t('audio.unmute') : t('audio.mute')}
         >
           {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
         </button>

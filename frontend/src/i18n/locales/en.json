@@ -826,5 +826,44 @@
       "resultsCount": "Found {{count}} clusters",
       "paperBadge": "Paper #{{id}}"
     }
+  },
+  "collections": {
+    "title": "Collections",
+    "create": "Create collection",
+    "allPapers": "All Papers",
+    "namePlaceholder": "Collection name",
+    "createBtn": "Create",
+    "rename": "Rename",
+    "delete": "Delete",
+    "aiTags": {
+      "button": "Suggest AI Tags",
+      "generating": "Generating..."
+    }
+  },
+  "export": {
+    "title": "Export to Reference Manager",
+    "downloadTab": "Download",
+    "zoteroTab": "Zotero",
+    "paperCount": "{{count}} paper{{plural}} will be exported from \"{{name}}\"",
+    "export": "Export",
+    "zotero": {
+      "placeholder": "Collection name",
+      "create": "Create",
+      "success": "Exported successfully",
+      "failed": "Export failed. Please try again.",
+      "itemsCreated": "{{count}} item{{plural}} created",
+      "tryAgain": "Try again",
+      "bibtexPreview": "Show BibTeX preview",
+      "envHint": "Requires ZOTERO_API_KEY and ZOTERO_USER_ID environment variables."
+    }
+  },
+  "audio": {
+    "previousLine": "Previous line",
+    "play": "Play",
+    "pause": "Pause",
+    "nextLine": "Next line",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "speed": "Speed: {{speed}}x"
   }
 }

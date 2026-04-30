@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { collectionsApi } from '@/services/api';
 import type { Collection } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ export function CollectionSidebar({
   selectedCollectionId,
   onSelectCollection,
 }: CollectionSidebarProps) {
+  const { t } = useTranslation();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
@@ -86,12 +88,12 @@ export function CollectionSidebar({
   return (
     <div className="flex h-full flex-col border-r bg-background">
       <div className="flex items-center justify-between border-b p-3">
-        <h3 className="text-sm font-semibold">Collections</h3>
+        <h3 className="text-sm font-semibold">{t('collections.title')}</h3>
         <Button
           variant="ghost"
           size="icon-xs"
           onClick={() => setIsCreating(true)}
-          title="Create collection"
+          title={t('collections.create')}
         >
           <Plus className="size-4" />
         </Button>
@@ -107,7 +109,7 @@ export function CollectionSidebar({
           onClick={() => onSelectCollection(null)}
         >
           <span className="size-2 rounded-full bg-muted-foreground/40" />
-          All Papers
+          {t('collections.allPapers')}
         </button>
 
         {collections.map(collection => (
@@ -126,7 +128,7 @@ export function CollectionSidebar({
             <Input
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              placeholder="Collection name"
+              placeholder={t('collections.namePlaceholder')}
               size="sm"
               autoFocus
               onKeyDown={e => {
@@ -149,10 +151,10 @@ export function CollectionSidebar({
             </div>
             <div className="flex gap-1">
               <Button size="xs" onClick={handleCreate} disabled={loading || !newName.trim()}>
-                Create
+                {t('collections.createBtn')}
               </Button>
               <Button size="xs" variant="outline" onClick={() => setIsCreating(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -214,7 +216,7 @@ function CollectionRow({ collection, isSelected, onSelect, onDelete, onRename }:
             setEditName(collection.name);
             setEditing(true);
           }}
-          title="Rename"
+          title={t('collections.rename')}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -224,7 +226,7 @@ function CollectionRow({ collection, isSelected, onSelect, onDelete, onRename }:
           type="button"
           className="rounded p-0.5 text-muted-foreground hover:text-destructive"
           onClick={onDelete}
-          title="Delete"
+          title={t('collections.delete')}
         >
           <X className="size-3" />
         </button>
@@ -286,7 +288,7 @@ function TagSuggestButton({ projectId }: TagSuggestButtonProps) {
       disabled={loading}
     >
       <Tag className="mr-1 size-3" />
-      {loading ? 'Generating...' : 'Suggest AI Tags'}
+      {loading ? t('collections.aiTags.generating') : t('collections.aiTags.button')}
     </Button>
   );
 }

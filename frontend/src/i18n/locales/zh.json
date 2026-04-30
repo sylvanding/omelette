@@ -765,5 +765,44 @@
       "resultsCount": "发现{{count}}个聚类",
       "paperBadge": "论文#{{id}}"
     }
+  },
+  "collections": {
+    "title": "合集",
+    "create": "创建合集",
+    "allPapers": "全部论文",
+    "namePlaceholder": "合集名称",
+    "createBtn": "创建",
+    "rename": "重命名",
+    "delete": "删除",
+    "aiTags": {
+      "button": "AI标签推荐",
+      "generating": "生成中..."
+    }
+  },
+  "export": {
+    "title": "导出到文献管理器",
+    "downloadTab": "下载",
+    "zoteroTab": "Zotero",
+    "paperCount": "将从\"{{name}}\"导出{{count}}篇论文",
+    "export": "导出",
+    "zotero": {
+      "placeholder": "合集名称",
+      "create": "创建",
+      "success": "导出成功",
+      "failed": "导出失败，请重试。",
+      "itemsCreated": "已创建{{count}}个条目",
+      "tryAgain": "重试",
+      "bibtexPreview": "显示BibTeX预览",
+      "envHint": "需要ZOTERO_API_KEY和ZOTERO_USER_ID环境变量。"
+    }
+  },
+  "audio": {
+    "previousLine": "上一行",
+    "play": "播放",
+    "pause": "暂停",
+    "nextLine": "下一行",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "speed": "速度: {{speed}}x"
   }
 }

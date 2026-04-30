@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2, Download, Copy, Check, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ interface ExportDialogProps {
 type ExportTab = 'download' | 'zotero';
 
 export function ExportDialog({ projectId, papers, projectName, onClose }: ExportDialogProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<ExportTab>('download');
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [zoteroName, setZoteroName] = useState('');
@@ -38,11 +40,11 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
     try {
       const result = await exportReferenceApi.exportZotero(projectId, zoteroName.trim());
       setZoteroResult({
-        message: result.message || 'Exported successfully',
+        message: result.message || t('export.zotero.success'),
         items_created: result.items_created,
       });
     } catch {
-      setZoteroResult({ message: 'Export failed. Please try again.' });
+      setZoteroResult({ message: t('export.zotero.failed') });
     } finally {
       setZoteroSubmitting(false);
     }
@@ -67,7 +69,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
         <div className="flex items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-2">
             <BookOpen className="size-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">Export to Reference Manager</h2>
+            <h2 className="text-lg font-semibold">{t('export.title')}</h2>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="size-4" />
@@ -82,7 +84,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
             }`}
             onClick={() => setTab('download')}
           >
-            Download
+            {t('export.downloadTab')}
           </button>
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -90,14 +92,14 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
             }`}
             onClick={() => setTab('zotero')}
           >
-            Zotero
+            {t('export.zoteroTab')}
           </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           <p className="mb-4 text-sm text-muted-foreground">
-            {papers.length} paper{papers.length !== 1 ? 's' : ''} will be exported from &ldquo;{projectName}&rdquo;
+            {t('export.paperCount', { count: papers.length, plural: papers.length !== 1 ? 's' : '', name: projectName })}
           </p>
 
           {tab === 'download' && (
@@ -122,7 +124,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
                     ) : (
                       <Download className="size-4" />
                     )}
-                    Export
+                    {t('export.export')}
                   </Button>
                 </div>
               ))}
@@ -137,7 +139,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
                     <p className="text-sm">{zoteroResult.message}</p>
                     {zoteroResult.items_created !== undefined && (
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {zoteroResult.items_created} item{zoteroResult.items_created !== 1 ? 's' : ''} created
+                        {t('export.zotero.itemsCreated', { count: zoteroResult.items_created, plural: zoteroResult.items_created !== 1 ? 's' : '' })}
                       </p>
                     )}
                   </div>
@@ -145,7 +147,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
                     <ZoteroManualPreview projectId={projectId} onCopy={handleCopyPreview} copied={copied} />
                   )}
                   <Button variant="outline" size="sm" onClick={() => setZoteroResult(null)}>
-                    Try again
+                    {t('export.zotero.tryAgain')}
                   </Button>
                 </div>
               ) : (
@@ -155,7 +157,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
                   </p>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Collection name"
+                      placeholder={t('export.zotero.placeholder')}
                       value={zoteroName}
                       onChange={(e) => setZoteroName(e.target.value)}
                       onKeyDown={(e) => {
@@ -166,7 +168,7 @@ export function ExportDialog({ projectId, papers, projectName, onClose }: Export
                       disabled={!zoteroName.trim() || zoteroSubmitting}
                       onClick={() => void handleZoteroExport()}
                     >
-                      {zoteroSubmitting ? <Loader2 className="size-4 animate-spin" /> : 'Create'}
+                      {zoteroSubmitting ? <Loader2 className="size-4 animate-spin" /> : t('export.zotero.create')}
                     </Button>
                   </div>
                 </div>
@@ -188,6 +190,7 @@ function ZoteroManualPreview({
   onCopy: (preview: string) => void;
   copied: boolean;
 }) {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -204,7 +207,7 @@ function ZoteroManualPreview({
   if (!preview && !loading) {
     return (
       <Button variant="outline" size="sm" onClick={fetchPreview}>
-        Show BibTeX preview
+        {t('export.zotero.bibtexPreview')}
       </Button>
     );
   }
