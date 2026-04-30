@@ -303,6 +303,57 @@ MOCK_RESPONSES: dict[str, str] = {
             ]
         }
     ),
+    "research_feed": json.dumps(
+        {
+            "recommendations": [
+                {
+                    "title": "Attention Mechanisms in Scientific Image Analysis",
+                    "authors": "J. Smith, A. Chen",
+                    "year": 2024,
+                    "abstract": "This paper introduces transformer-based attention mechanisms for automated analysis of scientific microscopy images, achieving state-of-the-art segmentation accuracy.",
+                    "doi": "10.5678/feed1",
+                    "relevance_score": 0.92,
+                    "reason": "Highly relevant to your reading history on deep learning for imaging",
+                },
+                {
+                    "title": "Few-Shot Learning for Rare Specimen Classification",
+                    "authors": "M. Kumar, L. Wang",
+                    "year": 2024,
+                    "abstract": "A meta-learning approach that achieves robust classification of rare biological specimens with as few as 5 training examples per class.",
+                    "doi": "10.5678/feed2",
+                    "relevance_score": 0.85,
+                    "reason": "Extends your interest in sample variability and hybrid methods",
+                },
+                {
+                    "title": "Self-Supervised Representation Learning for 3D Microscopy",
+                    "authors": "R. Patel, S. Lee",
+                    "year": 2023,
+                    "abstract": "Leverages contrastive learning to learn 3D representations from unlabeled microscopy volumes, enabling downstream tasks with minimal supervision.",
+                    "doi": "10.5678/feed3",
+                    "relevance_score": 0.78,
+                    "reason": "Complements your collection on deep learning for imaging",
+                },
+                {
+                    "title": "Quantitative Evaluation of Neural Reconstruction Artifacts",
+                    "authors": "T. Brown, K. Davis",
+                    "year": 2024,
+                    "abstract": "Systematic study of artifacts introduced by neural network-based image reconstruction across multiple microscopy modalities.",
+                    "doi": "10.5678/feed4",
+                    "relevance_score": 0.71,
+                    "reason": "Addresses the AI limitations theme in your library",
+                },
+                {
+                    "title": "Diffusion Models for Super-Resolution Microscopy",
+                    "authors": "Y. Zhang, H. Kim",
+                    "year": 2024,
+                    "abstract": "Applies denoising diffusion probabilistic models to achieve 4x super-resolution in fluorescence microscopy without paired training data.",
+                    "doi": "10.5678/feed5",
+                    "relevance_score": 0.68,
+                    "reason": "Novel approach to super-resolution beyond traditional methods",
+                },
+            ]
+        }
+    ),
     "default": "This is a mock LLM response for testing purposes.",
 }
 

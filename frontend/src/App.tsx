@@ -20,6 +20,7 @@ const AnalyticsPage = lazy(() => import('@/pages/project/AnalyticsPage'));
 const ReviewsPage = lazy(() => import('@/pages/project/ReviewsPage'));
 const ConceptsPage = lazy(() => import('@/pages/project/ConceptsPage'));
 const LibraryPage = lazy(() => import('@/pages/project/LibraryPage'));
+const FeedPage = lazy(() => import('@/pages/project/FeedPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
 
@@ -69,6 +70,9 @@ function App() {
               } />
               <Route path="library" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><LibraryPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="feed" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><FeedPage /></Suspense></ErrorBoundary>
               } />
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="activity" element={

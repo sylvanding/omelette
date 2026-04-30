@@ -173,7 +173,7 @@
         "Tests: verify feedback improves recommendations"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Add feed_service.py. Build interest vector from read/liked papers. Search Semantic Scholar/OpenAlex. Score by cosine similarity. Frontend: new feed route."
     }
   ]

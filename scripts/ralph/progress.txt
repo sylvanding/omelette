@@ -296,3 +296,35 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - ReadingSession model uses separate table (not Paper columns) for per-session granularity
   - The `formatReadingTime` utility function is in the same file as `useReadingTimer` hook for easy reuse
   - Knowledge gaps analysis uses journal distribution as proxy for topic diversity (no Concept model exists)
+- Route path `/{paper_id}/feedback` inside `/projects/{project_id}/feed` prefix resolves to `/projects/{project_id}/feed/{paper_id}/feedback` — must use named subpath (not bare `/`) to avoid trailing-slash 307 redirects
+
+---
+
+## [2026-04-30 11:00] - FEAT-010
+- Implemented personalized research feed with paper recommendations
+- Backend: Created `feed_service.py` with `get_feed()` (LLM-based recommendations) and `submit_feedback()` methods
+- Backend: Added feed.py router with GET /recommendations, POST /refresh, POST /{paper_id}/feedback endpoints
+- Backend: Registered feed router in `__init__.py` with prefix `/projects/{project_id}/feed`
+- Backend: Added mock LLM response for `research_feed` task type
+- Backend: Added 13 tests (6 service unit + 7 API endpoint tests)
+- Frontend: Created FeedPage with recommendation cards, expandable abstracts, and like/dislike feedback
+- Frontend: Added feedApi to services/api.ts and FeedRecommendation/FeedResponse types to types/index.ts
+- Frontend: Added /feed route and "Feed" navigation link (Sparkles icon) in ProjectDetail sidebar
+- Files changed:
+  - backend/app/services/feed_service.py (new)
+  - backend/app/api/v1/feed.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/services/llm/adapters/mock_adapter.py (modified)
+  - backend/tests/test_feed.py (new)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/types/index.ts (modified)
+  - frontend/src/pages/project/FeedPage.tsx (new)
+  - frontend/src/App.tsx (modified)
+  - frontend/src/pages/ProjectDetail.tsx (modified)
+- **Learnings for future iterations:**
+  - Avoid bare `/` as route path inside a prefix — use named paths like `/recommendations` to prevent trailing-slash 307 redirects
+  - `get_llm_client()` (not `get_llm`) is the correct import from `app.services.llm.client`
+  - `get_db` is imported from `app.api.deps`, not `app.database`
+  - Endpoint tests using `app.dependency_overrides[get_db]` with generator functions (`yield mock_session`) work reliably for mocking DB access
+  - The feed service builds a researcher profile from library papers, reading history, liked papers, and keywords, then asks the LLM for recommendations
+---

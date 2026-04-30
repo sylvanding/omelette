@@ -12,6 +12,7 @@ from app.api.v1 import (
     conversations,
     crawler,
     dedup,
+    feed,
     gpu,
     keywords,
     library,
@@ -57,3 +58,4 @@ api_router.include_router(reviews.router, prefix="/projects/{project_id}/reviews
 api_router.include_router(concepts.router, prefix="/projects/{project_id}/concepts")
 api_router.include_router(library.router, prefix="/projects/{project_id}/library")
 api_router.include_router(analytics.router, prefix="/projects/{project_id}/analytics")
+api_router.include_router(feed.router, prefix="/projects/{project_id}/feed")

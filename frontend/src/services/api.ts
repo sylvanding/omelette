@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 import type { PaginatedData } from '@/lib/api';
 import { apiUrl } from '@/lib/api-config';
-import type { Project, Paper, Keyword, Task, ActivityLog } from '@/types';
+import type { Project, Paper, Keyword, Task, ActivityLog, FeedResponse } from '@/types';
 import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse, ActivityListFilters } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
@@ -705,4 +705,19 @@ export const readingSessionApi = {
 export const knowledgeGapsApi = {
   get: (projectId: number) =>
     api.get<KnowledgeGapAnalysis>(`/projects/${projectId}/analytics/knowledge-gaps`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Personalized Research Feed API
+// ---------------------------------------------------------------------------
+
+export const feedApi = {
+  get: (projectId: number) =>
+    api.get<FeedResponse>(`/projects/${projectId}/feed/recommendations`).then(r => r.data),
+
+  refresh: (projectId: number) =>
+    api.post<FeedResponse>(`/projects/${projectId}/feed/refresh`).then(r => r.data),
+
+  feedback: (projectId: number, paperId: number, feedback: string) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/feed/${paperId}/feedback`, { feedback }).then(r => r.data),
 };

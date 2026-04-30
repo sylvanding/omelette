@@ -182,3 +182,18 @@ export interface PaperCluster {
   description: string;
   paper_ids: number[];
 }
+
+export interface FeedRecommendation {
+  title: string;
+  authors: string;
+  year: number | null;
+  abstract: string;
+  doi: string;
+  relevance_score: number;
+  reason: string;
+}
+
+export interface FeedResponse {
+  recommendations: FeedRecommendation[];
+  total: number;
+}
