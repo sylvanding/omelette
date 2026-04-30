@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     activities,
     analysis,
+    analytics,
     chat,
     collections,
     concepts,
@@ -55,3 +56,4 @@ api_router.include_router(analysis.router, prefix="/projects/{project_id}/analys
 api_router.include_router(reviews.router, prefix="/projects/{project_id}/reviews")
 api_router.include_router(concepts.router, prefix="/projects/{project_id}/concepts")
 api_router.include_router(library.router, prefix="/projects/{project_id}/library")
+api_router.include_router(analytics.router, prefix="/projects/{project_id}/analytics")

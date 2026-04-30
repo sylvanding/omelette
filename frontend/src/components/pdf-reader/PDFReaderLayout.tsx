@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useCallback } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -11,6 +11,7 @@ import HighlightOverlay from './HighlightOverlay';
 import CitationCardPanel from './CitationCardPanel';
 import { paperApi, augmentedReadingApi } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
+import { useReadingTimer, formatReadingTime } from '@/hooks/useReadingTimer';
 
 const PDFViewer = lazy(() => import('./PDFViewer'));
 
@@ -35,6 +36,8 @@ export default function PDFReaderLayout({
   const [selectedText, setSelectedText] = useState('');
   const [selectedPage, setSelectedPage] = useState(1);
   const [activeTab, setActiveTab] = useState('notes');
+
+  const { elapsedSeconds } = useReadingTimer({ projectId, paperId });
 
   const handleTextSelect = useCallback((text: string, pageNumber: number) => {
     setSelectedText(text);
@@ -84,6 +87,10 @@ export default function PDFReaderLayout({
           <ArrowLeft className="size-4" />
         </Button>
         <h1 className="line-clamp-1 flex-1 text-sm font-medium">{paperTitle}</h1>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Reading time">
+          <Clock className="size-3" />
+          <span>{formatReadingTime(elapsedSeconds)}</span>
+        </div>
       </div>
 
       {/* Main content */}

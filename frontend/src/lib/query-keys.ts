@@ -19,6 +19,10 @@ export const queryKeys = {
       ['paper-analytics', projectId] as const,
     related: (projectId: number, paperId: number) =>
       ['related-papers', projectId, paperId] as const,
+  analytics: {
+    knowledgeGaps: (projectId: number) =>
+      ['knowledge-gaps', projectId] as const,
+  },
   },
   keywords: {
     list: (projectId: number, level?: number) =>

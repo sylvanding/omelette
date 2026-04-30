@@ -155,7 +155,7 @@
         "Tests: verify analytics returns all metrics"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Enhance existing analytics endpoint. Frontend: measure time in PDF reader, report to backend. Use embeddings for topic coverage."
     },
     {

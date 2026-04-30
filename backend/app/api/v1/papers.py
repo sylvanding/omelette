@@ -153,6 +153,123 @@ async def batch_delete_papers(
     return ApiResponse(data={"deleted": len(papers), "requested": len(body.paper_ids)})
 
 
+@router.post("/reading-sessions", response_model=ApiResponse[dict], status_code=201, summary="Record a reading session")
+async def record_reading_session(
+    project_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Record a reading session for a paper."""
+    from datetime import datetime
+
+    from app.models.reading_session import ReadingSession
+
+    paper_id = body.get("paper_id")
+    started_at = body.get("started_at")
+    ended_at = body.get("ended_at")
+    time_spent_seconds = body.get("time_spent_seconds")
+    pages_read = body.get("pages_read")
+
+    if not all([paper_id, started_at, ended_at, time_spent_seconds is not None]):
+        raise HTTPException(
+            status_code=400, detail="paper_id, started_at, ended_at, and time_spent_seconds are required"
+        )
+
+    if time_spent_seconds < 0:
+        raise HTTPException(status_code=400, detail="time_spent_seconds must be non-negative")
+
+    paper = await get_or_404(db, Paper, paper_id, detail="Paper not found")
+    if paper.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Paper not found in this project")
+
+    if isinstance(started_at, str):
+        started_at = datetime.fromisoformat(started_at)
+    if isinstance(ended_at, str):
+        ended_at = datetime.fromisoformat(ended_at)
+
+    session = ReadingSession(
+        paper_id=paper_id,
+        started_at=started_at,
+        ended_at=ended_at,
+        time_spent_seconds=time_spent_seconds,
+        pages_read=pages_read,
+    )
+    db.add(session)
+
+    if paper.reading_status == "unread":
+        paper.reading_status = "reading"
+    if not paper.read_at:
+        paper.read_at = datetime.now()
+
+    await db.commit()
+    await db.refresh(session)
+
+    return ApiResponse(
+        data={
+            "id": session.id,
+            "paper_id": session.paper_id,
+            "started_at": session.started_at.isoformat(),
+            "ended_at": session.ended_at.isoformat(),
+            "time_spent_seconds": session.time_spent_seconds,
+            "pages_read": session.pages_read,
+            "created_at": session.created_at.isoformat() if session.created_at else None,
+        }
+    )
+
+
+@router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
+async def get_reading_analytics(
+    project_id: int,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return aggregated reading analytics for all papers in the project."""
+    from app.services.analytics_service import AnalyticsService
+
+    svc = AnalyticsService(db)
+
+    base = select(Paper).where(Paper.project_id == project_id)
+    papers = (await db.execute(base)).scalars().all()
+
+    total = len(papers)
+    status_counts: dict[str, int] = {"unread": 0, "reading": 0, "read": 0, "archived": 0}
+    for p in papers:
+        status_counts[p.reading_status] = status_counts.get(p.reading_status, 0) + 1
+
+    read_papers = [p for p in papers if p.reading_status == "read" and p.read_at]
+    read_by_week: dict[str, int] = {}
+    for p in read_papers:
+        week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
+        read_by_week[week] = read_by_week.get(week, 0) + 1
+
+    journal_counts: dict[str, int] = {}
+    for p in papers:
+        if p.journal:
+            journal_counts[p.journal] = journal_counts.get(p.journal, 0) + 1
+    top_journals = sorted(journal_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    papers_per_week = await svc.compute_papers_per_week(project_id)
+    avg_read_time = await svc.compute_avg_read_time(project_id)
+    reading_streak = await svc.compute_reading_streak(project_id)
+    domain_coverage = await svc.compute_domain_coverage(project_id)
+    citation_impact = await svc.compute_citation_impact(project_id)
+
+    return ApiResponse(
+        data={
+            "total": total,
+            "by_status": status_counts,
+            "read_by_week": dict(sorted(read_by_week.items())),
+            "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
+            "papers_per_week": papers_per_week,
+            "avg_read_time_seconds": avg_read_time,
+            "reading_streak_days": reading_streak,
+            "domain_coverage": domain_coverage,
+            "citation_impact": citation_impact,
+        }
+    )
+
+
 @router.get("/{paper_id}", response_model=ApiResponse[PaperRead], summary="Get paper by ID")
 async def get_paper(
     project_id: int,
@@ -339,43 +456,6 @@ async def compare_papers(
     svc = ComparisonService(db, llm)
     result = await svc.compare_papers(paper_ids, focus=focus)
     return ApiResponse(data=result)
-
-
-@router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
-async def get_reading_analytics(
-    project_id: int,
-    db: AsyncSession = Depends(get_db),
-    project: Project = Depends(get_project),
-):
-    """Return aggregated reading analytics for all papers in the project."""
-    base = select(Paper).where(Paper.project_id == project_id)
-    papers = (await db.execute(base)).scalars().all()
-
-    total = len(papers)
-    status_counts: dict[str, int] = {"unread": 0, "reading": 0, "read": 0, "archived": 0}
-    for p in papers:
-        status_counts[p.reading_status] = status_counts.get(p.reading_status, 0) + 1
-
-    read_papers = [p for p in papers if p.reading_status == "read" and p.read_at]
-    read_by_week: dict[str, int] = {}
-    for p in read_papers:
-        week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
-        read_by_week[week] = read_by_week.get(week, 0) + 1
-
-    journal_counts: dict[str, int] = {}
-    for p in papers:
-        if p.journal:
-            journal_counts[p.journal] = journal_counts.get(p.journal, 0) + 1
-    top_journals = sorted(journal_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-
-    return ApiResponse(
-        data={
-            "total": total,
-            "by_status": status_counts,
-            "read_by_week": dict(sorted(read_by_week.items())),
-            "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
-        }
-    )
 
 
 @router.get("/{paper_id}/similar", response_model=ApiResponse[list[dict]], summary="Get similar papers")

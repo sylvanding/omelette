@@ -31,6 +31,29 @@ export interface ReadingAnalytics {
   by_status: Record<string, number>;
   read_by_week: Record<string, number>;
   top_journals: Array<{ journal: string; count: number }>;
+  papers_per_week: number;
+  avg_read_time_seconds: number;
+  reading_streak_days: number;
+  domain_coverage: number;
+  citation_impact: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    p75: number;
+  };
+}
+
+export interface KnowledgeGapItem {
+  topic: string;
+  relevance_score: number;
+  paper_count: number;
+}
+
+export interface KnowledgeGapAnalysis {
+  gaps: KnowledgeGapItem[];
+  total_topics_analyzed: number;
+  coverage_score: number;
 }
 
 export const paperApi = {
@@ -656,4 +679,30 @@ export const libraryApi = {
 
   clusters: (projectId: number) =>
     api.post<ClusterResult>(`/projects/${projectId}/library/clusters`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Reading Session API
+// ---------------------------------------------------------------------------
+
+export interface ReadingSessionInput {
+  paper_id: number;
+  started_at: string;
+  ended_at: string;
+  time_spent_seconds: number;
+  pages_read?: number;
+}
+
+export const readingSessionApi = {
+  record: (projectId: number, data: ReadingSessionInput) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/papers/reading-sessions`, data).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Knowledge Gap Analysis API
+// ---------------------------------------------------------------------------
+
+export const knowledgeGapsApi = {
+  get: (projectId: number) =>
+    api.get<KnowledgeGapAnalysis>(`/projects/${projectId}/analytics/knowledge-gaps`).then(r => r.data),
 };

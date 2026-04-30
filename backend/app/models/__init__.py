@@ -8,6 +8,7 @@ from app.models.keyword import Keyword
 from app.models.message import Message
 from app.models.paper import Paper, PaperStatus
 from app.models.project import Project
+from app.models.reading_session import ReadingSession
 from app.models.review import Review, ReviewExtraction
 from app.models.subscription import Subscription
 from app.models.task import Task, TaskStatus, TaskType
@@ -24,6 +25,7 @@ __all__ = [
     "PaperChunk",
     "PaperStatus",
     "Project",
+    "ReadingSession",
     "Review",
     "ReviewExtraction",
     "Subscription",

@@ -255,3 +255,44 @@ Started: Thu Apr 30 07:12:46 AM CST 2026
   - LibraryService.check_health() is synchronous (no LLM needed) — pass None for llm parameter
   - httpx.AsyncClient proxy uses settings.http_proxy via _get_proxy() helper for consistency with search_service
   - Tab-based UI pattern: use state for activeTab, conditionally render sections, each tab has its own mutation
+- Route ordering matters in FastAPI: static paths (e.g., `/analytics`) MUST be defined before parameterized paths (e.g., `/{paper_id}`) in the same file to avoid route conflicts
+- Reading time is tracked via `useReadingTimer` hook in `frontend/src/hooks/useReadingTimer.ts` — auto-flushes on tab hide and component unmount
+
+---
+
+## [2026-04-30 10:30] - FEAT-009
+- Implemented enhanced reading analytics with productivity metrics and knowledge gap analysis
+- Backend: Created `analytics_service.py` with compute_papers_per_week, compute_avg_read_time, compute_reading_streak, compute_domain_coverage, compute_citation_impact, analyze_knowledge_gaps methods
+- Backend: Added `POST /projects/{id}/papers/reading-sessions` endpoint in papers.py (moved before /{paper_id} routes)
+- Backend: Enhanced `GET /projects/{id}/papers/analytics` with new metrics (papers_per_week, avg_read_time_seconds, reading_streak_days, domain_coverage, citation_impact)
+- Backend: Created `analytics.py` router with `GET /projects/{id}/analytics/knowledge-gaps` endpoint
+- Backend: Created ReadingSession model and Alembic migration for reading_sessions table
+- Backend: Added 14 tests (4 reading session API + 4 analytics API + 2 knowledge gap + 4 service unit tests)
+- Frontend: Created `useReadingTimer` hook with auto-flush on visibility change and unmount
+- Frontend: Integrated reading timer display in PDFReaderLayout header (Clock icon + formatted time)
+- Frontend: Enhanced AnalyticsPage with productivity metric cards, citation impact bar chart, knowledge gaps list
+- Frontend: Added ReadingSessionInput, KnowledgeGapItem, KnowledgeGapAnalysis types to api.ts
+- Frontend: Added readingSessionApi and knowledgeGapsApi service objects
+- Files changed:
+  - backend/app/models/reading_session.py (new)
+  - backend/app/models/__init__.py (modified)
+  - backend/app/schemas/analytics.py (new)
+  - backend/app/services/analytics_service.py (new)
+  - backend/app/api/v1/analytics.py (new)
+  - backend/app/api/v1/__init__.py (modified)
+  - backend/app/api/v1/papers.py (modified)
+  - backend/alembic/versions/a1b2c3d4e5f6_add_reading_sessions_table.py (new)
+  - backend/tests/test_reading_analytics.py (new)
+  - frontend/src/services/api.ts (modified)
+  - frontend/src/lib/query-keys.ts (modified)
+  - frontend/src/hooks/useReadingTimer.ts (new)
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (modified)
+  - frontend/src/pages/project/AnalyticsPage.tsx (modified)
+  - frontend/src/i18n/locales/en.json (modified)
+  - frontend/src/i18n/locales/zh.json (modified)
+  - scripts/ralph/prd.json (modified)
+- **Learnings for future iterations:**
+  - FastAPI route ordering: static paths MUST come before parameterized paths in the same file, or they'll match incorrectly
+  - ReadingSession model uses separate table (not Paper columns) for per-session granularity
+  - The `formatReadingTime` utility function is in the same file as `useReadingTimer` hook for easy reuse
+  - Knowledge gaps analysis uses journal distribution as proxy for topic diversity (no Concept model exists)
