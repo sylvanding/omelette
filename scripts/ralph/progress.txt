@@ -2,6 +2,40 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 14:30 - FEAT-015
+- Created APIKey model with hashed key storage (SHA-256), scope, and prefix display
+- Created Alembic migration for api_keys table with index on key_hash
+- Created APIKeyService with generate, create, list, revoke, delete, validate operations
+- Generated keys use `omk_` prefix + 32 alphanumeric chars for easy identification
+- Created REST endpoints: GET/POST /api/v1/api-keys, POST revoke, DELETE
+- Added FastAPI dependency `require_authenticated_api_key()` for DB-backed key auth
+- Added scope enforcement factory `require_scope()` with read < write < admin hierarchy
+- Built frontend APIKeysSettings component with create/revoke/delete UI
+- Added create dialog with name input and scope selector
+- Shows key once at creation with copy-to-clipboard
+- Files changed:
+  - backend/app/models/api_key.py (new)
+  - backend/app/models/__init__.py (added APIKey, APIKeyScope)
+  - backend/app/services/api_key_service.py (new)
+  - backend/app/api/v1/api_keys.py (new, 4 endpoints)
+  - backend/app/api/v1/__init__.py (registered api_keys router)
+  - backend/app/middleware/auth.py (added authenticate_api_key, require_scope, require_authenticated_api_key)
+  - backend/alembic/versions/b1c2d3e4f5a6_add_api_keys_table.py (new)
+  - backend/tests/test_api_keys.py (new, 17 tests)
+  - frontend/src/components/api-keys/APIKeysSettings.tsx (new)
+  - frontend/src/pages/SettingPage.tsx (added APIKeysSettings card)
+  - frontend/src/services/api.ts (added apiKeysApi)
+  - frontend/src/types/index.ts (added APIKeyScope, APIKey, CreatedAPIKey)
+  - frontend/src/lib/query-keys.ts (added apiKeys query key)
+  - frontend/src/test/mocks/handlers.ts (added mock handlers)
+  - frontend/src/i18n/locales/en.json (added apiKeys translations)
+- **Learnings for future iterations:**
+  - API responses use `{ code, message, data }` format — match this in new endpoints
+  - SQLite locks when multiple async sessions write simultaneously — test service methods directly, not through HTTP client
+  - Query keys should be constant arrays, not functions (`queryKeys.apiKeys.all`, not `.all()`)
+  - Key hashing: SHA-256 is used; the raw key is only returned at creation time and never stored
+---
+
 ## Codebase Patterns
 - Reference export endpoints use `/projects/{id}/export/{format}` pattern (bibtex, ris, zotero)
 - Zotero integration requires `ZOTERO_API_KEY` and `ZOTERO_USER_ID` env vars; falls back to BibTeX preview when not configured

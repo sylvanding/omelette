@@ -83,7 +83,7 @@
         "Tests: verify rate limiting enforced"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: api_key model, auth middleware, rate limiting via slowapi. FastAPI auto-generates OpenAPI docs. Frontend: API Keys tab in SettingsPage."
     },
     {
