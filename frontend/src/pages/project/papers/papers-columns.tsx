@@ -4,6 +4,7 @@ import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText } from 'l
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { StarRating } from '@/components/ui/star-rating';
+import { InlineTagEditor } from '@/components/tags/InlineTagEditor';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,7 @@ interface UsePapersColumnsParams {
   setGraphPaperId: (id: number) => void;
   onRatingChange?: (paperId: number, rating: number) => void;
   onReadingStatusChange?: (paperId: number, status: ReadingStatus) => void;
+  onTagsChange?: (paperId: number, tags: string[]) => void;
   impactScores?: Map<number, { score: number; factors: Record<string, ImpactFactor> }>;
 }
 
@@ -35,6 +37,7 @@ export function usePapersColumns({
   setGraphPaperId,
   onRatingChange,
   onReadingStatusChange,
+  onTagsChange,
   impactScores,
 }: UsePapersColumnsParams): DataTableColumn<Paper>[] {
   const { t } = useTranslation();
@@ -154,6 +157,17 @@ export function usePapersColumns({
           value={row.rating ?? 0}
           onChange={(rating) => onRatingChange?.(row.id, rating)}
           size={14}
+        />
+      ),
+    },
+    {
+      id: 'tags',
+      header: t('papers.tags', 'Tags'),
+      accessorKey: 'tags',
+      cell: ({ row }) => (
+        <InlineTagEditor
+          tags={row.tags}
+          onTagsChange={(tags) => onTagsChange?.(row.id, tags)}
         />
       ),
     },

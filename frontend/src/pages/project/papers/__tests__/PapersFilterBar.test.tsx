@@ -10,6 +10,8 @@ function renderFilterBar(props: Partial<React.ComponentProps<typeof PapersFilter
     status: '' as const,
     readingStatus: '' as const,
     qualityTag: '',
+    customTag: '',
+    customTags: [],
     year: '',
     sortBy: 'created_at',
     order: 'desc' as const,
@@ -17,6 +19,7 @@ function renderFilterBar(props: Partial<React.ComponentProps<typeof PapersFilter
     onStatusChange: vi.fn(),
     onReadingStatusChange: vi.fn(),
     onQualityTagChange: vi.fn(),
+    onCustomTagChange: vi.fn(),
     onYearChange: vi.fn(),
     onSortChange: vi.fn(),
     onOrderChange: vi.fn(),
@@ -59,5 +62,15 @@ describe('PapersFilterBar', () => {
   it('displays quality tag select trigger', () => {
     renderFilterBar({ qualityTag: 'Seminal' });
     expect(screen.getByText('Seminal')).toBeInTheDocument();
+  });
+
+  it('does not show custom tags filter when no custom tags exist', () => {
+    renderFilterBar();
+    expect(screen.queryByText('Tags')).not.toBeInTheDocument();
+  });
+
+  it('shows custom tags filter when custom tags are provided', () => {
+    renderFilterBar({ customTags: ['important', 'reviewed'] });
+    expect(screen.getByText('Tags')).toBeInTheDocument();
   });
 });

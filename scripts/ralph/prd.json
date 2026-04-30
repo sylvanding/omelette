@@ -39,7 +39,7 @@
         "Tags displayed as color-coded badges in paper row"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "The Paper type has both tags (free-form) and quality_tags (preset) fields. Currently only quality_tags is used in the UI. Reuse the existing tag mutation pattern. The backend libraryApi.autoTag and collectionsApi.suggestTags endpoints exist but are not wired up."
     },
     {

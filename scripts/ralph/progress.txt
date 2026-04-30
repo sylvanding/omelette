@@ -2,6 +2,58 @@
 Started: Thu Apr 30 01:02:06 PM CST 2026
 ---
 
+## 2026-04-30 23:18 - AUTO-023
+- Implemented custom user-defined tags with bulk tagging
+- Backend: Added `tags` filter parameter to list_papers endpoint (papers.py)
+- Created InlineTagEditor component: free-text input with enter-to-add, removable color-coded badges
+- Added tags column to papers-columns.tsx with inline editing via InlineTagEditor
+- Updated PapersFilterBar with custom tags dropdown filter (shows unique tags from current page)
+- Created BulkTagDialog for bulk add/remove tags on selected papers
+- Added "Add Tags" button to PapersToolbar — shows when papers are selected
+- Handler in PapersPage updates all selected papers via paperApi.update, invalidates query
+- Updated TimelinePage with custom tags filter props
+- Added i18n keys for en/zh locales
+- 19 new tests: 6 for InlineTagEditor, 6 for BulkTagDialog, 3 for PapersToolbar bulk tag, 2 for PapersFilterBar custom tags, 2 existing tests updated
+- All 264 frontend tests pass, 827 backend tests pass, TypeScript clean, ESLint clean
+- Files changed:
+  - backend/app/api/v1/papers.py (added tags filter parameter)
+  - frontend/src/types/api.ts (added tags to PaperListFilters)
+  - frontend/src/components/tags/InlineTagEditor.tsx (new)
+  - frontend/src/components/tags/__tests__/InlineTagEditor.test.tsx (new, 6 tests)
+  - frontend/src/components/tags/BulkTagDialog.tsx (new)
+  - frontend/src/components/tags/__tests__/BulkTagDialog.test.tsx (new, 6 tests)
+  - frontend/src/pages/project/papers/papers-columns.tsx (added tags column, onTagsChange prop)
+  - frontend/src/pages/project/PapersPage.tsx (added handleTagsChange, handleBulkTag, customTags, BulkTagDialog)
+  - frontend/src/pages/project/papers/PapersFilterBar.tsx (added customTag/customTags props and filter)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added Add Tags button)
+  - frontend/src/pages/project/TimelinePage.tsx (added custom tags props)
+  - frontend/src/pages/project/papers/__tests__/PapersFilterBar.test.tsx (updated, 2 new tests)
+  - frontend/src/pages/project/papers/__tests__/PapersToolbar.test.tsx (updated, 3 new tests)
+  - frontend/src/i18n/locales/en.json, zh.json (added tags/bulkTag translations)
+- **Learnings for future iterations:**
+  - The `paperApi.update` with `{ tags: [...] }` works server-side via the existing PUT endpoint
+  - Custom tags are computed from the current page's papers (not all papers) — for full cross-page tags, would need a dedicated endpoint
+  - Any page that directly uses PapersFilterBar needs the new customTag/customTags/onCustomTagChange props
+  - The Paper type already had `tags: string[] | null` — it was just unused in the UI
+
+## 2026-04-30 23:04 - AUTO-022
+- Converted static reading status badge in paper row to clickable DropdownMenu
+- Uses Radix DropdownMenuRadioGroup with RadioItem for each status (unread, reading, read, archived)
+- Handler in PapersPage calls paperApi.update with reading_status field, invalidates papers query
+- Follows same pattern as StarRating: callback prop passed from PapersPage to usePapersColumns
+- 7 new tests covering: button rendering, status labels, dropdown opening, menu items, callback invocation
+- Files changed:
+  - frontend/src/pages/project/papers/papers-columns.tsx (added DropdownMenu imports, onReadingStatusChange prop, converted cell)
+  - frontend/src/pages/project/PapersPage.tsx (added handleReadingStatusChange handler)
+  - frontend/src/pages/project/papers/__tests__/ReadingStatusEditor.test.tsx (new, 7 tests)
+  - frontend/src/i18n/locales/en.json, zh.json (added changeReadingStatus translation key)
+- All 247 tests pass, TypeScript clean, ESLint clean
+- **Learnings for future iterations:**
+  - `usePapersColumns` uses hooks (useTranslation, useNavigate) so it must be wrapped in a test component, not called directly in test render
+  - `fireEvent` is not exported from `@/test/utils` — import from `@testing-library/react` directly or use `userEvent`
+  - Radix DropdownMenu requires `userEvent.click` for reliable interaction in tests (not `fireEvent.click`)
+  - The DataTable component renders many cells — use `getByRole('button', { name: ... })` with specific aria-label for precision
+
 ## 2026-04-30 15:08 - FEAT-018
 - GapService uses LLM to analyze paper collection for research gaps
 - POST /projects/{id}/analysis/gaps endpoint with GapEntry and GapResearchQuestion response models

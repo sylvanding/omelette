@@ -41,7 +41,8 @@
     "saveFailed": "保存失败",
     "expand": "展开",
     "previousPage": "上一页",
-    "nextPage": "下一页"
+    "nextPage": "下一页",
+    "apply": "应用"
   },
   "app": {
     "name": "Omelette"
@@ -348,10 +349,21 @@
     "changeReadingStatus": "更改阅读状态",
     "rating": "评分",
     "qualityTags": "质量标签",
+    "tags": "标签",
+    "addTag": "添加标签",
+    "removeTag": "移除标签",
+    "addTagPlaceholder": "添加标签...",
     "compare": "对比",
     "compareTooMany": "请选择 2-5 篇论文进行对比",
     "compareTitle": "论文对比",
     "bulkCitation": "引用导出",
+    "bulkTag": {
+      "title": "批量标签",
+      "papers": "篇论文",
+      "addTags": "添加标签",
+      "removeTags": "移除标签",
+      "applySuccess": "已为 {{count}} 篇论文添加标签"
+    },
     "related": {
       "tab": "相关",
       "empty": "未找到相关论文",

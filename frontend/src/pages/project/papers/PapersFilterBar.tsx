@@ -16,6 +16,8 @@ interface PapersFilterBarProps {
   status: PaperStatus | '';
   readingStatus: ReadingStatus | '';
   qualityTag: string;
+  customTag: string;
+  customTags: string[];
   year: string;
   sortBy: string;
   order: 'asc' | 'desc';
@@ -23,6 +25,7 @@ interface PapersFilterBarProps {
   onStatusChange: (value: PaperStatus | '') => void;
   onReadingStatusChange: (value: ReadingStatus | '') => void;
   onQualityTagChange: (value: string) => void;
+  onCustomTagChange: (value: string) => void;
   onYearChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onOrderChange: () => void;
@@ -33,6 +36,8 @@ export function PapersFilterBar({
   status,
   readingStatus,
   qualityTag,
+  customTag,
+  customTags,
   year,
   sortBy,
   order,
@@ -40,6 +45,7 @@ export function PapersFilterBar({
   onStatusChange,
   onReadingStatusChange,
   onQualityTagChange,
+  onCustomTagChange,
   onYearChange,
   onSortChange,
   onOrderChange,
@@ -138,6 +144,24 @@ export function PapersFilterBar({
             ))}
           </SelectContent>
         </Select>
+        {customTags.length > 0 && (
+          <Select
+            value={customTag || '__all__'}
+            onValueChange={(v) => onCustomTagChange(v === '__all__' ? '' : v)}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder={t('papers.tags', 'Tags')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{t('papers.tags', 'Tags')}</SelectItem>
+              {customTags.map((tag) => (
+                <SelectItem key={tag} value={tag}>
+                  {tag}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger className="w-[140px]">
             <SelectValue />

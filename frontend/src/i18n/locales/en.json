@@ -41,7 +41,8 @@
     "saveFailed": "Save failed",
     "expand": "Expand",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "apply": "Apply"
   },
   "app": {
     "name": "Omelette"
@@ -348,6 +349,10 @@
     "changeReadingStatus": "Change reading status",
     "rating": "Rating",
     "qualityTags": "Quality Tags",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag",
+    "addTagPlaceholder": "Add tag...",
     "compare": "Compare",
     "compareTooMany": "Select 2-5 papers to compare",
     "compareTitle": "Paper Comparison",
@@ -357,7 +362,14 @@
       "emptyHint": "Index paper content to enable semantic similarity matching"
     },
     "authorNetwork": "Author Network",
-    "bulkCitation": "Citation Export"
+    "bulkCitation": "Citation Export",
+    "bulkTag": {
+      "title": "Add Tags",
+      "papers": "papers",
+      "addTags": "Add tags",
+      "removeTags": "Remove tags",
+      "applySuccess": "Tags applied to {{count}} papers"
+    }
   },
   "analytics": {
     "title": "Reading Analytics",

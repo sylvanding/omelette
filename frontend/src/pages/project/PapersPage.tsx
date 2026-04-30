@@ -26,6 +26,7 @@ import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 import { ExportDialog } from '@/components/export/ExportDialog';
 import { BulkCitationDialog } from '@/components/export/BulkCitationDialog';
 import { AuthorNetworkDialog } from '@/components/author-network/AuthorNetworkDialog';
+import { BulkTagDialog } from '@/components/tags/BulkTagDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -40,6 +41,7 @@ export default function PapersPage() {
   const [status, setStatus] = useState<PaperStatus | ''>('');
   const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
   const [qualityTag, setQualityTag] = useState('');
+  const [customTag, setCustomTag] = useState('');
   const [year, setYear] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -55,6 +57,7 @@ export default function PapersPage() {
   const [showExport, setShowExport] = useState(false);
   const [showBulkCitation, setShowBulkCitation] = useState(false);
   const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
+  const [showBulkTag, setShowBulkTag] = useState(false);
 
   const { data: impactData } = useQuery({
     queryKey: queryKeys.impactScores.all(pid),
@@ -78,11 +81,12 @@ export default function PapersPage() {
       status: status || undefined,
       reading_status: readingStatus || undefined,
       quality_tags: qualityTag || undefined,
+      tags: customTag || undefined,
       year: year ? Number(year) : undefined,
       sort_by: sortBy,
       order,
     }),
-    [page, pageSize, search, status, readingStatus, qualityTag, year, sortBy, order],
+    [page, pageSize, search, status, readingStatus, qualityTag, customTag, year, sortBy, order],
   );
 
   const { data: projectData } = useQuery({
@@ -120,6 +124,18 @@ export default function PapersPage() {
 
   const papers: Paper[] = useMemo(() => data?.items ?? [], [data?.items]);
   const total = data?.total ?? 0;
+
+  const customTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const p of papers) {
+      if (p.tags) {
+        for (const tag of p.tags) {
+          tagSet.add(tag);
+        }
+      }
+    }
+    return Array.from(tagSet).sort();
+  }, [papers]);
 
   const statusCounts = useMemo(() => {
     const counts = { processing: 0, indexed: 0, error: 0, total: papers.length };
@@ -226,6 +242,34 @@ export default function PapersPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
   };
 
+  const handleTagsChange = (paperId: number, tags: string[]) => {
+    paperApi.update(pid, paperId, { tags }).catch(() => {
+      toast.error(t('common.updateFailed'));
+    });
+    queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
+  };
+
+  const handleBulkTag = (tagsToAdd: string[], tagsToRemove: string[]) => {
+    const selectedIds = Array.from(selectedRows).map(Number);
+    const selectedPapers = papers.filter((p) => selectedRows.has(p.id));
+
+    Promise.all(
+      selectedPapers.map((paper) => {
+        const currentTags = paper.tags ?? [];
+        const newTags = [...new Set([...currentTags.filter((t) => !tagsToRemove.includes(t)), ...tagsToAdd])];
+        return paperApi.update(pid, paper.id, { tags: newTags });
+      }),
+    )
+      .then(() => {
+        toast.success(t('papers.bulkTag.applySuccess', 'Tags applied to {{count}} papers', { count: selectedIds.length }));
+        queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
+        setSelectedRows(new Set());
+      })
+      .catch(() => {
+        toast.error(t('common.updateFailed'));
+      });
+  };
+
   const columns = usePapersColumns({
     pid,
     deleteMutation,
@@ -233,6 +277,7 @@ export default function PapersPage() {
     setGraphPaperId,
     onRatingChange: handleRatingChange,
     onReadingStatusChange: handleReadingStatusChange,
+    onTagsChange: handleTagsChange,
     impactScores: impactScoreMap,
   });
 
@@ -256,6 +301,7 @@ export default function PapersPage() {
       onAudioOverview={() => setShowAudioOverview(true)}
       onExport={() => setShowExport(true)}
       onBulkCitation={() => setShowBulkCitation(true)}
+      onBulkTag={() => setShowBulkTag(true)}
       onAuthorNetwork={() => setShowAuthorNetwork(true)}
       projectId={pid}
       paperFilters={{
@@ -296,6 +342,8 @@ export default function PapersPage() {
           status={status}
           readingStatus={readingStatus}
           qualityTag={qualityTag}
+          customTag={customTag}
+          customTags={customTags}
           year={year}
           sortBy={sortBy}
           order={order}
@@ -303,6 +351,7 @@ export default function PapersPage() {
           onStatusChange={setStatus}
           onReadingStatusChange={setReadingStatus}
           onQualityTagChange={setQualityTag}
+          onCustomTagChange={setCustomTag}
           onYearChange={setYear}
           onSortChange={setSortBy}
           onOrderChange={() => setOrder((o) => (o === 'asc' ? 'desc' : 'asc'))}
@@ -455,6 +504,15 @@ export default function PapersPage() {
           <AuthorNetworkDialog
             projectId={pid}
             onClose={() => setShowAuthorNetwork(false)}
+          />
+        )}
+
+        {showBulkTag && (
+          <BulkTagDialog
+            selectedCount={selectedRows.size}
+            existingTags={customTags}
+            onApply={handleBulkTag}
+            onClose={() => setShowBulkTag(false)}
           />
         )}
       </div>

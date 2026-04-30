@@ -35,8 +35,9 @@ export default function TimelinePage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<PaperStatus | ''>('');
   const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
-  const [year, setYear] = useState('');
   const [qualityTag, setQualityTag] = useState('');
+  const [customTag, setCustomTag] = useState('');
+  const [year, setYear] = useState('');
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
 
   const filters = useMemo(
@@ -60,6 +61,18 @@ export default function TimelinePage() {
   });
 
   const papers: Paper[] = useMemo(() => data?.items ?? [], [data?.items]);
+
+  const customTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const p of papers) {
+      if (p.tags) {
+        for (const tag of p.tags) {
+          tagSet.add(tag);
+        }
+      }
+    }
+    return Array.from(tagSet).sort();
+  }, [papers]);
 
   const yearGroups: YearGroup[] = useMemo(() => {
     const map = new Map<number, Paper[]>();
@@ -115,15 +128,18 @@ export default function TimelinePage() {
         search={search}
         status={status}
         readingStatus={readingStatus}
-        year={year}
         qualityTag={qualityTag}
+        customTag={customTag}
+        customTags={customTags}
+        year={year}
         sortBy="year"
         order="desc"
         onSearchChange={setSearch}
         onStatusChange={setStatus}
         onReadingStatusChange={setReadingStatus}
-        onYearChange={setYear}
         onQualityTagChange={setQualityTag}
+        onCustomTagChange={setCustomTag}
+        onYearChange={setYear}
         onSortChange={() => {}}
         onOrderChange={() => {}}
       />

@@ -14,6 +14,7 @@ describe('PapersToolbar', () => {
     onAudioOverview: vi.fn(),
     onExport: vi.fn(),
     onBulkCitation: vi.fn(),
+    onBulkTag: vi.fn(),
     onAuthorNetwork: vi.fn(),
     projectId: 1,
     paperFilters: {},
@@ -106,5 +107,33 @@ describe('PapersToolbar', () => {
     button.click();
 
     expect(onBulkCitation).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides Add Tags button when no rows selected', () => {
+    renderWithProviders(<PapersToolbar {...defaultProps} />);
+
+    expect(screen.queryByRole('button', { name: /Add Tags|批量标签/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Add Tags button when rows are selected', () => {
+    renderWithProviders(
+      <PapersToolbar {...defaultProps} selectedRows={new Set([1])} />,
+    );
+
+    const button = screen.getByRole('button', { name: /Add Tags|批量标签/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveTextContent('(1)');
+  });
+
+  it('calls onBulkTag when Add Tags button is clicked', () => {
+    const onBulkTag = vi.fn();
+    renderWithProviders(
+      <PapersToolbar {...defaultProps} selectedRows={new Set([1, 2])} onBulkTag={onBulkTag} />,
+    );
+
+    const button = screen.getByRole('button', { name: /Add Tags|批量标签/i });
+    button.click();
+
+    expect(onBulkTag).toHaveBeenCalledTimes(1);
   });
 });

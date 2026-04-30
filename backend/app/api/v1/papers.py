@@ -27,6 +27,7 @@ async def list_papers(
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
     quality_tags: str | None = Query(default=None, description="Filter by quality tag"),
+    tags: str | None = Query(default=None, description="Filter by custom tags"),
     collection_id: int | None = Query(default=None, description="Filter by collection"),
     sort_by: str = "created_at",
     order: str = "desc",
@@ -59,10 +60,15 @@ async def list_papers(
         base = base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
         count_base = count_base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
     if quality_tags:
-        tags = [t.strip() for t in quality_tags.split(",") if t.strip()]
-        if tags:
-            base = base.where(Paper.quality_tags.overlap(tags))
-            count_base = count_base.where(Paper.quality_tags.overlap(tags))
+        tag_list = [t.strip() for t in quality_tags.split(",") if t.strip()]
+        if tag_list:
+            base = base.where(Paper.quality_tags.overlap(tag_list))
+            count_base = count_base.where(Paper.quality_tags.overlap(tag_list))
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",") if t.strip()]
+        if tag_list:
+            base = base.where(Paper.tags.overlap(tag_list))
+            count_base = count_base.where(Paper.tags.overlap(tag_list))
 
     total = (await db.execute(count_base)).scalar() or 0
 
