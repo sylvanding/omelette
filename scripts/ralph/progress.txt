@@ -234,6 +234,44 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - Need to check `title` query param separately from metadata dict in validation
 ---
 
+## 2026-04-30 15:10 - FEAT-019
+- PaperVersion model with FK to papers, cascade delete from Paper
+- Alembic migration creating paper_versions table
+- VersionService: check_for_updates, get_version_history, record_version, upgrade_to_version, poll_all_papers
+- _compute_diff generates human-readable diff between versions
+- _is_preprint_source and _extract_preprint_server helpers for Semantic Scholar metadata
+- 3 new API endpoints: GET /papers/{id}/versions, POST /papers/{id}/versions/check, POST /papers/{id}/versions/{version_id}/upgrade
+- upgrade_to_version preserves user data (notes, tags, rating, reading_status, quality_tags)
+- Scheduled job polls all papers with DOIs for version updates
+- Frontend: VersionTimeline component with timeline dots, preprint/journal badges, diff summaries
+- VersionTimelineDialog with fixed overlay, React Query data fetching and mutations
+- Wired "Versions" button into PDFReaderLayout header bar
+- useToastMutation hook for upgrade action with toast feedback
+- 17 backend tests pass, 10 frontend tests pass, TypeScript clean
+- Files changed:
+  - backend/app/models/paper_version.py (new)
+  - backend/app/models/__init__.py (added PaperVersion)
+  - backend/app/models/paper.py (added versions relationship)
+  - backend/app/services/version_service.py (new)
+  - backend/app/api/v1/papers.py (added 3 version endpoints)
+  - backend/alembic/versions/g1h2i3j4k5l6_add_paper_versions_table.py (new)
+  - backend/tests/test_version_tracking.py (new, 17 tests)
+  - frontend/src/services/api.ts (added PaperVersionEntry, versionTrackingApi)
+  - frontend/src/lib/query-keys.ts (added paperVersions query key)
+  - frontend/src/components/version-timeline/VersionTimeline.tsx (new)
+  - frontend/src/components/version-timeline/VersionTimelineDialog.tsx (new)
+  - frontend/src/components/version-timeline/__tests__/VersionTimeline.test.tsx (new, 10 tests)
+  - frontend/src/components/pdf-reader/PDFReaderLayout.tsx (added Versions button + dialog)
+  - frontend/src/test/mocks/handlers.ts (added version tracking mock handlers)
+  - frontend/src/i18n/locales/en.json, zh.json (added versions translations)
+- **Learnings for future iterations:**
+  - cascade="all, delete-orphan" belongs on the one-side of a relationship (Paper.versions), not the many-side
+  - Semantic Scholar API returns venue field for journal names, externalIds for preprint server detection
+  - Fixed-position dialog overlay pattern: `fixed inset-0 z-50 flex items-center justify-center bg-black/50`
+  - Version upgrade mutation invalidates both the paper query and paper-versions query key
+
+---
+
 ## 2026-04-30 15:07 - FEAT-018
 - Implemented POST /projects/{id}/analysis/gaps endpoint
 - Created GapService using LLM to analyze paper collection for research gaps
