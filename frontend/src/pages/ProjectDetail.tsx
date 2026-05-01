@@ -13,6 +13,7 @@ import {
   FolderOpen,
   FolderTree,
   Sparkles,
+  Brain,
   TrendingUp,
   Lightbulb,
   Headphones,
@@ -62,6 +63,7 @@ export default function ProjectDetail() {
     { path: 'keywords', label: 'Keywords', icon: Sparkles },
     { path: 'subscriptions', label: 'Subscriptions', icon: Rss },
     { path: 'pipelines', label: 'Pipelines', icon: Network },
+    { path: 'rag', label: 'RAG', icon: Brain },
   ];
 
   const { data } = useQuery({
