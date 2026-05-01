@@ -9,8 +9,16 @@ import {
   Send,
   Loader2,
   Trash2,
+  Pencil,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface QAEntry {
@@ -32,6 +40,13 @@ const QUICK_ACTIONS = [
   { id: 'explain', icon: MessageSquare, labelKey: 'pdf.explain' as const, fallback: '解释这段话' },
   { id: 'translate', icon: Languages, labelKey: 'pdf.translate' as const, fallback: '翻译' },
   { id: 'find_citations', icon: Search, labelKey: 'pdf.findCitations' as const, fallback: '找相关引用' },
+] as const;
+
+const REWRITE_STYLES = [
+  { id: 'simplify', label: 'Simplify', fallback: '简化' },
+  { id: 'academic', label: 'Academic', fallback: '学术化' },
+  { id: 'translate_en', label: 'Translate to English', fallback: '译为英文' },
+  { id: 'translate_zh', label: '译为中文', fallback: '译为中文' },
 ] as const;
 
 export function SelectionQA({
@@ -139,6 +154,76 @@ export function SelectionQA({
     setFreeQuestion('');
   }, [freeQuestion, askAI]);
 
+  const handleRewrite = useCallback(
+    async (style: string, label: string) => {
+      if (!selectedText || streaming) return;
+      setStreaming(true);
+
+      const entryId = crypto.randomUUID();
+      const newEntry: QAEntry = { id: entryId, question: `${label} "${selectedText.slice(0, 60)}..."`, answer: '', action: 'rewrite' };
+      setHistory((prev) => [...prev, newEntry]);
+
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+
+      try {
+        const res = await fetch(apiUrl('/chat/rewrite'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ excerpt: selectedText, style }),
+          signal: ctrl.signal,
+        });
+
+        if (!res.ok || !res.body) {
+          setHistory((prev) =>
+            prev.map((e) => (e.id === entryId ? { ...e, answer: 'Rewrite failed' } : e))
+          );
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop()!;
+
+          for (const line of lines) {
+            if (line.startsWith('event: rewrite_delta')) continue;
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.delta) {
+                  setHistory((prev) =>
+                    prev.map((e) => (e.id === entryId ? { ...e, answer: e.answer + data.delta } : e))
+                  );
+                }
+              } catch {
+                /* skip malformed */
+              }
+            }
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setHistory((prev) =>
+            prev.map((e) => (e.id === entryId ? { ...e, answer: 'Rewrite error' } : e))
+          );
+        }
+      } finally {
+        setStreaming(false);
+        abortRef.current = null;
+        setTimeout(() => historyEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    },
+    [selectedText, streaming],
+  );
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -178,6 +263,22 @@ export function SelectionQA({
                 {t(action.labelKey, action.fallback)}
               </Button>
             ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" disabled={streaming} className="h-7 gap-1 text-xs">
+                  <Pencil className="size-3" />
+                  Rewrite
+                  <ChevronDown className="size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {REWRITE_STYLES.map((s) => (
+                  <DropdownMenuItem key={s.id} onClick={() => handleRewrite(s.id, t('pdf.rewriteStyle.' + s.id, s.fallback))}>
+                    {t('pdf.rewriteStyle.' + s.id, s.fallback)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )}
