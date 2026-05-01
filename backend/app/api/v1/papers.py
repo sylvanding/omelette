@@ -244,6 +244,11 @@ async def get_reading_analytics(
         week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
         read_by_week[week] = read_by_week.get(week, 0) + 1
 
+    read_by_day: dict[str, int] = {}
+    for p in read_papers:
+        day = p.read_at.strftime("%Y-%m-%d") if p.read_at else "unknown"
+        read_by_day[day] = read_by_day.get(day, 0) + 1
+
     journal_counts: dict[str, int] = {}
     for p in papers:
         if p.journal:
@@ -261,6 +266,7 @@ async def get_reading_analytics(
             "total": total,
             "by_status": status_counts,
             "read_by_week": dict(sorted(read_by_week.items())),
+            "read_by_day": dict(sorted(read_by_day.items())),
             "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
             "papers_per_week": papers_per_week,
             "avg_read_time_seconds": avg_read_time,

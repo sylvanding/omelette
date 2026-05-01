@@ -43,6 +43,7 @@ export interface ReadingAnalytics {
   total: number;
   by_status: Record<string, number>;
   read_by_week: Record<string, number>;
+  read_by_day: Record<string, number>;
   top_journals: Array<{ journal: string; count: number }>;
   papers_per_week: number;
   avg_read_time_seconds: number;

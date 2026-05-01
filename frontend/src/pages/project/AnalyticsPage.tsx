@@ -8,6 +8,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { LoadingState } from '@/components/ui/loading-state';
 import PageLayout from '@/components/layout/PageLayout';
 import { formatReadingTime } from '@/hooks/useReadingTimer';
+import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<string, string> = {
   unread: '#94a3b8',
@@ -205,6 +206,99 @@ function KnowledgeGapList({ projectId }: { projectId: number }) {
   );
 }
 
+const HEATMAP_LEVELS = [
+  { max: 0, color: 'bg-muted/30' },
+  { max: 1, color: 'bg-green-200 dark:bg-green-900/40' },
+  { max: 3, color: 'bg-green-300 dark:bg-green-800/50' },
+  { max: 5, color: 'bg-green-500 dark:bg-green-700/60' },
+  { max: Infinity, color: 'bg-green-700 dark:bg-green-500/70' },
+];
+
+function getHeatmapColor(count: number): string {
+  for (const level of HEATMAP_LEVELS) {
+    if (count <= level.max) return level.color;
+  }
+  return HEATMAP_LEVELS[HEATMAP_LEVELS.length - 1].color;
+}
+
+function HeatmapCalendar({ data }: { data: Record<string, number> }) {
+  const { t } = useTranslation();
+
+  // Build last 52 weeks of days
+  const today = new Date();
+  const days: { date: string; count: number }[] = [];
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 364);
+  // Align to Sunday
+  startDate.setDate(startDate.getDate() - startDate.getDay());
+
+  const currentDate = new Date(startDate);
+  while (currentDate <= today) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    days.push({ date: dateStr, count: data[dateStr] ?? 0 });
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  const totalRead = days.reduce((sum, d) => sum + d.count, 0);
+
+  // Group into weeks (7 days per column)
+  const weeks: { date: string; count: number }[][] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  // Month labels
+  const monthLabels: { label: string; weekIndex: number }[] = [];
+  let lastMonth = -1;
+  weeks.forEach((week, i) => {
+    const month = new Date(week[0].date).getMonth();
+    if (month !== lastMonth) {
+      monthLabels.push({ label: new Date(week[0].date).toLocaleString('en', { month: 'short' }), weekIndex: i });
+      lastMonth = month;
+    }
+  });
+
+  if (totalRead === 0) {
+    return <EmptyChart message={t('analytics.noReadData')} />;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+        <span>{t('analytics.less', 'Less')}</span>
+        {HEATMAP_LEVELS.map((level, i) => (
+          <div key={i} className={cn('size-3 rounded-sm', level.color)} />
+        ))}
+        <span>{t('analytics.more', 'More')}</span>
+      </div>
+      <div className="relative">
+        {/* Month labels */}
+        <div className="flex ml-8 mb-1">
+          {monthLabels.map((m) => (
+            <div key={m.label} className="text-xs text-muted-foreground" style={{ width: `${(100 / weeks.length) * (m.weekIndex === 0 ? 1 : 1)}%` }}>
+              {m.label}
+            </div>
+          ))}
+        </div>
+        {/* Heatmap grid */}
+        <div className="flex gap-[3px]">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="flex flex-col gap-[3px]">
+              {week.map((day) => (
+                <div
+                  key={day.date}
+                  className={cn('size-3 rounded-sm', getHeatmapColor(day.count))}
+                  title={`${day.date}: ${day.count} paper${day.count !== 1 ? 's' : ''}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -249,6 +343,7 @@ export default function AnalyticsPage() {
   const total = data.total;
   const byStatus = data.by_status;
   const readByWeek = data.read_by_week;
+  const readByDay = data.read_by_day ?? {};
   const topJournals = data.top_journals;
 
   return (
@@ -274,6 +369,11 @@ export default function AnalyticsPage() {
             <WeeklyReadBar data={readByWeek} />
           </ChartCard>
         </div>
+
+        {/* Reading Activity Heatmap */}
+        <ChartCard title={t('analytics.readingActivity', 'Reading Activity')}>
+          <HeatmapCalendar data={readByDay} />
+        </ChartCard>
 
         {/* Citation impact and domain coverage */}
         <div className="grid gap-6 md:grid-cols-2">
