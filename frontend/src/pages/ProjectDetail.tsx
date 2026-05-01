@@ -58,6 +58,7 @@ export default function ProjectDetail() {
     { path: 'ocr', label: 'OCR', icon: Eye },
     { path: 'crawler', label: 'Crawler', icon: Download },
     { path: 'dedup', label: 'Dedup', icon: Files },
+    { path: 'keywords', label: 'Keywords', icon: Sparkles },
   ];
 
   const { data } = useQuery({
