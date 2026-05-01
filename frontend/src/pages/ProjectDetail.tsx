@@ -61,6 +61,7 @@ export default function ProjectDetail() {
     { path: 'dedup', label: 'Dedup', icon: Files },
     { path: 'keywords', label: 'Keywords', icon: Sparkles },
     { path: 'subscriptions', label: 'Subscriptions', icon: Rss },
+    { path: 'pipelines', label: 'Pipelines', icon: Network },
   ];
 
   const { data } = useQuery({

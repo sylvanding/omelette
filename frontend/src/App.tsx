@@ -38,6 +38,7 @@ const CrawlerPage = lazy(() => import('@/pages/project/CrawlerPage'));
 const DedupPage = lazy(() => import('@/pages/project/DedupPage'));
 const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
 const SubscriptionPage = lazy(() => import('@/pages/project/SubscriptionPage'));
+const PipelinesPage = lazy(() => import('@/pages/project/PipelinesPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -151,6 +152,9 @@ function App() {
               } />
               <Route path="subscriptions" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><SubscriptionPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="pipelines" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PipelinesPage /></Suspense></ErrorBoundary>
               } />
               <Route path="rag" element={<Navigate to="/" replace />} />
             </Route>
