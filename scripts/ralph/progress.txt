@@ -567,3 +567,20 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - Some `as any` in playground components (MessageBubble, MessageBubbleV2)
   - MessageBubbleV2 exists alongside MessageBubble (potential duplication)
 ---
+
+## 2026-05-01 20:33 - Ralph Loop Cycle 6
+- Discovered MessageBubble.tsx was dead code — only imported by its own test
+- PlaygroundPage uses MessageBubbleV2 exclusively
+- Removed dead MessageBubble.tsx and its orphaned test (saved 208 lines)
+- Tests: 251 pass (42 files) — 6 fewer tests from removed file
+- PR #20 now has 19 commits
+---
+
+## 2026-05-01 20:35 - Ralph Loop Cycle 7
+- URLs in backend are all either config defaults or properly configurable via env vars
+- 32 database indexes defined
+- All models have created_at timestamps (server_default=func.now())
+- No hardcoded external URLs in frontend
+- PR #20 growing with quality improvements
+- Overall: project is in excellent shape for v3.0.0 release
+---
