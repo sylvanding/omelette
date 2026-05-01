@@ -18,6 +18,7 @@ import {
   Search,
   Bell,
   NotebookPen,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -45,6 +46,7 @@ export default function ProjectDetail() {
     { path: 'audio-overviews', label: t('audioOverview.title', 'Audio Overviews'), icon: Headphones },
     { path: 'notifications', label: t('notifications.title', 'Notifications'), icon: Bell },
     { path: 'notes', label: t('notes.dashboard', 'Notes'), icon: NotebookPen },
+    { path: 'team', label: t('team.title', 'Team'), icon: Users },
   ];
 
   const { data } = useQuery({
