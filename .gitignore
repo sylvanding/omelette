@@ -67,6 +67,9 @@ chroma_data/
 frontend/dist/
 frontend/coverage/
 
+# Ralph working data (archived iterations)
+scripts/ralph/archive/
+
 # Documentation build
 docs/.vitepress/dist/
 docs/.vitepress/cache/

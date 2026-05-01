@@ -112,11 +112,12 @@ export default function SearchPage() {
         onSubmit={handleSearch}
         className="rounded-xl border border-border bg-card p-4 space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">
+          <label htmlFor="search-query" className="mb-1 block text-sm font-medium text-foreground">
             {t('searchPage.query')}
           </label>
           <div className="flex gap-2">
             <Input
+              id="search-query"
               placeholder={t('searchPage.queryPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -160,10 +161,11 @@ export default function SearchPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">
+          <label htmlFor="search-max-results" className="mb-1 block text-sm font-medium text-foreground">
             {t('searchPage.maxResults', { count: maxResults })}
           </label>
           <input
+            id="search-max-results"
             type="range"
             min={10}
             max={200}
