@@ -154,8 +154,9 @@ function QuickUpdateCheck({
 
       <div className="mb-4 flex flex-wrap gap-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="mb-1 block text-xs text-muted-foreground">Query</label>
+          <label htmlFor="quick-query" className="mb-1 block text-xs text-muted-foreground">Query</label>
           <input
+            id="quick-query"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -164,8 +165,9 @@ function QuickUpdateCheck({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Max results</label>
+          <label htmlFor="quick-max" className="mb-1 block text-xs text-muted-foreground">Max results</label>
           <input
+            id="quick-max"
             type="number"
             min={1}
             max={200}
@@ -268,8 +270,9 @@ function SubscriptionForm({
 
       <div className="space-y-4">
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Name</label>
+          <label htmlFor="sub-name" className="mb-1 block text-xs text-muted-foreground">Name</label>
           <input
+            id="sub-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -279,8 +282,9 @@ function SubscriptionForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Search query</label>
+          <label htmlFor="sub-query" className="mb-1 block text-xs text-muted-foreground">Search query</label>
           <input
+            id="sub-query"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -291,8 +295,9 @@ function SubscriptionForm({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Frequency</label>
+            <label htmlFor="sub-frequency" className="mb-1 block text-xs text-muted-foreground">Frequency</label>
             <select
+              id="sub-frequency"
               value={frequency}
               onChange={(e) => setFrequency(e.target.value as Frequency)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -304,8 +309,9 @@ function SubscriptionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Max results</label>
+            <label htmlFor="sub-max" className="mb-1 block text-xs text-muted-foreground">Max results</label>
             <input
+              id="sub-max"
               type="number"
               min={1}
               max={200}
@@ -316,8 +322,9 @@ function SubscriptionForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Sources (comma-separated)</label>
+            <label htmlFor="sub-sources" className="mb-1 block text-xs text-muted-foreground">Sources (comma-separated)</label>
             <input
+              id="sub-sources"
               type="text"
               value={sources}
               onChange={(e) => setSources(e.target.value)}

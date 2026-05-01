@@ -200,8 +200,9 @@ function StartPipelinePanel({ projectId }: { projectId: number }) {
 
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Search query</label>
+              <label htmlFor="pipe-search-query" className="mb-1 block text-xs text-muted-foreground">Search query</label>
               <input
+                id="pipe-search-query"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -212,8 +213,9 @@ function StartPipelinePanel({ projectId }: { projectId: number }) {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Sources (comma-separated, empty for all)</label>
+                <label htmlFor="pipe-sources" className="mb-1 block text-xs text-muted-foreground">Sources (comma-separated, empty for all)</label>
                 <input
+                  id="pipe-sources"
                   type="text"
                   value={searchSources}
                   onChange={(e) => setSearchSources(e.target.value)}
@@ -223,8 +225,9 @@ function StartPipelinePanel({ projectId }: { projectId: number }) {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Max results</label>
+                <label htmlFor="pipe-max" className="mb-1 block text-xs text-muted-foreground">Max results</label>
                 <input
+                  id="pipe-max"
                   type="number"
                   min={1}
                   max={200}
@@ -258,8 +261,9 @@ function StartPipelinePanel({ projectId }: { projectId: number }) {
 
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">PDF file paths (one per line)</label>
+              <label htmlFor="pipe-paths" className="mb-1 block text-xs text-muted-foreground">PDF file paths (one per line)</label>
               <textarea
+                id="pipe-paths"
                 value={uploadPaths}
                 onChange={(e) => setUploadPaths(e.target.value)}
                 placeholder="/path/to/paper1.pdf&#10;/path/to/paper2.pdf"
@@ -397,6 +401,7 @@ function ConflictResolver({
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium">Conflict: {id}</span>
                       <select
+                        aria-label={`Resolution for conflict ${id}`}
                         value={resolutions.get(id) ?? 'skip'}
                         onChange={(e) => setResolutions(new Map(resolutions).set(id, e.target.value))}
                         className="rounded-md border bg-background px-2 py-1 text-sm"
