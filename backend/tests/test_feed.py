@@ -208,9 +208,12 @@ class TestFeedAPI:
     async def test_get_feed_returns_404_for_unknown_project(self, client: AsyncClient):
         """Verify feed returns 404 for non-existent project."""
 
+        mock_project_result = MagicMock()
+        mock_project_result.scalars.return_value.first.return_value = None
+
         async def mock_get_db():
             mock_session = AsyncMock()
-            mock_session.get.return_value = None
+            mock_session.execute = AsyncMock(return_value=mock_project_result)
             yield mock_session
 
         app.dependency_overrides[get_db] = mock_get_db
