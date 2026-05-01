@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -728,8 +729,87 @@ async def upgrade_paper_version(
 
     svc = VersionService(db)
     try:
-        result = await svc.upgrade_to_version(paper_id, version_id)
+        await svc.upgrade_to_version(paper_id, version_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
-    return ApiResponse(data=result)
+    return ApiResponse(data=None)
+
+
+class NoteEntry(BaseModel):
+    """Aggregated note entry for a single paper."""
+
+    paper_id: int
+    title: str
+    authors: list
+    year: int | None
+    journal: str | None
+    notes: str
+    reading_status: str
+    updated_at: str | None
+
+
+class NotesAggregationResponse(BaseModel):
+    """Aggregated notes response for a project."""
+
+    total_papers: int
+    papers_with_notes: int
+    total_notes: int
+    notes: list[NoteEntry]
+
+
+@router.get(
+    "/notes/aggregate",
+    response_model=ApiResponse[NotesAggregationResponse],
+    summary="Aggregated notes across all papers in a project",
+)
+async def aggregate_notes(
+    project_id: int,
+    search: str | None = Query(default=None, description="Search across note content"),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return aggregated notes from all papers in the project, optionally filtered by search."""
+    # Count total papers
+    total_stmt = select(func.count(Paper.id)).where(Paper.project_id == project_id)
+    total_result = await db.execute(total_stmt)
+    total_papers = total_result.scalar() or 0
+
+    # Build query for papers with notes
+    stmt = (
+        select(Paper).where(Paper.project_id == project_id).where(Paper.notes != "").order_by(Paper.updated_at.desc())
+    )
+    if search:
+        stmt = stmt.where(Paper.notes.ilike(f"%{search}%"))
+
+    result = await db.execute(stmt)
+    papers = result.scalars().all()
+
+    notes_list = []
+    total_notes_chars = 0
+    for p in papers:
+        authors = p.authors or []
+        notes_list.append(
+            NoteEntry(
+                paper_id=p.id,
+                title=p.title or "",
+                authors=authors,
+                year=p.year,
+                journal=p.journal,
+                notes=p.notes or "",
+                reading_status=p.reading_status,
+                updated_at=p.updated_at.isoformat() if p.updated_at else None,
+            )
+        )
+        total_notes_chars += len(p.notes or "")
+
+    return ApiResponse(
+        code=0,
+        message="Notes aggregated successfully",
+        data=NotesAggregationResponse(
+            total_papers=total_papers,
+            papers_with_notes=len(notes_list),
+            total_notes=total_notes_chars,
+            notes=notes_list,
+        ),
+    )

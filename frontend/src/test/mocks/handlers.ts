@@ -432,6 +432,49 @@ export const handlers = [
     ),
   ),
 
+  // Notes aggregation
+  http.get(`${apiBase}/projects/:id/papers/notes/aggregate`, () =>
+    HttpResponse.json(
+      mockResponse({
+        total_papers: 5,
+        papers_with_notes: 3,
+        total_notes: 1250,
+        notes: [
+          {
+            paper_id: 1,
+            title: 'Understanding Deep Learning Representations',
+            authors: [{ name: 'John Doe' }, { name: 'Jane Smith' }],
+            year: 2024,
+            journal: 'NeurIPS',
+            notes: 'This paper presents a novel approach to understanding deep learning representations through contrastive learning. The key insight is that representations can be improved by maximizing agreement between different augmented views of the same example. Important findings include improved downstream task performance and better generalization.',
+            reading_status: 'read',
+            updated_at: '2024-01-15T10:00:00Z',
+          },
+          {
+            paper_id: 2,
+            title: 'Attention Is All You Need',
+            authors: [{ name: 'Vaswani' }],
+            year: 2017,
+            journal: 'NeurIPS',
+            notes: 'The transformer architecture.',
+            reading_status: 'in_progress',
+            updated_at: '2024-01-10T10:00:00Z',
+          },
+          {
+            paper_id: 3,
+            title: 'BERT: Pre-training of Deep Bidirectional Transformers',
+            authors: [{ name: 'Devlin' }, { name: 'Chang' }],
+            year: 2019,
+            journal: 'NAACL',
+            notes: '',
+            reading_status: 'unread',
+            updated_at: null,
+          },
+        ],
+      }),
+    ),
+  ),
+
   // Paper compare
   http.post(`${apiBase}/projects/:id/papers/compare`, async ({ request }) => {
     const body = (await request.json()) as { paper_ids?: number[]; focus?: string };

@@ -1126,3 +1126,34 @@ export const notificationsApi = {
   dismiss: (projectId: number, notificationId: number) =>
     api.delete<Record<string, unknown>>(`/projects/${projectId}/notifications/${notificationId}`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Notes Aggregation API
+// ---------------------------------------------------------------------------
+
+export interface PaperNote {
+  paper_id: number;
+  title: string;
+  authors: Record<string, unknown>[];
+  year: number | null;
+  journal: string | null;
+  notes: string;
+  reading_status: string;
+  updated_at: string | null;
+}
+
+export interface NotesAggregationResponse {
+  total_papers: number;
+  papers_with_notes: number;
+  total_notes: number;
+  notes: PaperNote[];
+}
+
+export const notesApi = {
+  aggregate: (projectId: number, search?: string) =>
+    api
+      .get<NotesAggregationResponse>(`/projects/${projectId}/papers/notes/aggregate`, {
+        params: search ? { search } : {},
+      })
+      .then(r => r.data),
+};

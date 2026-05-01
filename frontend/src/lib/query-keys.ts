@@ -86,4 +86,8 @@ export const queryKeys = {
     all: (projectId: number) => ['notifications', projectId] as const,
     unread: (projectId: number) => ['notifications', projectId, 'unread'] as const,
   },
+  notes: {
+    all: (projectId: number) => ['notes', projectId] as const,
+    search: (projectId: number, query: string) => ['notes', projectId, 'search', query] as const,
+  },
 } as const;
