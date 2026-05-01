@@ -148,6 +148,12 @@ function ProductivityCards({ data }: { data: ReturnType<typeof paperApi.getAnaly
 }
 
 function CitationImpactChart({ data }: { data: { min: number; max: number; mean: number; median: number; p75: number } }) {
+  const { t } = useTranslation();
+
+  if (data.max === 0 && data.min === 0) {
+    return <EmptyChart message={t('analytics.noData')} />;
+  }
+
   const chartData = [
     { name: 'Min', value: data.min },
     { name: 'Mean', value: data.mean },
@@ -161,7 +167,7 @@ function CitationImpactChart({ data }: { data: { min: number; max: number; mean:
       <BarChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-        <YAxis tick={{ fontSize: 12 }} />
+        <YAxis tick={{ fontSize: 12 }} domain={[0, 'auto']} />
         <Tooltip />
         <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
       </BarChart>

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { projectApi, type OverviewData } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
+import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
 import {
   FileText,
   BookOpen,
@@ -14,6 +15,8 @@ import {
   Bell,
   Search,
   ArrowRight,
+  Upload,
+  TrendingUp,
 } from 'lucide-react';
 
 function StatCard({
@@ -183,6 +186,9 @@ function QuickSearch({ projectId }: { projectId: number }) {
 export default function OverviewPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
+  const navigate = useNavigate();
+
+  const [showAddPaper, setShowAddPaper] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.projects.overview(pid),
@@ -199,6 +205,7 @@ export default function OverviewPage() {
   }
 
   const d = data as OverviewData;
+  const isEmpty = d.total_papers === 0;
 
   return (
     <div className="space-y-6 p-6">
@@ -224,6 +231,58 @@ export default function OverviewPage() {
         <YearChart data={d.papers_by_year} />
       </div>
 
+      {/* Get Started actions for empty projects */}
+      {isEmpty && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Get Started</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => setShowAddPaper(true)}
+                className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center transition-colors hover:bg-muted/50"
+              >
+                <div className="flex size-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <Upload className="size-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Upload Papers</p>
+                  <p className="text-xs text-muted-foreground">Add PDF files from your computer</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/projects/${projectId}/search`)}
+                className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center transition-colors hover:bg-muted/50"
+              >
+                <div className="flex size-12 items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+                  <Search className="size-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Search Databases</p>
+                  <p className="text-xs text-muted-foreground">Find papers from Semantic Scholar, arXiv, and more</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/projects/${projectId}/trends`)}
+                className="flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center transition-colors hover:bg-muted/50"
+              >
+                <div className="flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                  <TrendingUp className="size-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Discover Trends</p>
+                  <p className="text-xs text-muted-foreground">Explore emerging topics in your field</p>
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent Papers */}
       <Card>
         <CardHeader>
@@ -231,7 +290,11 @@ export default function OverviewPage() {
         </CardHeader>
         <CardContent>
           {d.recent_papers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No papers yet. Upload papers or search databases to get started.</p>
+            <p className="text-sm text-muted-foreground">
+              {isEmpty
+                ? 'Upload papers or search academic databases to get started.'
+                : 'No papers added recently.'}
+            </p>
           ) : (
             <div className="space-y-3">
               {d.recent_papers.map((paper, i) => (
@@ -255,6 +318,12 @@ export default function OverviewPage() {
           )}
         </CardContent>
       </Card>
+
+      <AddPaperDialog
+        projectId={pid}
+        open={showAddPaper}
+        onOpenChange={setShowAddPaper}
+      />
     </div>
   );
 }
