@@ -30,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { settingsApi } from '@/services/chat-api';
 import APIKeysSettings from '@/components/api-keys/APIKeysSettings';
+import GPUStatusCard from '@/components/settings/GPUStatusCard';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -342,6 +343,8 @@ export default function SettingsPage() {
         </Card>
 
         <APIKeysSettings />
+
+        <GPUStatusCard />
 
         <Card>
           <CardHeader>
