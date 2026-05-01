@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Bell, CheckCheck, ExternalLink, Loader2 } from 'lucide-react';
 import { notificationsApi, type NotificationItem } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import { Button } from '@/components/ui/button';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 function formatTimeAgo(dateStr: string): string {
   const now = new Date();
   const date = new Date(dateStr);
@@ -25,7 +26,6 @@ export default function NotificationBell() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = projectId ? Number(projectId) : null;
-  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data } = useQuery({
@@ -35,21 +35,15 @@ export default function NotificationBell() {
     refetchInterval: 30_000,
   });
 
-  const markReadMutation = useMutation({
+  const markReadMutation = useToastMutation({
     mutationFn: (id: number) => notificationsApi.markRead(pid!, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all(pid!) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unread(pid!) });
-    },
+    invalidateKeys: [queryKeys.notifications.all(pid!), queryKeys.notifications.unread(pid!)],
   });
 
-  const markAllReadMutation = useMutation({
+  const markAllReadMutation = useToastMutation({
     mutationFn: () => notificationsApi.markAllRead(pid!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all(pid!) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unread(pid!) });
-      setIsOpen(false);
-    },
+    invalidateKeys: [queryKeys.notifications.all(pid!), queryKeys.notifications.unread(pid!)],
+    onSuccess: () => setIsOpen(false),
   });
 
   const unreadCount = data?.unread_count ?? 0;

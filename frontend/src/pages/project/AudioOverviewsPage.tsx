@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Headphones, Trash2, Play, Plus, Clock, Loader2 } from 'lucide-react';
 import { audioOverviewsApi, type AudioOverviewListItem, type DialogueEntry } from '@/services/api';
@@ -11,28 +11,25 @@ import { Badge } from '@/components/ui/badge';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 import PageLayout from '@/components/layout/PageLayout';
-import { toast } from 'sonner';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 
 export default function AudioOverviewsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
-  const queryClient = useQueryClient();
 
   const [selectedOverview, setSelectedOverview] = useState<AudioOverviewListItem | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: queryKeys.audioOverviews.all(pid),
     queryFn: () => audioOverviewsApi.list(pid),
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useToastMutation({
     mutationFn: (id: number) => audioOverviewsApi.delete(pid, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.audioOverviews.all(pid) });
-      toast.success(t('audioOverview.deleted', 'Audio overview deleted'));
-    },
+    invalidateKeys: [queryKeys.audioOverviews.all(pid)],
+    successMessage: t('audioOverview.deleted', 'Audio overview deleted'),
   });
 
   const handlePlay = (overview: AudioOverviewListItem) => {
@@ -44,7 +41,7 @@ export default function AudioOverviewsPage() {
   };
 
   const handleGenerated = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.audioOverviews.all(pid) });
+    refetch();
   };
 
   if (isLoading) {

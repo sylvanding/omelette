@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Bell, BellOff, CheckCheck, X, ExternalLink, Loader2 } from 'lucide-react';
 import { notificationsApi, type NotificationItem } from '@/services/api';
@@ -8,7 +8,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import PageLayout from '@/components/layout/PageLayout';
-import { toast } from 'sonner';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 function formatTimeAgo(dateStr: string): string {
   const now = new Date();
   const date = new Date(dateStr);
@@ -28,33 +28,26 @@ export default function NotificationsPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
-  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.notifications.all(pid),
     queryFn: () => notificationsApi.list(pid),
   });
 
-  const markReadMutation = useMutation({
+  const markReadMutation = useToastMutation({
     mutationFn: (id: number) => notificationsApi.markRead(pid, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all(pid) });
-    },
+    invalidateKeys: [queryKeys.notifications.all(pid)],
   });
 
-  const markAllReadMutation = useMutation({
+  const markAllReadMutation = useToastMutation({
     mutationFn: () => notificationsApi.markAllRead(pid),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all(pid) });
-      toast.success(t('notifications.markedAllRead', 'All notifications marked as read'));
-    },
+    invalidateKeys: [queryKeys.notifications.all(pid)],
+    successMessage: t('notifications.markedAllRead', 'All notifications marked as read'),
   });
 
-  const dismissMutation = useMutation({
+  const dismissMutation = useToastMutation({
     mutationFn: (id: number) => notificationsApi.dismiss(pid, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all(pid) });
-    },
+    invalidateKeys: [queryKeys.notifications.all(pid)],
   });
 
   if (isLoading) {

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Loader2,
   RefreshCw,
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { feedApi } from '@/services/api';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 
 interface PaperFeedback {
   index: number;
@@ -26,18 +27,16 @@ export default function FeedPage() {
   const [feedbacks, setFeedbacks] = useState<PaperFeedback[]>([]);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
-  const { data: feedResponse, isLoading, refetch } = useQuery({
+  const { data: feedResponse, isLoading } = useQuery({
     queryKey: ['feed', pid],
     queryFn: () => feedApi.get(pid),
     enabled: !!pid,
   });
 
-  const refreshMutation = useMutation({
+  const refreshMutation = useToastMutation({
     mutationFn: () => feedApi.refresh(pid),
-    onSuccess: () => {
-      refetch();
-      setFeedbacks([]);
-    },
+    invalidateKeys: [['feed', pid]],
+    onSuccess: () => setFeedbacks([]),
   });
 
   const handleFeedback = useCallback(
