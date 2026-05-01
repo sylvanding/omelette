@@ -508,3 +508,30 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - frontend/src/pages/project/SearchPage.tsx (a11y: label association)
   - .gitignore (added ralph/archive)
 ---
+
+## 2026-05-01 19:55 - Ralph Loop Cycle 2
+- Discovered 6 nav labels hardcoded in English in ProjectDetail.tsx (Reviews, Concepts, Library, Feed, Trends, Gap Analysis)
+- Added i18n keys to en.json and zh.json for all missing nav labels
+- Found and fixed DUPLICATE 'trends' keys in both en.json and zh.json — second was overwriting full translations
+- TrendsPage test was failing because of this — now fixed
+- Created PR #20 on GitHub for Cycle 18 work
+- Branch has 17 commits ahead of main
+- Tests: 854 backend pass, 257 frontend pass
+---
+
+## 2026-05-01 19:58 - Ralph Loop Cycle 3
+- Discovered 16 stale remote branches without open PRs
+- Deleted all 16 stale branches from GitHub:
+  - docs/api-docs-and-frontend-bugfixes, docs/beautify-readme-and-assets
+  - feat/chat-routing-chain-rewrite, feat/frontend-redesign
+  - feat/integration-testing-audit, feat/rich-citation-rewrite
+  - feat/v2-architecture-upgrade, fix/code-review-findings
+  - ralph/cycle-5, ralph/cycle-6, ralph/cycle-8, ralph/cycle-9, ralph/cycle-17
+  - ralph/remaining-improvements, ralph/self-directed-improvements
+  - refactor/backend-comprehensive-optimization
+- Created PR #20 for Cycle 18 work (mergeable, 17 commits)
+- Audit: component organization looks good (20 component dirs, 74 tsx files)
+- No console.log in production code, no any types (except d3 and eslint-suppressed)
+- No SQL injection via f-strings, rate limiting on 11 expensive endpoints
+- Secrets properly handled with production warning for default key
+---

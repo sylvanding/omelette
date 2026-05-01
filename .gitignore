@@ -66,6 +66,7 @@ chroma_data/
 # Frontend
 frontend/dist/
 frontend/coverage/
+frontend/.eslintcache
 
 # Ralph working data (archived iterations)
 scripts/ralph/archive/
