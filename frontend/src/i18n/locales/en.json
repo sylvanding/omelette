@@ -728,5 +728,23 @@
       "ieee": "IEEE",
       "gb_t_7714": "GB/T 7714"
     }
+  },
+  "export": {
+    "title": "Export References",
+    "subtitle": "{{count}} papers in your library",
+    "bibtex": "BibTeX",
+    "bibtexDesc": "LaTeX bibliography format",
+    "csv": "CSV",
+    "csvDesc": "Spreadsheet format",
+    "ris": "RIS",
+    "risDesc": "Reference manager format (EndNote, Mendeley)",
+    "zotero": "Zotero",
+    "zoteroDesc": "Export to Zotero library",
+    "exporting": "Exporting...",
+    "downloaded": "{{format}} file downloaded",
+    "failed": "Failed to export {{format}}",
+    "zoteroPreview": "Zotero BibTeX Preview",
+    "zoteroCreated": "Zotero collection created",
+    "copyBibtex": "Copy BibTeX"
   }
 }

@@ -667,5 +667,23 @@
       "ieee": "IEEE",
       "gb_t_7714": "GB/T 7714"
     }
+  },
+  "export": {
+    "title": "导出参考文献",
+    "subtitle": "文献库中有 {{count}} 篇论文",
+    "bibtex": "BibTeX",
+    "bibtexDesc": "LaTeX 参考文献格式",
+    "csv": "CSV",
+    "csvDesc": "电子表格格式",
+    "ris": "RIS",
+    "risDesc": "参考文献管理器格式 (EndNote, Mendeley)",
+    "zotero": "Zotero",
+    "zoteroDesc": "导出到 Zotero 文献库",
+    "exporting": "导出中...",
+    "downloaded": "{{format}} 文件已下载",
+    "failed": "导出 {{format}} 失败",
+    "zoteroPreview": "Zotero BibTeX 预览",
+    "zoteroCreated": "Zotero 集合已创建",
+    "copyBibtex": "复制 BibTeX"
   }
 }
