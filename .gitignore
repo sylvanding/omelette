@@ -70,6 +70,11 @@ frontend/.eslintcache
 
 # Ralph working data (archived iterations)
 scripts/ralph/archive/
+.ralph/
+.ralphrc
+
+# Claude Code
+.claude/scheduled_tasks.lock
 
 # Documentation build
 docs/.vitepress/dist/
