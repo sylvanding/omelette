@@ -9,7 +9,7 @@ import { gpuApi } from '@/services/api';
 
 export default function GPUStatusCard() {
   const { data: gpuStatus, isLoading, refetch } = useQuery({
-    queryKey: queryKeys.gpu.status,
+    queryKey: queryKeys.gpu.status(),
     queryFn: gpuApi.status,
     refetchInterval: 10000,
   });
@@ -21,9 +21,10 @@ export default function GPUStatusCard() {
     onSuccess: () => refetch(),
   });
 
-  const models = (gpuStatus?.models as Record<string, unknown>) ?? {};
-  const mineru = (gpuStatus?.mineru as Record<string, unknown>) ?? {};
-  const memory = (gpuStatus?.gpu_memory as Array<Record<string, unknown>>) ?? [];
+  const data = gpuStatus as Record<string, unknown> | undefined;
+  const models = (data?.models as Record<string, unknown>) ?? {};
+  const mineru = (data?.mineru as Record<string, unknown>) ?? {};
+  const memory = (data?.gpu_memory as Array<Record<string, unknown>>) ?? [];
 
   const formatBytes = (mb: number | undefined) => {
     if (mb == null) return 'N/A';
@@ -84,7 +85,7 @@ export default function GPUStatusCard() {
               {Object.entries(models).map(([name, model]) => (
                 <div key={name} className="flex items-center justify-between rounded-lg border p-2">
                   <span className="font-mono text-sm">{name}</span>
-                  <Badge variant="secondary">{(model as Record<string, unknown>).status ?? 'loaded'}</Badge>
+                  <Badge variant="secondary">{String((model as Record<string, unknown>).status ?? 'loaded')}</Badge>
                 </div>
               ))}
             </div>
@@ -97,10 +98,10 @@ export default function GPUStatusCard() {
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">MinerU</h4>
           <div className="flex items-center gap-2">
-            <Badge variant={mineru.status === 'running' ? 'default' : 'secondary'}>
-              {mineru.status ?? 'inactive'}
+            <Badge variant={(mineru.status as string) === 'running' ? 'default' : 'secondary'}>
+              {String(mineru.status ?? 'inactive')}
             </Badge>
-            {mineru.pid && <span className="text-sm text-muted-foreground">PID: {String(mineru.pid)}</span>}
+            {mineru.pid != null && <span className="text-sm text-muted-foreground">PID: {String(mineru.pid)}</span>}
           </div>
         </div>
 
