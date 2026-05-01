@@ -32,6 +32,7 @@ const NotificationsPage = lazy(() => import('@/pages/project/NotificationsPage')
 const NotesPage = lazy(() => import('@/pages/project/NotesPage'));
 const TeamMembersPage = lazy(() => import('@/pages/project/TeamMembersPage'));
 const CollectionsPage = lazy(() => import('@/pages/project/CollectionsPage'));
+const ExportPage = lazy(() => import('@/pages/project/ExportPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,6 +128,9 @@ function App() {
               } />
               <Route path="collections" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><CollectionsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="export" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ExportPage /></Suspense></ErrorBoundary>
               } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />

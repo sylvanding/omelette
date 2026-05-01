@@ -21,6 +21,7 @@ import {
   NotebookPen,
   Users,
   LayoutDashboard,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -51,6 +52,7 @@ export default function ProjectDetail() {
     { path: 'notifications', label: t('notifications.title', 'Notifications'), icon: Bell },
     { path: 'notes', label: t('notes.dashboard', 'Notes'), icon: NotebookPen },
     { path: 'team', label: t('team.title', 'Team'), icon: Users },
+    { path: 'export', label: 'Export', icon: Download },
   ];
 
   const { data } = useQuery({
