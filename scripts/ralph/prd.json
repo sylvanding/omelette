@@ -81,6 +81,25 @@
       "priority": 6,
       "passes": true,
       "notes": "Backend: export.py already generates BibTeX/RIS. writingApi.citations exists in api.ts. Need: CitationStylePicker UI component, copy-citation action on paper cards (PapersPage + PDFReader), BibliographyBuilder dialog with paper selection and multi-style output. Reuse existing export_service.py for format generation."
+    },
+    {
+      "id": "FEAT-031",
+      "title": "Add notes aggregation across project papers",
+      "description": "As a researcher reviewing my paper collection, I want to see all my notes aggregated in one place with search capability so I can quickly review and find insights across papers.",
+      "acceptanceCriteria": [
+        "NotesPage shows summary cards (Total Papers, Papers with Notes, Total Notes)",
+        "Search input filters notes across all papers in the project",
+        "Note cards display paper metadata (title, authors, year, journal) and reading status",
+        "Long notes are truncated with Show more/less toggle",
+        "Notes render Markdown formatting including math (LaTeX)",
+        "Link to open paper in PDF reader from each note card",
+        "Tests: verify NotesPage renders summary cards and note list",
+        "Tests: verify search filters notes by content",
+        "Tests: verify backend aggregation endpoint returns correct counts and filtered notes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Backend: papers table has notes (text) and reading_status columns. Need: aggregate endpoint counting total papers, papers with notes, total notes characters, and filtered note entries. Frontend: NotesPage with summary cards, search bar, note cards with Markdown rendering. Register route and nav item. Add MSW mock handler."
     }
   ]
 }

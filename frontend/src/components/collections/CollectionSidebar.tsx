@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { collectionsApi } from '@/services/api';
-import type { Collection } from '@/services/api';
+import type { Collection, PaperTagSuggestion } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X, Tag } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface CollectionSidebarProps {
   projectId: number;
@@ -255,20 +256,19 @@ interface TagSuggestButtonProps {
 
 function TagSuggestButton({ projectId }: TagSuggestButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<PaperTagSuggestion[]>([]);
 
   const handleSuggestTags = async () => {
     setLoading(true);
     try {
-      // Fetch all papers to tag
       const { paperApi } = await import('@/services/api');
       const papersData = await paperApi.list(projectId, { page: 1, page_size: 100 });
       const paperIds = papersData.items.map(p => p.id);
 
       if (paperIds.length === 0) return;
 
-      const { suggestTags } = collectionsApi;
-      await suggestTags(projectId, paperIds);
-      // TODO: Display tag suggestions to user
+      const result = await collectionsApi.suggestTags(projectId, paperIds);
+      setSuggestions(result.tags);
     } catch (e) {
       console.error('Failed to suggest tags', e);
     } finally {
@@ -277,14 +277,31 @@ function TagSuggestButton({ projectId }: TagSuggestButtonProps) {
   };
 
   return (
-    <Button
-      variant="ghost"
-      className="w-full text-xs"
-      onClick={handleSuggestTags}
-      disabled={loading}
-    >
-      <Tag className="mr-1 size-3" />
-      {loading ? 'Generating...' : 'Suggest AI Tags'}
-    </Button>
+    <div className="space-y-2">
+      <Button
+        variant="ghost"
+        className="w-full text-xs"
+        onClick={handleSuggestTags}
+        disabled={loading}
+      >
+        <Tag className="mr-1 size-3" />
+        {loading ? 'Generating...' : 'Suggest AI Tags'}
+      </Button>
+
+      {suggestions.length > 0 && (
+        <div className="space-y-1">
+          {suggestions.map(suggestion => (
+            <div key={suggestion.paper_id} className="flex flex-wrap gap-1 rounded-md bg-muted/50 p-1.5 text-xs">
+              <span className="font-medium text-muted-foreground">#{suggestion.paper_id}</span>
+              {suggestion.suggested_tags.map(tag => (
+                <Badge key={tag} variant="secondary" className="text-[10px] px-1 py-0">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

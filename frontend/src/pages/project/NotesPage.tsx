@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Search, FileText, BookOpen, NotebookPen } from 'lucide-react';
@@ -64,6 +64,7 @@ function NotesPage() {
             placeholder={t('notes.searchPlaceholder', 'Search across all notes...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label={t('notes.searchPlaceholder', 'Search across all notes...')}
           />
         </div>
 
@@ -151,13 +152,13 @@ function NoteCard({ note, projectId }: { note: import('@/services/api').PaperNot
             <p className="truncate text-xs text-muted-foreground italic">{note.journal}</p>
           )}
         </div>
-        <a
-          href={`/projects/${projectId}/papers/${note.paper_id}/read`}
+        <Link
+          to={`/projects/${projectId}/papers/${note.paper_id}/read`}
           className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          title={t('notes.openPaper', 'Open paper in reader')}
+          aria-label={t('notes.openPaper', 'Open paper in reader')}
         >
           <BookOpen className="size-4" />
-        </a>
+        </Link>
       </div>
 
       {/* Notes content */}
@@ -171,6 +172,7 @@ function NoteCard({ note, projectId }: { note: import('@/services/api').PaperNot
         <button
           className="mt-2 text-xs text-muted-foreground hover:text-foreground"
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
         >
           {expanded ? t('notes.showLess', 'Show less') : t('notes.showMore', 'Show more')}
         </button>

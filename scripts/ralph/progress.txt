@@ -451,3 +451,37 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - docs/api/ missing documentation for 12+ new endpoints
   - Consider adding offline/PWA support, mobile optimization, more LLM providers
   - Notes aggregation feature was attempted but needs full backend + frontend implementation
+
+## 2026-05-01 18:00 - FEAT-031
+- Implemented GET /projects/{id}/papers/notes/aggregate endpoint in papers.py
+- Returns total_papers, papers_with_notes, total_notes (char count), and filtered notes list
+- Supports optional search query parameter for full-text filtering using ILIKE
+- Created NoteEntry and NotesAggregationResponse Pydantic models
+- 5 backend tests: empty project, papers without notes, papers with notes, search filter, multiple papers
+- Added notesApi to frontend services/api.ts with PaperNote and NotesAggregationResponse types
+- Added notes query keys (all, search) to query-keys.ts
+- Created NotesPage with summary cards, search bar, note cards with Markdown/LaTeX rendering
+- Note cards show paper metadata (authors, year, journal), reading status badges, updated dates
+- Expand/collapse for long notes (>300 chars)
+- Link to open paper in PDF reader from each note card
+- Registered route in App.tsx and nav item (NotebookPen icon) in ProjectDetail.tsx
+- Added MSW mock handler with 3 sample papers
+- 7 frontend tests pass
+- Files changed:
+  - backend/app/api/v1/papers.py (added aggregate endpoint + models)
+  - backend/tests/test_notes_aggregation.py (new, 5 tests)
+  - frontend/src/services/api.ts (added notesApi + types)
+  - frontend/src/lib/query-keys.ts (added notes query keys)
+  - frontend/src/pages/project/NotesPage.tsx (new)
+  - frontend/src/pages/__tests__/NotesPage.test.tsx (new, 7 tests)
+  - frontend/src/App.tsx (added notes route)
+  - frontend/src/pages/ProjectDetail.tsx (added Notes nav item)
+  - frontend/src/test/mocks/handlers.ts (added notes aggregation mock handler)
+  - scripts/ralph/prd.json (added FEAT-031)
+- Tests: 5 backend tests pass, 7 frontend tests pass, TypeScript clean, ESLint clean
+- **Learnings for future iterations:**
+  - The papers table already has a notes (text) column — no migration needed for notes aggregation
+  - ReactMarkdown with remarkGfm, remarkMath, and rehypeKatex provides full Markdown + LaTeX support
+  - The aggregate endpoint counts total_notes as character count (not number of notes) for a richer metric
+  - Pre-existing unused variable in upgrade_paper_version was caught by ruff — fixed by returning ApiResponse(data=None)
+---
