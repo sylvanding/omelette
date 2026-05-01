@@ -199,13 +199,13 @@ function QuickUpdateCheck({
           <div className="rounded-md border bg-muted/30 p-3">
             <div className="text-xs text-muted-foreground">New papers found</div>
             <div className="mt-1 text-lg font-bold text-green-500">
-              {data.new_papers ?? 0}
+              {(data.new_papers as number) ?? 0}
             </div>
           </div>
           <div className="rounded-md border bg-muted/30 p-3">
             <div className="text-xs text-muted-foreground">Total found</div>
             <div className="mt-1 text-lg font-bold">
-              {data.total_found ?? 0}
+              {(data.total_found as number) ?? 0}
             </div>
           </div>
           <div className="rounded-md border bg-muted/30 p-3">
@@ -216,7 +216,7 @@ function QuickUpdateCheck({
                   ? data.sources_checked.length
                   : typeof data.sources_checked === 'object'
                     ? Object.keys(data.sources_checked).length
-                    : 0)) ?? 0}
+                    : 0)) as number ?? 0}
             </div>
           </div>
         </div>
