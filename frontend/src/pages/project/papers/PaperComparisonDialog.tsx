@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2, Sparkles, RotateCcw } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { paperApi } from '@/services/api';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import type { PaperComparisonResponse, PaperComparisonDimension } from '@/types/api';
 import { cn } from '@/lib/utils';
 
@@ -31,9 +31,11 @@ export function PaperComparisonDialog({
   const { t } = useTranslation();
   const [focus, setFocus] = useState('');
 
-  const compare = useMutation<PaperComparisonResponse, Error, string | undefined>({
+  const compare = useToastMutation<PaperComparisonResponse, string | undefined>({
     mutationFn: (f?: string) =>
       paperApi.compare(projectId, { paper_ids: paperIds, focus: f || undefined }),
+    successMessage: false,
+    errorMessage: 'Failed to generate comparison',
   });
 
   const handleCompare = () => compare.mutate(focus || undefined);
@@ -102,13 +104,6 @@ export function PaperComparisonDialog({
             </div>
           )}
 
-          {compare.isError && !compare.data && (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-destructive">
-                Failed to generate comparison. Please try again.
-              </p>
-            </div>
-          )}
 
           {compare.data && <ComparisonView data={compare.data} />}
         </div>
