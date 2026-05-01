@@ -16,6 +16,7 @@ import {
   Lightbulb,
   Headphones,
   Search,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -41,6 +42,7 @@ export default function ProjectDetail() {
     { path: 'gaps', label: 'Gap Analysis', icon: Lightbulb },
     { path: 'activity', label: t('project.activity'), icon: Activity },
     { path: 'audio-overviews', label: t('audioOverview.title', 'Audio Overviews'), icon: Headphones },
+    { path: 'notifications', label: t('notifications.title', 'Notifications'), icon: Bell },
   ];
 
   const { data } = useQuery({

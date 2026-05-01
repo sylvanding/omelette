@@ -615,5 +615,21 @@
     "conversational": "对话式",
     "formal": "正式",
     "focusPlaceholder": "添加重点领域（如方法论、结果）"
+  },
+  "notifications": {
+    "title": "通知",
+    "unreadCount": "{{count}} 条未读",
+    "allRead": "已全部读完！",
+    "markAllRead": "全部标记为已读",
+    "markedAllRead": "所有通知已标记为已读",
+    "emptyTitle": "暂无通知",
+    "emptyDescription": "当订阅发现新论文时，它们将显示在这里",
+    "noUnread": "没有未读通知",
+    "viewAll": "查看所有通知",
+    "types": {
+      "subscriptionMatch": "订阅匹配",
+      "system": "系统",
+      "paperUpdate": "论文更新"
+    }
   }
 }

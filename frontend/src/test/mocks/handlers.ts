@@ -947,4 +947,65 @@ export const handlers = [
       }),
     ),
   ),
+
+  // Notifications
+  http.get(`${apiBase}/projects/:id/notifications`, ({ request }) => {
+    const url = new URL(request.url);
+    const unreadOnly = url.searchParams.get('unread_only') === 'true';
+    const items = [
+      {
+        id: 1,
+        project_id: 1,
+        type: 'subscription_match',
+        title: 'New paper: Deep Learning in NLP',
+        body: 'A new paper matching your subscription "NLP Advances" has been found.',
+        paper_id: 42,
+        subscription_id: 1,
+        is_read: false,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 2,
+        project_id: 1,
+        type: 'paper_update',
+        title: 'Paper version updated',
+        body: 'The paper "Transformers at Scale" has been updated with a new version.',
+        paper_id: 15,
+        subscription_id: null,
+        is_read: false,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: 3,
+        project_id: 1,
+        type: 'subscription_match',
+        title: 'Weekly digest: 5 new papers',
+        body: 'Your subscription "Computer Vision" found 5 new papers this week.',
+        paper_id: null,
+        subscription_id: 2,
+        is_read: true,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ];
+    const filteredItems = unreadOnly ? items.filter((item) => !item.is_read) : items;
+    return HttpResponse.json(
+      mockResponse({
+        items: filteredItems,
+        total: filteredItems.length,
+        unread_count: items.filter((item) => !item.is_read).length,
+      }),
+    );
+  }),
+  http.post(`${apiBase}/projects/:id/notifications/:notificationId/read`, () =>
+    HttpResponse.json(mockResponse({ read: true })),
+  ),
+  http.post(`${apiBase}/projects/:id/notifications/mark-all-read`, () =>
+    HttpResponse.json(mockResponse({ marked_count: 2 })),
+  ),
+  http.delete(`${apiBase}/projects/:id/notifications/:notificationId`, () =>
+    HttpResponse.json(mockResponse({ dismissed: true })),
+  ),
 ];

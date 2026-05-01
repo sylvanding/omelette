@@ -8,6 +8,7 @@ from app.models.collection import Collection, CollectionPaper
 from app.models.conversation import Conversation
 from app.models.keyword import Keyword
 from app.models.message import Message
+from app.models.notification import Notification
 from app.models.paper import Paper, PaperStatus
 from app.models.paper_version import PaperVersion
 from app.models.project import Project
@@ -28,6 +29,7 @@ __all__ = [
     "Conversation",
     "Keyword",
     "Message",
+    "Notification",
     "Paper",
     "PaperChunk",
     "PaperStatus",

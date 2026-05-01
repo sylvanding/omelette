@@ -350,3 +350,40 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - When writing tests for forms, use getByPlaceholderText instead of getByLabelText when labels lack `for`/`id` associations
   - The mockPaper fixture title is 'Test Paper' (not 'Test Paper Title') — verify fixture content before asserting on text
 ---
+
+## 2026-05-01 08:50 - FEAT-029
+- Created Notification model with project_id FK (CASCADE delete), type, title, body, paper_id, subscription_id, is_read, is_dismissed fields
+- Created Alembic migration for notifications table with indexes on project_id and is_read
+- Created 4 API endpoints: GET /projects/{id}/notifications (with unread_only filter), POST /projects/{id}/notifications/{id}/read, POST /projects/{id}/notifications/mark-all-read, DELETE /projects/{id}/notifications/{id}
+- Backend: 12 tests pass covering list, filter, mark read, mark all read, dismiss, project scoping
+- Frontend: NotificationsPage with notification cards, unread count, mark-all-read button, dismiss actions
+- Frontend: NotificationBell component in TopBar with dropdown panel showing unread notifications, red badge count
+- Added notificationApi to services/api.ts, query key in query-keys.ts
+- Added route /projects/:projectId/notifications and nav item in ProjectDetail.tsx
+- Added MSW mock handlers and i18n translations (en/zh)
+- 6 frontend tests pass
+- Files changed:
+  - backend/app/models/notification.py (new)
+  - backend/app/models/__init__.py (added Notification)
+  - backend/app/models/project.py (added notifications relationship)
+  - backend/alembic/versions/n0t1f2y3a4t5_add_notifications_table.py (new)
+  - backend/app/api/v1/notifications.py (new, 4 endpoints)
+  - backend/app/api/v1/__init__.py (registered notifications router)
+  - backend/tests/test_notifications.py (new, 12 tests)
+  - frontend/src/services/api.ts (added notificationsApi + types)
+  - frontend/src/lib/query-keys.ts (added notifications query key)
+  - frontend/src/components/notifications/NotificationBell.tsx (new)
+  - frontend/src/pages/project/NotificationsPage.tsx (new)
+  - frontend/src/components/layout/TopBar.tsx (wired NotificationBell)
+  - frontend/src/pages/ProjectDetail.tsx (added Notifications nav item)
+  - frontend/src/App.tsx (added notifications route)
+  - frontend/src/i18n/locales/en.json, zh.json (added notifications translations)
+  - frontend/src/test/mocks/handlers.ts (added notification mock handlers)
+  - frontend/src/pages/__tests__/NotificationsPage.test.tsx (new, 6 tests)
+- Tests: 12 backend tests pass, 6 frontend tests pass, TypeScript clean, ESLint clean
+- **Learnings for future iterations:**
+  - date-fns is not installed in this project — use a simple inline formatTimeAgo helper (see ActivityFeedPage pattern)
+  - NotificationBell uses a fixed backdrop + absolute positioned dropdown (not shadcn DropdownMenu)
+  - The TopBar is at the AppShell level, not inside ProjectDetail — NotificationBell needs to handle the case where projectId is null
+  - Notification type labels use i18n with a typeLabels map; in tests, multiple elements with the same type require getAllByText
+---

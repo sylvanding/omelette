@@ -676,5 +676,21 @@
     "conversational": "Conversational",
     "formal": "Formal",
     "focusPlaceholder": "Add focus areas (e.g., methodology, results)"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount": "{{count}} unread",
+    "allRead": "All caught up!",
+    "markAllRead": "Mark all read",
+    "markedAllRead": "All notifications marked as read",
+    "emptyTitle": "No notifications",
+    "emptyDescription": "When subscriptions find new papers, they will appear here",
+    "noUnread": "No unread notifications",
+    "viewAll": "View all notifications",
+    "types": {
+      "subscriptionMatch": "Subscription Match",
+      "system": "System",
+      "paperUpdate": "Paper Update"
+    }
   }
 }

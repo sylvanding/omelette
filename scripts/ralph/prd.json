@@ -64,8 +64,7 @@
         "Tests: verify notification panel dropdown works in TopBar"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": "Backend: need Notification model + endpoints (list, mark read, dismiss). Subscription model already exists and can trigger notifications. Frontend: need notification bell dropdown in TopBar.tsx (bell icon already exists), NotificationsPage, notificationApi in api.ts, query key, MSW handlers. Use the existing toast + query patterns."
+      "passes": true
     },
     {
       "id": "FEAT-030",

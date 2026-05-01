@@ -1086,3 +1086,42 @@ export const impactScoresApi = {
   get: (projectId: number) =>
     api.get<ImpactScoreResponse>(`/projects/${projectId}/analysis/impact-scores`).then(r => r.data),
 };
+
+// ---------------------------------------------------------------------------
+// Notifications API
+// ---------------------------------------------------------------------------
+
+export interface NotificationItem {
+  id: number;
+  project_id: number;
+  type: string;
+  title: string;
+  body: string;
+  paper_id: number | null;
+  subscription_id: number | null;
+  is_read: boolean;
+  is_dismissed: boolean;
+  created_at: string | null;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  total: number;
+  unread_count: number;
+}
+
+export const notificationsApi = {
+  list: (projectId: number, unreadOnly?: boolean) =>
+    api.get<NotificationListResponse>(`/projects/${projectId}/notifications`, {
+      params: unreadOnly ? { unread_only: true } : {},
+    }).then(r => r.data),
+
+  markRead: (projectId: number, notificationId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/notifications/${notificationId}/read`).then(r => r.data),
+
+  markAllRead: (projectId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/notifications/mark-all-read`).then(r => r.data),
+
+  dismiss: (projectId: number, notificationId: number) =>
+    api.delete<Record<string, unknown>>(`/projects/${projectId}/notifications/${notificationId}`).then(r => r.data),
+};

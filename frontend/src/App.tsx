@@ -27,6 +27,7 @@ const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
 const AudioOverviewsPage = lazy(() => import('@/pages/project/AudioOverviewsPage'));
 const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
+const NotificationsPage = lazy(() => import('@/pages/project/NotificationsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,9 @@ function App() {
               } />
               <Route path="search" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><SearchPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="notifications" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><NotificationsPage /></Suspense></ErrorBoundary>
               } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
