@@ -123,8 +123,9 @@ export default function CrawlerPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Max papers</label>
+              <label htmlFor="crawl-max" className="mb-1 block text-xs text-muted-foreground">Max papers</label>
               <input
+                id="crawl-max"
                 type="number"
                 min={1}
                 max={200}
