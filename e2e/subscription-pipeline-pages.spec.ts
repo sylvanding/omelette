@@ -49,3 +49,29 @@ test.describe('Pipelines Page', () => {
     await expect(page.getByText('Failed', { exact: true })).toBeVisible();
   });
 });
+
+test.describe('RAG Page', () => {
+  test('loads RAG page and shows query interface', async ({ page }) => {
+    await page.goto('/projects/1/rag');
+    await expect(page.locator('h1')).toContainText('RAG Query');
+    await expect(page.getByPlaceholder(/What are the key findings/)).toBeVisible();
+  });
+
+  test('shows build and delete index buttons', async ({ page }) => {
+    await page.goto('/projects/1/rag');
+    await expect(page.locator('button:has-text("Build Index")')).toBeVisible();
+    await expect(page.locator('button:has-text("Delete Index")')).toBeVisible();
+  });
+
+  test('shows warning when no index exists', async ({ page }) => {
+    await page.goto('/projects/1/rag');
+    await expect(page.locator('text=No vector index exists')).toBeVisible();
+  });
+
+  test('shows stats cards', async ({ page }) => {
+    await page.goto('/projects/1/rag');
+    await expect(page.locator('text=Indexed Papers')).toBeVisible();
+    await expect(page.locator('text=Total Chunks')).toBeVisible();
+    await expect(page.locator('text=Vector Records')).toBeVisible();
+  });
+});
