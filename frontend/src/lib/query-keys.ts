@@ -5,6 +5,7 @@ export const queryKeys = {
     all: ['projects'] as const,
     list: (page?: number, pageSize?: number) => ['projects', { page, pageSize }] as const,
     detail: (id: number) => ['project', id] as const,
+    overview: (id: number) => ['project-overview', id] as const,
   },
   papers: {
     list: (projectId: number, filters?: PaperListFilters) =>

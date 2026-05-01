@@ -24,6 +24,8 @@ export const projectApi = {
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/run`).then(r => r.data),
   runPaperPipeline: (projectId: number, paperId: number) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
+  getOverview: (id: number) =>
+    api.get<Record<string, unknown>>(`/projects/${id}/overview`).then(r => r.data),
 };
 
 export interface ReadingAnalytics {

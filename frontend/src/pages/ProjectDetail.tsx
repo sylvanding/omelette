@@ -19,6 +19,7 @@ import {
   Bell,
   NotebookPen,
   Users,
+  LayoutDashboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -31,7 +32,8 @@ export default function ProjectDetail() {
   const location = useLocation();
 
   const navItems = [
-    { path: '', label: t('project.papers'), icon: FileText },
+    { path: '', label: t('project.overview', 'Overview'), icon: LayoutDashboard },
+    { path: 'papers', label: t('project.papers'), icon: FileText },
     { path: 'discovery', label: t('discovery.title'), icon: Compass },
     { path: 'search', label: t('searchPage.title', 'Search'), icon: Search },
     { path: 'reviews', label: t('reviews.title', 'Reviews'), icon: Table2 },

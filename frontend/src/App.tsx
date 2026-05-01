@@ -11,6 +11,7 @@ const KnowledgeBasesPage = lazy(() => import('@/pages/KnowledgeBasesPage'));
 const ChatHistoryPage = lazy(() => import('@/pages/ChatHistoryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'));
+const OverviewPage = lazy(() => import('@/pages/project/OverviewPage'));
 const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
@@ -64,7 +65,10 @@ function App() {
               <ErrorBoundary><Suspense fallback={<LoadingState />}><ProjectDetail /></Suspense></ErrorBoundary>
             }>
               <Route index element={
-                <ErrorBoundary><Suspense fallback={<LoadingState />}><PapersPage /></Suspense></ErrorBoundary>
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><OverviewPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="overview" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><OverviewPage /></Suspense></ErrorBoundary>
               } />
               <Route path="papers" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><PapersPage /></Suspense></ErrorBoundary>
