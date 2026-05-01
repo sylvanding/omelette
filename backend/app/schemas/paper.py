@@ -18,6 +18,8 @@ class PaperCreate(BaseModel):
     source_id: str = Field(default="", max_length=500)
     pdf_url: str = Field(default="", max_length=5000)
     tags: list[str] | None = None
+    notes: str = Field(default="", max_length=100000)
+    reading_status: Literal["unread", "reading", "read", "archived"] = Field(default="unread")
 
 
 class PaperUpdate(BaseModel):

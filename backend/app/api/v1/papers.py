@@ -729,11 +729,11 @@ async def upgrade_paper_version(
 
     svc = VersionService(db)
     try:
-        await svc.upgrade_to_version(paper_id, version_id)
+        result = await svc.upgrade_to_version(paper_id, version_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
-    return ApiResponse(data=None)
+    return ApiResponse(data=result)
 
 
 class NoteEntry(BaseModel):
@@ -776,8 +776,13 @@ async def aggregate_notes(
     total_papers = total_result.scalar() or 0
 
     # Build query for papers with notes
+
     stmt = (
-        select(Paper).where(Paper.project_id == project_id).where(Paper.notes != "").order_by(Paper.updated_at.desc())
+        select(Paper)
+        .where(Paper.project_id == project_id)
+        .where(Paper.notes.isnot(None))
+        .where(Paper.notes != "")
+        .order_by(Paper.updated_at.desc())
     )
     if search:
         stmt = stmt.where(Paper.notes.ilike(f"%{search}%"))
