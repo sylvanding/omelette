@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -10,6 +10,18 @@ export function useDebouncedSave(
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedContentRef = useRef<string>('');
   const pendingContentRef = useRef<string>('');
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   const flushSave = useCallback(async () => {
     const content = pendingContentRef.current;
@@ -21,12 +33,15 @@ export function useDebouncedSave(
     try {
       await saveFn(content);
       savedContentRef.current = content;
+      if (!mountedRef.current) return;
       setStatus('saved');
 
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return;
         setStatus((s) => (s === 'saved' ? 'idle' : s));
       }, 3000);
     } catch {
+      if (!mountedRef.current) return;
       setStatus('error');
     }
   }, [saveFn]);

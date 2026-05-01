@@ -2,12 +2,13 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, get_project
+from app.middleware.rate_limit import limiter
 from app.models import Paper, Project
 from app.schemas.common import ApiResponse
 
@@ -200,7 +201,9 @@ class ImpactScoreResponse(BaseModel):
     response_model=ApiResponse[ContradictionResponse],
     summary="Detect contradictions across project papers",
 )
+@limiter.limit("3/minute")
 async def detect_contradictions(
+    request: Request,
     project_id: int,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),
@@ -287,7 +290,9 @@ async def get_research_trends(
     response_model=ApiResponse[GapResponse],
     summary="Detect literature gaps and research opportunities",
 )
+@limiter.limit("3/minute")
 async def detect_gaps(
+    request: Request,
     project_id: int,
     db: AsyncSession = Depends(get_db),
     project: Project = Depends(get_project),

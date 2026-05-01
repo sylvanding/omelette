@@ -233,8 +233,12 @@ export const ragApi = {
         if (line.startsWith('event: ')) {
           currentEvent = line.slice(7).trim();
         } else if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
-          yield { event: currentEvent as IndexSSEEvent['event'], data };
+          try {
+            const data = JSON.parse(line.slice(6));
+            yield { event: currentEvent as IndexSSEEvent['event'], data };
+          } catch {
+            // Skip malformed SSE data fragments
+          }
         }
       }
     }

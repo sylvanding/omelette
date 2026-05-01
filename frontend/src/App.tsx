@@ -63,12 +63,24 @@ function App() {
             <Route path="projects/:projectId" element={
               <ErrorBoundary><Suspense fallback={<LoadingState />}><ProjectDetail /></Suspense></ErrorBoundary>
             }>
-              <Route index element={<PapersPage />} />
-              <Route path="papers" element={<PapersPage />} />
-              <Route path="papers/:paperId/read" element={<PDFReaderPage />} />
-              <Route path="discovery" element={<DiscoveryPage />} />
-              <Route path="writing" element={<WritingPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route index element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PapersPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="papers" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PapersPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="papers/:paperId/read" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PDFReaderPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="discovery" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><DiscoveryPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="writing" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><WritingPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="analytics" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><AnalyticsPage /></Suspense></ErrorBoundary>
+              } />
               <Route path="trends" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><TrendsPage /></Suspense></ErrorBoundary>
               } />
@@ -87,7 +99,9 @@ function App() {
               <Route path="feed" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><FeedPage /></Suspense></ErrorBoundary>
               } />
-              <Route path="timeline" element={<TimelinePage />} />
+              <Route path="timeline" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><TimelinePage /></Suspense></ErrorBoundary>
+              } />
               <Route path="activity" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ActivityFeedPage /></Suspense></ErrorBoundary>
               } />
@@ -109,7 +123,6 @@ function App() {
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
               <Route path="rag" element={<Navigate to="/" replace />} />
-              <Route path="tasks" element={<Navigate to="/tasks" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
