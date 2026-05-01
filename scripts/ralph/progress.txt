@@ -485,3 +485,26 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - The aggregate endpoint counts total_notes as character count (not number of notes) for a richer metric
   - Pre-existing unused variable in upgrade_paper_version was caught by ruff — fixed by returning ApiResponse(data=None)
 ---
+
+## 2026-05-01 19:38 - FEAT-032
+- Discovered TeamMembersManager component was orphaned — no page, route, or nav item
+- Created TeamMembersPage wrapping existing TeamMembersManager
+- Added /team route in App.tsx with ErrorBoundary and Suspense
+- Added Team nav item with Users icon in ProjectDetail sidebar
+- Uses existing i18n team.* translations
+- 2 frontend tests pass (title renders, invite button displays)
+- Also fixed:
+  - Completed TODO in CollectionSidebar: display AI tag suggestions as badges
+  - NotesPage a11y: replaced <a> with <Link> for client-side nav, added aria-label/aria-expanded
+  - SearchPage a11y: added htmlFor/id pairing for search query and max results inputs
+  - Added scripts/ralph/archive/ to .gitignore
+- Files changed:
+  - frontend/src/pages/project/TeamMembersPage.tsx (new)
+  - frontend/src/pages/__tests__/TeamMembersPage.test.tsx (new, 2 tests)
+  - frontend/src/App.tsx (added TeamMembersPage lazy import and /team route)
+  - frontend/src/pages/ProjectDetail.tsx (added team nav item with Users icon)
+  - frontend/src/components/collections/CollectionSidebar.tsx (display tag suggestions)
+  - frontend/src/pages/project/NotesPage.tsx (a11y: Link, aria attributes)
+  - frontend/src/pages/project/SearchPage.tsx (a11y: label association)
+  - .gitignore (added ralph/archive)
+---
