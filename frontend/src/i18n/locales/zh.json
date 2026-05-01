@@ -569,6 +569,18 @@
     "emergingTopics": "新兴主题",
     "decliningTopics": "衰退主题"
   },
+  "reviews": {
+    "title": "评审"
+  },
+  "concepts": {
+    "title": "概念"
+  },
+  "library": {
+    "title": "文献库"
+  },
+  "feed": {
+    "title": "推荐"
+  },
   "gaps": {
     "title": "文献缺口分析",
     "close": "关闭缺口分析",

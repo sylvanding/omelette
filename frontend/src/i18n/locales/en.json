@@ -630,6 +630,18 @@
     "noDecliningTopics": "No declining topics detected",
     "loadFailed": "Failed to load trend analysis data"
   },
+  "reviews": {
+    "title": "Reviews"
+  },
+  "concepts": {
+    "title": "Concepts"
+  },
+  "library": {
+    "title": "Library"
+  },
+  "feed": {
+    "title": "Feed"
+  },
   "gaps": {
     "title": "Literature Gap Analysis",
     "close": "Close gap analysis",
