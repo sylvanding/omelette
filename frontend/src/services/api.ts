@@ -5,6 +5,17 @@ import type { Project, Paper, Keyword, Task, ActivityLog, FeedResponse } from '@
 import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse, ActivityListFilters } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
+export interface OverviewData {
+  total_papers: number;
+  papers_by_status: Record<string, number>;
+  papers_by_reading: Record<string, number>;
+  papers_by_year: Record<string, number>;
+  avg_citations: number;
+  recent_papers: Array<{ title: string; year: number | null; reading_status: string; added_at: string | null }>;
+  keyword_count: number;
+  subscription_count: number;
+}
+
 export const projectApi = {
   list: (page = 1, pageSize = 20) =>
     api.get<PaginatedData<Project>>(`/projects?page=${page}&page_size=${pageSize}`).then(r => r.data),
@@ -25,7 +36,7 @@ export const projectApi = {
   runPaperPipeline: (projectId: number, paperId: number) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
   getOverview: (id: number) =>
-    api.get<Record<string, unknown>>(`/projects/${id}/overview`).then(r => r.data),
+    api.get<OverviewData>(`/projects/${id}/overview`).then(r => r.data),
 };
 
 export interface ReadingAnalytics {

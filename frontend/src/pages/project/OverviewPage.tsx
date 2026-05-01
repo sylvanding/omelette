@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { projectApi } from '@/services/api';
+import { projectApi, type OverviewData } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import {
   FileText,
@@ -12,17 +12,6 @@ import {
   Tag,
   Bell,
 } from 'lucide-react';
-
-interface OverviewData {
-  total_papers: number;
-  papers_by_status: Record<string, number>;
-  papers_by_reading: Record<string, number>;
-  papers_by_year: Record<string, number>;
-  avg_citations: number;
-  recent_papers: Array<{ title: string; year: number | null; reading_status: string; added_at: string | null }>;
-  keyword_count: number;
-  subscription_count: number;
-}
 
 function StatCard({
   icon: Icon,
