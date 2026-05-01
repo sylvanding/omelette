@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   Download,
   Eye,
+  Files,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -56,6 +57,7 @@ export default function ProjectDetail() {
     { path: 'export', label: 'Export', icon: Download },
     { path: 'ocr', label: 'OCR', icon: Eye },
     { path: 'crawler', label: 'Crawler', icon: Download },
+    { path: 'dedup', label: 'Dedup', icon: Files },
   ];
 
   const { data } = useQuery({

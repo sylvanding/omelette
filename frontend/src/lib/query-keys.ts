@@ -91,4 +91,9 @@ export const queryKeys = {
     all: (projectId: number) => ['notes', projectId] as const,
     search: (projectId: number, query: string) => ['notes', projectId, 'search', query] as const,
   },
+  dedup: {
+    candidates: (projectId: number, params?: PaginationParams) =>
+      ['dedup-candidates', projectId, params] as const,
+    stats: (projectId: number) => ['dedup-stats', projectId] as const,
+  },
 } as const;
