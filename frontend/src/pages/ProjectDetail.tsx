@@ -24,6 +24,7 @@ import {
   Download,
   Eye,
   Files,
+  Rss,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -59,6 +60,7 @@ export default function ProjectDetail() {
     { path: 'crawler', label: 'Crawler', icon: Download },
     { path: 'dedup', label: 'Dedup', icon: Files },
     { path: 'keywords', label: 'Keywords', icon: Sparkles },
+    { path: 'subscriptions', label: 'Subscriptions', icon: Rss },
   ];
 
   const { data } = useQuery({

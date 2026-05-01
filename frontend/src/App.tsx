@@ -37,6 +37,7 @@ const OCRPage = lazy(() => import('@/pages/project/OCRPage'));
 const CrawlerPage = lazy(() => import('@/pages/project/CrawlerPage'));
 const DedupPage = lazy(() => import('@/pages/project/DedupPage'));
 const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
+const SubscriptionPage = lazy(() => import('@/pages/project/SubscriptionPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -148,7 +149,9 @@ function App() {
               <Route path="keywords" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><KeywordsPage /></Suspense></ErrorBoundary>
               } />
-              <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
+              <Route path="subscriptions" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><SubscriptionPage /></Suspense></ErrorBoundary>
+              } />
               <Route path="rag" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
