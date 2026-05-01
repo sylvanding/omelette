@@ -55,6 +55,7 @@ export default function ProjectDetail() {
     { path: 'team', label: t('team.title', 'Team'), icon: Users },
     { path: 'export', label: 'Export', icon: Download },
     { path: 'ocr', label: 'OCR', icon: Eye },
+    { path: 'crawler', label: 'Crawler', icon: Download },
   ];
 
   const { data } = useQuery({

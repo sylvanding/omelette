@@ -34,6 +34,7 @@ const TeamMembersPage = lazy(() => import('@/pages/project/TeamMembersPage'));
 const CollectionsPage = lazy(() => import('@/pages/project/CollectionsPage'));
 const ExportPage = lazy(() => import('@/pages/project/ExportPage'));
 const OCRPage = lazy(() => import('@/pages/project/OCRPage'));
+const CrawlerPage = lazy(() => import('@/pages/project/CrawlerPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +136,9 @@ function App() {
               } />
               <Route path="ocr" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><OCRPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="crawler" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><CrawlerPage /></Suspense></ErrorBoundary>
               } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
