@@ -24,11 +24,11 @@ const STATUS_VARIANT: Record<Task['status'], 'warning' | 'info' | 'success' | 'd
 
 function useKanbanColumns(t: (key: string) => string) {
   return [
-    { status: 'pending' as const, label: t('tasks.pending', 'Pending'), emoji: '' },
-    { status: 'running' as const, label: t('tasks.running', 'Running'), emoji: '▶️' },
-    { status: 'completed' as const, label: t('tasks.completed', 'Completed'), emoji: '✅' },
-    { status: 'failed' as const, label: t('tasks.failed', 'Failed'), emoji: '' },
-    { status: 'cancelled' as const, label: t('tasks.cancelled', 'Cancelled'), emoji: '⛔' },
+    { status: 'pending' as const, label: t('tasks.pending'), emoji: '' },
+    { status: 'running' as const, label: t('tasks.running'), emoji: '▶️' },
+    { status: 'completed' as const, label: t('tasks.completed'), emoji: '✅' },
+    { status: 'failed' as const, label: t('tasks.failed'), emoji: '' },
+    { status: 'cancelled' as const, label: t('tasks.cancelled'), emoji: '' },
   ];
 }
 
@@ -41,7 +41,7 @@ function KanbanBoard({
   tasks: Task[];
   onCancel: (id: number) => void;
   isCanceling: boolean;
-  t: (key: string, fallback?: string) => string;
+  t: (key: string) => string;
 }) {
   const columns = useKanbanColumns(t);
   return (
@@ -224,7 +224,7 @@ export default function TasksPage() {
           </TabsContent>
 
           <TabsContent value="kanban" className="mt-4">
-            <KanbanBoard tasks={tasks} onCancel={cancelMutation.mutate} isCanceling={cancelMutation.isPending} t={t} />
+            <KanbanBoard tasks={tasks} onCancel={cancelMutation.mutate} isCanceling={cancelMutation.isPending} t={(key) => t(key)} />
           </TabsContent>
         </Tabs>
       </div>
