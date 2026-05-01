@@ -167,6 +167,11 @@ export default function LibraryPage() {
                     </div>
                   ))}
                 </div>
+              ) : healthResponse.total_papers === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                  <CheckCircle2 className="size-12 text-muted-foreground/50" />
+                  <p className="text-sm">No papers in this library yet. Add papers to check metadata health.</p>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
                   <CheckCircle2 className="size-12 text-green-500" />
