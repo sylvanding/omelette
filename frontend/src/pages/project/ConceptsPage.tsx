@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Network, BookOpen, ArrowLeft, Search } from 'lucide-react';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
+import { Loader2, Network, BookOpen, ArrowLeft, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,13 @@ export default function ConceptsPage() {
     setSelectedConcept(null);
     setTopicPage(null);
   }, []);
+
+  const extractMutation = useToastMutation({
+    mutationFn: () => conceptsApi.extract(pid),
+    successMessage: 'Concept extraction completed',
+    errorMessage: 'Failed to extract concepts',
+    invalidateKeys: [['concepts', pid]],
+  });
 
   const filteredNodes = graphData?.nodes.filter(
     (n) =>
@@ -145,9 +153,25 @@ export default function ConceptsPage() {
 
   if (!graphData || graphData.total_concepts === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center gap-4 py-12">
         <Network className="size-12 text-muted-foreground/50" />
-        <p className="text-sm">No concepts extracted yet. Run concept extraction to get started.</p>
+        <div className="text-center">
+          <p className="text-sm font-medium text-foreground">No concepts extracted yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Analyze your papers to discover key concepts and their relationships.</p>
+        </div>
+        <Button onClick={() => extractMutation.mutate()} disabled={extractMutation.isPending}>
+          {extractMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              Extracting...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 size-4" />
+              Extract Concepts
+            </>
+          )}
+        </Button>
       </div>
     );
   }
