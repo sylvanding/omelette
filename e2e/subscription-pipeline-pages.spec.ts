@@ -83,8 +83,8 @@ test.describe('Contradictions Page', () => {
     await expect(page.locator('text=Contradiction Detection')).toBeVisible();
   });
 
-  test('has run analysis button', async ({ page }) => {
+  test('has detect contradictions button', async ({ page }) => {
     await page.goto('/projects/1/contradictions');
-    await expect(page.locator('button:has-text("Run Analysis")')).toBeVisible();
+    await expect(page.locator('button:has-text("Detect Contradictions")')).toBeVisible();
   });
 });
