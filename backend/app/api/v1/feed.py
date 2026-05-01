@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, get_or_404
 from app.models import Paper, Project
@@ -38,7 +39,11 @@ async def get_feed(
     """Return personalized paper recommendations for the project."""
     from app.services.llm.client import get_llm_client
 
-    project = await get_or_404(db, Project, project_id)
+    stmt = select(Project).where(Project.id == project_id).options(selectinload(Project.keywords))
+    result = await db.execute(stmt)
+    project = result.scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
 
     stmt = select(Paper).where(Paper.project_id == project_id)
     result = await db.execute(stmt)
@@ -64,7 +69,7 @@ async def get_feed(
     ]
 
     liked_ids = [p.id for p in papers if getattr(p, "liked", False)]
-    keywords = list(getattr(project, "keywords", []) or [])
+    keywords = [k.keyword for k in project.keywords] if project.keywords else []
 
     svc = FeedService(get_llm_client())
     recommendations = await svc.get_feed(
@@ -86,7 +91,11 @@ async def refresh_feed(
     """Force recalculation of the personalized feed."""
     from app.services.llm.client import get_llm_client
 
-    project = await get_or_404(db, Project, project_id)
+    stmt = select(Project).where(Project.id == project_id).options(selectinload(Project.keywords))
+    result = await db.execute(stmt)
+    project = result.scalars().first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
 
     stmt = select(Paper).where(Paper.project_id == project_id)
     result = await db.execute(stmt)
@@ -112,7 +121,7 @@ async def refresh_feed(
     ]
 
     liked_ids = [p.id for p in papers if getattr(p, "liked", False)]
-    keywords = list(getattr(project, "keywords", []) or [])
+    keywords = [k.keyword for k in project.keywords] if project.keywords else []
 
     svc = FeedService(get_llm_client())
     recommendations = await svc.get_feed(
