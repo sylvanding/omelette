@@ -58,7 +58,32 @@ export default function ProjectDetail() {
 
   return (
     <div className="flex h-full">
-      <aside className="w-52 shrink-0 border-r border-border bg-muted/30">
+      {/* Mobile horizontal nav */}
+      <nav className="flex w-full overflow-x-auto border-b border-border bg-muted/30 px-2 py-1.5 md:hidden">
+        {navItems.map((item) => {
+          const fullPath = item.path ? `${basePath}/${item.path}` : basePath;
+          const isActive = item.path
+            ? location.pathname === fullPath
+            : location.pathname === basePath || location.pathname === `${basePath}/`;
+          return (
+            <Link
+              key={item.path}
+              to={fullPath}
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <item.icon className="size-3.5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <aside className="hidden w-52 shrink-0 border-r border-border bg-muted/30 md:block">
         <div className="flex h-full flex-col p-3">
           <Tooltip>
             <TooltipTrigger asChild>

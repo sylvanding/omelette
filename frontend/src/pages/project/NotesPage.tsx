@@ -49,7 +49,7 @@ function NotesPage() {
     <PageLayout title={t('notes.dashboard', 'Notes Dashboard')}>
       <div className="space-y-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <SummaryCard icon={BookOpen} label={t('notes.totalPapers', 'Total Papers')} value={data.total_papers} />
           <SummaryCard icon={FileText} label={t('notes.papersWithNotes', 'Papers with Notes')} value={data.papers_with_notes} color="text-blue-500" />
           <SummaryCard icon={NotebookPen} label={t('notes.totalNotes', 'Total Notes')} value={data.total_notes} color="text-green-500" />
