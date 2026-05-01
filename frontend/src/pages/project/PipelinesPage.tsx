@@ -111,7 +111,7 @@ export default function PipelinesPage() {
                 pipeline={pipeline}
                 onCancel={() => cancelMutation.mutate(pipeline.thread_id)}
                 onResume={() => setResolvingThread(pipeline.thread_id)}
-                isCanceling={cancelMutation.isPending && cancelMutation.variables?.[0] === pipeline.thread_id}
+                isCanceling={cancelMutation.isPending && cancelMutation.variables === pipeline.thread_id}
               />
             ))}
           </div>
