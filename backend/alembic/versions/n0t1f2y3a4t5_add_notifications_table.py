@@ -30,7 +30,6 @@ def upgrade() -> None:
         sa.Column("is_dismissed", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
     )
-    op.create_index("ix_notifications_project_id", "notifications", ["project_id"])
     op.create_index("ix_notifications_is_read", "notifications", ["is_read"])
 
 

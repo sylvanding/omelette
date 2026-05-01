@@ -125,7 +125,10 @@ async def expand_keywords(
     llm: LLMClient = Depends(get_llm),
     project: Project = Depends(get_project),
 ):
-    """Use LLM to expand seed keywords with synonyms and related terms."""
+    """Use LLM to expand seed keywords with synonyms and related terms.
+
+    Falls back to mock data when no real LLM is configured.
+    """
     svc = KeywordService(db, llm)
     expanded = await svc.expand_keywords_with_llm(
         project_id=project_id,
@@ -134,9 +137,10 @@ async def expand_keywords(
         max_results=body.max_results,
     )
 
+    is_mock = not llm or llm.provider == "mock"
     return ApiResponse(
         data=KeywordExpandResponse(
             expanded_terms=expanded,
-            source=f"llm:{llm.provider}" if llm else "none",
+            source=f"llm:{llm.provider}" if not is_mock else "mock",
         )
     )

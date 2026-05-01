@@ -237,3 +237,46 @@ async def test_update_nonexistent_keyword(client: AsyncClient, project_id: int):
 async def test_delete_nonexistent_keyword(client: AsyncClient, project_id: int):
     resp = await client.delete(f"/api/v1/projects/{project_id}/keywords/99999")
     assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_expand_keywords_mock_known_term(client: AsyncClient, project_id: int):
+    """Mock mode returns curated examples for known seed terms."""
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/keywords/expand",
+        json={"seed_terms": ["machine learning"], "language": "en", "max_results": 10},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["data"]["source"] == "mock"
+    terms = body["data"]["expanded_terms"]
+    assert len(terms) > 0
+    term_names = [t["term"].lower() for t in terms]
+    assert any("deep learning" in t for t in term_names)
+
+
+@pytest.mark.asyncio
+async def test_expand_keywords_mock_unknown_term(client: AsyncClient, project_id: int):
+    """Mock mode generates template-based results for unknown seed terms."""
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/keywords/expand",
+        json={"seed_terms": ["quantum entanglement"], "language": "en", "max_results": 10},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["data"]["source"] == "mock"
+    terms = body["data"]["expanded_terms"]
+    assert len(terms) > 0
+    assert any("quantum entanglement" in t["term"].lower() for t in terms)
+
+
+@pytest.mark.asyncio
+async def test_expand_keywords_mock_respects_max_results(client: AsyncClient, project_id: int):
+    """Mock mode does not exceed max_results."""
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/keywords/expand",
+        json={"seed_terms": ["super-resolution microscopy", "machine learning"], "max_results": 4},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["data"]["expanded_terms"]) <= 4
