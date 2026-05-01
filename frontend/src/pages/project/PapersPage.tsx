@@ -6,7 +6,7 @@ import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { toast } from 'sonner';
 import { FileText } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
-import { paperApi, projectApi, paperProcessApi, impactScoresApi } from '@/services/api';
+import { paperApi, projectApi, paperProcessApi, impactScoresApi, writingApi } from '@/services/api';
 import { kbApi } from '@/services/kb-api';
 import { queryKeys } from '@/lib/query-keys';
 import type { Paper, PaperStatus, ReadingStatus } from '@/types';
@@ -25,6 +25,7 @@ import { PaperComparisonDialog } from './papers/PaperComparisonDialog';
 import { AudioOverviewDialog } from '@/components/audio/AudioOverviewDialog';
 import { ExportDialog } from '@/components/export/ExportDialog';
 import { AuthorNetworkDialog } from '@/components/author-network/AuthorNetworkDialog';
+import { BibliographyBuilderDialog } from '@/components/citation/BibliographyBuilderDialog';
 
 const PROCESSING_STATUSES: PaperStatus[] = ['pdf_downloaded', 'ocr_complete'];
 
@@ -53,6 +54,7 @@ export default function PapersPage() {
   const [showAudioOverview, setShowAudioOverview] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showAuthorNetwork, setShowAuthorNetwork] = useState(false);
+  const [showBibliography, setShowBibliography] = useState(false);
 
   const { data: impactData } = useQuery({
     queryKey: queryKeys.impactScores.all(pid),
@@ -217,6 +219,19 @@ export default function PapersPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid, filters) });
   };
 
+  const handleCopyCitation = async (paperId: number) => {
+    try {
+      const res = await writingApi.citations(pid, [paperId], 'apa');
+      const citation = res?.citations?.[0]?.citation ?? '';
+      if (citation) {
+        await navigator.clipboard.writeText(citation);
+        toast.success(t('common.copied'));
+      }
+    } catch {
+      toast.error(t('common.operationFailed'));
+    }
+  };
+
   const columns = usePapersColumns({
     pid,
     deleteMutation,
@@ -224,6 +239,7 @@ export default function PapersPage() {
     setGraphPaperId,
     onRatingChange: handleRatingChange,
     impactScores: impactScoreMap,
+    onCopyCitation: handleCopyCitation,
   });
 
   const subtitle = projectData && (
@@ -246,6 +262,7 @@ export default function PapersPage() {
       onAudioOverview={() => setShowAudioOverview(true)}
       onExport={() => setShowExport(true)}
       onAuthorNetwork={() => setShowAuthorNetwork(true)}
+      onBibliography={() => setShowBibliography(true)}
       projectId={pid}
       paperFilters={{
         q: search || undefined,
@@ -437,6 +454,13 @@ export default function PapersPage() {
           <AuthorNetworkDialog
             projectId={pid}
             onClose={() => setShowAuthorNetwork(false)}
+          />
+        )}
+
+        {showBibliography && (
+          <BibliographyBuilderDialog
+            projectId={pid}
+            onClose={() => setShowBibliography(false)}
           />
         )}
       </div>

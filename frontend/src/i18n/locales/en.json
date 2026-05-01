@@ -692,5 +692,29 @@
       "system": "System",
       "paperUpdate": "Paper Update"
     }
+  },
+  "bibliography": {
+    "title": "Bibliography Builder",
+    "selectPapers": "Select Papers",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "searchPlaceholder": "Search papers...",
+    "noPapers": "No papers found",
+    "citationStyle": "Citation Style",
+    "generate": "Generate Bibliography",
+    "generating": "Generating...",
+    "output": "Output",
+    "formatted": "Formatted",
+    "copy": "Copy",
+    "export": "Export",
+    "emptyState": "Select papers and click Generate to create your bibliography",
+    "exportPreview": "Select papers to see the export preview",
+    "styles": {
+      "apa": "APA",
+      "mla": "MLA",
+      "chicago": "Chicago",
+      "ieee": "IEEE",
+      "gb_t_7714": "GB/T 7714"
+    }
   }
 }

@@ -228,12 +228,21 @@ export const handlers = [
     );
   }),
   http.post(`${apiBase}/projects/:id/writing/citations`, async ({ request }) => {
-    const body = (await request.json()) as { paper_ids?: number[] };
+    const body = (await request.json()) as { paper_ids?: number[]; style?: string };
     const count = body.paper_ids?.length ?? 0;
+    const style = body.style ?? 'gb_t_7714';
+    const styleTemplates: Record<string, (i: number) => string> = {
+      apa: (i) => `Doe, J., Smith, A., & Wang, L. (2024). Paper ${i + 1}. Test Journal, 15(3), 100-120.`,
+      mla: (i) => `Doe, John, et al. "Paper ${i + 1}." Test Journal, vol. 15, no. 3, 2024, pp. 100-120.`,
+      chicago: (i) => `Doe, John, Alice Smith, and Li Wang. "Paper ${i + 1}." Test Journal 15, no. 3 (2024): 100-120.`,
+      ieee: (i) => `J. Doe, A. Smith, and L. Wang, "Paper ${i + 1}," Test Journal, vol. 15, no. 3, pp. 100-120, 2024.`,
+      gb_t_7714: (i) => `Doe J, Smith A, Wang L. Paper ${i + 1}[J]. Test Journal, 2024, 15(3): 100-120.`,
+    };
+    const formatter = styleTemplates[style] ?? styleTemplates.gb_t_7714;
     return HttpResponse.json(
       mockResponse({
         citations: Array.from({ length: count }, (_, i) => ({
-          citation: `[${i + 1}] Doe, J. (2024). Paper ${i + 1}. Test Journal.`,
+          citation: formatter(i),
         })),
       }),
     );

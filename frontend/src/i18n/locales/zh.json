@@ -631,5 +631,29 @@
       "system": "系统",
       "paperUpdate": "论文更新"
     }
+  },
+  "bibliography": {
+    "title": "参考文献生成器",
+    "selectPapers": "选择论文",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "searchPlaceholder": "搜索论文...",
+    "noPapers": "未找到论文",
+    "citationStyle": "引用格式",
+    "generate": "生成参考文献",
+    "generating": "生成中...",
+    "output": "输出",
+    "formatted": "格式化",
+    "copy": "复制",
+    "export": "导出",
+    "emptyState": "选择论文并点击生成以创建参考文献",
+    "exportPreview": "选择论文以查看导出预览",
+    "styles": {
+      "apa": "APA",
+      "mla": "MLA",
+      "chicago": "芝加哥",
+      "ieee": "IEEE",
+      "gb_t_7714": "GB/T 7714"
+    }
   }
 }
