@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
@@ -33,8 +33,9 @@ export default function SearchPage() {
   const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
+  const [searchParams] = useSearchParams();
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('q') ?? '');
   const [sources, setSources] = useState<string[]>(['semantic_scholar', 'openalex']);
   const [maxResults, setMaxResults] = useState(50);
   const [results, setResults] = useState<SearchPaper[]>([]);
@@ -60,6 +61,14 @@ export default function SearchPage() {
       setImported(res?.imported ?? 0);
     },
   });
+
+  // Auto-search when URL has a `q` param
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && results.length === 0 && !searchMutation.isPending) {
+      searchMutation.mutate({ query: q });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const importMutation = useToastMutation({
     mutationFn: (papers: SearchPaper[]) =>
