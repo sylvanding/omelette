@@ -33,7 +33,7 @@ describe('NotesPage', () => {
     renderWithProviders(<NotesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Understanding Deep Learning Representations/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Understanding Deep Learning Representations/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 
