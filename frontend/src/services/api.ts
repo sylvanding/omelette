@@ -382,23 +382,23 @@ export interface PipelineStatus {
 
 export const pipelineApi = {
   list: (status?: string) =>
-    api.get<ApiResponse<Pipeline[]>>('/pipelines', { params: status ? { status } : undefined }).then(r => r.data),
+    api.get<Record<string, unknown>[]>('/pipelines', { params: status ? { status } : undefined }).then(r => r.data),
   search: (projectId: number, query: string, sources?: string[], maxResults?: number) =>
-    api.post<ApiResponse<Record<string, unknown>>>('/pipelines/search', {
+    api.post<Record<string, unknown>>('/pipelines/search', {
       project_id: projectId, query, sources, max_results: maxResults ?? 50,
     }).then(r => r.data),
   upload: (projectId: number, pdfPaths: string[]) =>
-    api.post<ApiResponse<Record<string, unknown>>>('/pipelines/upload', {
+    api.post<Record<string, unknown>>('/pipelines/upload', {
       project_id: projectId, pdf_paths: pdfPaths,
     }).then(r => r.data),
   status: (threadId: string) =>
-    api.get<ApiResponse<PipelineStatus>>(`/pipelines/${threadId}/status`).then(r => r.data),
+    api.get<Record<string, unknown>>(`/pipelines/${threadId}/status`).then(r => r.data),
   resume: (threadId: string, resolvedConflicts: Record<string, unknown>[]) =>
-    api.post<ApiResponse<Record<string, unknown>>>(`/pipelines/${threadId}/resume`, {
+    api.post<Record<string, unknown>>(`/pipelines/${threadId}/resume`, {
       resolved_conflicts: resolvedConflicts,
     }).then(r => r.data),
   cancel: (threadId: string) =>
-    api.post<ApiResponse<Record<string, unknown>>>(`/pipelines/${threadId}/cancel`).then(r => r.data),
+    api.post<Record<string, unknown>>(`/pipelines/${threadId}/cancel`).then(r => r.data),
 };
 
 // ---------------------------------------------------------------------------

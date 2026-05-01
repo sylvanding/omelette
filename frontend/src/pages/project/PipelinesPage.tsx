@@ -42,7 +42,11 @@ export default function PipelinesPage() {
     refetchInterval: 3000,
   });
 
-  const pipelines = (pipelinesData as Pipeline[] | undefined) ?? [];
+  const pipelines = ((pipelinesData as Pipeline[] | undefined) ?? []).map((p) => ({
+    thread_id: p.thread_id as string,
+    status: p.status as Pipeline['status'],
+    task_id: p.task_id as number | undefined,
+  }));
 
   const cancelMutation = useToastMutation({
     mutationFn: (threadId: string) => pipelineApi.cancel(threadId),
