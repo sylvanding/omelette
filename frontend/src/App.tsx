@@ -31,6 +31,7 @@ const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
 const NotificationsPage = lazy(() => import('@/pages/project/NotificationsPage'));
 const NotesPage = lazy(() => import('@/pages/project/NotesPage'));
 const TeamMembersPage = lazy(() => import('@/pages/project/TeamMembersPage'));
+const CollectionsPage = lazy(() => import('@/pages/project/CollectionsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -123,6 +124,9 @@ function App() {
               } />
               <Route path="team" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><TeamMembersPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="collections" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><CollectionsPage /></Suspense></ErrorBoundary>
               } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
