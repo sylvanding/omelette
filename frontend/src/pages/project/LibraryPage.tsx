@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Loader2,
   ShieldCheck,
@@ -30,16 +31,23 @@ export default function LibraryPage() {
     enabled: !!pid && activeTab === 'health',
   });
 
-  const repairMutation = useMutation({
+  const repairMutation = useToastMutation({
     mutationFn: () => libraryApi.repair(pid),
+    successMessage: 'Metadata repair completed',
+    errorMessage: 'Failed to repair metadata',
+    invalidateKeys: [['library-health', pid]],
   });
 
-  const tagMutation = useMutation({
+  const tagMutation = useToastMutation({
     mutationFn: () => libraryApi.autoTag(pid),
+    successMessage: 'Auto-tagging completed',
+    errorMessage: 'Failed to generate tags',
   });
 
-  const clusterMutation = useMutation({
+  const clusterMutation = useToastMutation({
     mutationFn: () => libraryApi.clusters(pid),
+    successMessage: 'Clustering analysis completed',
+    errorMessage: 'Failed to analyze clusters',
   });
 
   const handleRepair = useCallback(() => {
