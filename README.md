@@ -229,7 +229,7 @@ omelette/
 │   ├── mcp_server.py     # MCP (Model Context Protocol) server
 │   ├── alembic/          # Database migrations
 │   ├── scripts/          # Utilities (gpu_watchdog.py)
-│   ├── tests/            # pytest-asyncio tests (500+ tests)
+│   ├── tests/            # pytest-asyncio tests (850+ tests)
 │   └── pyproject.toml    # Python dependencies
 ├── frontend/             # React SPA
 │   └── src/
@@ -265,10 +265,10 @@ make dev                  # Start both backend and frontend
 ### Running Tests
 
 ```bash
-# Backend (526 tests)
+# Backend (850+ tests)
 cd backend && pytest tests/ -v
 
-# Frontend unit tests (248 tests — Vitest + Testing Library + MSW)
+# Frontend unit tests (255 tests — Vitest + Testing Library + MSW)
 cd frontend && npm test
 
 # Frontend type check and build

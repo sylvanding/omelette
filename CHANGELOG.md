@@ -39,9 +39,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 #### Frontend Infrastructure
 
 - **TypeScript** — Full TypeScript migration with strict mode
-- **Testing** — Vitest + Testing Library + MSW (248 tests, 41 test files)
+- **Testing** — Vitest + Testing Library + MSW (255 tests, 42 test files)
 - **E2E** — Playwright E2E test suite for critical user flows
 - **Bundle Optimization** — Code splitting with manual chunks for react-pdf, d3, katex, ai-sdk
+- **PWA Support** — Service worker with offline caching, manifest.json for installability, Apple mobile web app meta tags
+- **Mobile Optimization** — Horizontal scrollable nav for project pages on mobile, responsive grid layouts, safe-area-inset support
 
 ### Fixed
 
@@ -56,8 +58,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 
 ### Tests
 
-- **248 frontend tests** passing (41 test files)
-- **500+ backend tests** passing (67 test files)
+- **255 frontend tests** passing (42 test files)
+- **850+ backend tests** passing (46+ test files)
 
 ## [2.0.0] - 2026-03-11
 

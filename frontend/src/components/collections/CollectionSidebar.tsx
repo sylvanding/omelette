@@ -267,9 +267,8 @@ function TagSuggestButton({ projectId }: TagSuggestButtonProps) {
       if (paperIds.length === 0) return;
 
       const { suggestTags } = collectionsApi;
-      const result = await suggestTags(projectId, paperIds);
-      console.log('Tag suggestions:', result.tags);
-      // In a full implementation, this would update the paper tags
+      await suggestTags(projectId, paperIds);
+      // TODO: Display tag suggestions to user
     } catch (e) {
       console.error('Failed to suggest tags', e);
     } finally {
