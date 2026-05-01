@@ -23,7 +23,7 @@ export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose,
   const [focusInput, setFocusInput] = useState('');
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
 
-  const generate = useToastMutation<AudioOverviewResponse, void>({
+  const generate = useToastMutation<AudioOverviewResponse, Error, void>({
     mutationFn: () =>
       audioOverviewsApi.generate(projectId, {
         paper_ids: paperIds,

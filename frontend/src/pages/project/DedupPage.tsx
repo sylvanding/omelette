@@ -21,6 +21,13 @@ interface VerifyResult {
   reasoning: string;
 }
 
+interface DedupCandidate {
+  paper_a: { id: number; title?: string; authors?: string; doi?: string; year?: string | number; journal?: string };
+  paper_b: { id: number; title?: string; authors?: string; doi?: string; year?: string | number; journal?: string };
+  confidence: number;
+  strategy: string;
+}
+
 export default function DedupPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
@@ -40,7 +47,7 @@ export default function DedupPage() {
   });
 
   const papers = papersData?.items ?? [];
-  const candidates = candidatesData?.items ?? [];
+  const candidates = (candidatesData?.items as DedupCandidate[] | undefined) ?? [];
   const visibleCandidates = candidates.filter(
     (c) => !dismissedPairs.has(pairKey(c.paper_a?.id, c.paper_b?.id))
   );
@@ -63,9 +70,9 @@ export default function DedupPage() {
     errorMessage: 'Verification failed',
   });
 
-  const handleVerify = (candidate: Record<string, unknown>) => {
-    const aId = (candidate.paper_a as Record<string, unknown>)?.id as number;
-    const bId = (candidate.paper_b as Record<string, unknown>)?.id as number;
+  const handleVerify = (candidate: DedupCandidate) => {
+    const aId = candidate.paper_a?.id;
+    const bId = candidate.paper_b?.id;
     if (!aId || !bId) return;
 
     verifyMutation.mutate(
@@ -84,9 +91,9 @@ export default function DedupPage() {
     );
   };
 
-  const handleDismiss = (candidate: Record<string, unknown>) => {
-    const aId = (candidate.paper_a as Record<string, unknown>)?.id;
-    const bId = (candidate.paper_b as Record<string, unknown>)?.id;
+  const handleDismiss = (candidate: DedupCandidate) => {
+    const aId = candidate.paper_a?.id;
+    const bId = candidate.paper_b?.id;
     if (!aId || !bId) return;
     setDismissedPairs((prev) => new Set(prev).add(pairKey(aId, bId)));
   };
@@ -285,20 +292,20 @@ function CandidateCard({
   isVerifying,
   onToggleExpand,
 }: {
-  candidate: Record<string, unknown>;
+  candidate: DedupCandidate;
   verifiedPairs: Map<string, VerifyResult>;
   expandedCards: Set<string>;
-  onVerify: (candidate: Record<string, unknown>) => void;
-  onDismiss: (candidate: Record<string, unknown>) => void;
+  onVerify: (candidate: DedupCandidate) => void;
+  onDismiss: (candidate: DedupCandidate) => void;
   onMerge: () => void;
   isVerifying: boolean;
   onToggleExpand: (key: string) => void;
 }) {
-  const paperA = candidate.paper_a as Record<string, unknown> | undefined;
-  const paperB = candidate.paper_b as Record<string, unknown> | undefined;
-  const confidence = (candidate.confidence as number) ?? 0;
-  const aId = paperA?.id as number | undefined;
-  const bId = paperB?.id as number | undefined;
+  const paperA = candidate.paper_a;
+  const paperB = candidate.paper_b;
+  const confidence = candidate.confidence ?? 0;
+  const aId = paperA?.id;
+  const bId = paperB?.id;
   const key = pairKey(aId, bId);
   const verified = verifiedPairs.get(key);
   const isExpanded = expandedCards.has(key);
@@ -317,7 +324,7 @@ function CandidateCard({
         <div className="flex items-center gap-2">
           <GitCompare className="size-4 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground">
-            {String(candidate.strategy ?? 'unknown')} match
+            {candidate.strategy ?? 'unknown'} match
           </span>
         </div>
         <Badge variant="outline" className={confidenceColor}>
@@ -397,11 +404,20 @@ function CandidateCard({
   );
 }
 
+interface PaperInfo {
+  id?: number;
+  title?: string;
+  authors?: string;
+  doi?: string;
+  year?: string | number;
+  journal?: string;
+}
+
 function PaperColumn({
   paper,
   label,
 }: {
-  paper: Record<string, unknown> | undefined;
+  paper: PaperInfo | undefined;
   label: string;
 }) {
   if (!paper) {
@@ -415,16 +431,16 @@ function PaperColumn({
   return (
     <div className="rounded-md border p-3">
       <div className="mb-1 text-xs font-medium text-muted-foreground">{label}</div>
-      <p className="truncate text-sm font-medium">{String(paper.title ?? 'Untitled')}</p>
+      <p className="truncate text-sm font-medium">{paper.title ?? 'Untitled'}</p>
       <p className="truncate text-xs text-muted-foreground">
-        {String(paper.authors ?? '').substring(0, 60)}
+        {(paper.authors ?? '').substring(0, 60)}
       </p>
       {paper.doi && (
-        <p className="truncate text-xs text-muted-foreground">{String(paper.doi)}</p>
+        <p className="truncate text-xs text-muted-foreground">{paper.doi}</p>
       )}
       <div className="mt-1 flex gap-2 text-xs text-muted-foreground">
         {paper.year && <span>{paper.year}</span>}
-        {paper.journal && <span className="truncate">{String(paper.journal)}</span>}
+        {paper.journal && <span className="truncate">{paper.journal}</span>}
       </div>
     </div>
   );

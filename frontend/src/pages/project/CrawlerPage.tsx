@@ -160,19 +160,19 @@ export default function CrawlerPage() {
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Downloaded</div>
               <div className="mt-1 text-2xl font-bold text-green-500">
-                {crawlMutation.data.successful ?? 0}
+                {(crawlMutation.data as Record<string, number>).successful ?? 0}
               </div>
             </div>
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Failed</div>
               <div className="mt-1 text-2xl font-bold text-red-500">
-                {crawlMutation.data.failed ?? 0}
+                {(crawlMutation.data as Record<string, number>).failed ?? 0}
               </div>
             </div>
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Total attempted</div>
               <div className="mt-1 text-2xl font-bold">
-                {crawlMutation.data.total ?? 0}
+                {(crawlMutation.data as Record<string, number>).total ?? 0}
               </div>
             </div>
           </div>

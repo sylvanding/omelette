@@ -31,14 +31,13 @@ export function PaperComparisonDialog({
   const { t } = useTranslation();
   const [focus, setFocus] = useState('');
 
-  const compare = useToastMutation<PaperComparisonResponse, string | undefined>({
-    mutationFn: (f?: string) =>
-      paperApi.compare(projectId, { paper_ids: paperIds, focus: f || undefined }),
-    successMessage: false,
+  const compare = useToastMutation<PaperComparisonResponse, Error, unknown>({
+    mutationFn: (f: unknown) =>
+      paperApi.compare(projectId, { paper_ids: paperIds, focus: f as string | undefined }),
     errorMessage: 'Failed to generate comparison',
   });
 
-  const handleCompare = () => compare.mutate(focus || undefined);
+  const handleCompare = () => compare.mutate(focus || undefined as unknown);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
