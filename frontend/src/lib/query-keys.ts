@@ -83,6 +83,10 @@ export const queryKeys = {
   impactScores: {
     all: (projectId: number) => ['impact-scores', projectId] as const,
   },
+  readingSessions: {
+    all: (projectId: number) => ['reading-sessions', projectId] as const,
+    byPaper: (projectId: number, paperId: number) => ['reading-sessions', projectId, paperId] as const,
+  },
   audioOverviews: {
     all: (projectId: number) => ['audio-overviews', projectId] as const,
   },

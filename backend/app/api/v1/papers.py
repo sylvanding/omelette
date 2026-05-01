@@ -219,6 +219,54 @@ async def record_reading_session(
     )
 
 
+@router.get("/reading-sessions", response_model=ApiResponse[dict], summary="List reading sessions")
+async def list_reading_sessions(
+    project_id: int,
+    paper_id: int | None = Query(default=None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """List reading sessions for a project, optionally filtered by paper."""
+    from app.models.reading_session import ReadingSession
+
+    query = select(ReadingSession).join(Paper).where(Paper.project_id == project_id)
+    if paper_id:
+        query = query.where(ReadingSession.paper_id == paper_id)
+
+    total_stmt = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(total_stmt)
+    total = total_result.scalar() or 0
+
+    query = query.order_by(ReadingSession.started_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    sessions = result.scalars().all()
+
+    items = [
+        {
+            "id": s.id,
+            "paper_id": s.paper_id,
+            "paper_title": s.paper.title or "Untitled",
+            "started_at": s.started_at.isoformat(),
+            "ended_at": s.ended_at.isoformat(),
+            "time_spent_seconds": s.time_spent_seconds,
+            "pages_read": s.pages_read,
+        }
+        for s in sessions
+    ]
+
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size if page_size else 0,
+        }
+    )
+
+
 @router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
 async def get_reading_analytics(
     project_id: int,

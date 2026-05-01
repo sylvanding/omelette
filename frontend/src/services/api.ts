@@ -814,9 +814,23 @@ export interface ReadingSessionInput {
   pages_read?: number;
 }
 
+export interface ReadingSession {
+  id: number;
+  paper_id: number;
+  paper_title: string;
+  started_at: string;
+  ended_at: string;
+  time_spent_seconds: number;
+  pages_read: number | null;
+}
+
 export const readingSessionApi = {
   record: (projectId: number, data: ReadingSessionInput) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/papers/reading-sessions`, data).then(r => r.data),
+  list: (projectId: number, paperId?: number, page = 1, pageSize = 20) =>
+    api.get<PaginatedData<ReadingSession>>(`/projects/${projectId}/papers/reading-sessions`, {
+      params: { paper_id: paperId, page, page_size: pageSize },
+    }).then(r => r.data),
 };
 
 // ---------------------------------------------------------------------------

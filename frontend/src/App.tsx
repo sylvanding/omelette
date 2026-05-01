@@ -26,6 +26,7 @@ const LibraryPage = lazy(() => import('@/pages/project/LibraryPage'));
 const FeedPage = lazy(() => import('@/pages/project/FeedPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
+const ReadingHistoryPage = lazy(() => import('@/pages/project/ReadingHistoryPage'));
 const AudioOverviewsPage = lazy(() => import('@/pages/project/AudioOverviewsPage'));
 const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
 const NotificationsPage = lazy(() => import('@/pages/project/NotificationsPage'));
@@ -118,6 +119,9 @@ function App() {
               } />
               <Route path="activity" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ActivityFeedPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="reading-history" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ReadingHistoryPage /></Suspense></ErrorBoundary>
               } />
               <Route path="audio-overviews" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><AudioOverviewsPage /></Suspense></ErrorBoundary>
