@@ -126,28 +126,34 @@ async def start_search_pipeline(
         try:
             result = await pipeline.ainvoke(initial_state, config=config)
             snapshot = pipeline.get_state(config)
-            if snapshot and snapshot.next:
-                _running_tasks[thread_id]["status"] = "interrupted"
-                _running_tasks[thread_id]["result"] = result
-            else:
-                _running_tasks[thread_id]["status"] = "completed"
-                _running_tasks[thread_id]["result"] = result
-            await pipeline_manager.broadcast_to_room(
-                thread_id,
-                {
-                    "type": "status",
-                    "status": _running_tasks[thread_id]["status"],
-                    "stage": result.get("stage", ""),
-                    "progress": result.get("progress", 0),
-                },
-            )
+            task = _running_tasks.get(thread_id)
+            if task:
+                if snapshot and snapshot.next:
+                    task["status"] = "interrupted"
+                    task["result"] = result
+                else:
+                    task["status"] = "completed"
+                    task["result"] = result
+                await pipeline_manager.broadcast_to_room(
+                    thread_id,
+                    {
+                        "type": "status",
+                        "status": task["status"],
+                        "stage": result.get("stage", ""),
+                        "progress": result.get("progress", 0),
+                    },
+                )
         except asyncio.CancelledError:
-            _running_tasks[thread_id]["status"] = "cancelled"
+            task = _running_tasks.get(thread_id)
+            if task:
+                task["status"] = "cancelled"
             await pipeline_manager.broadcast_to_room(thread_id, {"type": "status", "status": "cancelled"})
         except Exception as e:
             logger.error("Pipeline %s failed: %s", thread_id, e)
-            _running_tasks[thread_id]["status"] = "failed"
-            _running_tasks[thread_id]["error"] = str(e)
+            task = _running_tasks.get(thread_id)
+            if task:
+                task["status"] = "failed"
+                task["error"] = str(e)
             await pipeline_manager.broadcast_to_room(thread_id, {"type": "error", "message": str(e)})
         finally:
             s = _running_tasks.get(thread_id, {}).get("status")
@@ -236,28 +242,34 @@ async def start_upload_pipeline(
         try:
             result = await pipeline.ainvoke(initial_state, config=config)
             snapshot = pipeline.get_state(config)
-            if snapshot and snapshot.next:
-                _running_tasks[thread_id]["status"] = "interrupted"
-                _running_tasks[thread_id]["result"] = result
-            else:
-                _running_tasks[thread_id]["status"] = "completed"
-                _running_tasks[thread_id]["result"] = result
-            await pipeline_manager.broadcast_to_room(
-                thread_id,
-                {
-                    "type": "status",
-                    "status": _running_tasks[thread_id]["status"],
-                    "stage": result.get("stage", ""),
-                    "progress": result.get("progress", 0),
-                },
-            )
+            task = _running_tasks.get(thread_id)
+            if task:
+                if snapshot and snapshot.next:
+                    task["status"] = "interrupted"
+                    task["result"] = result
+                else:
+                    task["status"] = "completed"
+                    task["result"] = result
+                await pipeline_manager.broadcast_to_room(
+                    thread_id,
+                    {
+                        "type": "status",
+                        "status": task["status"],
+                        "stage": result.get("stage", ""),
+                        "progress": result.get("progress", 0),
+                    },
+                )
         except asyncio.CancelledError:
-            _running_tasks[thread_id]["status"] = "cancelled"
+            task = _running_tasks.get(thread_id)
+            if task:
+                task["status"] = "cancelled"
             await pipeline_manager.broadcast_to_room(thread_id, {"type": "status", "status": "cancelled"})
         except Exception as e:
             logger.error("Pipeline %s failed: %s", thread_id, e)
-            _running_tasks[thread_id]["status"] = "failed"
-            _running_tasks[thread_id]["error"] = str(e)
+            task = _running_tasks.get(thread_id)
+            if task:
+                task["status"] = "failed"
+                task["error"] = str(e)
             await pipeline_manager.broadcast_to_room(thread_id, {"type": "error", "message": str(e)})
 
     task_ref = asyncio.create_task(_run())
