@@ -4,12 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Brain, Database, Trash2, Send, Loader2, BookOpen, AlertTriangle,
-  FileText, Sparkles, BarChart3, RefreshCw,
+  FileText, Sparkles, BarChart3, RefreshCw, Scale,
 } from 'lucide-react';
 import { ragApi, paperApi } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import { Button } from '@/components/ui/button';
 import PageLayout from '@/components/layout/PageLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EvidenceConsensus } from '@/components/evidence/EvidenceConsensus';
 import type { Paper } from '@/types';
 
 export default function RAGPage() {
@@ -67,7 +69,19 @@ export default function RAGPage() {
 
   return (
     <PageLayout title="RAG Query" subtitle="Ask questions about your indexed literature">
-      <div className="space-y-6">
+      <Tabs defaultValue="query" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="query" className="gap-2">
+            <Brain className="size-3.5" />
+            RAG Query
+          </TabsTrigger>
+          <TabsTrigger value="consensus" className="gap-2">
+            <Scale className="size-3.5" />
+            Evidence Consensus
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="query" className="space-y-6">
         {/* Index stats */}
         <div className="grid gap-4 sm:grid-cols-4">
           <StatCard icon={Database} label="Indexed Papers" value={indexedPapers} color="text-blue-500" />
@@ -204,7 +218,12 @@ export default function RAGPage() {
             )}
           </div>
         </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="consensus">
+          <EvidenceConsensus projectId={pid} />
+        </TabsContent>
+      </Tabs>
     </PageLayout>
   );
 }
