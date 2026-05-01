@@ -22,26 +22,31 @@ const STATUS_VARIANT: Record<Task['status'], 'warning' | 'info' | 'success' | 'd
   cancelled: 'secondary',
 };
 
-const KANBAN_COLUMNS: { status: Task['status']; label: string; emoji: string }[] = [
-  { status: 'pending', label: 'Pending', emoji: '⏳' },
-  { status: 'running', label: 'Running', emoji: '▶️' },
-  { status: 'completed', label: 'Completed', emoji: '✅' },
-  { status: 'failed', label: 'Failed', emoji: '❌' },
-  { status: 'cancelled', label: 'Cancelled', emoji: '⛔' },
-];
+function useKanbanColumns(t: (key: string) => string) {
+  return [
+    { status: 'pending' as const, label: t('tasks.pending', 'Pending'), emoji: '' },
+    { status: 'running' as const, label: t('tasks.running', 'Running'), emoji: '▶️' },
+    { status: 'completed' as const, label: t('tasks.completed', 'Completed'), emoji: '✅' },
+    { status: 'failed' as const, label: t('tasks.failed', 'Failed'), emoji: '' },
+    { status: 'cancelled' as const, label: t('tasks.cancelled', 'Cancelled'), emoji: '⛔' },
+  ];
+}
 
 function KanbanBoard({
   tasks,
   onCancel,
   isCanceling,
+  t,
 }: {
   tasks: Task[];
   onCancel: (id: number) => void;
   isCanceling: boolean;
+  t: (key: string, fallback?: string) => string;
 }) {
+  const columns = useKanbanColumns(t);
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-      {KANBAN_COLUMNS.map((col) => {
+      {columns.map((col) => {
         const colTasks = tasks.filter((t) => t.status === col.status);
         return (
           <div key={col.status} className="flex flex-col rounded-xl border border-border bg-muted/20">
@@ -219,7 +224,7 @@ export default function TasksPage() {
           </TabsContent>
 
           <TabsContent value="kanban" className="mt-4">
-            <KanbanBoard tasks={tasks} onCancel={cancelMutation.mutate} isCanceling={cancelMutation.isPending} />
+            <KanbanBoard tasks={tasks} onCancel={cancelMutation.mutate} isCanceling={cancelMutation.isPending} t={t} />
           </TabsContent>
         </Tabs>
       </div>
