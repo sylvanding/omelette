@@ -26,6 +26,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 - **Search Page** — External academic search with similar papers discovery from library (`FEAT-028`)
 - **Notifications** — In-app notification bell, dropdown panel, mark-all-read, and subscription alerts (`FEAT-029`)
 - **Citation Tools** — Citation style picker (APA, MLA, Chicago, IEEE, GB/T 7714), bibliography builder, copy citation button (`FEAT-030`)
+- **Notes Aggregation** — Project-wide notes dashboard with summary cards, global search, Markdown/LaTeX rendering, and paper cross-references (`FEAT-031`)
 
 #### Analysis & Visualization
 
