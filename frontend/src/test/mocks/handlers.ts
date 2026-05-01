@@ -513,6 +513,38 @@ export const handlers = [
       }),
     ),
   ),
+  http.get(`${apiBase}/projects/:id/audio-overviews`, () =>
+    HttpResponse.json(
+      mockResponse({
+        items: [
+          {
+            id: 1,
+            title: 'Introduction to Machine Learning',
+            summary: 'A discussion of fundamental ML concepts and applications.',
+            duration_estimate: '5 min',
+            tone: 'conversational',
+            paper_count: 3,
+            paper_ids: [1, 2, 3],
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            title: 'Deep Learning Advances',
+            summary: 'Exploring recent breakthroughs in neural network architectures.',
+            duration_estimate: '8 min',
+            tone: 'formal',
+            paper_count: 5,
+            paper_ids: [4, 5, 6, 7, 8],
+            created_at: new Date().toISOString(),
+          },
+        ],
+        total: 2,
+      }),
+    ),
+  ),
+  http.delete(`${apiBase}/projects/:id/audio-overviews/:overviewId`, () =>
+    HttpResponse.json(mockResponse({ deleted: true })),
+  ),
 
   // Browser Upload
   http.post(`${apiBase}/projects/:id/upload/browser`, ({ request }) => {

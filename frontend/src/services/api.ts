@@ -745,9 +745,31 @@ export interface AudioOverviewRequest {
   focus_areas?: string[];
 }
 
+export interface AudioOverviewListItem {
+  id: number;
+  title: string;
+  summary: string;
+  duration_estimate: string;
+  tone: string;
+  paper_count: number;
+  paper_ids: number[];
+  created_at: string | null;
+}
+
+export interface AudioOverviewListResponse {
+  items: AudioOverviewListItem[];
+  total: number;
+}
+
 export const audioOverviewsApi = {
   generate: (projectId: number, data: AudioOverviewRequest) =>
     api.post<AudioOverviewResponse>(`/projects/${projectId}/audio-overviews`, data).then(r => r.data),
+
+  list: (projectId: number) =>
+    api.get<AudioOverviewListResponse>(`/projects/${projectId}/audio-overviews`).then(r => r.data),
+
+  delete: (projectId: number, overviewId: number) =>
+    api.delete<Record<string, unknown>>(`/projects/${projectId}/audio-overviews/${overviewId}`).then(r => r.data),
 };
 
 // ---------------------------------------------------------------------------

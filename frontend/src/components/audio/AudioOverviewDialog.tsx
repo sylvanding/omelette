@@ -14,9 +14,10 @@ interface AudioOverviewDialogProps {
   paperIds: number[];
   paperTitles: string[];
   onClose: () => void;
+  onGenerated?: () => void;
 }
 
-export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose }: AudioOverviewDialogProps) {
+export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose, onGenerated }: AudioOverviewDialogProps) {
   const { t } = useTranslation();
   const [tone, setTone] = useState<'formal' | 'conversational'>('conversational');
   const [focusInput, setFocusInput] = useState('');
@@ -29,6 +30,9 @@ export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose 
         tone,
         focus_areas: focusAreas.length > 0 ? focusAreas : undefined,
       }),
+    onSuccess: () => {
+      onGenerated?.();
+    },
   });
 
   const handleGenerate = () => {

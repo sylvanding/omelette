@@ -2,6 +2,7 @@
 
 from app.models.activity_log import ActivityLog
 from app.models.api_key import APIKey, APIKeyScope
+from app.models.audio_overview import AudioOverview
 from app.models.chunk import PaperChunk
 from app.models.collection import Collection, CollectionPaper
 from app.models.conversation import Conversation
@@ -21,6 +22,7 @@ __all__ = [
     "ActivityLog",
     "APIKey",
     "APIKeyScope",
+    "AudioOverview",
     "Collection",
     "CollectionPaper",
     "Conversation",

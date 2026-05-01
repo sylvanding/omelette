@@ -173,3 +173,93 @@ class TestAudioOverviewAPI:
             },
         )
         assert resp.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test_list_returns_overviews(self, client: AsyncClient, project_id: int):
+        """Verify the list endpoint returns generated overviews."""
+        paper_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Test Paper", "abstract": "Abstract", "year": 2024},
+        )
+        paper_id = paper_resp.json()["data"]["id"]
+
+        await client.post(
+            f"/api/v1/projects/{project_id}/audio-overviews",
+            json={"paper_ids": [paper_id], "tone": "conversational"},
+        )
+
+        resp = await client.get(f"/api/v1/projects/{project_id}/audio-overviews")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["total"] >= 1
+        assert len(data["items"]) >= 1
+        assert "title" in data["items"][0]
+        assert "duration_estimate" in data["items"][0]
+
+    @pytest.mark.asyncio
+    async def test_list_returns_empty_for_project_without_overviews(self, client: AsyncClient, project_id: int):
+        """Verify the list endpoint returns empty list when no overviews exist."""
+        resp = await client.get(f"/api/v1/projects/{project_id}/audio-overviews")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["total"] == 0
+        assert data["items"] == []
+
+    @pytest.mark.asyncio
+    async def test_delete_removes_overview(self, client: AsyncClient, project_id: int):
+        """Verify the delete endpoint removes an audio overview."""
+        paper_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Test Paper", "abstract": "Abstract", "year": 2024},
+        )
+        paper_id = paper_resp.json()["data"]["id"]
+
+        await client.post(
+            f"/api/v1/projects/{project_id}/audio-overviews",
+            json={"paper_ids": [paper_id], "tone": "conversational"},
+        )
+
+        list_resp = await client.get(f"/api/v1/projects/{project_id}/audio-overviews")
+        overview_id = list_resp.json()["data"]["items"][0]["id"]
+
+        delete_resp = await client.delete(
+            f"/api/v1/projects/{project_id}/audio-overviews/{overview_id}",
+        )
+        assert delete_resp.status_code == 200
+
+        list_resp2 = await client.get(f"/api/v1/projects/{project_id}/audio-overviews")
+        assert list_resp2.json()["data"]["total"] == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_returns_404_for_missing_overview(self, client: AsyncClient, project_id: int):
+        """Verify deleting a non-existent overview returns 404."""
+        resp = await client.delete(
+            f"/api/v1/projects/{project_id}/audio-overviews/9999",
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_delete_is_scoped_to_project(self, client: AsyncClient, project_id: int):
+        """Verify that deleting an overview from another project fails."""
+        other_resp = await client.post("/api/v1/projects", json={"name": "Other Project"})
+        other_id = other_resp.json()["data"]["id"]
+
+        paper_resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers",
+            json={"title": "Test Paper", "abstract": "Abstract", "year": 2024},
+        )
+        paper_id = paper_resp.json()["data"]["id"]
+
+        await client.post(
+            f"/api/v1/projects/{project_id}/audio-overviews",
+            json={"paper_ids": [paper_id], "tone": "conversational"},
+        )
+
+        list_resp = await client.get(f"/api/v1/projects/{project_id}/audio-overviews")
+        overview_id = list_resp.json()["data"]["items"][0]["id"]
+
+        # Try to delete from other project — should fail
+        delete_resp = await client.delete(
+            f"/api/v1/projects/{other_id}/audio-overviews/{overview_id}",
+        )
+        assert delete_resp.status_code == 404

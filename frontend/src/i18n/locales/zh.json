@@ -596,5 +596,24 @@
     "loadError": "加载版本历史失败",
     "newVersionAvailable": "有新版本可用",
     "tab": "版本"
+  },
+  "audioOverview": {
+    "title": "音频概述",
+    "description": "收听AI生成的论文讨论",
+    "generateNew": "生成新的",
+    "generate": "生成音频概述",
+    "generating": "正在生成音频概述...",
+    "error": "生成失败，请重试",
+    "deleted": "音频概述已删除",
+    "emptyTitle": "暂无音频概述",
+    "emptyDescription": "生成第一个音频概述以开始",
+    "generateFirst": "生成第一个概述",
+    "play": "播放",
+    "papers": "篇论文",
+    "selectedPapers": "已选论文",
+    "tone": "语调",
+    "conversational": "对话式",
+    "formal": "正式",
+    "focusPlaceholder": "添加重点领域（如方法论、结果）"
   }
 }

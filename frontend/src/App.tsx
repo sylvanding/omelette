@@ -25,6 +25,7 @@ const LibraryPage = lazy(() => import('@/pages/project/LibraryPage'));
 const FeedPage = lazy(() => import('@/pages/project/FeedPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
+const AudioOverviewsPage = lazy(() => import('@/pages/project/AudioOverviewsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +86,9 @@ function App() {
               <Route path="timeline" element={<TimelinePage />} />
               <Route path="activity" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ActivityFeedPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="audio-overviews" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><AudioOverviewsPage /></Suspense></ErrorBoundary>
               } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
               <Route path="search" element={<Navigate to="../discovery" replace />} />

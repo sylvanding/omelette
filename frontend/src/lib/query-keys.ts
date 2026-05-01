@@ -79,4 +79,7 @@ export const queryKeys = {
   impactScores: {
     all: (projectId: number) => ['impact-scores', projectId] as const,
   },
+  audioOverviews: {
+    all: (projectId: number) => ['audio-overviews', projectId] as const,
+  },
 } as const;

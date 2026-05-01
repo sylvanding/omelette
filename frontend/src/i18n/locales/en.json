@@ -657,5 +657,24 @@
     "loadError": "Failed to load version history",
     "newVersionAvailable": "New version available",
     "tab": "Versions"
+  },
+  "audioOverview": {
+    "title": "Audio Overviews",
+    "description": "Listen to AI-generated discussions of your papers",
+    "generateNew": "Generate New",
+    "generate": "Generate Audio Overview",
+    "generating": "Generating audio overview...",
+    "error": "Failed to generate. Please try again.",
+    "deleted": "Audio overview deleted",
+    "emptyTitle": "No audio overviews yet",
+    "emptyDescription": "Generate your first audio overview to get started",
+    "generateFirst": "Generate First Overview",
+    "play": "Play",
+    "papers": "papers",
+    "selectedPapers": "Selected Papers",
+    "tone": "Tone",
+    "conversational": "Conversational",
+    "formal": "Formal",
+    "focusPlaceholder": "Add focus areas (e.g., methodology, results)"
   }
 }

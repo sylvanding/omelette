@@ -14,6 +14,7 @@ import {
   Sparkles,
   TrendingUp,
   Lightbulb,
+  Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -37,6 +38,7 @@ export default function ProjectDetail() {
     { path: 'trends', label: 'Trends', icon: TrendingUp },
     { path: 'gaps', label: 'Gap Analysis', icon: Lightbulb },
     { path: 'activity', label: t('project.activity'), icon: Activity },
+    { path: 'audio-overviews', label: t('audioOverview.title', 'Audio Overviews'), icon: Headphones },
   ];
 
   const { data } = useQuery({
