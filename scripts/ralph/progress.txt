@@ -295,3 +295,38 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - frontend/src/pages/ProjectDetail.tsx (added nav item)
   - frontend/src/i18n/locales/en.json, zh.json (added gaps translations)
   - frontend/src/test/mocks/handlers.ts (added gaps mock handler)
+
+
+## 2026-05-01 08:32 - FEAT-027
+- Created AudioOverview model with FK to projects (CASCADE delete)
+- Created Alembic migration for audio_overviews table
+- Extended backend audio_overviews.py with GET list and DELETE endpoints
+- Persist generated overviews to database on successful generation
+- Created AudioOverviewsPage with overview card grid, generate dialog, player modal, delete
+- Added onGenerated callback prop to AudioOverviewDialog for list refresh after generation
+- Extended audioOverviewsApi in api.ts with list() and delete() methods
+- Added queryKeys.audioOverviews in query-keys.ts
+- Registered route in App.tsx and nav item (Headphones icon) in ProjectDetail.tsx
+- Added i18n translations for audio overview UI (en/zh)
+- Added MSW mock handlers for GET and DELETE audio-overviews endpoints
+- Files changed:
+  - backend/app/models/audio_overview.py (new)
+  - backend/app/models/__init__.py (added AudioOverview)
+  - backend/app/models/project.py (added audio_overviews relationship)
+  - backend/alembic/versions/h1a2u3d4i5o6_add_audio_overviews_table.py (new)
+  - backend/app/api/v1/audio_overviews.py (added GET list, DELETE endpoints)
+  - backend/tests/test_audio_overviews.py (extended to 12 tests)
+  - frontend/src/services/api.ts (added AudioOverviewListItem, list, delete)
+  - frontend/src/lib/query-keys.ts (added audioOverviews query key)
+  - frontend/src/components/audio/AudioOverviewDialog.tsx (added onGenerated prop)
+  - frontend/src/pages/project/AudioOverviewsPage.tsx (new)
+  - frontend/src/pages/__tests__/AudioOverviewsPage.test.tsx (new, 6 tests)
+  - frontend/src/App.tsx (added audio-overviews route)
+  - frontend/src/pages/ProjectDetail.tsx (added Audio Overviews nav item)
+  - frontend/src/i18n/locales/en.json, zh.json (added audioOverview translations)
+  - frontend/src/test/mocks/handlers.ts (added GET/DELETE audio-overviews handlers)
+- Tests: 12 backend tests pass, 12 frontend tests pass (6 AudioOverviewsPage + 6 AudioOverviewDialog)
+- **Learnings for future iterations:**
+  - When adding onGenerated callback prop to a component, ensure it's actually destructured from props — ReferenceError at runtime if mutation's onSuccess references it
+  - AudioOverviewsPage follows the same pattern as other feature pages: queryKeys lookup, useMutation for delete, useToastMutation pattern, PageLayout wrapper
+  - The audio overview list is project-scoped — all queries and mutations use projectId in the URL path

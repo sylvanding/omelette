@@ -32,7 +32,7 @@
         "Tests: verify audio generation mutation and delete work"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: audio_overviews.py already exists with generate/list/delete endpoints. Frontend: audioOverviewsApi exists in api.ts, AudioPlayer and AudioOverviewDialog components already exist. Need: AudioOverviewsPage listing overviews with generate + play + delete. Register route and nav item. Add mock handlers. Reuse existing AudioPlayer component."
     },
     {
