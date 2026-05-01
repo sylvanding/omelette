@@ -66,7 +66,7 @@ export default function SubscriptionPage() {
           onCheck={(params) => checkUpdatesMutation.mutate(params)}
           isChecking={checkUpdatesMutation.isPending}
           isSuccess={checkUpdatesMutation.isSuccess}
-          data={checkUpdatesMutation.data as Record<string, number> | undefined}
+          data={checkUpdatesMutation.data as Record<string, unknown> | undefined}
         />
 
         {/* Subscriptions list */}
@@ -105,7 +105,7 @@ export default function SubscriptionPage() {
                   triggerMutation.mutate(
                     { subId: sub.id, autoImport },
                     { onSuccess: (data) => {
-                      setRunResults((prev) => new Map(prev).set(sub.id, data as Record<string, number>));
+                      setRunResults((prev) => new Map(prev).set(sub.id, data as unknown as Record<string, number>));
                     }}
                   )
                 }
@@ -135,7 +135,7 @@ function QuickUpdateCheck({
   onCheck: (params: { query: string; sources?: string[]; maxResults: number }) => void;
   isChecking: boolean;
   isSuccess: boolean;
-  data: Record<string, number> | undefined;
+  data: Record<string, unknown> | undefined;
 }) {
   const [query, setQuery] = useState('');
   const [maxResults, setMaxResults] = useState(50);
@@ -212,7 +212,11 @@ function QuickUpdateCheck({
             <div className="text-xs text-muted-foreground">Sources checked</div>
             <div className="mt-1 text-lg font-bold">
               {(data.sources_checked &&
-                Object.keys(data.sources_checked as Record<string, unknown>).length) ?? 0}
+                (Array.isArray(data.sources_checked)
+                  ? data.sources_checked.length
+                  : typeof data.sources_checked === 'object'
+                    ? Object.keys(data.sources_checked).length
+                    : 0)) ?? 0}
             </div>
           </div>
         </div>
