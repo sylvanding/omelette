@@ -26,6 +26,7 @@ const FeedPage = lazy(() => import('@/pages/project/FeedPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
 const AudioOverviewsPage = lazy(() => import('@/pages/project/AudioOverviewsPage'));
+const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -90,8 +91,10 @@ function App() {
               <Route path="audio-overviews" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><AudioOverviewsPage /></Suspense></ErrorBoundary>
               } />
+              <Route path="search" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><SearchPage /></Suspense></ErrorBoundary>
+              } />
               <Route path="keywords" element={<Navigate to="../discovery" replace />} />
-              <Route path="search" element={<Navigate to="../discovery" replace />} />
               <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
               <Route path="rag" element={<Navigate to="/" replace />} />
               <Route path="tasks" element={<Navigate to="/tasks" replace />} />

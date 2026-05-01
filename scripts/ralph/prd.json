@@ -48,7 +48,7 @@
         "Tests: verify similar papers section renders related papers from library"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "SearchPage.tsx already exists but is not registered in App.tsx — just needs route + nav item + i18n + mock handler fixes. paperApi.getRelated already calls /projects/{id}/papers/{paperId}/similar. Need: register SearchPage, add SimilarPapersPanel component to PDFReaderLayout or paper detail, wire up getRelated call. Backend endpoint may need implementation if not already present."
     },
     {

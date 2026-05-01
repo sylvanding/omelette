@@ -330,3 +330,23 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - When adding onGenerated callback prop to a component, ensure it's actually destructured from props — ReferenceError at runtime if mutation's onSuccess references it
   - AudioOverviewsPage follows the same pattern as other feature pages: queryKeys lookup, useMutation for delete, useToastMutation pattern, PageLayout wrapper
   - The audio overview list is project-scoped — all queries and mutations use projectId in the URL path
+
+## 2026-05-01 08:38 - FEAT-028
+- Registered SearchPage in App.tsx with /search route (was redirecting to discovery)
+- Added Search nav item to ProjectDetail.tsx sidebar (Search icon from lucide)
+- i18n translations for searchPage already existed in en.json
+- SimilarPapers/RelatedPapers component already exists in PDFReaderLayout "Related" tab, wired to paperApi.getRelated with similarity scores
+- Backend similar papers endpoint already implemented at /projects/{id}/papers/{paperId}/similar
+- MSW mock handlers for similar papers and search endpoints already present
+- Added 6 frontend tests for SearchPage (form rendering, sources, search, import, slider)
+- Files changed:
+  - frontend/src/App.tsx (added SearchPage lazy import, /search route)
+  - frontend/src/pages/ProjectDetail.tsx (added Search nav item)
+  - frontend/src/pages/__tests__/SearchPage.test.tsx (new, 6 tests)
+- Tests: 6 new frontend tests pass, 17 related tests pass, TypeScript clean, ESLint clean
+- **Learnings for future iterations:**
+  - SearchPage.tsx was already fully implemented — many features have "just register it" status
+  - The "Related" tab in PDFReaderLayout already shows similar papers with similarity scores — no duplicate component needed
+  - When writing tests for forms, use getByPlaceholderText instead of getByLabelText when labels lack `for`/`id` associations
+  - The mockPaper fixture title is 'Test Paper' (not 'Test Paper Title') — verify fixture content before asserting on text
+---

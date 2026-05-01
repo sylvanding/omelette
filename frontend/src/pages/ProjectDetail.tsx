@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Lightbulb,
   Headphones,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -29,6 +30,7 @@ export default function ProjectDetail() {
   const navItems = [
     { path: '', label: t('project.papers'), icon: FileText },
     { path: 'discovery', label: t('discovery.title'), icon: Compass },
+    { path: 'search', label: t('searchPage.title', 'Search'), icon: Search },
     { path: 'reviews', label: 'Reviews', icon: Table2 },
     { path: 'concepts', label: 'Concepts', icon: Network },
     { path: 'library', label: 'Library', icon: FolderOpen },
