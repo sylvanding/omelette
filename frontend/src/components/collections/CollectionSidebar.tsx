@@ -127,7 +127,7 @@ export function CollectionSidebar({
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Collection name"
-              size="sm"
+              className="text-sm"
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter') handleCreate();
@@ -235,7 +235,7 @@ function CollectionRow({ collection, isSelected, onSelect, onDelete, onRename }:
           <Input
             value={editName}
             onChange={e => setEditName(e.target.value)}
-            size="sm"
+            className="text-sm"
             autoFocus
             onKeyDown={e => {
               if (e.key === 'Enter') handleSave();
@@ -280,7 +280,6 @@ function TagSuggestButton({ projectId }: TagSuggestButtonProps) {
   return (
     <Button
       variant="ghost"
-      size="sm"
       className="w-full text-xs"
       onClick={handleSuggestTags}
       disabled={loading}

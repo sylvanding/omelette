@@ -94,7 +94,6 @@ describe('AuthorNetworkView', () => {
         nodes={[]}
         edges={[]}
         metrics={mockMetrics}
-        totalAuthors={0}
         isLoading
       />,
     );
@@ -107,7 +106,6 @@ describe('AuthorNetworkView', () => {
         nodes={[]}
         edges={[]}
         metrics={mockMetrics}
-        totalAuthors={0}
         error="Failed to load network"
       />,
     );
@@ -120,7 +118,6 @@ describe('AuthorNetworkView', () => {
         nodes={[]}
         edges={[]}
         metrics={{ ...mockMetrics, total_edges: 0 }}
-        totalAuthors={0}
       />,
     );
     expect(
@@ -134,7 +131,6 @@ describe('AuthorNetworkView', () => {
         nodes={mockNodes}
         edges={mockEdges}
         metrics={mockMetrics}
-        totalAuthors={3}
       />,
     );
     expect(getByText('2 authors')).toBeTruthy();
@@ -148,7 +144,6 @@ describe('AuthorNetworkView', () => {
         nodes={mockNodes}
         edges={mockEdges}
         metrics={mockMetrics}
-        totalAuthors={3}
         onNodeClick={handleClick}
       />,
     );

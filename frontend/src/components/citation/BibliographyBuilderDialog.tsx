@@ -272,7 +272,7 @@ export function BibliographyBuilderDialog({ projectId, onClose }: BibliographyBu
 
 function formatAuthors(authors: unknown[] | null): string {
   if (!authors || authors.length === 0) return '';
-  const names = authors.slice(0, 3).map((a) => (typeof a === 'object' && 'name' in a ? a.name : String(a)));
+  const names = authors.slice(0, 3).map((a) => (a !== null && typeof a === 'object' && 'name' in a ? a.name : String(a)));
   if (authors.length > 3) names.push('et al.');
   return names.join(', ');
 }

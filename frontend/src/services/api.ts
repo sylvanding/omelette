@@ -858,6 +858,7 @@ export const teamMembersApi = {
 // ---------------------------------------------------------------------------
 
 export type { APIKey, APIKeyScope, CreatedAPIKey } from '@/types';
+import type { APIKeyScope } from '@/types';
 
 export interface CreateAPIKeyRequest {
   name: string;

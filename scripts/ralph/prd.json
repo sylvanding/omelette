@@ -79,7 +79,7 @@
         "Tests: verify bibliography builder generates output with selected papers"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Backend: export.py already generates BibTeX/RIS. writingApi.citations exists in api.ts. Need: CitationStylePicker UI component, copy-citation action on paper cards (PapersPage + PDFReader), BibliographyBuilder dialog with paper selection and multi-style output. Reuse existing export_service.py for format generation."
     }
   ]

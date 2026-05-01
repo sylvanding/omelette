@@ -63,6 +63,10 @@ chroma_data/
 # Jupyter
 .ipynb_checkpoints/
 
+# Frontend
+frontend/dist/
+frontend/coverage/
+
 # Documentation build
 docs/.vitepress/dist/
 docs/.vitepress/cache/

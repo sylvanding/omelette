@@ -195,7 +195,7 @@ function ZoteroManualPreview({
     setLoading(true);
     try {
       const result = await exportReferenceApi.exportZotero(projectId, 'preview');
-      setPreview(result.preview);
+      setPreview(result.preview ?? null);
     } finally {
       setLoading(false);
     }

@@ -192,7 +192,7 @@ export function AuthorNetworkDialog({ projectId, onClose }: AuthorNetworkDialogP
       .domain([1, Math.max(...nodes.map((n) => n.paper_count), 1)])
       .range([5, 20]);
 
-    const colorScale = scaleLinear()
+    const colorScale = scaleLinear<string>()
       .domain([0, 1])
       .range(
         [

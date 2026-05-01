@@ -27,7 +27,7 @@ export default function ReviewsPage() {
   const createMutation = useToastMutation({
     mutationFn: (data: { title: string; research_question: string; columns: ReviewColumn[] }) =>
       reviewsApi.create(pid, data),
-    successMsg: 'Review created',
+    successMessage: 'Review created',
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', pid] });
       setShowCreateForm(false);
@@ -36,7 +36,7 @@ export default function ReviewsPage() {
 
   const deleteMutation = useToastMutation({
     mutationFn: (reviewId: number) => reviewsApi.delete(pid, reviewId),
-    successMsg: 'Review deleted',
+    successMessage: 'Review deleted',
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', pid] });
       setSelectedReview(null);
@@ -45,7 +45,7 @@ export default function ReviewsPage() {
 
   const extractMutation = useToastMutation({
     mutationFn: (reviewId: number) => reviewsApi.extract(pid, reviewId),
-    successMsg: 'Extraction complete',
+    successMessage: 'Extraction complete',
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['extractions', pid, selectedReview?.id] });
     },

@@ -5,6 +5,59 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 
 ## [Unreleased]
 
+### Added
+
+#### Phase 2 Features (FEAT-011 through FEAT-020)
+
+- **Audio Overviews** — LLM-generated dialogue audio for paper collections with tone selection and focus areas (`FEAT-011`)
+- **Browser Extension** — Chrome extension for one-click paper capture from academic sites (arXiv, PubMed, Semantic Scholar) (`FEAT-012`)
+- **Reference Export** — BibTeX, RIS, EndNote, and Zotero export with two-tab dialog UI (`FEAT-013`)
+- **Team Members** — Project team management with invite, role assignment (read/write/admin), and RBAC middleware (`FEAT-014`)
+- **API Key Management** — SHA-256 hashed API keys with scope-based access control (`omk_` prefix) (`FEAT-015`)
+- **Author Network** — d3-force directed graph visualization of co-authorship relationships with centrality metrics (`FEAT-016`)
+- **Trend Analysis** — Year-binned topic trends, publication volume charts, emerging/declining topic detection (`FEAT-017`)
+- **Gap Analysis** — LLM-powered research gap identification with novelty and feasibility scoring (`FEAT-018`)
+- **Version Tracking** — Paper version history with Semantic Scholar polling, diff generation, and upgrade preservation (`FEAT-019`)
+- **Collection Management** — Paper collections with custom tags and bulk operations (`FEAT-020`)
+
+#### Cycle 18 Features (FEAT-026 through FEAT-030)
+
+- **Audio Overviews Page** — Dedicated page for browsing, generating, playing, and deleting audio overviews (`FEAT-027`)
+- **Search Page** — External academic search with similar papers discovery from library (`FEAT-028`)
+- **Notifications** — In-app notification bell, dropdown panel, mark-all-read, and subscription alerts (`FEAT-029`)
+- **Citation Tools** — Citation style picker (APA, MLA, Chicago, IEEE, GB/T 7714), bibliography builder, copy citation button (`FEAT-030`)
+
+#### Analysis & Visualization
+
+- **Analytics Dashboard** — Comprehensive project analytics with reading patterns, paper status distribution, and activity metrics
+- **Concept Map** — Knowledge concept visualization with relationship graphs
+- **Activity Feed** — Project activity timeline with filterable events
+- **Paper Comparison** — Side-by-side paper comparison with diff highlighting
+- **Evidence Consensus** — Structured data extraction visualization with recharts
+
+#### Frontend Infrastructure
+
+- **TypeScript** — Full TypeScript migration with strict mode
+- **Testing** — Vitest + Testing Library + MSW (248 tests, 41 test files)
+- **E2E** — Playwright E2E test suite for critical user flows
+- **Bundle Optimization** — Code splitting with manual chunks for react-pdf, d3, katex, ai-sdk
+
+### Fixed
+
+- TypeScript build errors across 15+ files (type mismatches, missing imports, null safety)
+- D3 type compatibility issues in AuthorNetworkView and CitationGraphView
+- ReviewsPage `useToastMutation` property naming (`successMsg` → `successMessage`)
+- CollectionSidebar invalid `size` prop on native input elements
+- TeamMembersManager EmptyState action type mismatch
+- ExportDialog null/undefined preview state handling
+- HighlightOverlay missing `useCallback` import
+- PapersToolbar test missing new callback props
+
+### Tests
+
+- **248 frontend tests** passing (41 test files)
+- **500+ backend tests** passing (67 test files)
+
 ## [2.0.0] - 2026-03-11
 
 ### V2 Architecture Upgrade

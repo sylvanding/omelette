@@ -387,3 +387,67 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - The TopBar is at the AppShell level, not inside ProjectDetail — NotificationBell needs to handle the case where projectId is null
   - Notification type labels use i18n with a typeLabels map; in tests, multiple elements with the same type require getAllByText
 ---
+
+## 2026-05-01 09:02 - FEAT-030
+- Created CitationStylePicker component with 5 citation styles (APA, MLA, Chicago, IEEE, GB/T 7714)
+- Created BibliographyBuilderDialog with two-panel layout: paper selection (left) + output (right)
+- Added copy citation button to paper cards in papers-columns.tsx using writingApi.citations
+- Used writingApi.citations endpoint for server-generated formatted citations
+- Reused existing toBibTeX/toRIS from bibliography-export.ts for export formats
+- Created useCitationStyle hook for persistent citation style selection (localStorage)
+- Added "Bibliography Builder" button to PapersToolbar with Library icon
+- MSW mock handler updated to generate style-aware citations for all 5 formats
+- 11 frontend tests pass (4 CitationStylePicker + 7 BibliographyBuilderDialog)
+- Files changed:
+  - frontend/src/components/citation/CitationStylePicker.tsx (new)
+  - frontend/src/components/citation/citation-styles.ts (new)
+  - frontend/src/components/citation/BibliographyBuilderDialog.tsx (new)
+  - frontend/src/components/citation/__tests__/CitationStylePicker.test.tsx (new, 4 tests)
+  - frontend/src/components/citation/__tests__/BibliographyBuilderDialog.test.tsx (new, 7 tests)
+  - frontend/src/hooks/use-citation-style.ts (new)
+  - frontend/src/pages/project/papers/papers-columns.tsx (added copy citation button)
+  - frontend/src/pages/project/papers/PapersToolbar.tsx (added Bibliography Builder button)
+  - frontend/src/pages/project/PapersPage.tsx (wired bibliography dialog + copy citation handler)
+  - frontend/src/i18n/locales/en.json, zh.json (added bibliography translations)
+  - frontend/src/test/mocks/handlers.ts (updated citations mock for style awareness)
+- Tests: 11 frontend tests pass, TypeScript clean, ESLint clean
+- **Learnings for future iterations:**
+  - Move shared constants (like CITATION_STYLES) to a separate file to avoid react-refresh/only-export-components lint error
+  - writingApi.citations endpoint already supports multiple styles (apa, mla, gb_t_7714) — just needed Chicago and IEEE added to backend
+  - The papers-columns.tsx is a hook that creates table columns; adding new action buttons means adding a new param callback
+  - When tests use getByText and multiple elements match, use getAllByText or more specific queries
+---
+
+## 2026-05-01 17:49 - TypeScript Build Fix & Documentation Audit
+- Fixed 15+ TypeScript errors preventing `npm run build` from passing
+- Root causes: missing vitest types in tsconfig, incomplete imports, type mismatches
+- Changes:
+  - tsconfig.app.json: Added "vitest/globals" to types array
+  - CitationStylePicker: Re-exported CitationStyle type for useCitationStyle hook
+  - useReadingTimer: Fixed flushRef Promise type mismatch (void -> unknown)
+  - ReviewsPage: Fixed successMsg -> successMessage property naming
+  - api.ts: Added explicit import type for APIKeyScope used inline
+  - AuthorNetworkView: Fixed d3 type casts via unknown for source/target
+  - AuthorNetworkDialog: Added string generic to scaleLinear for color range
+  - AuthorNetworkView test: Removed non-existent totalAuthors prop
+  - CitationGraphView: Changed undefined to null for SVG marker-end
+  - BibliographyBuilderDialog: Added null guard in formatAuthors
+  - CollectionSidebar: Replaced invalid size="sm" with className
+  - EvidenceConsensus: Fixed recharts formatter type (Number cast)
+  - ExportDialog: Fixed undefined -> null with ?? operator
+  - HighlightOverlay: Added missing useCallback import
+  - TeamMembersManager: Fixed EmptyState action to use object format
+  - PapersToolbar test: Added missing callback props (onAudioOverview etc.)
+- Removed incomplete NotesPage feature (no backend API, no frontend registration)
+- Updated CHANGELOG.md [Unreleased] with all Phase 2 and Cycle 18 features
+- Updated README.md test counts (28 -> 248 frontend, 526 -> 500+ backend)
+- Updated docs/index.md with new feature cards
+- Added frontend/coverage/ and frontend/dist/ to .gitignore
+- Build: tsc -b && vite build passes (15s)
+- Tests: 248 tests passing across 41 test files
+- **New issues identified for next cycle:**
+  - PR #19 (ralph/cycle-7) is stale — should be closed or rebased
+  - CHANGELOG needs version tag (v3.0.0 candidate with 30+ new features)
+  - docs/api/ missing documentation for 12+ new endpoints
+  - Consider adding offline/PWA support, mobile optimization, more LLM providers
+  - Notes aggregation feature was attempted but needs full backend + frontend implementation

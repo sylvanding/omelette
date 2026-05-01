@@ -111,12 +111,7 @@ export function TeamMembersManager({ projectId }: TeamMembersManagerProps) {
             icon={Users}
             title={t('team.noMembers')}
             description={t('team.noMembersDesc')}
-            action={
-              <Button onClick={() => setInviteOpen(true)}>
-                <UserPlus className="mr-2 size-4" />
-                {t('team.inviteFirst')}
-              </Button>
-            }
+            action={{ label: t('team.inviteFirst'), onClick: () => setInviteOpen(true) }}
           />
           <InviteDialog
             open={inviteOpen}

@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils';
 import { CITATION_STYLES, type CitationStyle } from './citation-styles';
 
+export type { CitationStyle };
+
 interface CitationStylePickerProps {
   value: CitationStyle;
   onChange: (style: CitationStyle) => void;

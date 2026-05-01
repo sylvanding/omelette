@@ -21,7 +21,7 @@ export function useReadingTimer({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const startTimeRef = useRef<Date | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const flushRef = useRef<Promise<void> | null>(null);
+  const flushRef = useRef<Promise<unknown> | null>(null);
 
   const isRunning = startTimeRef.current !== null && elapsedSeconds > 0;
 

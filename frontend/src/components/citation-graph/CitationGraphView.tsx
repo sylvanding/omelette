@@ -163,7 +163,7 @@ export default function CitationGraphView({
       .attr('stroke', (d) => edgeColor(d.type))
       .attr('stroke-width', (d) => d.type === 'similar' ? Math.max(1, (d.similarity ?? 0.5) * 3) : 1)
       .attr('stroke-opacity', 0.6)
-      .attr('marker-end', (d) => d.type === 'similar' ? undefined : 'url(#arrow-cites)');
+      .attr('marker-end', (d) => d.type === 'similar' ? null : 'url(#arrow-cites)');
 
     const nodeContainer = nodeGroup
       .selectAll<SVGGElement, GraphNode>('g')

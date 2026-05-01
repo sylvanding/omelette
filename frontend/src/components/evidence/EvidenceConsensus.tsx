@@ -102,7 +102,7 @@ function ConsensusChart({ result }: ConsensusChartProps) {
           <BarChart data={chartData}>
             <XAxis dataKey="name" />
             <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-            <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+            <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {chartData.map((entry, index) => (
                 <Cell key={index} fill={entry.fill} />
