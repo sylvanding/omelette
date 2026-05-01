@@ -2,6 +2,7 @@ import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   FileText,
   Compass,
   PenLine,
@@ -64,6 +65,7 @@ export default function ProjectDetail() {
     { path: 'subscriptions', label: 'Subscriptions', icon: Rss },
     { path: 'pipelines', label: 'Pipelines', icon: Network },
     { path: 'rag', label: 'RAG', icon: Brain },
+    { path: 'contradictions', label: 'Contradictions', icon: AlertTriangle },
   ];
 
   const { data } = useQuery({

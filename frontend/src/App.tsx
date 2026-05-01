@@ -37,6 +37,7 @@ const OCRPage = lazy(() => import('@/pages/project/OCRPage'));
 const CrawlerPage = lazy(() => import('@/pages/project/CrawlerPage'));
 const DedupPage = lazy(() => import('@/pages/project/DedupPage'));
 const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
+const ContradictionsPage = lazy(() => import('@/pages/project/ContradictionsPage'));
 const SubscriptionPage = lazy(() => import('@/pages/project/SubscriptionPage'));
 const PipelinesPage = lazy(() => import('@/pages/project/PipelinesPage'));
 const RAGPage = lazy(() => import('@/pages/project/RAGPage'));
@@ -150,6 +151,9 @@ function App() {
               } />
               <Route path="keywords" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><KeywordsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="contradictions" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ContradictionsPage /></Suspense></ErrorBoundary>
               } />
               <Route path="subscriptions" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><SubscriptionPage /></Suspense></ErrorBoundary>

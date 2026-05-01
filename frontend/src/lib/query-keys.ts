@@ -74,6 +74,9 @@ export const queryKeys = {
   gaps: {
     all: (projectId: number) => ['gaps', projectId] as const,
   },
+  contradictions: {
+    all: (projectId: number) => ['contradictions', projectId] as const,
+  },
   paperVersions: {
     all: (projectId: number, paperId: number) => ['paper-versions', projectId, paperId] as const,
   },

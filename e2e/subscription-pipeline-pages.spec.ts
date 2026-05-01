@@ -75,3 +75,16 @@ test.describe('RAG Page', () => {
     await expect(page.locator('text=Vector Records')).toBeVisible();
   });
 });
+
+test.describe('Contradictions Page', () => {
+  test('loads contradictions page and shows initial empty state', async ({ page }) => {
+    await page.goto('/projects/1/contradictions');
+    await expect(page.locator('h1')).toContainText('Contradictions');
+    await expect(page.locator('text=Contradiction Detection')).toBeVisible();
+  });
+
+  test('has run analysis button', async ({ page }) => {
+    await page.goto('/projects/1/contradictions');
+    await expect(page.locator('button:has-text("Run Analysis")')).toBeVisible();
+  });
+});
