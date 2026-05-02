@@ -70,14 +70,32 @@ export default function ProjectDetail() {
     { path: 'contradictions', label: 'Contradictions', icon: AlertTriangle },
   ];
 
-  const { data } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => projectApi.get(Number(projectId!)),
     enabled: !!projectId,
+    retry: 1,
   });
 
   const project = data;
   const basePath = `/projects/${projectId}`;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-muted-foreground">{t('common.loading', 'Loading...')}</p>
+      </div>
+    );
+  }
+
+  if (isError || !project) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <p className="text-lg font-semibold">{t('project.notFound', 'Project not found')}</p>
+        <p className="text-sm text-muted-foreground">{t('project.notFoundDesc', 'This project may have been deleted or you do not have access.')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full">
