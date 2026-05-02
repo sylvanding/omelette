@@ -20,6 +20,7 @@ interface PapersToolbarProps {
   onCompare: () => void;
   onAudioOverview: () => void;
   onBatchStatusChange: () => void;
+  onBatchStatusUnread: () => void;
   onExport: () => void;
   onAuthorNetwork: () => void;
   onBibliography: () => void;
@@ -42,6 +43,7 @@ export function PapersToolbar({
   onCompare,
   onAudioOverview,
   onBatchStatusChange,
+  onBatchStatusUnread,
   onExport,
   onAuthorNetwork,
   onBibliography,
@@ -144,6 +146,16 @@ export function PapersToolbar({
         >
           <CheckCircle2 className="size-4" />
           Mark Read
+        </Button>
+      )}
+      {selectedRows.size > 0 && (
+        <Button
+          variant="outline"
+          onClick={onBatchStatusUnread}
+          className="gap-1.5"
+        >
+          <BookOpen className="size-4" />
+          Mark Unread
         </Button>
       )}
       {selectedRows.size > 0 && (
