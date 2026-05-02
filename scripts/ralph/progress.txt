@@ -674,3 +674,27 @@ Tested 35 pages with real API data (5 papers, 8 reading sessions, 5 keywords, 1 
 - Timeline by year (2013-2019)
 - Reading sessions (8 sessions, 4h 35m total)
 ---
+
+## 2026-05-02 20:55 - Ralph Cycle: PDF/OCR/Notes/Contradictions/Concepts
+
+### Feature Testing Results
+1. **PDF Upload** ✅ - Real PDF (316 bytes) uploaded successfully, saved to data/pdfs/
+2. **OCR Processing** ✅ - Auto-OCR on upload (status: ocr_complete), manual OCR endpoint works
+3. **Notes Editing** ✅ - Complete cycle verified: edit textarea → modify Markdown → preview → save
+   - Markdown rendering: headings, bold, lists all working
+   - Browser verification: Edit/Preview toggle functional, content persists after save
+4. **Contradiction Detection** ✅ - API at /analysis/contradictions, returns 0 without LLM (expected)
+5. **Concept Extraction** ✅ - API at /concepts/extract, returns empty graph without LLM (expected)
+
+### Issues Discovered
+- **No contradictions.py module** - contradictions live in analysis.py (correct, but non-obvious)
+- **Concepts API path** is /projects/{id}/concepts (separate router)
+- Contradictions and concepts both require LLM to generate meaningful output
+
+### Next Ralph Tasks
+- [ ] Create comprehensive PRD entries for contradiction & concept LLM features
+- [ ] Test notification bell with real notification data
+- [ ] Test audio overviews with LLM configured
+- [ ] Add loading states for LLM-dependent features (contradictions, concepts)
+- [ ] Check if NotesPanel auto-saves on blur/change
+---
