@@ -9,6 +9,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { EmptyState } from '@/components/ui/empty-state';
 import PageLayout from '@/components/layout/PageLayout';
 import { formatReadingTime } from '@/hooks/useReadingTimer';
+import { ReadingGoalsCard } from '@/components/reading/ReadingGoalsCard';
 
 const PAGE_SIZE = 20;
 
@@ -64,6 +65,9 @@ export default function ReadingHistoryPage() {
           <SummaryCard icon={Clock} label={t('readingHistory.totalTime', 'Total Time')} value={formatReadingTime(totalSeconds)} />
           <SummaryCard icon={FileText} label={t('readingHistory.papersRead', 'Papers Read')} value={new Set(sessions.map((s) => s.paper_id)).size} />
         </div>
+
+        {/* Reading goals */}
+        <ReadingGoalsCard sessions={sessions} />
 
         {/* Sessions list */}
         {grouped.size === 0 ? (

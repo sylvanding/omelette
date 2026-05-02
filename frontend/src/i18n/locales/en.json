@@ -750,6 +750,20 @@
     "zoteroCreated": "Zotero collection created",
     "copyBibtex": "Copy BibTeX"
   },
+  "readingGoals": {
+    "title": "Reading Goals",
+    "edit": "Edit goals",
+    "dailyGoal": "Daily goal",
+    "weeklyGoal": "Weekly goal",
+    "papersPerDay": "papers/day",
+    "papersPerWeek": "papers/week",
+    "today": "Today",
+    "thisWeek": "This week",
+    "papers": "papers",
+    "dayStreak": "day streak",
+    "readToday": "read today",
+    "daily": "daily"
+  },
   "readingHistory": {
     "title": "Reading History",
     "subtitle": "Track your reading progress across all papers",

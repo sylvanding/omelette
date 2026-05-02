@@ -689,6 +689,20 @@
     "zoteroCreated": "Zotero 集合已创建",
     "copyBibtex": "复制 BibTeX"
   },
+  "readingGoals": {
+    "title": "阅读目标",
+    "edit": "编辑目标",
+    "dailyGoal": "每日目标",
+    "weeklyGoal": "每周目标",
+    "papersPerDay": "篇/天",
+    "papersPerWeek": "篇/周",
+    "today": "今日",
+    "thisWeek": "本周",
+    "papers": "篇",
+    "dayStreak": "天连续",
+    "readToday": "今日已读",
+    "daily": "每日"
+  },
   "readingHistory": {
     "title": "阅读历史",
     "subtitle": "追踪你的阅读进度",
