@@ -1,7 +1,7 @@
 {
   "project": "Omelette - Research Workflow Enhancement",
-  "branchName": "ralph/cycle-18",
-  "description": "After completing FEAT-021 through FEAT-025 (synthesis and report generation), implement 5 features that wire up existing backend services to the UI and close daily-use workflow gaps: deduplication management, audio overviews, similar papers discovery, notification system, and citation tools. All five leverage existing backend endpoints and frontend service code.",
+  "branchName": "ralph/cycle-20",
+  "description": "Cycle 20: Paper quality scoring, bulk operations, and improved empty states",
   "userStories": [
     {
       "id": "FEAT-026",
@@ -49,7 +49,7 @@
       ],
       "priority": 8,
       "passes": true,
-      "notes": "SearchPage.tsx already exists but is not registered in App.tsx — just needs route + nav item + i18n + mock handler fixes. paperApi.getRelated already calls /projects/{id}/papers/{paperId}/similar. Need: register SearchPage, add SimilarPapersPanel component to PDFReaderLayout or paper detail, wire up getRelated call. Backend endpoint may need implementation if not already present."
+      "notes": "SearchPage.tsx already exists but is not registered in App.tsx \u2014 just needs route + nav item + i18n + mock handler fixes. paperApi.getRelated already calls /projects/{id}/papers/{paperId}/similar. Need: register SearchPage, add SimilarPapersPanel component to PDFReaderLayout or paper detail, wire up getRelated call. Backend endpoint may need implementation if not already present."
     },
     {
       "id": "FEAT-029",
@@ -129,6 +129,34 @@
       "priority": 4,
       "passes": true,
       "notes": "Reuse ReadingGoalsCard from ReadingHistoryPage. Added readingSessionApi query to OverviewPage. Card shown only when sessions exist."
+    },
+    {
+      "id": "FEAT-035",
+      "title": "Add paper quality scoring with star ratings and quality tags",
+      "description": "As a researcher, I want to rate papers and tag quality issues so I can prioritize my reading list.",
+      "acceptanceCriteria": [
+        "Paper rows show star ratings (1-5) and quality tags",
+        "Clicking stars updates rating via API",
+        "Quality tags can be added/removed per paper",
+        "Filter by quality tag works in PapersFilterBar",
+        "Tests: verify rating mutation, quality tag toggle"
+      ],
+      "priority": 6,
+      "passes": false
+    },
+    {
+      "id": "FEAT-036",
+      "title": "Add bulk paper operations (batch tag, batch status change)",
+      "description": "As a researcher managing many papers, I want to update tags and reading status for multiple papers at once.",
+      "acceptanceCriteria": [
+        "Select multiple papers shows bulk action toolbar",
+        "Can apply tags to all selected papers",
+        "Can change reading status for all selected papers",
+        "Batch delete works correctly",
+        "Tests: verify bulk tag, bulk status, batch delete"
+      ],
+      "priority": 5,
+      "passes": false
     }
   ]
 }

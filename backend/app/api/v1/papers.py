@@ -155,6 +155,44 @@ async def batch_delete_papers(
     return ApiResponse(data={"deleted": len(papers), "requested": len(body.paper_ids)})
 
 
+@router.post("/batch-update", response_model=ApiResponse[dict], summary="Batch update papers")
+async def batch_update_papers(
+    project_id: int,
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Update tags and/or reading_status for multiple papers at once."""
+    paper_ids = body.get("paper_ids", [])
+    updates = body.get("updates", {})
+
+    if not paper_ids:
+        raise HTTPException(status_code=400, detail="paper_ids is required")
+    if not updates:
+        raise HTTPException(status_code=400, detail="updates is required")
+
+    allowed_fields = {"tags", "reading_status", "quality_tags", "rating"}
+    invalid = set(updates.keys()) - allowed_fields
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Invalid update fields: {invalid}")
+
+    stmt = select(Paper).where(
+        Paper.project_id == project_id,
+        Paper.id.in_(paper_ids),
+    )
+    result = await db.execute(stmt)
+    papers = result.scalars().all()
+
+    updated = 0
+    for paper in papers:
+        for field, value in updates.items():
+            setattr(paper, field, value)
+        updated += 1
+
+    await db.flush()
+    return ApiResponse(data={"updated": updated, "total": len(paper_ids)})
+
+
 @router.post("/reading-sessions", response_model=ApiResponse[dict], status_code=201, summary="Record a reading session")
 async def record_reading_session(
     project_id: int,
