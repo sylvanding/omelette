@@ -100,6 +100,35 @@
       "priority": 7,
       "passes": true,
       "notes": "Backend: papers table has notes (text) and reading_status columns. Need: aggregate endpoint counting total papers, papers with notes, total notes characters, and filtered note entries. Frontend: NotesPage with summary cards, search bar, note cards with Markdown rendering. Register route and nav item. Add MSW mock handler."
+    },
+    {
+      "id": "FEAT-032",
+      "title": "Wire up team members page and add reading goals",
+      "description": "As a researcher managing a team, I want to see team members on a dedicated page, and set reading goals to track my progress.",
+      "acceptanceCriteria": [
+        "TeamMembersPage shows the TeamMembersManager component",
+        "Team nav item appears in project sidebar",
+        "Reading goals card shows daily/weekly targets with progress bars",
+        "Users can edit reading goals and persist them",
+        "Streak counter shows consecutive days meeting goal",
+        "Tests: verify team page renders, reading goals CRUD and calculations"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "TeamMembersManager existed but was orphaned. Reading goals uses localStorage with useReadingGoals hook. computeTodayProgress counts unique papers by ID per day. computeStreak counts consecutive days meeting daily goal."
+    },
+    {
+      "id": "FEAT-033",
+      "title": "Add reading goal progress bars to overview page",
+      "description": "As a researcher, I want to see my reading goals progress on the project overview for quick motivation.",
+      "acceptanceCriteria": [
+        "OverviewPage shows reading goals progress card",
+        "Displays today's papers read vs daily goal",
+        "Shows current week streak"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Reuse ReadingGoalsCard from ReadingHistoryPage. Reading sessions already available via API."
     }
   ]
 }
