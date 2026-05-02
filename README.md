@@ -265,16 +265,16 @@ make dev                  # Start both backend and frontend
 ### Running Tests
 
 ```bash
-# Backend (850+ tests)
+# Backend (861 tests)
 cd backend && pytest tests/ -v
 
-# Frontend unit tests (255 tests — Vitest + Testing Library + MSW)
+# Frontend unit tests (261 tests — Vitest + Testing Library + MSW)
 cd frontend && npm test
 
 # Frontend type check and build
 cd frontend && npx tsc --noEmit && npm run build
 
-# E2E tests (optional — requires running frontend dev server)
+# E2E tests (39 tests — optional, requires running frontend dev server)
 npx playwright test
 ```
 

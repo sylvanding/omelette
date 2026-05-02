@@ -20,7 +20,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 - **Version Tracking** — Paper version history with Semantic Scholar polling, diff generation, and upgrade preservation (`FEAT-019`)
 - **Collection Management** — Paper collections with custom tags and bulk operations (`FEAT-020`)
 
-#### Cycle 18 Features (FEAT-026 through FEAT-030)
+#### Cycle 18 Features (FEAT-026 through FEAT-032)
+
+- **Reading History** — Track reading sessions with time tracking, date grouping, pagination, and progress stats (`FEAT-032`)
+- **Team Members Page** — Dedicated team management page with invite dialog and role assignment (`FEAT-032`)
 
 - **Audio Overviews Page** — Dedicated page for browsing, generating, playing, and deleting audio overviews (`FEAT-027`)
 - **Search Page** — External academic search with similar papers discovery from library (`FEAT-028`)
@@ -39,7 +42,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 #### Frontend Infrastructure
 
 - **TypeScript** — Full TypeScript migration with strict mode
-- **Testing** — Vitest + Testing Library + MSW (255 tests, 42 test files)
+- **Testing** — Vitest + Testing Library + MSW (261 tests, 46 test files)
 - **E2E** — Playwright E2E test suite for critical user flows
 - **Bundle Optimization** — Code splitting with manual chunks for react-pdf, d3, katex, ai-sdk
 - **PWA Support** — Service worker with offline caching, manifest.json for installability, Apple mobile web app meta tags
@@ -48,6 +51,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 ### Fixed
 
 - TypeScript build errors across 15+ files (type mismatches, missing imports, null safety)
+- Add i18n to ReadingHistoryPage with common date/pagination keys
+- Add error state handling to PapersPage and ReadingHistoryPage
+- Fix PWA manifest referencing non-existent icon files
+- Remove dead MessageBubble component (replaced by MessageBubbleV2)
+- Clean up 16 stale remote branches
+- Fix duplicate trends key in both en.json and zh.json
+- Wire up all nav labels through t() for bilingual support
 - D3 type compatibility issues in AuthorNetworkView and CitationGraphView
 - ReviewsPage `useToastMutation` property naming (`successMsg` → `successMessage`)
 - CollectionSidebar invalid `size` prop on native input elements
@@ -58,8 +68,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/), with [Convention
 
 ### Tests
 
-- **255 frontend tests** passing (42 test files)
-- **850+ backend tests** passing (46+ test files)
+- **261 frontend tests** passing (46 test files)
+- **861 backend tests** passing (46+ test files)
+- **39 E2E tests** passing
 
 ## [2.0.0] - 2026-03-11
 
