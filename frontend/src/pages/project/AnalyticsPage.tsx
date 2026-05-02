@@ -253,14 +253,15 @@ function HeatmapCalendar({ data }: { data: Record<string, number> }) {
     weeks.push(days.slice(i, i + 7));
   }
 
-  // Month labels
+  // Month labels — use year+month to avoid duplicates across years
   const monthLabels: { label: string; weekIndex: number }[] = [];
-  let lastMonth = -1;
+  let lastKey = '';
   weeks.forEach((week, i) => {
-    const month = new Date(week[0].date).getMonth();
-    if (month !== lastMonth) {
-      monthLabels.push({ label: new Date(week[0].date).toLocaleString('en', { month: 'short' }), weekIndex: i });
-      lastMonth = month;
+    const d = new Date(week[0].date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (key !== lastKey) {
+      monthLabels.push({ label: d.toLocaleString('en', { month: 'short' }), weekIndex: i });
+      lastKey = key;
     }
   });
 
@@ -280,11 +281,16 @@ function HeatmapCalendar({ data }: { data: Record<string, number> }) {
       <div className="relative">
         {/* Month labels */}
         <div className="flex ml-8 mb-1">
-          {monthLabels.map((m) => (
-            <div key={m.label} className="text-xs text-muted-foreground" style={{ width: `${(100 / weeks.length) * (m.weekIndex === 0 ? 1 : 1)}%` }}>
-              {m.label}
-            </div>
-          ))}
+          {monthLabels.map((m, idx) => {
+            const nextIdx = idx + 1 < monthLabels.length ? monthLabels[idx + 1].weekIndex : weeks.length;
+            const span = nextIdx - m.weekIndex;
+            const pct = (span / weeks.length) * 100;
+            return (
+              <div key={m.label + '-' + m.weekIndex} className="text-xs text-muted-foreground" style={{ width: `${pct}%`, minWidth: '2em' }}>
+                {m.label}
+              </div>
+            );
+          })}
         </div>
         {/* Heatmap grid */}
         <div className="flex gap-[3px]">

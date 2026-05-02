@@ -69,7 +69,7 @@ async def get_feed(
     ]
 
     liked_ids = [p.id for p in papers if getattr(p, "liked", False)]
-    keywords = [k.keyword for k in project.keywords] if project.keywords else []
+    keywords = [k.term for k in project.keywords] if project.keywords else []
 
     svc = FeedService(get_llm_client())
     recommendations = await svc.get_feed(
@@ -121,7 +121,7 @@ async def refresh_feed(
     ]
 
     liked_ids = [p.id for p in papers if getattr(p, "liked", False)]
-    keywords = [k.keyword for k in project.keywords] if project.keywords else []
+    keywords = [k.term for k in project.keywords] if project.keywords else []
 
     svc = FeedService(get_llm_client())
     recommendations = await svc.get_feed(
