@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { projectApi, type OverviewData } from '@/services/api';
+import { projectApi, readingSessionApi, type OverviewData } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import { AddPaperDialog } from '@/components/knowledge-base/AddPaperDialog';
+import { ReadingGoalsCard } from '@/components/reading/ReadingGoalsCard';
 import {
   FileText,
   BookOpen,
@@ -196,6 +197,20 @@ export default function OverviewPage() {
     enabled: !!projectId,
   });
 
+  const { data: sessionsData } = useQuery({
+    queryKey: queryKeys.readingSessions.all(pid),
+    queryFn: () => readingSessionApi.list(pid, undefined, 1, 50),
+    enabled: !!projectId,
+  });
+
+  const sessions = (sessionsData?.items ?? []) as Array<{
+    id: number;
+    started_at: string;
+    paper_id: number;
+    time_spent_seconds: number;
+    paper_title: string;
+  }>;
+
   if (isLoading || !data) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -230,6 +245,11 @@ export default function OverviewPage() {
         <ReadingProgressBar data={d} />
         <YearChart data={d.papers_by_year} />
       </div>
+
+      {/* Reading Goals */}
+      {sessions.length > 0 && (
+        <ReadingGoalsCard sessions={sessions} />
+      )}
 
       {/* Get Started actions for empty projects */}
       {isEmpty && (
