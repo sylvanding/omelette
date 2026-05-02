@@ -127,8 +127,8 @@
         "Shows current week streak"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": "Reuse ReadingGoalsCard from ReadingHistoryPage. Reading sessions already available via API."
+      "passes": true,
+      "notes": "Reuse ReadingGoalsCard from ReadingHistoryPage. Added readingSessionApi query to OverviewPage. Card shown only when sessions exist."
     }
   ]
 }

@@ -619,3 +619,23 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
 - Tests: Backend 854 pass, Frontend 251 pass
 - Project ready for v3.0.0 release
 ---
+
+## 2026-05-02 19:47 - FEAT-033/034
+- FEAT-033: Added reading goals with daily/weekly targets and streak tracking
+  - useReadingGoals hook with localStorage persistence
+  - ReadingGoalsCard component with progress bars, streak counter, edit panel
+  - Integrated into ReadingHistoryPage
+  - 8 tests for the hook (goal CRUD, progress calculation, streak)
+- FEAT-034: Added ReadingGoalsCard to OverviewPage
+  - Fetches reading sessions and passes to ReadingGoalsCard
+  - Only shown when sessions exist (>0)
+- Files changed:
+  - frontend/src/hooks/useReadingGoals.ts (new)
+  - frontend/src/hooks/__tests__/useReadingGoals.test.ts (new, 8 tests)
+  - frontend/src/components/reading/ReadingGoalsCard.tsx (new)
+  - frontend/src/pages/project/ReadingHistoryPage.tsx (added goals card)
+  - frontend/src/pages/project/OverviewPage.tsx (added goals card)
+  - frontend/src/i18n/locales/en.json (readingGoals section)
+  - frontend/src/i18n/locales/zh.json (readingGoals section)
+- All tests: 269 frontend pass, 861 backend pass, 39 E2E pass
+---
