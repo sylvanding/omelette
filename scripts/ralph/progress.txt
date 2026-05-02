@@ -698,3 +698,22 @@ Tested 35 pages with real API data (5 papers, 8 reading sessions, 5 keywords, 1 
 - [ ] Add loading states for LLM-dependent features (contradictions, concepts)
 - [ ] Check if NotesPanel auto-saves on blur/change
 ---
+
+## 2026-05-02 21:00 - FEAT-036: Batch Paper Update
+
+### Implementation
+- **Backend**: `POST /projects/{id}/papers/batch-update` endpoint
+  - Accepts `{paper_ids: [], updates: {tags, reading_status, quality_tags, rating}}`
+  - Validates allowed fields, returns {updated, total}
+  - 856 backend tests pass
+- **Frontend**: `paperApi.batchUpdate()` method in api.ts
+  - Ready to wire into batch action toolbar
+
+### Ralph Loop Cycle 20 Summary
+- FEAT-035: Paper quality scoring ✅ (already fully implemented - star ratings + quality tags)
+- FEAT-036: Batch paper update ✅ (new backend endpoint + frontend API method)
+
+### All Test Results
+- Backend: 856 pass | Frontend: 269 pass | E2E: 39 pass
+- 35 browser pages verified with real data
+---
