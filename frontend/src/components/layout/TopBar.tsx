@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Bell, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -35,9 +36,7 @@ export default function TopBar({ className }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button aria-label="Notifications" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
-          <Bell className="size-4" />
-        </button>
+        <NotificationBell />
         <button aria-label="Help" className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
           <HelpCircle className="size-4" />
         </button>

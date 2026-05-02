@@ -24,10 +24,11 @@ test.describe('Knowledge Base Paper Flow', () => {
     }
   });
 
-  test('old routes redirect to discovery', async ({ page }) => {
+  test('keywords page loads and shows keyword form', async ({ page }) => {
     await page.goto('/projects/1/keywords');
     await page.waitForTimeout(1000);
-    expect(page.url()).toContain('discovery');
+    await expect(page.locator('body')).toBeVisible();
+    expect(page.url()).toContain('keywords');
   });
 
   test('tasks page is accessible globally', async ({ page }) => {

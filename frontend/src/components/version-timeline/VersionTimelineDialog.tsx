@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { versionTrackingApi } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import VersionTimeline from './VersionTimeline';
 
 interface VersionTimelineDialogProps {
@@ -21,16 +22,14 @@ export function VersionTimelineDialog({
 }: VersionTimelineDialogProps) {
   const { t } = useTranslation();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: queryKeys.paperVersions.all(projectId, paperId),
     queryFn: () => versionTrackingApi.getVersions(projectId, paperId),
   });
 
-  const checkMutation = useMutation({
+  const checkMutation = useToastMutation({
     mutationFn: () => versionTrackingApi.checkForUpdates(projectId, paperId),
-    onSuccess: () => {
-      refetch();
-    },
+    invalidateKeys: [queryKeys.paperVersions.all(projectId, paperId)],
   });
 
   const handleCheckUpdates = () => {

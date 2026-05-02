@@ -228,12 +228,21 @@ export const handlers = [
     );
   }),
   http.post(`${apiBase}/projects/:id/writing/citations`, async ({ request }) => {
-    const body = (await request.json()) as { paper_ids?: number[] };
+    const body = (await request.json()) as { paper_ids?: number[]; style?: string };
     const count = body.paper_ids?.length ?? 0;
+    const style = body.style ?? 'gb_t_7714';
+    const styleTemplates: Record<string, (i: number) => string> = {
+      apa: (i) => `Doe, J., Smith, A., & Wang, L. (2024). Paper ${i + 1}. Test Journal, 15(3), 100-120.`,
+      mla: (i) => `Doe, John, et al. "Paper ${i + 1}." Test Journal, vol. 15, no. 3, 2024, pp. 100-120.`,
+      chicago: (i) => `Doe, John, Alice Smith, and Li Wang. "Paper ${i + 1}." Test Journal 15, no. 3 (2024): 100-120.`,
+      ieee: (i) => `J. Doe, A. Smith, and L. Wang, "Paper ${i + 1}," Test Journal, vol. 15, no. 3, pp. 100-120, 2024.`,
+      gb_t_7714: (i) => `Doe J, Smith A, Wang L. Paper ${i + 1}[J]. Test Journal, 2024, 15(3): 100-120.`,
+    };
+    const formatter = styleTemplates[style] ?? styleTemplates.gb_t_7714;
     return HttpResponse.json(
       mockResponse({
         citations: Array.from({ length: count }, (_, i) => ({
-          citation: `[${i + 1}] Doe, J. (2024). Paper ${i + 1}. Test Journal.`,
+          citation: formatter(i),
         })),
       }),
     );
@@ -423,6 +432,49 @@ export const handlers = [
     ),
   ),
 
+  // Notes aggregation
+  http.get(`${apiBase}/projects/:id/papers/notes/aggregate`, () =>
+    HttpResponse.json(
+      mockResponse({
+        total_papers: 5,
+        papers_with_notes: 3,
+        total_notes: 1250,
+        notes: [
+          {
+            paper_id: 1,
+            title: 'Understanding Deep Learning Representations',
+            authors: [{ name: 'John Doe' }, { name: 'Jane Smith' }],
+            year: 2024,
+            journal: 'NeurIPS',
+            notes: 'This paper presents a novel approach to understanding deep learning representations through contrastive learning. The key insight is that representations can be improved by maximizing agreement between different augmented views of the same example. Important findings include improved downstream task performance and better generalization.',
+            reading_status: 'read',
+            updated_at: '2024-01-15T10:00:00Z',
+          },
+          {
+            paper_id: 2,
+            title: 'Attention Is All You Need',
+            authors: [{ name: 'Vaswani' }],
+            year: 2017,
+            journal: 'NeurIPS',
+            notes: 'The transformer architecture.',
+            reading_status: 'in_progress',
+            updated_at: '2024-01-10T10:00:00Z',
+          },
+          {
+            paper_id: 3,
+            title: 'BERT: Pre-training of Deep Bidirectional Transformers',
+            authors: [{ name: 'Devlin' }, { name: 'Chang' }],
+            year: 2019,
+            journal: 'NAACL',
+            notes: '',
+            reading_status: 'unread',
+            updated_at: null,
+          },
+        ],
+      }),
+    ),
+  ),
+
   // Paper compare
   http.post(`${apiBase}/projects/:id/papers/compare`, async ({ request }) => {
     const body = (await request.json()) as { paper_ids?: number[]; focus?: string };
@@ -512,6 +564,38 @@ export const handlers = [
         paper_count: 2,
       }),
     ),
+  ),
+  http.get(`${apiBase}/projects/:id/audio-overviews`, () =>
+    HttpResponse.json(
+      mockResponse({
+        items: [
+          {
+            id: 1,
+            title: 'Introduction to Machine Learning',
+            summary: 'A discussion of fundamental ML concepts and applications.',
+            duration_estimate: '5 min',
+            tone: 'conversational',
+            paper_count: 3,
+            paper_ids: [1, 2, 3],
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: 2,
+            title: 'Deep Learning Advances',
+            summary: 'Exploring recent breakthroughs in neural network architectures.',
+            duration_estimate: '8 min',
+            tone: 'formal',
+            paper_count: 5,
+            paper_ids: [4, 5, 6, 7, 8],
+            created_at: new Date().toISOString(),
+          },
+        ],
+        total: 2,
+      }),
+    ),
+  ),
+  http.delete(`${apiBase}/projects/:id/audio-overviews/:overviewId`, () =>
+    HttpResponse.json(mockResponse({ deleted: true })),
   ),
 
   // Browser Upload
@@ -914,5 +998,66 @@ export const handlers = [
         top_paper_id: 1,
       }),
     ),
+  ),
+
+  // Notifications
+  http.get(`${apiBase}/projects/:id/notifications`, ({ request }) => {
+    const url = new URL(request.url);
+    const unreadOnly = url.searchParams.get('unread_only') === 'true';
+    const items = [
+      {
+        id: 1,
+        project_id: 1,
+        type: 'subscription_match',
+        title: 'New paper: Deep Learning in NLP',
+        body: 'A new paper matching your subscription "NLP Advances" has been found.',
+        paper_id: 42,
+        subscription_id: 1,
+        is_read: false,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 2,
+        project_id: 1,
+        type: 'paper_update',
+        title: 'Paper version updated',
+        body: 'The paper "Transformers at Scale" has been updated with a new version.',
+        paper_id: 15,
+        subscription_id: null,
+        is_read: false,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        id: 3,
+        project_id: 1,
+        type: 'subscription_match',
+        title: 'Weekly digest: 5 new papers',
+        body: 'Your subscription "Computer Vision" found 5 new papers this week.',
+        paper_id: null,
+        subscription_id: 2,
+        is_read: true,
+        is_dismissed: false,
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ];
+    const filteredItems = unreadOnly ? items.filter((item) => !item.is_read) : items;
+    return HttpResponse.json(
+      mockResponse({
+        items: filteredItems,
+        total: filteredItems.length,
+        unread_count: items.filter((item) => !item.is_read).length,
+      }),
+    );
+  }),
+  http.post(`${apiBase}/projects/:id/notifications/:notificationId/read`, () =>
+    HttpResponse.json(mockResponse({ read: true })),
+  ),
+  http.post(`${apiBase}/projects/:id/notifications/mark-all-read`, () =>
+    HttpResponse.json(mockResponse({ marked_count: 2 })),
+  ),
+  http.delete(`${apiBase}/projects/:id/notifications/:notificationId`, () =>
+    HttpResponse.json(mockResponse({ dismissed: true })),
   ),
 ];

@@ -1,177 +1,134 @@
 {
-  "project": "Omelette - Phase 2 Feature Expansion",
-  "branchName": "ralph/phase2-features",
-  "description": "After completing FEAT-001 through FEAT-010, implement the next 10 highest-impact features based on competitive analysis. Focus: audio overviews, browser extension, reference manager export, team collaboration, public API, author network, trend analysis, gap detection, preprint tracking, and impact scoring.",
+  "project": "Omelette - Research Workflow Enhancement",
+  "branchName": "ralph/cycle-18",
+  "description": "After completing FEAT-021 through FEAT-025 (synthesis and report generation), implement 5 features that wire up existing backend services to the UI and close daily-use workflow gaps: deduplication management, audio overviews, similar papers discovery, notification system, and citation tools. All five leverage existing backend endpoints and frontend service code.",
   "userStories": [
     {
-      "id": "FEAT-011",
-      "title": "Add audio overviews (AI podcast generation) for papers",
-      "description": "As a researcher, I want to generate conversational audio summaries of papers or collections so I can consume research while commuting, like NotebookLM Audio Overviews.",
+      "id": "FEAT-026",
+      "title": "Add paper deduplication management page",
+      "description": "As a researcher who imports papers from multiple sources, I want to see detected duplicate papers and resolve them so my library stays clean and accurate.",
       "acceptanceCriteria": [
-        "POST /projects/{id}/audio-overviews generates dialogue script from paper content",
-        "Audio player with play/pause, seek, speed 0.5x-2x controls in UI",
-        "Generated audio cached and available for download",
-        "User can customize tone (formal/conversational) and focus areas",
-        "Tests: verify audio overview endpoint returns structured dialogue",
-        "Tests: verify audio player component renders with controls"
+        "DedupPage shows detected duplicate groups with paper details side by side",
+        "User can mark a keeper and resolve duplicates via keep/skip/merge actions",
+        "Run dedup button triggers the existing backend endpoint and refreshes results",
+        "Summary stats show total duplicates found and resolved count",
+        "Tests: verify DedupPage renders duplicate groups and resolve actions",
+        "Tests: verify dedup API integration triggers scan and returns candidates"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Backend: audio_overview_service.py with TTS generation. Frontend: AudioOverviewDialog + audio player component. Use OpenAI TTS or ElevenLabs API."
+      "notes": "Backend: dedup.py already has run, candidates, verify, resolve endpoints. Frontend: dedupApi exists in api.ts. Need: DedupPage with duplicate group cards, keeper selection, resolve mutation. Register route in App.tsx and add nav item to ProjectDetail.tsx. Add mock handlers for all dedup endpoints."
     },
     {
-      "id": "FEAT-012",
-      "title": "Add browser extension for one-click paper capture",
-      "description": "As a researcher browsing academic sites, I want a Chrome/Firefox extension to save papers directly into my Omelette projects without leaving the page.",
+      "id": "FEAT-027",
+      "title": "Add audio overviews page for paper dialogues",
+      "description": "As a researcher who learns better by listening, I want to browse and play generated audio dialogues for my papers.",
       "acceptanceCriteria": [
-        "Extension detects DOI/arXiv ID/PDF URL and shows save button",
-        "One-click save fetches metadata via Semantic Scholar API",
-        "User can select target project and add tags from extension popup",
-        "Backend: POST /api/v1/upload/browser accepts PDF + metadata",
-        "Extension shows sync status with notifications",
-        "Tests: verify browser upload endpoint accepts PDF"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "Build Chrome extension (Manifest V3). Content script for DOI detection. Popup for project selection. Backend: /api/v1/upload/browser endpoint. Reuse existing paper processing pipeline."
-    },
-    {
-      "id": "FEAT-013",
-      "title": "Add reference manager export (Zotero/Mendeley/BibTeX)",
-      "description": "As a researcher, I want to export my Omelette collections to Zotero, Mendeley, or BibTeX so I can use them in my existing citation workflow.",
-      "acceptanceCriteria": [
-        "POST /projects/{id}/export/bibtex returns BibTeX formatted string",
-        "POST /projects/{id}/export/ris returns RIS formatted string",
-        "POST /projects/{id}/export/zotero creates Zotero collection via API",
-        "Export dialog shows preview of items before exporting",
-        "Tests: verify BibTeX export includes all required fields",
-        "Tests: verify RIS export is valid format"
+        "AudioOverviewsPage lists generated audio dialogues grouped by paper",
+        "User can generate a new audio overview with tone and focus area selection",
+        "AudioPlayer component plays generated dialogues inline",
+        "User can delete audio overviews they no longer need",
+        "Tests: verify AudioOverviewsPage renders dialogue list and generate action",
+        "Tests: verify audio generation mutation and delete work"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Backend: export_service.py with BibTeX, RIS, Zotero API integration. Frontend: ExportDialog component. Reuse existing collection model."
+      "notes": "Backend: audio_overviews.py already exists with generate/list/delete endpoints. Frontend: audioOverviewsApi exists in api.ts, AudioPlayer and AudioOverviewDialog components already exist. Need: AudioOverviewsPage listing overviews with generate + play + delete. Register route and nav item. Add mock handlers. Reuse existing AudioPlayer component."
     },
     {
-      "id": "FEAT-014",
-      "title": "Add team collaboration and shared workspaces",
-      "description": "As a research team lead, I want shared project workspaces where team members can collaboratively annotate papers and track review assignments.",
+      "id": "FEAT-028",
+      "title": "Add search page and similar papers discovery",
+      "description": "As a researcher exploring my paper collection, I want to search external academic sources and find similar papers within my own library.",
       "acceptanceCriteria": [
-        "New team_members table with project_id, user_id, role columns",
-        "POST/GET/PUT/DELETE /projects/{id}/members for CRUD",
-        "Shared annotations visible to all project members with author attribution",
-        "Paper review assignment with due dates and status tracking",
-        "RBAC middleware restricts access by role",
-        "Tests: verify member CRUD operations",
-        "Tests: verify RBAC blocks unauthorized access"
+        "Register existing SearchPage in App.tsx with /search route and nav item",
+        "Paper detail or PDF reader shows 'Similar Papers' section with papers from the same project",
+        "Similar papers uses the existing paperApi.getRelated endpoint (embeddings-based)",
+        "Each similar paper card shows title, authors, year, and similarity score",
+        "Tests: verify SearchPage renders and search/import work",
+        "Tests: verify similar papers section renders related papers from library"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "New model: team_member.py. New service: team_service.py. RBAC middleware for existing endpoints. Frontend: InviteModal, MemberList, role selector."
+      "notes": "SearchPage.tsx already exists but is not registered in App.tsx — just needs route + nav item + i18n + mock handler fixes. paperApi.getRelated already calls /projects/{id}/papers/{paperId}/similar. Need: register SearchPage, add SimilarPapersPanel component to PDFReaderLayout or paper detail, wire up getRelated call. Backend endpoint may need implementation if not already present."
     },
     {
-      "id": "FEAT-015",
-      "title": "Add public REST API with API key management",
-      "description": "As a power user, I want a documented REST API with API keys so I can programmatically access Omelette features and integrate with my research pipeline.",
+      "id": "FEAT-029",
+      "title": "Add in-app notifications and subscription alerts",
+      "description": "As a researcher tracking emerging papers in my field, I want to receive notifications when my subscriptions find new matching papers.",
       "acceptanceCriteria": [
-        "New api_keys table with hashed keys and scopes",
-        "POST/GET/DELETE /api/v1/api-keys for key management",
-        "API key auth middleware alongside session auth",
-        "Rate limiting enforced per API key",
-        "OpenAPI/Swagger docs served at /api/docs",
-        "Frontend: API Keys settings tab with generate/revoke UI",
-        "Tests: verify API key auth works",
-        "Tests: verify rate limiting enforced"
+        "Notification bell in TopBar shows unread count and dropdown panel",
+        "NotificationsPage lists all notifications with read/unread state",
+        "Subscription matches generate notifications with paper preview and action buttons",
+        "User can mark all as read and dismiss individual notifications",
+        "Tests: verify notification list renders with read/unread states",
+        "Tests: verify notification panel dropdown works in TopBar"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": "Backend: api_key model, auth middleware, rate limiting via slowapi. FastAPI auto-generates OpenAPI docs. Frontend: API Keys tab in SettingsPage."
+      "passes": true
     },
     {
-      "id": "FEAT-016",
-      "title": "Add author network and collaboration graph",
-      "description": "As a researcher exploring a new field, I want to visualize author collaboration networks and identify influential researchers and research groups.",
+      "id": "FEAT-030",
+      "title": "Add citation style picker and bibliography builder",
+      "description": "As a researcher writing a paper, I want to generate formatted citations in different styles and build a bibliography from my selected papers.",
       "acceptanceCriteria": [
-        "GET /projects/{id}/analysis/author-network returns author graph",
-        "Force-directed graph with authors as nodes, co-authorship as edges",
-        "Node size reflects publication count, edge weight reflects co-authorship count",
-        "Author detail panel shows papers, h-index estimate, top topics",
-        "Graph exportable as PNG/SVG",
-        "Tests: verify author network returns structured graph data",
-        "Tests: verify AuthorNetwork component renders correctly"
-      ],
-      "priority": 7,
-      "passes": true,
-      "notes": "Backend: author_network_service.py extracts authors, builds co-authorship matrix, computes centrality metrics. Frontend: AuthorNetworkDialog reusing d3-force from citation-graph."
-    },
-    {
-      "id": "FEAT-017",
-      "title": "Add research trend analysis and temporal insights",
-      "description": "As a researcher, I want to see how research topics have evolved over time with trend detection for emerging areas and declining topics.",
-      "acceptanceCriteria": [
-        "GET /projects/{id}/analysis/trends returns year-binned topic data",
-        "Timeline chart showing publication volume per year",
-        "Topic trend lines with rising/declining indicators",
-        "Emerging topic detection (>50% YoY growth)",
-        "Export trend analysis as PNG or CSV",
-        "Frontend: TrendsPage with line/bar/area charts",
-        "Tests: verify trend endpoint returns structured data",
-        "Tests: verify trend chart renders correctly"
+        "CitationStylePicker component with common styles (APA, MLA, Chicago, IEEE, GB/T 7714)",
+        "Copy citation button on paper cards that copies formatted citation to clipboard",
+        "BibliographyBuilder dialog to select papers and generate a formatted bibliography",
+        "Export bibliography as text, BibTeX, or RIS from the builder",
+        "Tests: verify CitationStylePicker renders and style selection works",
+        "Tests: verify bibliography builder generates output with selected papers"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Backend: trend_service.py extracts keywords, computes year-binned aggregates, linear regression for trend slopes. Frontend: TrendsPage using recharts (already installed)."
+      "notes": "Backend: export.py already generates BibTeX/RIS. writingApi.citations exists in api.ts. Need: CitationStylePicker UI component, copy-citation action on paper cards (PapersPage + PDFReader), BibliographyBuilder dialog with paper selection and multi-style output. Reuse existing export_service.py for format generation."
     },
     {
-      "id": "FEAT-018",
-      "title": "Add literature gap detection and research opportunity finder",
-      "description": "As a researcher identifying my next project, I want Omelette to analyze my collection and identify under-explored areas and generate research questions.",
+      "id": "FEAT-031",
+      "title": "Add notes aggregation across project papers",
+      "description": "As a researcher reviewing my paper collection, I want to see all my notes aggregated in one place with search capability so I can quickly review and find insights across papers.",
       "acceptanceCriteria": [
-        "POST /projects/{id}/analysis/gaps returns gap analysis results",
-        "Identifies 3-5 under-researched subtopics with supporting evidence",
-        "Generates 5-10 candidate research questions with novelty scores",
-        "User can save gaps as research ideas with notes",
-        "Analysis runs asynchronously with progress notification",
-        "Frontend: GapAnalysisPanel with gap cards",
-        "Tests: verify gap detection returns structured data"
+        "NotesPage shows summary cards (Total Papers, Papers with Notes, Total Notes)",
+        "Search input filters notes across all papers in the project",
+        "Note cards display paper metadata (title, authors, year, journal) and reading status",
+        "Long notes are truncated with Show more/less toggle",
+        "Notes render Markdown formatting including math (LaTeX)",
+        "Link to open paper in PDF reader from each note card",
+        "Tests: verify NotesPage renders summary cards and note list",
+        "Tests: verify search filters notes by content",
+        "Tests: verify backend aggregation endpoint returns correct counts and filtered notes"
       ],
-      "priority": 6,
+      "priority": 7,
       "passes": true,
-      "notes": "Backend: gap_service.py uses LLM to analyze paper collection. Async task with SSE progress. Frontend: GapAnalysisPanel component. Reuse existing contradiction data as input."
+      "notes": "Backend: papers table has notes (text) and reading_status columns. Need: aggregate endpoint counting total papers, papers with notes, total notes characters, and filtered note entries. Frontend: NotesPage with summary cards, search bar, note cards with Markdown rendering. Register route and nav item. Add MSW mock handler."
     },
     {
-      "id": "FEAT-019",
-      "title": "Add preprint-to-journal version tracking",
-      "description": "As a researcher, I want to automatically track when preprints in my collection are updated or published in journals, so I always cite the definitive version.",
+      "id": "FEAT-032",
+      "title": "Wire up team members page and add reading goals",
+      "description": "As a researcher managing a team, I want to see team members on a dedicated page, and set reading goals to track my progress.",
       "acceptanceCriteria": [
-        "Daily job polls Semantic Scholar/CrossRef for paper updates",
-        "GET /papers/{id}/versions returns version history",
-        "Version timeline shows preprint v1, v2, journal publication",
-        "User can upgrade preprint to published version preserving annotations",
-        "Notification badge on papers with new versions available",
-        "Frontend: VersionTimeline component in paper detail",
-        "Tests: verify version tracking endpoint returns history",
-        "Tests: verify annotation migration on version upgrade"
+        "TeamMembersPage shows the TeamMembersManager component",
+        "Team nav item appears in project sidebar",
+        "Reading goals card shows daily/weekly targets with progress bars",
+        "Users can edit reading goals and persist them",
+        "Streak counter shows consecutive days meeting goal",
+        "Tests: verify team page renders, reading goals CRUD and calculations"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Backend: version_service.py with daily APScheduler job. Frontend: VersionTimeline component. Use react-diff-viewer-continued for abstract diff display."
+      "notes": "TeamMembersManager existed but was orphaned. Reading goals uses localStorage with useReadingGoals hook. computeTodayProgress counts unique papers by ID per day. computeStreak counts consecutive days meeting daily goal."
     },
     {
-      "id": "FEAT-020",
-      "title": "Add citation impact scoring and paper significance ranking",
-      "description": "As a researcher evaluating papers, I want computed impact scores combining citation count, recency, journal prestige, and evidence consensus to prioritize significant papers.",
+      "id": "FEAT-033",
+      "title": "Add reading goal progress bars to overview page",
+      "description": "As a researcher, I want to see my reading goals progress on the project overview for quick motivation.",
       "acceptanceCriteria": [
-        "Each paper displays Omelette Impact Score (0-100)",
-        "Score combines: citations (30%), recency (20%), journal IF (20%), evidence consensus (15%), field percentile (15%)",
-        "Papers sortable by impact score in all views",
-        "Score methodology transparent with factor breakdown tooltip",
-        "Impact score column in papers table",
-        "Tests: verify impact score calculation bounded [0,100]",
-        "Tests: verify score breakdown returns all factors"
+        "OverviewPage shows reading goals progress card",
+        "Displays today's papers read vs daily goal",
+        "Shows current week streak"
       ],
-      "priority": 5,
-      "passes": false,
-      "notes": "Backend: compute_impact_score() in analysis service. Fetch citation counts from Semantic Scholar. Frontend: ImpactScoreBadge on paper cards, score column in tables."
+      "priority": 4,
+      "passes": true,
+      "notes": "Reuse ReadingGoalsCard from ReadingHistoryPage. Added readingSessionApi query to OverviewPage. Card shown only when sessions exist."
     }
   ]
 }

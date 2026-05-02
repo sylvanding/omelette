@@ -65,3 +65,18 @@ GET /api/v1/tasks/{task_id}
 | [Settings](/api/settings) | `/settings` |
 | [Tasks](/api/tasks) | `/tasks` |
 | [Pipelines](/api/pipelines) | `/pipelines` |
+| [Activities](/api/activities) | `/projects/{id}/activities` |
+| [Analysis](/api/analysis) | `/projects/{id}/analysis` |
+| [Analytics](/api/analytics) | `/projects/{id}/analysis/knowledge-gaps` |
+| [API Keys](/api/api_keys) | `/api-keys` |
+| [Audio Overviews](/api/audio_overviews) | `/projects/{id}/audio-overviews` |
+| [Browser Upload](/api/upload) | `/projects/{id}/upload/browser` |
+| [Collections](/api/collections) | `/projects/{id}/collections` |
+| [Concepts](/api/concepts) | `/projects/{id}/concepts` |
+| [Export](/api/export) | `/projects/{id}/export` |
+| [Feed](/api/feed) | `/projects/{id}/feed` |
+| [Library](/api/library) | `/projects/{id}/library` |
+| [Notifications](/api/notifications) | `/projects/{id}/notifications` |
+| [Reviews](/api/reviews) | `/projects/{id}/reviews` |
+| [Team Members](/api/team_members) | `/projects/{id}/members` |
+| [Upload](/api/upload) | `/projects/{id}/upload` |

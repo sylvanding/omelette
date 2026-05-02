@@ -32,7 +32,7 @@ export function WritingTabs({ activeTab, onTabChange, children }: WritingTabsPro
         </TabsTrigger>
         <TabsTrigger value="review" className="gap-1.5">
           <BookOpen className="size-4" />
-          {t('writing.tabs.review', '综述生成')}
+          {t('writing.tabs.review', 'Review')}
         </TabsTrigger>
       </TabsList>
 

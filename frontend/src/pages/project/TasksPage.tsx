@@ -22,6 +22,90 @@ const STATUS_VARIANT: Record<Task['status'], 'warning' | 'info' | 'success' | 'd
   cancelled: 'secondary',
 };
 
+function useKanbanColumns(t: (key: string) => string) {
+  return [
+    { status: 'pending' as const, label: t('tasks.pending'), emoji: '' },
+    { status: 'running' as const, label: t('tasks.running'), emoji: '▶️' },
+    { status: 'completed' as const, label: t('tasks.completed'), emoji: '✅' },
+    { status: 'failed' as const, label: t('tasks.failed'), emoji: '' },
+    { status: 'cancelled' as const, label: t('tasks.cancelled'), emoji: '' },
+  ];
+}
+
+function KanbanBoard({
+  tasks,
+  onCancel,
+  isCanceling,
+  t,
+}: {
+  tasks: Task[];
+  onCancel: (id: number) => void;
+  isCanceling: boolean;
+  t: (key: string) => string;
+}) {
+  const columns = useKanbanColumns(t);
+  return (
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      {columns.map((col) => {
+        const colTasks = tasks.filter((t) => t.status === col.status);
+        return (
+          <div key={col.status} className="flex flex-col rounded-xl border border-border bg-muted/20">
+            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+              <span className="text-sm">{col.emoji}</span>
+              <span className="text-sm font-medium">{col.label}</span>
+              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                {colTasks.length}
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3" style={{ maxHeight: '60vh' }}>
+              {colTasks.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">No tasks</p>
+              ) : (
+                colTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="rounded-lg border border-border bg-card p-3 shadow-sm"
+                  >
+                    <p className="text-sm font-medium">{task.task_type}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{
+                            width: task.total > 0 ? `${Math.round((task.progress / task.total) * 100)}%` : '0%',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {task.progress}/{task.total}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {task.created_at ? new Date(task.created_at).toLocaleTimeString() : ''}
+                    </p>
+                    {task.status === 'running' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-6 w-full gap-1 text-xs text-destructive hover:bg-destructive/10"
+                        onClick={() => onCancel(task.id)}
+                        disabled={isCanceling}
+                      >
+                        <XCircle className="size-3" />
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TasksPage() {
   const { t, i18n } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
@@ -140,9 +224,7 @@ export default function TasksPage() {
           </TabsContent>
 
           <TabsContent value="kanban" className="mt-4">
-            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-12 text-center text-muted-foreground">
-              {t('common.comingSoon', 'Coming soon')}
-            </div>
+            <KanbanBoard tasks={tasks} onCancel={cancelMutation.mutate} isCanceling={cancelMutation.isPending} t={(key) => t(key)} />
           </TabsContent>
         </Tabs>
       </div>

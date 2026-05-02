@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import {
   Loader2,
   ShieldCheck,
@@ -30,16 +31,23 @@ export default function LibraryPage() {
     enabled: !!pid && activeTab === 'health',
   });
 
-  const repairMutation = useMutation({
+  const repairMutation = useToastMutation({
     mutationFn: () => libraryApi.repair(pid),
+    successMessage: 'Metadata repair completed',
+    errorMessage: 'Failed to repair metadata',
+    invalidateKeys: [['library-health', pid]],
   });
 
-  const tagMutation = useMutation({
+  const tagMutation = useToastMutation({
     mutationFn: () => libraryApi.autoTag(pid),
+    successMessage: 'Auto-tagging completed',
+    errorMessage: 'Failed to generate tags',
   });
 
-  const clusterMutation = useMutation({
+  const clusterMutation = useToastMutation({
     mutationFn: () => libraryApi.clusters(pid),
+    successMessage: 'Clustering analysis completed',
+    errorMessage: 'Failed to analyze clusters',
   });
 
   const handleRepair = useCallback(() => {
@@ -158,6 +166,11 @@ export default function LibraryPage() {
                       </Badge>
                     </div>
                   ))}
+                </div>
+              ) : healthResponse.total_papers === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                  <CheckCircle2 className="size-12 text-muted-foreground/50" />
+                  <p className="text-sm">No papers in this library yet. Add papers to check metadata health.</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">

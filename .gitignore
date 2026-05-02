@@ -63,6 +63,19 @@ chroma_data/
 # Jupyter
 .ipynb_checkpoints/
 
+# Frontend
+frontend/dist/
+frontend/coverage/
+frontend/.eslintcache
+
+# Ralph working data (archived iterations)
+scripts/ralph/archive/
+.ralph/
+.ralphrc
+
+# Claude Code
+.claude/scheduled_tasks.lock
+
 # Documentation build
 docs/.vitepress/dist/
 docs/.vitepress/cache/

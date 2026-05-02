@@ -5,6 +5,7 @@ export const queryKeys = {
     all: ['projects'] as const,
     list: (page?: number, pageSize?: number) => ['projects', { page, pageSize }] as const,
     detail: (id: number) => ['project', id] as const,
+    overview: (id: number) => ['project-overview', id] as const,
   },
   papers: {
     list: (projectId: number, filters?: PaperListFilters) =>
@@ -73,10 +74,33 @@ export const queryKeys = {
   gaps: {
     all: (projectId: number) => ['gaps', projectId] as const,
   },
+  contradictions: {
+    all: (projectId: number) => ['contradictions', projectId] as const,
+  },
   paperVersions: {
     all: (projectId: number, paperId: number) => ['paper-versions', projectId, paperId] as const,
   },
   impactScores: {
     all: (projectId: number) => ['impact-scores', projectId] as const,
+  },
+  readingSessions: {
+    all: (projectId: number) => ['reading-sessions', projectId] as const,
+    byPaper: (projectId: number, paperId: number) => ['reading-sessions', projectId, paperId] as const,
+  },
+  audioOverviews: {
+    all: (projectId: number) => ['audio-overviews', projectId] as const,
+  },
+  notifications: {
+    all: (projectId: number) => ['notifications', projectId] as const,
+    unread: (projectId: number) => ['notifications', projectId, 'unread'] as const,
+  },
+  notes: {
+    all: (projectId: number) => ['notes', projectId] as const,
+    search: (projectId: number, query: string) => ['notes', projectId, 'search', query] as const,
+  },
+  dedup: {
+    candidates: (projectId: number, params?: PaginationParams) =>
+      ['dedup-candidates', projectId, params] as const,
+    stats: (projectId: number) => ['dedup-stats', projectId] as const,
   },
 } as const;

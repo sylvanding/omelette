@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -218,6 +219,54 @@ async def record_reading_session(
     )
 
 
+@router.get("/reading-sessions", response_model=ApiResponse[dict], summary="List reading sessions")
+async def list_reading_sessions(
+    project_id: int,
+    paper_id: int | None = Query(default=None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """List reading sessions for a project, optionally filtered by paper."""
+    from app.models.reading_session import ReadingSession
+
+    query = select(ReadingSession).join(Paper).where(Paper.project_id == project_id)
+    if paper_id:
+        query = query.where(ReadingSession.paper_id == paper_id)
+
+    total_stmt = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(total_stmt)
+    total = total_result.scalar() or 0
+
+    query = query.order_by(ReadingSession.started_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    sessions = result.scalars().all()
+
+    items = [
+        {
+            "id": s.id,
+            "paper_id": s.paper_id,
+            "paper_title": s.paper.title or "Untitled",
+            "started_at": s.started_at.isoformat(),
+            "ended_at": s.ended_at.isoformat(),
+            "time_spent_seconds": s.time_spent_seconds,
+            "pages_read": s.pages_read,
+        }
+        for s in sessions
+    ]
+
+    return ApiResponse(
+        data={
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size if page_size else 0,
+        }
+    )
+
+
 @router.get("/analytics", response_model=ApiResponse[dict], summary="Get reading analytics")
 async def get_reading_analytics(
     project_id: int,
@@ -243,6 +292,11 @@ async def get_reading_analytics(
         week = p.read_at.strftime("%Y-%W") if p.read_at else "unknown"
         read_by_week[week] = read_by_week.get(week, 0) + 1
 
+    read_by_day: dict[str, int] = {}
+    for p in read_papers:
+        day = p.read_at.strftime("%Y-%m-%d") if p.read_at else "unknown"
+        read_by_day[day] = read_by_day.get(day, 0) + 1
+
     journal_counts: dict[str, int] = {}
     for p in papers:
         if p.journal:
@@ -260,6 +314,7 @@ async def get_reading_analytics(
             "total": total,
             "by_status": status_counts,
             "read_by_week": dict(sorted(read_by_week.items())),
+            "read_by_day": dict(sorted(read_by_day.items())),
             "top_journals": [{"journal": j, "count": c} for j, c in top_journals],
             "papers_per_week": papers_per_week,
             "avg_read_time_seconds": avg_read_time,
@@ -733,3 +788,87 @@ async def upgrade_paper_version(
         raise HTTPException(status_code=404, detail=str(e)) from e
 
     return ApiResponse(data=result)
+
+
+class NoteEntry(BaseModel):
+    """Aggregated note entry for a single paper."""
+
+    paper_id: int
+    title: str
+    authors: list
+    year: int | None
+    journal: str | None
+    notes: str
+    reading_status: str
+    updated_at: str | None
+
+
+class NotesAggregationResponse(BaseModel):
+    """Aggregated notes response for a project."""
+
+    total_papers: int
+    papers_with_notes: int
+    total_notes: int
+    notes: list[NoteEntry]
+
+
+@router.get(
+    "/notes/aggregate",
+    response_model=ApiResponse[NotesAggregationResponse],
+    summary="Aggregated notes across all papers in a project",
+)
+async def aggregate_notes(
+    project_id: int,
+    search: str | None = Query(default=None, description="Search across note content"),
+    db: AsyncSession = Depends(get_db),
+    project: Project = Depends(get_project),
+):
+    """Return aggregated notes from all papers in the project, optionally filtered by search."""
+    # Count total papers
+    total_stmt = select(func.count(Paper.id)).where(Paper.project_id == project_id)
+    total_result = await db.execute(total_stmt)
+    total_papers = total_result.scalar() or 0
+
+    # Build query for papers with notes
+
+    stmt = (
+        select(Paper)
+        .where(Paper.project_id == project_id)
+        .where(Paper.notes.isnot(None))
+        .where(Paper.notes != "")
+        .order_by(Paper.updated_at.desc())
+    )
+    if search:
+        stmt = stmt.where(Paper.notes.ilike(f"%{search}%"))
+
+    result = await db.execute(stmt)
+    papers = result.scalars().all()
+
+    notes_list = []
+    total_notes_chars = 0
+    for p in papers:
+        authors = p.authors or []
+        notes_list.append(
+            NoteEntry(
+                paper_id=p.id,
+                title=p.title or "",
+                authors=authors,
+                year=p.year,
+                journal=p.journal,
+                notes=p.notes or "",
+                reading_status=p.reading_status,
+                updated_at=p.updated_at.isoformat() if p.updated_at else None,
+            )
+        )
+        total_notes_chars += len(p.notes or "")
+
+    return ApiResponse(
+        code=0,
+        message="Notes aggregated successfully",
+        data=NotesAggregationResponse(
+            total_papers=total_papers,
+            papers_with_notes=len(notes_list),
+            total_notes=total_notes_chars,
+            notes=notes_list,
+        ),
+    )

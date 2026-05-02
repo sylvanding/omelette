@@ -50,5 +50,3 @@ export const api = {
     return axiosInstance.delete(url, config) as Promise<ApiResponse<T>>;
   },
 };
-
-export default api;

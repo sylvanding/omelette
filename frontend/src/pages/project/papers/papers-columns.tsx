@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText } from 'lucide-react';
+import { FileDown, RefreshCw, Loader2, GitBranch, Trash2, BookOpenText, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { StarRating } from '@/components/ui/star-rating';
@@ -18,6 +18,7 @@ interface UsePapersColumnsParams {
   setGraphPaperId: (id: number) => void;
   onRatingChange?: (paperId: number, rating: number) => void;
   impactScores?: Map<number, { score: number; factors: Record<string, ImpactFactor> }>;
+  onCopyCitation?: (paperId: number) => void;
 }
 
 export function usePapersColumns({
@@ -27,6 +28,7 @@ export function usePapersColumns({
   setGraphPaperId,
   onRatingChange,
   impactScores,
+  onCopyCitation,
 }: UsePapersColumnsParams): DataTableColumn<Paper>[] {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -150,6 +152,16 @@ export function usePapersColumns({
       accessorFn: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          {onCopyCitation && (
+            <button
+              onClick={() => onCopyCitation(row.id)}
+              className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              title="Copy citation"
+              aria-label="Copy citation"
+            >
+              <Copy className="size-4" />
+            </button>
+          )}
           <button
             onClick={() => navigate(`/projects/${pid}/papers/${row.id}/read`)}
             className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"

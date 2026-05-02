@@ -766,3 +766,116 @@ async def test_federated_search_dedups_across_sources():
     # Same paper from 2 providers should appear only once
     dl_papers = [p for p in results["papers"] if "Deep Learning Review" in p["title"]]
     assert len(dl_papers) == 1
+
+
+# --- Async search API endpoint tests ---
+
+
+@pytest.mark.asyncio
+async def test_execute_search_async_creates_task(client: AsyncClient):
+    """Test POST /execute-async returns a task_id immediately."""
+    create_resp = await client.post("/api/v1/projects", json={"name": "Async Test"})
+    assert create_resp.status_code == 201
+    project_id = create_resp.json()["data"]["id"]
+
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/search/execute-async",
+        json={"query": "machine learning"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "task_id" in body["data"]
+    assert body["data"]["task_id"] > 0
+    assert body["data"]["status"] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_execute_search_async_task_completes(client: AsyncClient):
+    """Test that async search task completes and stores results."""
+    from app.api.v1.search import _run_search_task
+    from app.services.search_service import StandardizedPaper
+
+    create_resp = await client.post("/api/v1/projects", json={"name": "Async Complete Test"})
+    assert create_resp.status_code == 201
+    project_id = create_resp.json()["data"]["id"]
+
+    mock_paper = StandardizedPaper(
+        title="Async Paper",
+        doi="10.async/test",
+        abstract="Abstract",
+        source="openalex",
+    )
+
+    async def mock_provider_search(*args, **kwargs):
+        return [mock_paper]
+
+    with patch("app.api.v1.search.SearchService") as mock_search_service:
+        mock_service = MagicMock()
+        mock_service.providers = {"openalex": MagicMock(search=mock_provider_search)}
+        mock_service._dedup_results = lambda papers: papers
+        mock_search_service.return_value = mock_service
+        # Create task via the API endpoint
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/search/execute-async",
+            json={"query": "test"},
+        )
+
+        task_id = resp.json()["data"]["task_id"]
+        assert task_id > 0
+
+        # Directly invoke the background task (test client doesn't run BackgroundTasks)
+        await _run_search_task(
+            task_id=task_id,
+            project_id=project_id,
+            query="test",
+            sources=["openalex"],
+            max_results=10,
+            auto_import=False,
+        )
+
+    # Verify task was completed
+    task_resp = await client.get(f"/api/v1/tasks/{task_id}")
+    task_body = task_resp.json()
+    assert task_body["data"]["status"] == "completed"
+    assert task_body["data"]["result"] is not None
+    assert task_body["data"]["result"]["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_execute_search_async_no_query_no_keywords(client: AsyncClient):
+    """Test async search fails gracefully when no query and no keywords."""
+    from app.api.v1.search import _run_search_task
+
+    create_resp = await client.post("/api/v1/projects", json={"name": "Empty Async"})
+    assert create_resp.status_code == 201
+    project_id = create_resp.json()["data"]["id"]
+
+    resp = await client.post(
+        f"/api/v1/projects/{project_id}/search/execute-async",
+        json={"query": ""},
+    )
+    task_id = resp.json()["data"]["task_id"]
+
+    # Directly invoke the background task
+    await _run_search_task(
+        task_id=task_id,
+        project_id=project_id,
+        query="",
+        sources=None,
+        max_results=100,
+        auto_import=False,
+    )
+
+    task_resp = await client.get(f"/api/v1/tasks/{task_id}")
+    task_body = task_resp.json()
+    assert task_body["data"]["status"] == "failed"
+    assert "no keywords" in task_body["data"]["error_message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_execute_search_async_nonexistent_project(client: AsyncClient):
+    resp = await client.post(
+        "/api/v1/projects/99999/search/execute-async",
+        json={"query": "test"},
+    )
+    assert resp.status_code == 404

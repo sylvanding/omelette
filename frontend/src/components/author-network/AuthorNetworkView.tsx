@@ -186,12 +186,12 @@ export default function AuthorNetworkView({
       .alphaMin(0.001)
       .on('tick', () => {
         links
-          .attr('x1', d => (d.source as AuthorGraphNode).x ?? 0)
-          .attr('y1', d => (d.source as AuthorGraphNode).y ?? 0)
-          .attr('x2', d => (d.target as AuthorGraphNode).x ?? 0)
-          .attr('y2', d => (d.target as AuthorGraphNode).y ?? 0);
+          .attr('x1', d => (d.source as unknown as AuthorGraphNode)?.x ?? 0)
+          .attr('y1', d => (d.source as unknown as AuthorGraphNode)?.y ?? 0)
+          .attr('x2', d => (d.target as unknown as AuthorGraphNode)?.x ?? 0)
+          .attr('y2', d => (d.target as unknown as AuthorGraphNode)?.y ?? 0);
 
-        nodeContainer.attr('transform', d => `translate(${d.x ?? 0},${d.y ?? 0})`);
+        nodeContainer.attr('transform', (d: AuthorGraphNode) => `translate(${d.x ?? 0},${d.y ?? 0})`);
       });
 
     simulationRef.current = sim;

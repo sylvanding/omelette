@@ -41,7 +41,10 @@
     "saveFailed": "保存失败",
     "expand": "展开",
     "previousPage": "上一页",
-    "nextPage": "下一页"
+    "nextPage": "下一页",
+    "today": "今天",
+    "yesterday": "昨天",
+    "pageOf": "第 {{page}} 页，共 {{total}} 页"
   },
   "app": {
     "name": "Omelette"
@@ -569,6 +572,18 @@
     "emergingTopics": "新兴主题",
     "decliningTopics": "衰退主题"
   },
+  "reviews": {
+    "title": "评审"
+  },
+  "concepts": {
+    "title": "概念"
+  },
+  "library": {
+    "title": "文献库"
+  },
+  "feed": {
+    "title": "推荐"
+  },
   "gaps": {
     "title": "文献缺口分析",
     "close": "关闭缺口分析",
@@ -596,5 +611,105 @@
     "loadError": "加载版本历史失败",
     "newVersionAvailable": "有新版本可用",
     "tab": "版本"
+  },
+  "audioOverview": {
+    "title": "音频概述",
+    "description": "收听AI生成的论文讨论",
+    "generateNew": "生成新的",
+    "generate": "生成音频概述",
+    "generating": "正在生成音频概述...",
+    "error": "生成失败，请重试",
+    "deleted": "音频概述已删除",
+    "emptyTitle": "暂无音频概述",
+    "emptyDescription": "生成第一个音频概述以开始",
+    "generateFirst": "生成第一个概述",
+    "play": "播放",
+    "papers": "篇论文",
+    "selectedPapers": "已选论文",
+    "tone": "语调",
+    "conversational": "对话式",
+    "formal": "正式",
+    "focusPlaceholder": "添加重点领域（如方法论、结果）"
+  },
+  "notifications": {
+    "title": "通知",
+    "unreadCount": "{{count}} 条未读",
+    "allRead": "已全部读完！",
+    "markAllRead": "全部标记为已读",
+    "markedAllRead": "所有通知已标记为已读",
+    "emptyTitle": "暂无通知",
+    "emptyDescription": "当订阅发现新论文时，它们将显示在这里",
+    "noUnread": "没有未读通知",
+    "viewAll": "查看所有通知",
+    "types": {
+      "subscriptionMatch": "订阅匹配",
+      "system": "系统",
+      "paperUpdate": "论文更新"
+    }
+  },
+  "bibliography": {
+    "title": "参考文献生成器",
+    "selectPapers": "选择论文",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "searchPlaceholder": "搜索论文...",
+    "noPapers": "未找到论文",
+    "citationStyle": "引用格式",
+    "generate": "生成参考文献",
+    "generating": "生成中...",
+    "output": "输出",
+    "formatted": "格式化",
+    "copy": "复制",
+    "export": "导出",
+    "emptyState": "选择论文并点击生成以创建参考文献",
+    "exportPreview": "选择论文以查看导出预览",
+    "styles": {
+      "apa": "APA",
+      "mla": "MLA",
+      "chicago": "芝加哥",
+      "ieee": "IEEE",
+      "gb_t_7714": "GB/T 7714"
+    }
+  },
+  "export": {
+    "title": "导出参考文献",
+    "subtitle": "文献库中有 {{count}} 篇论文",
+    "bibtex": "BibTeX",
+    "bibtexDesc": "LaTeX 参考文献格式",
+    "csv": "CSV",
+    "csvDesc": "电子表格格式",
+    "ris": "RIS",
+    "risDesc": "参考文献管理器格式 (EndNote, Mendeley)",
+    "zotero": "Zotero",
+    "zoteroDesc": "导出到 Zotero 文献库",
+    "exporting": "导出中...",
+    "downloaded": "{{format}} 文件已下载",
+    "failed": "导出 {{format}} 失败",
+    "zoteroPreview": "Zotero BibTeX 预览",
+    "zoteroCreated": "Zotero 集合已创建",
+    "copyBibtex": "复制 BibTeX"
+  },
+  "readingGoals": {
+    "title": "阅读目标",
+    "edit": "编辑目标",
+    "dailyGoal": "每日目标",
+    "weeklyGoal": "每周目标",
+    "papersPerDay": "篇/天",
+    "papersPerWeek": "篇/周",
+    "today": "今日",
+    "thisWeek": "本周",
+    "papers": "篇",
+    "dayStreak": "天连续",
+    "readToday": "今日已读",
+    "daily": "每日"
+  },
+  "readingHistory": {
+    "title": "阅读历史",
+    "subtitle": "追踪你的阅读进度",
+    "sessions": "阅读次数",
+    "totalTime": "总时长",
+    "papersRead": "已读论文",
+    "emptyTitle": "暂无阅读记录",
+    "emptyDesc": "开始阅读论文以追踪你的进度。"
   }
 }

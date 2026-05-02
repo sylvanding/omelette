@@ -11,6 +11,7 @@ const KnowledgeBasesPage = lazy(() => import('@/pages/KnowledgeBasesPage'));
 const ChatHistoryPage = lazy(() => import('@/pages/ChatHistoryPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ProjectDetail = lazy(() => import('@/pages/ProjectDetail'));
+const OverviewPage = lazy(() => import('@/pages/project/OverviewPage'));
 const PapersPage = lazy(() => import('@/pages/project/PapersPage'));
 const WritingPage = lazy(() => import('@/pages/project/WritingPage'));
 const TasksPage = lazy(() => import('@/pages/project/TasksPage'));
@@ -25,6 +26,22 @@ const LibraryPage = lazy(() => import('@/pages/project/LibraryPage'));
 const FeedPage = lazy(() => import('@/pages/project/FeedPage'));
 const TimelinePage = lazy(() => import('@/pages/project/TimelinePage'));
 const ActivityFeedPage = lazy(() => import('@/pages/project/ActivityFeedPage'));
+const ReadingHistoryPage = lazy(() => import('@/pages/project/ReadingHistoryPage'));
+const AudioOverviewsPage = lazy(() => import('@/pages/project/AudioOverviewsPage'));
+const SearchPage = lazy(() => import('@/pages/project/SearchPage'));
+const NotificationsPage = lazy(() => import('@/pages/project/NotificationsPage'));
+const NotesPage = lazy(() => import('@/pages/project/NotesPage'));
+const TeamMembersPage = lazy(() => import('@/pages/project/TeamMembersPage'));
+const CollectionsPage = lazy(() => import('@/pages/project/CollectionsPage'));
+const ExportPage = lazy(() => import('@/pages/project/ExportPage'));
+const OCRPage = lazy(() => import('@/pages/project/OCRPage'));
+const CrawlerPage = lazy(() => import('@/pages/project/CrawlerPage'));
+const DedupPage = lazy(() => import('@/pages/project/DedupPage'));
+const KeywordsPage = lazy(() => import('@/pages/project/KeywordsPage'));
+const ContradictionsPage = lazy(() => import('@/pages/project/ContradictionsPage'));
+const SubscriptionPage = lazy(() => import('@/pages/project/SubscriptionPage'));
+const PipelinesPage = lazy(() => import('@/pages/project/PipelinesPage'));
+const RAGPage = lazy(() => import('@/pages/project/RAGPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,12 +75,27 @@ function App() {
             <Route path="projects/:projectId" element={
               <ErrorBoundary><Suspense fallback={<LoadingState />}><ProjectDetail /></Suspense></ErrorBoundary>
             }>
-              <Route index element={<PapersPage />} />
-              <Route path="papers" element={<PapersPage />} />
-              <Route path="papers/:paperId/read" element={<PDFReaderPage />} />
-              <Route path="discovery" element={<DiscoveryPage />} />
-              <Route path="writing" element={<WritingPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route index element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><OverviewPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="overview" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><OverviewPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="papers" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PapersPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="papers/:paperId/read" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PDFReaderPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="discovery" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><DiscoveryPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="writing" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><WritingPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="analytics" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><AnalyticsPage /></Suspense></ErrorBoundary>
+              } />
               <Route path="trends" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><TrendsPage /></Suspense></ErrorBoundary>
               } />
@@ -82,15 +114,60 @@ function App() {
               <Route path="feed" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><FeedPage /></Suspense></ErrorBoundary>
               } />
-              <Route path="timeline" element={<TimelinePage />} />
+              <Route path="timeline" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><TimelinePage /></Suspense></ErrorBoundary>
+              } />
               <Route path="activity" element={
                 <ErrorBoundary><Suspense fallback={<LoadingState />}><ActivityFeedPage /></Suspense></ErrorBoundary>
               } />
-              <Route path="keywords" element={<Navigate to="../discovery" replace />} />
-              <Route path="search" element={<Navigate to="../discovery" replace />} />
-              <Route path="subscriptions" element={<Navigate to="../discovery" replace />} />
-              <Route path="rag" element={<Navigate to="/" replace />} />
-              <Route path="tasks" element={<Navigate to="/tasks" replace />} />
+              <Route path="reading-history" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ReadingHistoryPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="audio-overviews" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><AudioOverviewsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="search" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><SearchPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="notifications" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><NotificationsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="notes" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><NotesPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="team" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><TeamMembersPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="collections" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><CollectionsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="export" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ExportPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="ocr" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><OCRPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="crawler" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><CrawlerPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="dedup" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><DedupPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="keywords" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><KeywordsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="contradictions" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><ContradictionsPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="subscriptions" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><SubscriptionPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="pipelines" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><PipelinesPage /></Suspense></ErrorBoundary>
+              } />
+              <Route path="rag" element={
+                <ErrorBoundary><Suspense fallback={<LoadingState />}><RAGPage /></Suspense></ErrorBoundary>
+              } />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

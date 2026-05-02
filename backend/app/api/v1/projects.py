@@ -131,6 +131,77 @@ async def get_project(project_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
+@router.get("/{project_id}/overview", response_model=ApiResponse[dict], summary="Get project overview dashboard")
+async def get_project_overview(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Return a dashboard overview with key project statistics."""
+    await get_or_404(db, Project, project_id, detail="Project not found")
+
+    # Total papers
+    total_papers = (await db.execute(select(func.count(Paper.id)).where(Paper.project_id == project_id))).scalar() or 0
+
+    # Papers by status
+    status_counts_result = await db.execute(
+        select(Paper.status, func.count(Paper.id)).where(Paper.project_id == project_id).group_by(Paper.status)
+    )
+    papers_by_status = {row[0]: row[1] for row in status_counts_result.all()}
+
+    # Papers by reading status
+    reading_counts_result = await db.execute(
+        select(Paper.reading_status, func.count(Paper.id))
+        .where(Paper.project_id == project_id)
+        .group_by(Paper.reading_status)
+    )
+    papers_by_reading = {row[0]: row[1] for row in reading_counts_result.all()}
+
+    # Papers by year
+    year_counts_result = await db.execute(
+        select(Paper.year, func.count(Paper.id))
+        .where(Paper.project_id == project_id, Paper.year.isnot(None))
+        .group_by(Paper.year)
+        .order_by(Paper.year)
+    )
+    papers_by_year = {str(row[0]): row[1] for row in year_counts_result.all()}
+
+    # Average citation count
+    avg_citations_result = await db.execute(
+        select(func.avg(Paper.citation_count)).where(Paper.project_id == project_id)
+    )
+    avg_citations = avg_citations_result.scalar() or 0
+
+    # Recent papers (last 5)
+    recent_result = await db.execute(
+        select(Paper.title, Paper.year, Paper.reading_status, Paper.created_at)
+        .where(Paper.project_id == project_id)
+        .order_by(Paper.created_at.desc())
+        .limit(5)
+    )
+    recent_papers = [
+        {"title": row[0], "year": row[1], "reading_status": row[2], "added_at": row[3].isoformat() if row[3] else None}
+        for row in recent_result.all()
+    ]
+
+    # Keywords count
+    kw_count = (await db.execute(select(func.count(Keyword.id)).where(Keyword.project_id == project_id))).scalar() or 0
+
+    # Subscription count
+    sub_count = (
+        await db.execute(select(func.count(Subscription.id)).where(Subscription.project_id == project_id))
+    ).scalar() or 0
+
+    return ApiResponse(
+        data={
+            "total_papers": total_papers,
+            "papers_by_status": papers_by_status,
+            "papers_by_reading": papers_by_reading,
+            "papers_by_year": papers_by_year,
+            "avg_citations": round(avg_citations, 1),
+            "recent_papers": recent_papers,
+            "keyword_count": kw_count,
+            "subscription_count": sub_count,
+        }
+    )
+
+
 @router.put("/{project_id}", response_model=ApiResponse[ProjectRead], summary="Update project")
 async def update_project(project_id: int, body: ProjectUpdate, db: AsyncSession = Depends(get_db)):
     project = await get_or_404(db, Project, project_id, detail="Project not found")

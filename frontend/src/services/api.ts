@@ -5,6 +5,17 @@ import type { Project, Paper, Keyword, Task, ActivityLog, FeedResponse } from '@
 import type { PaginationParams, PaperListFilters, PaperComparisonRequest, PaperComparisonResponse, ActivityListFilters } from '@/types/api';
 import type { GraphData } from '@/components/citation-graph/CitationGraphView';
 
+export interface OverviewData {
+  total_papers: number;
+  papers_by_status: Record<string, number>;
+  papers_by_reading: Record<string, number>;
+  papers_by_year: Record<string, number>;
+  avg_citations: number;
+  recent_papers: Array<{ title: string; year: number | null; reading_status: string; added_at: string | null }>;
+  keyword_count: number;
+  subscription_count: number;
+}
+
 export const projectApi = {
   list: (page = 1, pageSize = 20) =>
     api.get<PaginatedData<Project>>(`/projects?page=${page}&page_size=${pageSize}`).then(r => r.data),
@@ -24,12 +35,15 @@ export const projectApi = {
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/run`).then(r => r.data),
   runPaperPipeline: (projectId: number, paperId: number) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/pipeline/paper/${paperId}`).then(r => r.data),
+  getOverview: (id: number) =>
+    api.get<OverviewData>(`/projects/${id}/overview`).then(r => r.data),
 };
 
 export interface ReadingAnalytics {
   total: number;
   by_status: Record<string, number>;
   read_by_week: Record<string, number>;
+  read_by_day: Record<string, number>;
   top_journals: Array<{ journal: string; count: number }>;
   papers_per_week: number;
   avg_read_time_seconds: number;
@@ -233,8 +247,12 @@ export const ragApi = {
         if (line.startsWith('event: ')) {
           currentEvent = line.slice(7).trim();
         } else if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
-          yield { event: currentEvent as IndexSSEEvent['event'], data };
+          try {
+            const data = JSON.parse(line.slice(6));
+            yield { event: currentEvent as IndexSSEEvent['event'], data };
+          } catch {
+            // Skip malformed SSE data fragments
+          }
         }
       }
     }
@@ -340,6 +358,109 @@ export const crawlerApi = {
     }).then(r => r.data),
   stats: (projectId: number) =>
     api.get<Record<string, unknown>>(`/projects/${projectId}/crawl/stats`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Pipeline API
+// ---------------------------------------------------------------------------
+
+export interface Pipeline {
+  thread_id: string;
+  status: 'running' | 'interrupted' | 'completed' | 'failed' | 'cancelled';
+  task_id?: number;
+}
+
+export interface PipelineStatus {
+  thread_id: string;
+  status: string;
+  stage?: string;
+  progress?: number;
+  conflicts?: Record<string, unknown>[];
+  interrupted_at?: string[];
+  result?: Record<string, unknown>;
+  error?: string;
+}
+
+export const pipelineApi = {
+  list: (status?: string) =>
+    api.get<Record<string, unknown>[]>('/pipelines', { params: status ? { status } : undefined }).then(r => r.data),
+  search: (projectId: number, query: string, sources?: string[], maxResults?: number) =>
+    api.post<Record<string, unknown>>('/pipelines/search', {
+      project_id: projectId, query, sources, max_results: maxResults ?? 50,
+    }).then(r => r.data),
+  upload: (projectId: number, pdfPaths: string[]) =>
+    api.post<Record<string, unknown>>('/pipelines/upload', {
+      project_id: projectId, pdf_paths: pdfPaths,
+    }).then(r => r.data),
+  status: (threadId: string) =>
+    api.get<Record<string, unknown>>(`/pipelines/${threadId}/status`).then(r => r.data),
+  resume: (threadId: string, resolvedConflicts: Record<string, unknown>[]) =>
+    api.post<Record<string, unknown>>(`/pipelines/${threadId}/resume`, {
+      resolved_conflicts: resolvedConflicts,
+    }).then(r => r.data),
+  cancel: (threadId: string) =>
+    api.post<Record<string, unknown>>(`/pipelines/${threadId}/cancel`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Subscription API
+// ---------------------------------------------------------------------------
+
+export interface Subscription {
+  id: number;
+  project_id: number;
+  name: string;
+  query: string;
+  sources: string[];
+  frequency: 'daily' | 'weekly' | 'monthly';
+  max_results: number;
+  is_active: boolean;
+  last_run_at: string | null;
+  total_found: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface SubscriptionCreate {
+  name: string;
+  query: string;
+  sources: string[];
+  frequency: 'daily' | 'weekly' | 'monthly';
+  max_results: number;
+}
+
+export interface SubscriptionRunResult {
+  new_papers: number;
+  total_checked: number;
+  sources_searched: string[];
+  imported: number;
+}
+
+export const subscriptionApi = {
+  list: (projectId: number, params?: PaginationParams) =>
+    api.get<PaginatedData<Subscription>>(`/projects/${projectId}/subscriptions`, { params }).then(r => r.data),
+  get: (projectId: number, subId: number) =>
+    api.get<Subscription>(`/projects/${projectId}/subscriptions/${subId}`).then(r => r.data),
+  create: (projectId: number, body: SubscriptionCreate) =>
+    api.post<Subscription>(`/projects/${projectId}/subscriptions`, body).then(r => r.data),
+  update: (projectId: number, subId: number, body: Partial<SubscriptionCreate>) =>
+    api.put<Subscription>(`/projects/${projectId}/subscriptions/${subId}`, body).then(r => r.data),
+  delete: (projectId: number, subId: number) =>
+    api.delete(`/projects/${projectId}/subscriptions/${subId}`).then(r => r.data),
+  trigger: (projectId: number, subId: number, sinceDays?: number, autoImport?: boolean) =>
+    api.post<SubscriptionRunResult>(`/projects/${projectId}/subscriptions/${subId}/trigger`, null, {
+      params: { since_days: sinceDays, auto_import: autoImport },
+    }).then(r => r.data),
+  checkRss: (projectId: number, feedUrl: string, sinceDays?: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/subscriptions/check-rss`, null, {
+      params: { feed_url: feedUrl, since_days: sinceDays },
+    }).then(r => r.data),
+  checkUpdates: (projectId: number, query?: string, sources?: string[], sinceDays?: number, maxResults?: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/subscriptions/check-updates`, null, {
+      params: { query, sources, since_days: sinceDays, max_results: maxResults },
+    }).then(r => r.data),
+  feeds: (projectId: number) =>
+    api.get<Record<string, unknown>[]>(`/projects/${projectId}/subscriptions/feeds`).then(r => r.data),
 };
 
 export const activityApi = {
@@ -693,9 +814,23 @@ export interface ReadingSessionInput {
   pages_read?: number;
 }
 
+export interface ReadingSession {
+  id: number;
+  paper_id: number;
+  paper_title: string;
+  started_at: string;
+  ended_at: string;
+  time_spent_seconds: number;
+  pages_read: number | null;
+}
+
 export const readingSessionApi = {
   record: (projectId: number, data: ReadingSessionInput) =>
     api.post<Record<string, unknown>>(`/projects/${projectId}/papers/reading-sessions`, data).then(r => r.data),
+  list: (projectId: number, paperId?: number, page = 1, pageSize = 20) =>
+    api.get<PaginatedData<ReadingSession>>(`/projects/${projectId}/papers/reading-sessions`, {
+      params: { paper_id: paperId, page, page_size: pageSize },
+    }).then(r => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -745,9 +880,31 @@ export interface AudioOverviewRequest {
   focus_areas?: string[];
 }
 
+export interface AudioOverviewListItem {
+  id: number;
+  title: string;
+  summary: string;
+  duration_estimate: string;
+  tone: string;
+  paper_count: number;
+  paper_ids: number[];
+  created_at: string | null;
+}
+
+export interface AudioOverviewListResponse {
+  items: AudioOverviewListItem[];
+  total: number;
+}
+
 export const audioOverviewsApi = {
   generate: (projectId: number, data: AudioOverviewRequest) =>
     api.post<AudioOverviewResponse>(`/projects/${projectId}/audio-overviews`, data).then(r => r.data),
+
+  list: (projectId: number) =>
+    api.get<AudioOverviewListResponse>(`/projects/${projectId}/audio-overviews`).then(r => r.data),
+
+  delete: (projectId: number, overviewId: number) =>
+    api.delete<Record<string, unknown>>(`/projects/${projectId}/audio-overviews/${overviewId}`).then(r => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -836,6 +993,7 @@ export const teamMembersApi = {
 // ---------------------------------------------------------------------------
 
 export type { APIKey, APIKeyScope, CreatedAPIKey } from '@/types';
+import type { APIKeyScope } from '@/types';
 
 export interface CreateAPIKeyRequest {
   name: string;
@@ -1063,4 +1221,74 @@ export interface ImpactScoreResponse {
 export const impactScoresApi = {
   get: (projectId: number) =>
     api.get<ImpactScoreResponse>(`/projects/${projectId}/analysis/impact-scores`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Notifications API
+// ---------------------------------------------------------------------------
+
+export interface NotificationItem {
+  id: number;
+  project_id: number;
+  type: string;
+  title: string;
+  body: string;
+  paper_id: number | null;
+  subscription_id: number | null;
+  is_read: boolean;
+  is_dismissed: boolean;
+  created_at: string | null;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  total: number;
+  unread_count: number;
+}
+
+export const notificationsApi = {
+  list: (projectId: number, unreadOnly?: boolean) =>
+    api.get<NotificationListResponse>(`/projects/${projectId}/notifications`, {
+      params: unreadOnly ? { unread_only: true } : {},
+    }).then(r => r.data),
+
+  markRead: (projectId: number, notificationId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/notifications/${notificationId}/read`).then(r => r.data),
+
+  markAllRead: (projectId: number) =>
+    api.post<Record<string, unknown>>(`/projects/${projectId}/notifications/mark-all-read`).then(r => r.data),
+
+  dismiss: (projectId: number, notificationId: number) =>
+    api.delete<Record<string, unknown>>(`/projects/${projectId}/notifications/${notificationId}`).then(r => r.data),
+};
+
+// ---------------------------------------------------------------------------
+// Notes Aggregation API
+// ---------------------------------------------------------------------------
+
+export interface PaperNote {
+  paper_id: number;
+  title: string;
+  authors: Record<string, unknown>[];
+  year: number | null;
+  journal: string | null;
+  notes: string;
+  reading_status: string;
+  updated_at: string | null;
+}
+
+export interface NotesAggregationResponse {
+  total_papers: number;
+  papers_with_notes: number;
+  total_notes: number;
+  notes: PaperNote[];
+}
+
+export const notesApi = {
+  aggregate: (projectId: number, search?: string) =>
+    api
+      .get<NotesAggregationResponse>(`/projects/${projectId}/papers/notes/aggregate`, {
+        params: search ? { search } : {},
+      })
+      .then(r => r.data),
 };

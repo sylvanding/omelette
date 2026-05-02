@@ -1,6 +1,6 @@
 """add reading_sessions table
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: d292859d63de
 Revises: f0a1b2c3d4e5
 Create Date: 2026-04-30 10:30:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "a1b2c3d4e5f6"
+revision: str = "d292859d63de"
 down_revision: str | None = "f0a1b2c3d4e5"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

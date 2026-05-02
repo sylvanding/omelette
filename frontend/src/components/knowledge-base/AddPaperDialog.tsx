@@ -23,7 +23,7 @@ interface AddPaperDialogProps {
   projectId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onComplete: (uploadResult?: UploadResult) => void;
+  onComplete?: (uploadResult?: UploadResult) => void;
 }
 
 export function AddPaperDialog({
@@ -145,7 +145,7 @@ export function AddPaperDialog({
     try {
       await kbApi.bulkImport(projectId, toAdd);
       toast.success(t('kb.searchAdd.importSuccess', { count: toAdd.length }));
-      onComplete();
+      onComplete?.();
       handleOpenChange(false);
     } catch (err: unknown) {
       const msg =
@@ -222,7 +222,7 @@ export function AddPaperDialog({
 
   const handleUploadContinue = useCallback(() => {
     if (uploadResult) {
-      onComplete(uploadResult);
+      onComplete?.(uploadResult);
       handleOpenChange(false);
     }
   }, [uploadResult, onComplete, handleOpenChange]);

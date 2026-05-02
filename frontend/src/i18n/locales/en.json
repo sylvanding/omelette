@@ -41,7 +41,10 @@
     "saveFailed": "Save failed",
     "expand": "Expand",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "pageOf": "Page {{page}} of {{total}}"
   },
   "app": {
     "name": "Omelette"
@@ -630,6 +633,18 @@
     "noDecliningTopics": "No declining topics detected",
     "loadFailed": "Failed to load trend analysis data"
   },
+  "reviews": {
+    "title": "Reviews"
+  },
+  "concepts": {
+    "title": "Concepts"
+  },
+  "library": {
+    "title": "Library"
+  },
+  "feed": {
+    "title": "Feed"
+  },
   "gaps": {
     "title": "Literature Gap Analysis",
     "close": "Close gap analysis",
@@ -657,5 +672,105 @@
     "loadError": "Failed to load version history",
     "newVersionAvailable": "New version available",
     "tab": "Versions"
+  },
+  "audioOverview": {
+    "title": "Audio Overviews",
+    "description": "Listen to AI-generated discussions of your papers",
+    "generateNew": "Generate New",
+    "generate": "Generate Audio Overview",
+    "generating": "Generating audio overview...",
+    "error": "Failed to generate. Please try again.",
+    "deleted": "Audio overview deleted",
+    "emptyTitle": "No audio overviews yet",
+    "emptyDescription": "Generate your first audio overview to get started",
+    "generateFirst": "Generate First Overview",
+    "play": "Play",
+    "papers": "papers",
+    "selectedPapers": "Selected Papers",
+    "tone": "Tone",
+    "conversational": "Conversational",
+    "formal": "Formal",
+    "focusPlaceholder": "Add focus areas (e.g., methodology, results)"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount": "{{count}} unread",
+    "allRead": "All caught up!",
+    "markAllRead": "Mark all read",
+    "markedAllRead": "All notifications marked as read",
+    "emptyTitle": "No notifications",
+    "emptyDescription": "When subscriptions find new papers, they will appear here",
+    "noUnread": "No unread notifications",
+    "viewAll": "View all notifications",
+    "types": {
+      "subscriptionMatch": "Subscription Match",
+      "system": "System",
+      "paperUpdate": "Paper Update"
+    }
+  },
+  "bibliography": {
+    "title": "Bibliography Builder",
+    "selectPapers": "Select Papers",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "searchPlaceholder": "Search papers...",
+    "noPapers": "No papers found",
+    "citationStyle": "Citation Style",
+    "generate": "Generate Bibliography",
+    "generating": "Generating...",
+    "output": "Output",
+    "formatted": "Formatted",
+    "copy": "Copy",
+    "export": "Export",
+    "emptyState": "Select papers and click Generate to create your bibliography",
+    "exportPreview": "Select papers to see the export preview",
+    "styles": {
+      "apa": "APA",
+      "mla": "MLA",
+      "chicago": "Chicago",
+      "ieee": "IEEE",
+      "gb_t_7714": "GB/T 7714"
+    }
+  },
+  "export": {
+    "title": "Export References",
+    "subtitle": "{{count}} papers in your library",
+    "bibtex": "BibTeX",
+    "bibtexDesc": "LaTeX bibliography format",
+    "csv": "CSV",
+    "csvDesc": "Spreadsheet format",
+    "ris": "RIS",
+    "risDesc": "Reference manager format (EndNote, Mendeley)",
+    "zotero": "Zotero",
+    "zoteroDesc": "Export to Zotero library",
+    "exporting": "Exporting...",
+    "downloaded": "{{format}} file downloaded",
+    "failed": "Failed to export {{format}}",
+    "zoteroPreview": "Zotero BibTeX Preview",
+    "zoteroCreated": "Zotero collection created",
+    "copyBibtex": "Copy BibTeX"
+  },
+  "readingGoals": {
+    "title": "Reading Goals",
+    "edit": "Edit goals",
+    "dailyGoal": "Daily goal",
+    "weeklyGoal": "Weekly goal",
+    "papersPerDay": "papers/day",
+    "papersPerWeek": "papers/week",
+    "today": "Today",
+    "thisWeek": "This week",
+    "papers": "papers",
+    "dayStreak": "day streak",
+    "readToday": "read today",
+    "daily": "daily"
+  },
+  "readingHistory": {
+    "title": "Reading History",
+    "subtitle": "Track your reading progress across all papers",
+    "sessions": "Sessions",
+    "totalTime": "Total Time",
+    "papersRead": "Papers Read",
+    "emptyTitle": "No reading sessions yet",
+    "emptyDesc": "Start reading papers to track your progress here."
   }
 }

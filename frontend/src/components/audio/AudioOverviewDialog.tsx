@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '@tanstack/react-query';
 import { X, Loader2, Headphones, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { audioOverviewsApi, type AudioOverviewResponse } from '@/services/api';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { AudioPlayer } from './AudioPlayer';
 
 interface AudioOverviewDialogProps {
@@ -14,21 +14,27 @@ interface AudioOverviewDialogProps {
   paperIds: number[];
   paperTitles: string[];
   onClose: () => void;
+  onGenerated?: () => void;
 }
 
-export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose }: AudioOverviewDialogProps) {
+export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose, onGenerated }: AudioOverviewDialogProps) {
   const { t } = useTranslation();
   const [tone, setTone] = useState<'formal' | 'conversational'>('conversational');
   const [focusInput, setFocusInput] = useState('');
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
 
-  const generate = useMutation<AudioOverviewResponse, Error, void>({
+  const generate = useToastMutation<AudioOverviewResponse, Error, void>({
     mutationFn: () =>
       audioOverviewsApi.generate(projectId, {
         paper_ids: paperIds,
         tone,
         focus_areas: focusAreas.length > 0 ? focusAreas : undefined,
       }),
+    successMessage: 'Audio overview generated',
+    errorMessage: 'Failed to generate audio overview',
+    onSettled: () => {
+      onGenerated?.();
+    },
   });
 
   const handleGenerate = () => {
@@ -139,9 +145,6 @@ export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose 
               )}
             </Button>
 
-            {generate.isError && (
-              <p className="text-sm text-destructive">{t('audioOverview.error', 'Failed to generate. Please try again.')}</p>
-            )}
           </div>
         )}
 

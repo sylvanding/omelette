@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Loader2,
   RefreshCw,
@@ -13,10 +13,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { feedApi } from '@/services/api';
+import { useToastMutation } from '@/hooks/use-toast-mutation';
 
 interface PaperFeedback {
-  paperId: number;
-  feedback: 'like' | 'dislike' | null;
+  index: number;
+  feedback: 'like' | 'dislike';
 }
 
 export default function FeedPage() {
@@ -26,39 +27,31 @@ export default function FeedPage() {
   const [feedbacks, setFeedbacks] = useState<PaperFeedback[]>([]);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
 
-  const { data: feedResponse, isLoading, refetch } = useQuery({
+  const { data: feedResponse, isLoading } = useQuery({
     queryKey: ['feed', pid],
     queryFn: () => feedApi.get(pid),
     enabled: !!pid,
   });
 
-  const refreshMutation = useMutation({
+  const refreshMutation = useToastMutation({
     mutationFn: () => feedApi.refresh(pid),
-    onSuccess: () => {
-      refetch();
-      setFeedbacks([]);
-    },
-  });
-
-  const feedbackMutation = useMutation({
-    mutationFn: ({ paperId, feedback }: { paperId: number; feedback: string }) =>
-      feedApi.feedback(pid, paperId, feedback),
+    invalidateKeys: [['feed', pid]],
+    onSuccess: () => setFeedbacks([]),
   });
 
   const handleFeedback = useCallback(
-    (paperId: number, feedback: 'like' | 'dislike') => {
-      feedbackMutation.mutate({ paperId, feedback });
+    (index: number, feedback: 'like' | 'dislike') => {
       setFeedbacks((prev) => {
-        const existing = prev.findIndex((p) => p.paperId === paperId);
+        const existing = prev.findIndex((p) => p.index === index);
         if (existing >= 0) {
           const updated = [...prev];
-          updated[existing] = { paperId, feedback };
+          updated[existing] = { index, feedback };
           return updated;
         }
-        return [...prev, { paperId, feedback }];
+        return [...prev, { index, feedback }];
       });
     },
-    [feedbackMutation],
+    [],
   );
 
   const toggleExpand = useCallback((index: number) => {
@@ -129,9 +122,9 @@ export default function FeedPage() {
             {/* Header: title + score */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-semibold">{rec.title}</h3>
+                <h3 className="text-base font-semibold">{rec.title || 'Untitled'}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {rec.authors}
+                  {rec.authors || ''}
                   {rec.year ? ` · ${rec.year}` : ''}
                   {rec.doi ? ` · ${rec.doi}` : ''}
                 </p>
@@ -144,7 +137,7 @@ export default function FeedPage() {
             {/* Reason */}
             <div className="mt-3 flex items-start gap-2 rounded-md bg-muted/50 p-3">
               <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-              <p className="text-sm">{rec.reason}</p>
+              <p className="text-sm">{rec.reason || 'No reason provided'}</p>
             </div>
 
             {/* Expandable abstract */}
@@ -163,14 +156,14 @@ export default function FeedPage() {
 
             {expandedCards.has(index) && (
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {rec.abstract}
+                {rec.abstract || ''}
               </p>
             )}
 
             {/* Feedback buttons */}
             <div className="mt-4 flex items-center gap-2">
               <Button
-                variant={getFeedbackForPaper(feedbacks, rec.title) === 'like' ? 'default' : 'outline'}
+                variant={getFeedbackForIndex(feedbacks, index) === 'like' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleFeedback(index, 'like')}
               >
@@ -178,7 +171,7 @@ export default function FeedPage() {
                 Relevant
               </Button>
               <Button
-                variant={getFeedbackForPaper(feedbacks, rec.title) === 'dislike' ? 'destructive' : 'outline'}
+                variant={getFeedbackForIndex(feedbacks, index) === 'dislike' ? 'destructive' : 'outline'}
                 size="sm"
                 onClick={() => handleFeedback(index, 'dislike')}
               >
@@ -193,10 +186,10 @@ export default function FeedPage() {
   );
 }
 
-function getFeedbackForPaper(
+function getFeedbackForIndex(
   feedbacks: PaperFeedback[],
-  title: string,
+  index: number,
 ): 'like' | 'dislike' | null {
-  const match = feedbacks.find((f) => f.paperId === title.charCodeAt(0) % 1000);
+  const match = feedbacks.find((f) => f.index === index);
   return match?.feedback ?? null;
 }

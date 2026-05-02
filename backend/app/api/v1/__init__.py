@@ -20,6 +20,7 @@ from app.api.v1 import (
     gpu,
     keywords,
     library,
+    notifications,
     ocr,
     papers,
     pipelines,
@@ -69,3 +70,4 @@ api_router.include_router(feed.router, prefix="/projects/{project_id}/feed")
 api_router.include_router(export.router)
 api_router.include_router(team_members.router, prefix="/projects/{project_id}/members")
 api_router.include_router(api_keys.router, prefix="/api-keys")
+api_router.include_router(notifications.router, prefix="/projects/{project_id}/notifications")

@@ -1,0 +1,12 @@
+{
+  "name": "Omelette - Scientific Literature Assistant",
+  "short_name": "Omelette",
+  "description": "AI-powered scientific literature research and analysis tool",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "any",
+  "icons": [],
+  "categories": ["education", "productivity"]
+}

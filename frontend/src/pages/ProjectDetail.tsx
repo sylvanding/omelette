@@ -2,6 +2,7 @@ import { Outlet, Link, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   FileText,
   Compass,
   PenLine,
@@ -11,9 +12,22 @@ import {
   Table2,
   Network,
   FolderOpen,
+  FolderTree,
   Sparkles,
+  Brain,
   TrendingUp,
   Lightbulb,
+  Headphones,
+  BookOpen,
+  Search,
+  Bell,
+  NotebookPen,
+  Users,
+  LayoutDashboard,
+  Download,
+  Eye,
+  Files,
+  Rss,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { projectApi } from '@/services/api';
@@ -26,17 +40,34 @@ export default function ProjectDetail() {
   const location = useLocation();
 
   const navItems = [
-    { path: '', label: t('project.papers'), icon: FileText },
+    { path: '', label: t('project.overview', 'Overview'), icon: LayoutDashboard },
+    { path: 'papers', label: t('project.papers'), icon: FileText },
     { path: 'discovery', label: t('discovery.title'), icon: Compass },
-    { path: 'reviews', label: 'Reviews', icon: Table2 },
-    { path: 'concepts', label: 'Concepts', icon: Network },
-    { path: 'library', label: 'Library', icon: FolderOpen },
-    { path: 'feed', label: 'Feed', icon: Sparkles },
+    { path: 'search', label: t('searchPage.title', 'Search'), icon: Search },
+    { path: 'reviews', label: t('reviews.title', 'Reviews'), icon: Table2 },
+    { path: 'concepts', label: t('concepts.title', 'Concepts'), icon: Network },
+    { path: 'library', label: t('library.title', 'Library'), icon: FolderOpen },
+    { path: 'collections', label: t('collections.title', 'Collections'), icon: FolderTree },
+    { path: 'feed', label: t('feed.title', 'Feed'), icon: Sparkles },
     { path: 'writing', label: t('project.writing'), icon: PenLine },
     { path: 'timeline', label: t('project.timeline'), icon: Clock },
-    { path: 'trends', label: 'Trends', icon: TrendingUp },
-    { path: 'gaps', label: 'Gap Analysis', icon: Lightbulb },
+    { path: 'trends', label: t('trends.title', 'Trends'), icon: TrendingUp },
+    { path: 'gaps', label: t('gaps.title', 'Gap Analysis'), icon: Lightbulb },
     { path: 'activity', label: t('project.activity'), icon: Activity },
+    { path: 'reading-history', label: 'Reading History', icon: BookOpen },
+    { path: 'audio-overviews', label: t('audioOverview.title', 'Audio Overviews'), icon: Headphones },
+    { path: 'notifications', label: t('notifications.title', 'Notifications'), icon: Bell },
+    { path: 'notes', label: t('notes.dashboard', 'Notes'), icon: NotebookPen },
+    { path: 'team', label: t('team.title', 'Team'), icon: Users },
+    { path: 'export', label: 'Export', icon: Download },
+    { path: 'ocr', label: 'OCR', icon: Eye },
+    { path: 'crawler', label: 'Crawler', icon: Download },
+    { path: 'dedup', label: 'Dedup', icon: Files },
+    { path: 'keywords', label: 'Keywords', icon: Sparkles },
+    { path: 'subscriptions', label: 'Subscriptions', icon: Rss },
+    { path: 'pipelines', label: 'Pipelines', icon: Network },
+    { path: 'rag', label: 'RAG', icon: Brain },
+    { path: 'contradictions', label: 'Contradictions', icon: AlertTriangle },
   ];
 
   const { data } = useQuery({
@@ -50,7 +81,32 @@ export default function ProjectDetail() {
 
   return (
     <div className="flex h-full">
-      <aside className="w-52 shrink-0 border-r border-border bg-muted/30">
+      {/* Mobile horizontal nav */}
+      <nav className="flex w-full overflow-x-auto border-b border-border bg-muted/30 px-2 py-1.5 md:hidden">
+        {navItems.map((item) => {
+          const fullPath = item.path ? `${basePath}/${item.path}` : basePath;
+          const isActive = item.path
+            ? location.pathname === fullPath
+            : location.pathname === basePath || location.pathname === `${basePath}/`;
+          return (
+            <Link
+              key={item.path}
+              to={fullPath}
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+              )}
+            >
+              <item.icon className="size-3.5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <aside className="hidden w-52 shrink-0 border-r border-border bg-muted/30 md:block">
         <div className="flex h-full flex-col p-3">
           <Tooltip>
             <TooltipTrigger asChild>

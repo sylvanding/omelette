@@ -39,4 +39,14 @@ features:
     details: Full Chinese/English bilingual interface with react-i18next and automatic language detection.
   - title: "\U0001F3A8 Modern UI"
     details: shadcn/ui + Radix components, Framer Motion animations, icon sidebar, and responsive design with TailwindCSS v4.
+  - title: "\U0001F50D Smart Search"
+    details: External academic search across multiple sources with similar papers discovery from your own library.
+  - title: "\U0001F514 Notifications"
+    details: In-app notification bell with unread count, dropdown panel, and subscription-based alerts.
+  - title: "\U0001F4DD Citation Tools"
+    details: Multi-style citation picker (APA, MLA, Chicago, IEEE, GB/T 7714) and bibliography builder with export.
+  - title: "\U0001F50C API Keys"
+    details: Secure API key generation with SHA-256 hashing and scope-based access control for programmatic access.
+  - title: "\U0001F465 Team Collaboration"
+    details: Project team management with invites, role-based access control, and permission scopes.
 ---
