@@ -19,7 +19,7 @@ export default function ReadingHistoryPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.readingSessions.all(pid),
     queryFn: () => readingSessionApi.list(pid, undefined, page, PAGE_SIZE),
   });
@@ -31,6 +31,16 @@ export default function ReadingHistoryPage() {
     return (
       <PageLayout title={t('readingHistory.title', 'Reading History')}>
         <LoadingState />
+      </PageLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PageLayout title={t('readingHistory.title', 'Reading History')}>
+        <div className="py-12 text-center text-muted-foreground">
+          {t('common.error', 'An error occurred')}
+        </div>
       </PageLayout>
     );
   }

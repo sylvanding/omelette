@@ -91,7 +91,7 @@ export default function PapersPage() {
     enabled: !!pid,
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: queryKeys.papers.list(pid, filters),
     queryFn: () => paperApi.list(pid, filters),
     enabled: !!pid,
@@ -316,6 +316,10 @@ export default function PapersPage() {
 
         {isLoading ? (
           <LoadingState message={t('common.loading')} />
+        ) : isError ? (
+          <div className="py-12 text-center text-muted-foreground">
+            {t('common.error', 'An error occurred')}
+          </div>
         ) : papers.length === 0 ? (
           <EmptyState
             icon={FileText}
