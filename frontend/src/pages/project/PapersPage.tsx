@@ -165,6 +165,17 @@ export default function PapersPage() {
     });
   };
 
+  const handleBatchStatusChange = () => {
+    const ids = Array.from(selectedRows).map(Number);
+    if (ids.length === 0) return;
+    paperApi.batchUpdate(pid, ids, { reading_status: 'read' }).then(() => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid) });
+      setSelectedRows(new Set());
+    }).catch((err: Error) => {
+      toast.error(err.message || 'Batch update failed');
+    });
+  };
+
   const handleAddComplete = (uploadResult?: UploadResult) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.papers.list(pid) });
     if (uploadResult?.conflicts?.length) {
@@ -256,6 +267,7 @@ export default function PapersPage() {
       needsProcessing={needsProcessing}
       isBatchDeleting={batchDeleteMutation.isPending}
       onBatchDelete={handleBatchDelete}
+      onBatchStatusChange={handleBatchStatusChange}
       onProcessAll={handleProcessAll}
       onAddPaper={() => setShowAddPaper(true)}
       onCompare={() => setShowComparison(true)}
