@@ -247,9 +247,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Reading Goals */}
-      {sessions.length > 0 && (
-        <ReadingGoalsCard sessions={sessions} />
-      )}
+      <ReadingGoalsCard sessions={sessions} />
 
       {/* Get Started actions for empty projects */}
       {isEmpty && (
