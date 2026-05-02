@@ -9,6 +9,13 @@
 - Keep the PR description updated with the latest features, fixes, and test counts
 - The PR must always reflect the current state of the branch
 
+**Autonomous PR merging — no user approval needed.**
+
+- When a PR is feature-complete and all quality checks pass (tests, lint, typecheck), merge it immediately
+- Use `gh pr merge <number> --squash` with a concise subject line summarizing the release
+- Do NOT ask the user for permission to merge — just do it
+- After merging, switch to `main`, pull, and create a new feature branch for the next cycle
+
 ## Development Commands
 
 ```bash
