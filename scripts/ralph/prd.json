@@ -1,6 +1,6 @@
 {
   "project": "Omelette - Research Workflow Enhancement",
-  "branchName": "ralph/cycle-20",
+  "branchName": "ralph/cycle-21",
   "description": "Cycle 20: Paper quality scoring, bulk operations, and improved empty states",
   "userStories": [
     {
@@ -156,6 +156,20 @@
         "Tests: verify bulk tag, bulk status, batch delete"
       ],
       "priority": 5,
+      "passes": false
+    },
+    {
+      "id": "FEAT-037",
+      "title": "Wire batch actions into toolbar when papers selected",
+      "description": "When papers are selected, show batch action buttons for tag, status, and delete.",
+      "acceptanceCriteria": [
+        "Selecting papers shows batch action toolbar",
+        "Can add tags to all selected papers",
+        "Can change reading status for all selected",
+        "Batch delete works with confirmation",
+        "Tests: verify toolbar appears, tag mutation, status mutation"
+      ],
+      "priority": 7,
       "passes": false
     }
   ]
