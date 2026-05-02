@@ -357,7 +357,9 @@
       "tab": "相关",
       "empty": "未找到相关论文",
       "emptyHint": "索引论文内容以启用语义相似度匹配"
-    }
+    },
+    "audioOverview": "音频概述",
+    "audioOverviewRange": "选择 1-10 篇论文"
   },
   "analytics": {
     "title": "阅读分析",

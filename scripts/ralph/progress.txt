@@ -639,3 +639,62 @@ Started: Thu Apr 30 01:02:06 PM CST 2026
   - frontend/src/i18n/locales/zh.json (readingGoals section)
 - All tests: 269 frontend pass, 861 backend pass, 39 E2E pass
 ---
+
+## 2026-05-02 20:40 - Ralph Loop Comprehensive Audit
+- **Ralph pattern established**: autonomous loop with continuous testing, never stop
+- **BUG FIX**: Reading sessions API returning 500 error - fixed `selectinload(ReadingSession.paper)` for lazy loading issue
+- **BUG FIX**: Missing `papers.audioOverview` and `papers.audioOverviewRange` i18n keys - added to en/zh
+- **BUG FIX**: ReadingGoalsCard now always shows on Overview (not just when sessions > 0)
+
+### Comprehensive Browser Testing (REAL DATA, NO MOCKS)
+Tested 35 pages with real API data (5 papers, 8 reading sessions, 5 keywords, 1 subscription, 1 collection):
+
+**Core Pages (ALL PASS)**: Playground, KnowledgeBases, Settings, History, Tasks
+**Project Pages (ALL PASS)**: Overview, Papers, Notes, Analytics, Reading History, Collections, Feed, Search, Discovery, Writing, Timeline, Trends, Gap Analysis, Activity, Reviews, Concepts, Library, Audio Overviews, Notifications, Team, Export
+**Workflow Pages (ALL PASS)**: Dedup, Crawler, OCR, Subscriptions, Pipelines, RAG, Keywords, Contradictions
+
+**Interactive Features Tested**:
+- Paper search with q= parameter (correctly filters)
+- Notes dashboard search (finds "transformer" in full-text notes)
+- Reading goals editing (change daily goal, persists)
+- Collection creation (UI creates and shows in sidebar)
+- Team invite dialog (opens, shows form with email/role)
+- Keyword creation (UI adds to list)
+- Paper comparison (select 3 papers, Compare button appears)
+- Markdown rendering in notes (bold, headings rendered)
+- Export formats (BibTeX, CSV, Zotero buttons)
+- Search formula generation (WoS format working)
+- AI keyword expansion (12 related terms)
+
+**API Verified**:
+- 856 backend tests ✅ | 269 frontend tests ✅ | 39 E2E ✅
+- Notes aggregation (5 papers, 522 note chars)
+- Library health (5/5 healthy)
+- Impact scores (5 papers scored)
+- Timeline by year (2013-2019)
+- Reading sessions (8 sessions, 4h 35m total)
+---
+
+## 2026-05-02 20:55 - Ralph Cycle: PDF/OCR/Notes/Contradictions/Concepts
+
+### Feature Testing Results
+1. **PDF Upload** ✅ - Real PDF (316 bytes) uploaded successfully, saved to data/pdfs/
+2. **OCR Processing** ✅ - Auto-OCR on upload (status: ocr_complete), manual OCR endpoint works
+3. **Notes Editing** ✅ - Complete cycle verified: edit textarea → modify Markdown → preview → save
+   - Markdown rendering: headings, bold, lists all working
+   - Browser verification: Edit/Preview toggle functional, content persists after save
+4. **Contradiction Detection** ✅ - API at /analysis/contradictions, returns 0 without LLM (expected)
+5. **Concept Extraction** ✅ - API at /concepts/extract, returns empty graph without LLM (expected)
+
+### Issues Discovered
+- **No contradictions.py module** - contradictions live in analysis.py (correct, but non-obvious)
+- **Concepts API path** is /projects/{id}/concepts (separate router)
+- Contradictions and concepts both require LLM to generate meaningful output
+
+### Next Ralph Tasks
+- [ ] Create comprehensive PRD entries for contradiction & concept LLM features
+- [ ] Test notification bell with real notification data
+- [ ] Test audio overviews with LLM configured
+- [ ] Add loading states for LLM-dependent features (contradictions, concepts)
+- [ ] Check if NotesPanel auto-saves on blur/change
+---

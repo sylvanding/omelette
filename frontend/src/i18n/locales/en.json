@@ -358,7 +358,9 @@
       "empty": "No related papers found",
       "emptyHint": "Index paper content to enable semantic similarity matching"
     },
-    "authorNetwork": "Author Network"
+    "authorNetwork": "Author Network",
+    "audioOverview": "Audio Overview",
+    "audioOverviewRange": "Select 1-10 papers"
   },
   "analytics": {
     "title": "Reading Analytics",

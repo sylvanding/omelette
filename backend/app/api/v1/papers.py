@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, get_or_404, get_project
 from app.config import settings
@@ -231,7 +232,12 @@ async def list_reading_sessions(
     """List reading sessions for a project, optionally filtered by paper."""
     from app.models.reading_session import ReadingSession
 
-    query = select(ReadingSession).join(Paper).where(Paper.project_id == project_id)
+    query = (
+        select(ReadingSession)
+        .join(Paper)
+        .where(Paper.project_id == project_id)
+        .options(selectinload(ReadingSession.paper))
+    )
     if paper_id:
         query = query.where(ReadingSession.paper_id == paper_id)
 
