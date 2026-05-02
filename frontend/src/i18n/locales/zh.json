@@ -41,7 +41,10 @@
     "saveFailed": "保存失败",
     "expand": "展开",
     "previousPage": "上一页",
-    "nextPage": "下一页"
+    "nextPage": "下一页",
+    "today": "今天",
+    "yesterday": "昨天",
+    "pageOf": "第 {{page}} 页，共 {{total}} 页"
   },
   "app": {
     "name": "Omelette"
@@ -685,5 +688,14 @@
     "zoteroPreview": "Zotero BibTeX 预览",
     "zoteroCreated": "Zotero 集合已创建",
     "copyBibtex": "复制 BibTeX"
+  },
+  "readingHistory": {
+    "title": "阅读历史",
+    "subtitle": "追踪你的阅读进度",
+    "sessions": "阅读次数",
+    "totalTime": "总时长",
+    "papersRead": "已读论文",
+    "emptyTitle": "暂无阅读记录",
+    "emptyDesc": "开始阅读论文以追踪你的进度。"
   }
 }

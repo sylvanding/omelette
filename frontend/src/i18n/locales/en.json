@@ -41,7 +41,10 @@
     "saveFailed": "Save failed",
     "expand": "Expand",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "pageOf": "Page {{page}} of {{total}}"
   },
   "app": {
     "name": "Omelette"
@@ -746,5 +749,14 @@
     "zoteroPreview": "Zotero BibTeX Preview",
     "zoteroCreated": "Zotero collection created",
     "copyBibtex": "Copy BibTeX"
+  },
+  "readingHistory": {
+    "title": "Reading History",
+    "subtitle": "Track your reading progress across all papers",
+    "sessions": "Sessions",
+    "totalTime": "Total Time",
+    "papersRead": "Papers Read",
+    "emptyTitle": "No reading sessions yet",
+    "emptyDesc": "Start reading papers to track your progress here."
   }
 }

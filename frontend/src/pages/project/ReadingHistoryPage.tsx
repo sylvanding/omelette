@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Clock, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { readingSessionApi } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
@@ -12,6 +13,7 @@ import { formatReadingTime } from '@/hooks/useReadingTimer';
 const PAGE_SIZE = 20;
 
 export default function ReadingHistoryPage() {
+  const { t } = useTranslation();
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId!);
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export default function ReadingHistoryPage() {
 
   if (isLoading) {
     return (
-      <PageLayout title="Reading History">
+      <PageLayout title={t('readingHistory.title', 'Reading History')}>
         <LoadingState />
       </PageLayout>
     );
@@ -44,27 +46,27 @@ export default function ReadingHistoryPage() {
   const totalSeconds = sessions.reduce((sum, s) => sum + s.time_spent_seconds, 0);
 
   return (
-    <PageLayout title="Reading History" subtitle="Track your reading progress across all papers">
+    <PageLayout title={t('readingHistory.title', 'Reading History')} subtitle={t('readingHistory.subtitle', 'Track your reading progress across all papers')}>
       <div className="space-y-6">
         {/* Summary card */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <SummaryCard icon={BookOpen} label="Sessions" value={data?.total ?? 0} />
-          <SummaryCard icon={Clock} label="Total Time" value={formatReadingTime(totalSeconds)} />
-          <SummaryCard icon={FileText} label="Papers Read" value={new Set(sessions.map((s) => s.paper_id)).size} />
+          <SummaryCard icon={BookOpen} label={t('readingHistory.sessions', 'Sessions')} value={data?.total ?? 0} />
+          <SummaryCard icon={Clock} label={t('readingHistory.totalTime', 'Total Time')} value={formatReadingTime(totalSeconds)} />
+          <SummaryCard icon={FileText} label={t('readingHistory.papersRead', 'Papers Read')} value={new Set(sessions.map((s) => s.paper_id)).size} />
         </div>
 
         {/* Sessions list */}
         {grouped.size === 0 ? (
           <EmptyState
             icon={BookOpen}
-            title="No reading sessions yet"
-            description="Start reading papers to track your progress here."
+            title={t('readingHistory.emptyTitle', 'No reading sessions yet')}
+            description={t('readingHistory.emptyDesc', 'Start reading papers to track your progress here.')}
           />
         ) : (
           <div className="space-y-6">
             {Array.from(grouped.entries()).map(([date, daySessions]) => (
               <div key={date}>
-                <h3 className="mb-3 text-sm font-medium text-muted-foreground">{formatDate(date)}</h3>
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground">{formatDate(date, t)}</h3>
                 <div className="space-y-2">
                   {daySessions.map((session) => (
                     <button
@@ -102,10 +104,10 @@ export default function ReadingHistoryPage() {
                   className="flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm disabled:opacity-40"
                 >
                   <ChevronLeft className="size-4" />
-                  Previous
+                  {t('common.previousPage', 'Previous')}
                 </button>
                 <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
+                  {t('common.pageOf', 'Page {{page}} of {{total}}', { page, total: totalPages })}
                 </span>
                 <button
                   type="button"
@@ -113,7 +115,7 @@ export default function ReadingHistoryPage() {
                   disabled={page === totalPages}
                   className="flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-sm disabled:opacity-40"
                 >
-                  Next
+                  {t('common.nextPage', 'Next')}
                   <ChevronRight className="size-4" />
                 </button>
               </div>
@@ -145,13 +147,13 @@ function SummaryCard({
   );
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, t: (key: string, fallback?: string) => string): string {
   const date = new Date(dateStr);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  if (date.toLocaleDateString() === today.toLocaleDateString()) return 'Today';
-  if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return 'Yesterday';
+  if (date.toLocaleDateString() === today.toLocaleDateString()) return t('common.today', 'Today');
+  if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return t('common.yesterday', 'Yesterday');
   return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 }
