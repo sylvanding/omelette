@@ -36,7 +36,7 @@ npm install
 
 ### 3. MinerU PDF 解析引擎（可选）
 
-MinerU 需要独立的 conda 环境，参考 [MinerU 独立服务部署指南](/deployment/mineru-setup)。
+MinerU 需要独立的 conda 环境：
 
 ```bash
 conda create -n mineru python=3.12 -y
