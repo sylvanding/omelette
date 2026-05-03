@@ -7,6 +7,8 @@ import i18n from '@/i18n';
 function renderFilterBar(props: Partial<React.ComponentProps<typeof PapersFilterBar>> = {}) {
   const defaultProps = {
     search: '',
+    author: '',
+    journal: '',
     status: '' as const,
     readingStatus: '' as const,
     qualityTag: '',
@@ -14,6 +16,8 @@ function renderFilterBar(props: Partial<React.ComponentProps<typeof PapersFilter
     sortBy: 'created_at',
     order: 'desc' as const,
     onSearchChange: vi.fn(),
+    onAuthorChange: vi.fn(),
+    onJournalChange: vi.fn(),
     onStatusChange: vi.fn(),
     onReadingStatusChange: vi.fn(),
     onQualityTagChange: vi.fn(),

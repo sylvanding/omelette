@@ -113,6 +113,8 @@ export default function TimelinePage() {
     <div className="space-y-4">
       <PapersFilterBar
         search={search}
+        author=""
+        journal=""
         status={status}
         readingStatus={readingStatus}
         year={year}
@@ -120,6 +122,8 @@ export default function TimelinePage() {
         sortBy="year"
         order="desc"
         onSearchChange={setSearch}
+        onAuthorChange={() => {}}
+        onJournalChange={() => {}}
         onStatusChange={setStatus}
         onReadingStatusChange={setReadingStatus}
         onYearChange={setYear}

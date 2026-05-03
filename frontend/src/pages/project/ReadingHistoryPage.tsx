@@ -80,7 +80,7 @@ export default function ReadingHistoryPage() {
           <div className="space-y-6">
             {Array.from(grouped.entries()).map(([date, daySessions]) => (
               <div key={date}>
-                <h3 className="mb-3 text-sm font-medium text-muted-foreground">{formatDate(date, t)}</h3>
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground">{formatDate(date)}</h3>
                 <div className="space-y-2">
                   {daySessions.map((session) => (
                     <button
@@ -161,13 +161,13 @@ function SummaryCard({
   );
 }
 
-function formatDate(dateStr: string, t: (key: string, fallback?: string) => string): string {
+function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  if (date.toLocaleDateString() === today.toLocaleDateString()) return t('common.today', 'Today');
-  if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return t('common.yesterday', 'Yesterday');
+  if (date.toLocaleDateString() === today.toLocaleDateString()) return 'Today';
+  if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return 'Yesterday';
   return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 }
