@@ -359,7 +359,8 @@
       "emptyHint": "索引论文内容以启用语义相似度匹配"
     },
     "audioOverview": "音频概述",
-    "audioOverviewRange": "选择 1-10 篇论文"
+    "audioOverviewRange": "选择 1-10 篇论文",
+    "authorNetwork": "作者网络"
   },
   "analytics": {
     "title": "阅读分析",
@@ -556,7 +557,12 @@
     "papers": "论文数",
     "coAuthors": "合作者",
     "hIndex": "预估 h-index",
-    "topCoauthors": "合作者列表"
+    "topCoauthors": "合作者列表",
+    "activeOnly": "仅活跃",
+    "centrality": "中心性",
+    "error": "加载作者网络失败，请重试。",
+    "exportPNG": "导出 PNG",
+    "loading": "正在构建作者网络..."
   },
   "trends": {
     "title": "研究趋势分析",
@@ -572,7 +578,16 @@
     "citations": "引用",
     "topicTrends": "主题趋势",
     "emergingTopics": "新兴主题",
-    "decliningTopics": "衰退主题"
+    "decliningTopics": "衰退主题",
+    "citationsOverTime": "引用趋势",
+    "decliningTopicsTitle": "衰退主题",
+    "emergingTopicsTitle": "新兴主题",
+    "loadFailed": "加载趋势分析数据失败",
+    "noCitationData": "暂无引用数据",
+    "noDecliningTopics": "未检测到衰退主题",
+    "noEmergingTopics": "未检测到新兴主题",
+    "noTopicData": "暂无主题趋势数据",
+    "noVolumeData": "暂无发表量数据"
   },
   "reviews": {
     "title": "评审"
@@ -713,5 +728,66 @@
     "papersRead": "已读论文",
     "emptyTitle": "暂无阅读记录",
     "emptyDesc": "开始阅读论文以追踪你的进度。"
+  },
+  "ocr": {
+    "title": "OCR"
+  },
+  "crawler": {
+    "title": "爬虫"
+  },
+  "dedup": {
+    "title": "去重"
+  },
+  "pipelines": {
+    "title": "流水线"
+  },
+  "contradictions": {
+    "title": "矛盾检测"
+  },
+  "apiKeys": {
+    "title": "API 密钥",
+    "generate": "生成密钥",
+    "generateDesc": "创建用于程序化访问的密钥。立即保存 — 不会再次显示。",
+    "generateTitle": "生成新 API 密钥",
+    "keyCreated": "API 密钥已创建",
+    "keyName": "密钥名称",
+    "keyNamePlaceholder": "例如：研究流水线",
+    "keyWarning": "立即复制此密钥 — 不会再次显示。",
+    "neverUsed": "从未使用",
+    "noKeys": "暂无 API 密钥",
+    "noKeysDesc": "生成密钥以程序化访问 API。",
+    "revoke": "撤销",
+    "revokeFailed": "撤销 API 密钥失败",
+    "revokeSuccess": "API 密钥已撤销",
+    "revoked": "已撤销",
+    "scope": "权限范围",
+    "scopeAdmin": "管理员",
+    "scopeRead": "只读",
+    "scopeReadDesc": "仅能读取数据和端点。",
+    "scopeWrite": "写入",
+    "deleteSuccess": "API 密钥已删除",
+    "deleteFailed": "删除 API 密钥失败",
+    "createSuccess": "API 密钥创建成功",
+    "createFailed": "创建 API 密钥失败",
+    "usedRecently": "最近使用过"
+  },
+  "team": {
+    "title": "团队成员",
+    "active": "活跃",
+    "admin": "管理员",
+    "editor": "编辑者",
+    "email": "邮箱地址",
+    "emailPlaceholder": "同事@example.com",
+    "invite": "邀请",
+    "inviteFirst": "邀请成员",
+    "inviteSuccess": "成员邀请成功",
+    "inviteTitle": "邀请团队成员",
+    "memberRemoved": "成员已移除",
+    "noMembers": "暂无团队成员",
+    "noMembersDesc": "邀请团队成员协作此项目。",
+    "owner": "拥有者",
+    "role": "角色",
+    "roleUpdated": "角色已更新",
+    "viewer": "查看者"
   }
 }
