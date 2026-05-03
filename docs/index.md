@@ -2,8 +2,8 @@
 layout: home
 hero:
   name: "Omelette"
-  text: "Scientific Literature Lifecycle Management"
-  tagline: "Chat-centric scientific assistant — from keyword search to RAG-powered writing, orchestrated by LangGraph."
+  text: "AI-Powered Literature Management"
+  tagline: "Search · Deduplicate · OCR · Index · Chat — the complete research pipeline"
   image:
     src: /logo-mascot.png
     alt: Omelette Mascot
@@ -14,39 +14,73 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/sylvanding/omelette
+
 features:
-  - title: "\U0001F4AC Chat Playground"
-    details: ChatGPT-style interface with SSE streaming, knowledge base selection, and multiple tool modes (QA, citation lookup, review outline, gap analysis).
-  - title: "\U0001F916 Multi-LLM Support"
-    details: LangChain abstraction supporting OpenAI, Anthropic, Aliyun, Volcengine, Ollama, and mock providers with per-session switching.
-  - title: "\U0001F9E0 RAG Knowledge Base"
-    details: LlamaIndex-powered with ChromaDB vector store, GPU-aware HuggingFace embeddings, hybrid retrieval, and cited answers.
-  - title: "\U0001F500 LangGraph Pipeline"
-    details: Orchestrated search → dedup → HITL → crawl → OCR → index workflow with interrupt/resume and checkpointing.
-  - title: "\U0001F50D Multi-Source Search"
-    details: Federated search across Semantic Scholar, OpenAlex, arXiv, and Crossref with standardized metadata.
-  - title: "\U0001F9F9 Smart Deduplication"
-    details: Three-stage pipeline with Git-style HITL conflict resolution — DOI hard dedup, title similarity, LLM verification.
-  - title: "\U0001F4E1 Subscription Management"
-    details: Persistent subscription rules with CRUD API, frequency scheduling, and automatic incremental updates.
-  - title: "\U0001F4E5 PDF Crawler & OCR"
-    details: Multi-channel PDF download via Unpaywall/arXiv, native text extraction with PaddleOCR GPU fallback.
-  - title: "\U0001F4DD Writing Assistant"
-    details: Summarization, citation generation (GB/T 7714, APA, MLA), review outlines, and gap analysis.
-  - title: "\U0001F310 MCP Integration"
-    details: Model Context Protocol server exposing tools, resources, and prompts for Claude Code, Codex, and other AI IDEs.
-  - title: "\U0001F30D Bilingual i18n"
-    details: Full Chinese/English bilingual interface with react-i18next and automatic language detection.
-  - title: "\U0001F3A8 Modern UI"
-    details: shadcn/ui + Radix components, Framer Motion animations, icon sidebar, and responsive design with TailwindCSS v4.
-  - title: "\U0001F50D Smart Search"
-    details: External academic search across multiple sources with similar papers discovery from your own library.
-  - title: "\U0001F514 Notifications"
-    details: In-app notification bell with unread count, dropdown panel, and subscription-based alerts.
-  - title: "\U0001F4DD Citation Tools"
-    details: Multi-style citation picker (APA, MLA, Chicago, IEEE, GB/T 7714) and bibliography builder with export.
-  - title: "\U0001F50C API Keys"
-    details: Secure API key generation with SHA-256 hashing and scope-based access control for programmatic access.
-  - title: "\U0001F465 Team Collaboration"
-    details: Project team management with invites, role-based access control, and permission scopes.
+  - icon: 🔍
+    title: Multi-Source Search
+    details: Federated search across Semantic Scholar, OpenAlex, arXiv, and Crossref with automatic deduplication.
+    link: /modules/search
+  - icon: 📄
+    title: PDF Pipeline
+    details: Automated PDF download, OCR processing, and full-text indexing with MinerU and PaddleOCR.
+    link: /modules/ocr
+  - icon: 🧠
+    title: RAG Knowledge Base
+    details: LlamaIndex-powered retrieval with GPU-aware embeddings, hybrid search, and cited answers.
+    link: /modules/rag
+  - icon: 💬
+    title: Chat Playground
+    details: ChatGPT-style conversational interface for literature Q&A with streaming responses.
+    link: /guide/chat
+  - icon: 📊
+    title: Research Analytics
+    details: Trend analysis, author networks, gap analysis, and paper comparison tools.
+    link: /guide/features
+  - icon: 🌐
+    title: Bilingual & PWA
+    details: Full Chinese/English i18n, installable PWA with offline support, responsive design.
+    link: /guide/configuration
 ---
+
+## Architecture
+
+Omelette follows a modular pipeline architecture:
+
+```
+Keywords → Search → Dedup → Crawler → OCR → RAG → Writing
+    │         │        │        │       │      │       │
+    └─────────┴────────┴────────┴───────┴──────┴───────┘
+                        LangGraph Orchestration
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 · TypeScript · Vite · TailwindCSS v4 · shadcn/ui |
+| Backend | FastAPI · SQLAlchemy 2 (async) · Pydantic v2 · Python 3.12 |
+| Database | SQLite + aiosqlite · Alembic |
+| Vector Store | ChromaDB |
+| RAG | LlamaIndex · BAAI/bge-m3 · bge-reranker-v2-m3 |
+| LLM | LangChain (OpenAI · Anthropic · Aliyun · Volcengine · Ollama) |
+| OCR | MinerU · pdfplumber · PaddleOCR |
+| Pipeline | LangGraph with HITL interrupt/resume |
+
+## Testing
+
+| Suite | Framework | Count |
+|-------|-----------|-------|
+| Backend | pytest-asyncio | 861 tests |
+| Frontend | Vitest + Testing Library | 273 tests |
+| E2E | Playwright | 39 tests |
+| CI | GitHub Actions | All passing ✅ |
+
+## Quick Links
+
+- [Getting Started](/guide/getting-started)
+- [Architecture](/guide/architecture)
+- [API Reference](/api/)
+- [Configuration](/guide/configuration)
+- [Pipeline Guide](/guide/pipeline)
+- [MCP Integration](/guide/mcp)
+- [Deployment](/guide/deployment)
