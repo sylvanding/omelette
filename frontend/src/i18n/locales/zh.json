@@ -381,7 +381,10 @@
     "noData": "暂无数据",
     "noReadData": "暂无已读论文",
     "noJournalData": "暂无期刊数据",
-    "loadFailed": "加载分析数据失败"
+    "loadFailed": "加载分析数据失败",
+    "readingActivity": "阅读活动",
+    "less": "少",
+    "more": "多"
   },
   "timeline": {
     "title": "时间线",
@@ -485,6 +488,20 @@
     "customPlaceholder": "输入自定义重写指令..."
   },
   "notes": {
+    "dashboard": "笔记仪表盘",
+    "totalPapers": "论文总数",
+    "papersWithNotes": "有笔记的论文",
+    "totalNotes": "笔记总数",
+    "searchPlaceholder": "搜索所有笔记...",
+    "noNotesYet": "暂无笔记",
+    "noPapersYet": "暂无论文",
+    "emptyWithPapers": "在 PDF 阅读器中为论文添加笔记。",
+    "emptyNoPapers": "先向项目添加论文，然后开始记笔记。",
+    "showMore": "展开",
+    "showLess": "收起",
+    "updated": "更新于",
+    "openPaper": "在阅读器中打开论文",
+    "loadFailed": "加载笔记失败",
     "tab": "笔记",
     "qa": "问答",
     "edit": "编辑",
