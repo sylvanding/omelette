@@ -294,8 +294,6 @@ export default function PapersPage() {
       projectId={pid}
       paperFilters={{
         q: search || undefined,
-      author: author || undefined,
-      journal: journal || undefined,
         status: status || undefined,
         year: year ? Number(year) : undefined,
       }}
