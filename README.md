@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>A full-stack Scientific Literature Lifecycle Management System</strong>
+  <strong>AI-Powered Scientific Literature Lifecycle Management</strong>
 </p>
 
 <p align="center">
@@ -19,126 +19,111 @@
 <p align="center">
   <a href="README_zh.md">中文</a> ·
   <a href="https://sylvanding.github.io/omelette/">Documentation</a> ·
-  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#quick-start">Quick Start</a> ·
   <a href="https://github.com/sylvanding/omelette/issues">Report Bug</a>
 </p>
 
 ---
 
-Omelette automates the full research literature pipeline — from keyword management and multi-source search, through deduplication and PDF crawling, to OCR processing, RAG-powered knowledge base, and AI writing assistance. V2 adds a chat-centric UX, multi-provider LLM support, LangGraph pipeline orchestration, and MCP integration for AI IDE clients.
+Omelette is a full-stack application for managing the complete scientific literature lifecycle. Search across academic databases, deduplicate results, download and OCR papers, build RAG-powered knowledge bases, and interact with your literature through a ChatGPT-style conversational interface.
 
 > **Om** (Omni-) + **Lit** (Literature) = **Omlit** ≈ **Omelette** 🍳
 
-## ✨ Features
+## Features
 
-<table>
-<tr>
-  <td width="50%">
+### Literature Pipeline
+- **Keyword Management** — Three-level hierarchy with LLM-powered term expansion and search formula generation for WOS, Scopus, PubMed
+- **Multi-Source Search** — Federated search across Semantic Scholar, OpenAlex, arXiv, and Crossref
+- **Smart Deduplication** — Three-stage pipeline: DOI exact match → title similarity → LLM verification
+- **PDF Crawler** — Multi-channel download via Unpaywall, arXiv, and direct URL fallback
+- **OCR Processing** — MinerU (auto-managed) + pdfplumber + PaddleOCR for scanned PDFs
+- **Incremental Subscription** — RSS and API-based scheduled updates
 
-  **🔑 Keyword Management**
-  Three-level hierarchy with LLM-powered expansion and search formula generation for WOS, Scopus, PubMed.
+### AI & Knowledge Management
+- **RAG Knowledge Base** — LlamaIndex + ChromaDB with GPU-aware embeddings, hybrid retrieval, and cited answers
+- **Chat Playground** — ChatGPT-style conversational interface for literature Q&A
+- **Multi-Provider LLM** — LangChain integration for OpenAI, Anthropic, Aliyun, Volcengine, and Ollama
+- **LangGraph Pipeline** — StateGraph-based orchestration with HITL interrupt/resume
 
-  **🔍 Multi-Source Search**
-  Federated search across Semantic Scholar, OpenAlex, arXiv, and Crossref with standardized metadata.
+### Research Tools
+- **Audio Overviews** — LLM-generated dialogue audio for paper collections
+- **Citation Tools** — APA, MLA, Chicago, IEEE, GB/T 7714 styles with bibliography builder
+- **Author Network** — d3-force directed graph of co-authorship relationships
+- **Trend Analysis** — Year-binned topic trends with emerging/declining detection
+- **Gap Analysis** — LLM-powered research gap identification with novelty scoring
+- **Version Tracking** — Paper version history with Semantic Scholar polling
+- **Paper Comparison** — Side-by-side comparison with diff highlighting
 
-  **🧹 Smart Deduplication**
-  Three-stage pipeline: DOI hard dedup → title similarity → LLM verification.
+### Collaboration
+- **Team Members** — Project team management with RBAC (read/write/admin)
+- **API Keys** — SHA-256 hashed keys with scope-based access control
+- **Collection Management** — Custom paper collections with AI-suggested tags
+- **MCP Integration** — Model Context Protocol server for AI IDE clients
 
-  **📡 Incremental Subscription**
-  RSS feeds and API-based scheduled updates to track new publications automatically.
+### User Experience
+- **i18n** — Full Chinese/English bilingual support
+- **PWA** — Installable with offline caching
+- **Responsive** — Mobile-optimized with horizontal scroll navigation
+- **Dark Mode** — System-aware theme
 
-  **💬 Chat Playground**
-  ChatGPT-style conversational interface for RAG queries and writing assistance.
-
-  **🔌 Multi-LLM Support**
-  LangChain integration for OpenAI, Anthropic, Aliyun, Volcengine, and Ollama providers.
-
-  </td>
-  <td width="50%">
-
-  **📥 PDF Crawler**
-  Multi-channel download via Unpaywall, arXiv, and direct URL fallback strategies.
-
-  **📝 OCR Processing**
-  Native text extraction via MinerU (auto-managed subprocess) or PaddleOCR GPU fallback.
-
-  **🧠 RAG Knowledge Base**
-  LlamaIndex engine with ChromaDB, GPU-aware embeddings, hybrid retrieval, and cited answers.
-
-  **✍️ Writing Assistant**
-  Summarization, citation generation (GB/T 7714, APA, MLA), review outlines, and gap analysis.
-
-  **🔄 LangGraph Pipeline**
-  Pipeline orchestration with HITL interrupt/resume and persistent checkpointing.
-
-  **⚡ GPU Resource Management**
-  TTL-based auto-unload for GPU models, MinerU subprocess auto-management, monitoring API, and exit cleanup watchdog.
-
-  **🔗 MCP Integration**
-  Model Context Protocol server for AI IDE clients (Cursor, Claude Code, etc.).
-
-  **🌐 i18n**
-  Bilingual UI (zh/en) with shadcn/ui and Radix primitives.
-
-  </td>
-</tr>
-</table>
-
-## 🏗️ Architecture
+## Architecture
 
 ```
-Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ Writing
-   │          │         │         │        │       │        │
-   ▼          ▼         ▼         ▼        ▼       ▼        ▼
-[LangChain] [Sources] [SQLite]  [PDFs]  [Paddle] [LlamaIndex] [LLM]
-   │                                                      │
-   └────────────────── LangGraph ─────────────────────────┘
-   │
-   └── MCP (Model Context Protocol) ──→ AI IDE clients
+┌─────────────────────────────────────────────────────────┐
+│                      Frontend (React 18)                 │
+│  TypeScript · Vite · TailwindCSS · shadcn/ui · TanStack │
+├─────────────────────────────────────────────────────────┤
+│                    Backend (FastAPI)                     │
+│  Python 3.12 · SQLAlchemy 2 (async) · Pydantic v2       │
+├──────────┬──────────┬──────────┬──────────┬────────────┤
+│  Search  │  Dedup   │  Crawler │   OCR    │    RAG     │
+│ LangChain│ Semantic │ Unpaywall│  MinerU  │ LlamaIndex │
+│  OpenAlex│ Scholar  │  arXiv   │PaddleOCR │  ChromaDB  │
+├──────────┴──────────┴──────────┴──────────┴────────────┤
+│                   Storage: SQLite + ChromaDB             │
+└─────────────────────────────────────────────────────────┘
 ```
 
 | Layer | Technology |
 |-------|------------|
+| **Frontend** | React 18, TypeScript, Vite, TailwindCSS v4, shadcn/ui, TanStack Query |
 | **Backend** | FastAPI, SQLAlchemy 2 (async), Pydantic v2, Python 3.12 |
-| **Frontend** | React 18, Vite, TypeScript, TailwindCSS v4, shadcn/ui, Radix, TanStack Query |
 | **Database** | SQLite + aiosqlite, Alembic migrations |
 | **Vector Store** | ChromaDB |
-| **RAG** | LlamaIndex with GPU-aware embeddings |
-| **LLM** | LangChain (OpenAI, Anthropic, Aliyun, Volcengine, Ollama) |
+| **RAG** | LlamaIndex with GPU-aware BAAI/bge-m3 embeddings |
+| **LLM** | LangChain (OpenAI, Anthropic, Aliyun Bailian, Volcengine, Ollama) |
 | **Orchestration** | LangGraph with HITL interrupt/resume |
 | **OCR** | MinerU (auto-managed) + pdfplumber (native) + PaddleOCR (scanned) |
-| **MCP** | Model Context Protocol server |
 | **Docs** | VitePress (bilingual EN/ZH) |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-
 - [Conda](https://docs.conda.io/) or Miniconda
 - Node.js 22+
 - (Optional) CUDA for GPU-accelerated OCR and embeddings
-- (Optional) API keys: OpenAI, Anthropic, Aliyun Bailian, or Volcengine for LLM; Semantic Scholar for higher rate limits
 
-### 1. Clone & setup
+### Setup
 
 ```bash
 git clone git@github.com:sylvanding/omelette.git
 cd omelette
 
-# Create conda env and install all backend dependencies
+# Backend
 conda env create -f environment.yml
 conda activate omelette
+cp .env.example .env  # Edit with your API keys
+cd backend && alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (new terminal)
+cd frontend && npm install
+npm run dev -- --port 3000
 ```
 
-### 2. Configure
+Open [http://localhost:3000](http://localhost:3000).
 
-```bash
-cp .env.example .env
-# Edit .env with your API keys and data paths
-```
-
-<details>
-<summary><strong>Key environment variables</strong></summary>
+### Key Environment Variables
 
 | Variable | Description |
 |----------|-------------|
@@ -147,174 +132,85 @@ cp .env.example .env
 | `LLM_PROVIDER` | `openai`, `anthropic`, `aliyun`, `volcengine`, `ollama`, or `mock` |
 | `OPENAI_API_KEY` | OpenAI API key |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
-| `ALIYUN_API_KEY` | Aliyun Bailian API key |
-| `VOLCENGINE_API_KEY` | Volcengine Doubao API key |
-| `SEMANTIC_SCHOLAR_API_KEY` | Optional; increases Semantic Scholar rate limit |
-| `GPU_MODE` | GPU preset: `conservative`, `balanced` (default), `aggressive` |
-| `MODEL_TTL_SECONDS` | Auto-unload GPU models after N seconds idle (default: 300) |
-| `MINERU_AUTO_MANAGE` | Auto start/stop MinerU subprocess (default: true) |
 | `PDF_PARSER` | `auto`, `mineru`, or `pdfplumber` |
+| `GPU_MODE` | `conservative`, `balanced` (default), `aggressive` |
 
 See [`.env.example`](.env.example) for the full list.
 
-</details>
-
-### 3. Start backend
+## Development
 
 ```bash
-cd backend
-
-# Run database migrations
-alembic upgrade head
-
-# Start server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-On startup, the backend automatically:
-- Writes a PID file to `DATA_DIR/omelette.pid`
-- Starts a GPU model TTL monitor (auto-unloads idle models)
-- If `MINERU_AUTO_MANAGE=true`, manages MinerU subprocess lifecycle
-- Registers cleanup handlers (`atexit` + `SIGHUP`) so GPU resources are released even if the process exits unexpectedly
-
-### 4. (Optional) GPU watchdog
-
-For extra safety against `kill -9` or crashes, run the external watchdog:
-
-```bash
-python backend/scripts/gpu_watchdog.py --daemon
-```
-
-The watchdog monitors the Omelette process and cleans up GPU resources if it terminates abnormally.
-
-### 5. Start frontend
-
-```bash
+# Frontend
 cd frontend
-npm install
-npm run dev
+npm test                 # 273 tests (Vitest + Testing Library)
+npx tsc --noEmit         # TypeScript check
+npx eslint src/          # Lint
+
+# Backend
+cd backend
+pytest tests/ -v         # 861 tests (pytest-asyncio)
+ruff check app/          # Lint
+
+# E2E
+npx playwright test      # 39 tests (requires frontend dev server)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## API Overview
 
-### 6. (Optional) MinerU setup
-
-If using MinerU for PDF parsing (`PDF_PARSER=mineru`):
-
-```bash
-# Create a separate conda env for MinerU
-conda create -n mineru python=3.10
-conda activate mineru
-pip install magic-pdf[full]
-```
-
-Set `MINERU_CONDA_ENV=mineru` in `.env`. Omelette will auto-start MinerU when needed.
-
-> **Troubleshooting:** If you get `ModuleNotFoundError: No module named 'fastapi'`, ensure the conda environment is activated: `conda activate omelette`.
-
-## 📂 Project Layout
-
-```
-omelette/
-├── backend/              # FastAPI application
-│   ├── app/
-│   │   ├── api/v1/       # REST endpoints
-│   │   ├── models/       # SQLAlchemy ORM models
-│   │   ├── schemas/      # Pydantic request/response schemas
-│   │   ├── services/     # Business logic
-│   │   ├── pipelines/    # LangGraph pipeline definitions
-│   │   ├── config.py     # Settings from .env
-│   │   ├── database.py   # Async engine and session
-│   │   └── main.py       # App entry, lifespan, CORS
-│   ├── mcp_server.py     # MCP (Model Context Protocol) server
-│   ├── alembic/          # Database migrations
-│   ├── scripts/          # Utilities (gpu_watchdog.py)
-│   ├── tests/            # pytest-asyncio tests (850+ tests)
-│   └── pyproject.toml    # Python dependencies
-├── frontend/             # React SPA
-│   └── src/
-│       ├── pages/        # Dashboard, ProjectDetail, Chat, modules
-│       ├── components/   # Layout, shared UI
-│       │   └── ui/       # shadcn/ui components
-│       ├── services/     # Typed API client
-│       ├── hooks/        # Custom hooks (useToastMutation, etc.)
-│       ├── stores/       # Zustand state
-│       ├── i18n/         # Internationalization (zh/en)
-│       ├── test/         # Vitest setup, MSW mocks, fixtures
-│       └── lib/          # Axios client, utils
-├── e2e/                  # Playwright E2E tests
-├── docs/                 # VitePress documentation (EN/ZH)
-├── assets/               # Banner, logo, mascot images
-├── environment.yml       # Conda env (Python 3.12)
-├── Makefile              # Dev workflow shortcuts
-├── .env.example          # Configuration template
-├── playwright.config.ts  # Playwright E2E configuration
-└── .github/workflows/    # CI (ruff, pytest, vitest, tsc, build, docs)
-```
-
-## 🛠️ Development
-
-```bash
-make pre-commit-install   # Install pre-commit hooks
-make lint                 # Run linters
-make format               # Auto-format code
-make test                 # Run all tests
-make dev                  # Start both backend and frontend
-```
-
-### Running Tests
-
-```bash
-# Backend (861 tests)
-cd backend && pytest tests/ -v
-
-# Frontend unit tests (261 tests — Vitest + Testing Library + MSW)
-cd frontend && npm test
-
-# Frontend type check and build
-cd frontend && npx tsc --noEmit && npm run build
-
-# E2E tests (39 tests — optional, requires running frontend dev server)
-npx playwright test
-```
-
-## 📡 API Overview
-
-REST APIs under `/api/v1/`:
+Base URL: `/api/v1`
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET/POST /projects` | Project CRUD |
-| `GET/POST /projects/{id}/papers` | Paper management |
-| `GET/POST /projects/{id}/keywords` | Keyword management |
-| `GET /projects/{id}/keywords/search-formula` | Generate search formula |
-| `POST /projects/{id}/search` | Execute multi-source search |
+| `GET/POST /projects/{id}/papers` | Paper management with search, filter, sort |
+| `GET/POST /projects/{id}/keywords` | Keyword hierarchy |
+| `POST /projects/{id}/search/execute` | Federated academic search |
 | `POST /projects/{id}/dedup/run` | Run deduplication |
 | `POST /projects/{id}/crawl/start` | Start PDF download |
 | `POST /projects/{id}/ocr/process` | Run OCR on papers |
 | `POST /projects/{id}/rag/index` | Build vector index |
 | `POST /projects/{id}/rag/query` | RAG retrieval |
-| `POST /projects/{id}/writing/assist` | Writing assistance |
-| `POST /projects/{id}/writing/review-draft/stream` | Streaming literature review (SSE) |
 | `POST /chat` | Chat messages (playground) |
-| `POST /chat/complete` | Smart autocomplete suggestions |
-| `GET /projects/{id}/papers/{paper_id}/citation-graph` | Citation graph (Semantic Scholar) |
-| `GET/POST /conversations` | Conversation CRUD |
-| `GET/POST /pipelines` | Pipeline management |
+| `GET/POST /projects/{id}/collections` | Paper collections |
 | `GET/POST /subscriptions` | Subscription management |
-| `GET/POST /settings` | Settings and health |
-| `GET /settings/health` | Health check |
-| `GET /gpu/status` | GPU model and memory status |
-| `POST /gpu/unload` | Manually unload GPU models |
-
-MCP server: `/mcp` (WebSocket/SSE for AI IDE clients)
+| `GET /projects/{id}/analytics` | Reading analytics |
+| `POST /projects/{id}/concepts/extract` | Concept extraction |
+| `POST /projects/{id}/analysis/contradictions` | Contradiction detection |
 
 Full documentation: [API Reference](https://sylvanding.github.io/omelette/api/)
 
-## 🤝 Contributing
+## Project Structure
+
+```
+omelette/
+├── backend/               # FastAPI application
+│   ├── app/
+│   │   ├── api/v1/        # REST endpoints (33 modules)
+│   │   ├── models/        # SQLAlchemy ORM models
+│   │   ├── schemas/       # Pydantic request/response schemas
+│   │   ├── services/      # Business logic + LLM services
+│   │   └── pipelines/     # LangGraph pipeline definitions
+│   ├── alembic/           # Database migrations
+│   ├── mcp_server.py      # MCP (Model Context Protocol) server
+│   └── tests/             # pytest-asyncio tests (861 tests)
+├── frontend/              # React SPA
+│   └── src/
+│       ├── pages/         # Route components (35 project pages)
+│       ├── components/    # Reusable UI + layout
+│       ├── services/      # Typed API client
+│       ├── hooks/         # Custom hooks
+│       ├── i18n/          # zh/en translations
+│       └── test/          # Vitest setup, MSW mocks
+├── e2e/                   # Playwright E2E tests (39 tests)
+├── docs/                  # VitePress documentation (EN/ZH)
+├── scripts/ralph/         # Ralph autonomous agent workflow
+└── .github/workflows/     # CI (ruff, pytest, vitest, tsc)
+```
+
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## 📄 License
+## License
 
 [MIT License](LICENSE) — Copyright © 2026 [Sylvan Ding](https://github.com/sylvanding)

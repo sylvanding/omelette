@@ -3,311 +3,90 @@
 </p>
 
 <p align="center">
-  <strong>A full-stack Scientific Literature Lifecycle Management System</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/sylvanding/omelette/actions"><img src="https://img.shields.io/github/actions/workflow/status/sylvanding/omelette/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI" alt="CI"></a>
-  <a href="https://github.com/sylvanding/omelette/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sylvanding/omelette?style=flat-square&color=blue" alt="License"></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.12-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12"></a>
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/node-22+-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js 22+"></a>
-  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React_18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18"></a>
-  <a href="https://sylvanding.github.io/omelette/"><img src="https://img.shields.io/badge/docs-VitePress-646CFF?style=flat-square&logo=vitepress&logoColor=white" alt="Docs"></a>
+  <strong>AI 驱动的科学文献全生命周期管理系统</strong>
 </p>
 
 <p align="center">
   <a href="README.md">English</a> ·
-  <a href="https://sylvanding.github.io/omelette/">Documentation</a> ·
-  <a href="#-快速开始">Quick Start</a> ·
-  <a href="https://github.com/sylvanding/omelette/issues">Report Bug</a>
+  <a href="https://sylvanding.github.io/omelette/">文档</a> ·
+  <a href="#快速开始">快速开始</a> ·
+  <a href="https://github.com/sylvanding/omelette/issues">报告问题</a>
 </p>
 
 ---
 
-Omelette 覆盖科研文献全流程自动化 — 从关键词管理、多源检索、去重过滤、PDF 爬取，到 OCR 文本提取、RAG 知识库构建和 AI 写作辅助。V2 版本新增以对话为中心的用户体验、多厂商 LLM 支持、LangGraph 流水线编排，以及面向 AI IDE 客户端的 MCP 集成。
+Omelette 是一个全栈科学文献管理系统，覆盖文献检索、去重、PDF 下载、OCR 处理、RAG 知识库构建和 AI 对话式交互的完整生命周期。
 
-> **Om**（Omni- 全）+ **Lit**（Literature 文献）= **Omlit** ≈ **Omelette** 🍳
+> **Om** (Omni-) + **Lit** (Literature) = **Omlit** ≈ **Omelette** 🍳
 
-## ✨ 功能模块
+## 功能特性
 
-<table>
-<tr>
-  <td width="50%">
+### 文献流水线
+- **关键词管理** — 三级层次结构，LLM 扩展和 WOS/Scopus/PubMed 检索式生成
+- **多源检索** — Semantic Scholar、OpenAlex、arXiv、Crossref 联合检索
+- **智能去重** — 三阶段：DOI 精确匹配 → 标题相似度 → LLM 验证
+- **PDF 爬虫** — Unpaywall、arXiv、直链回退多渠道下载
+- **OCR 处理** — MinerU + pdfplumber + PaddleOCR
+- **增量订阅** — RSS 和 API 定时更新
 
-  **🔑 关键词管理**
-  三级关键词层级，LLM 智能扩展，自动生成 WOS、Scopus、PubMed 检索公式。
+### AI 与知识管理
+- **RAG 知识库** — LlamaIndex + ChromaDB，GPU 加速嵌入，混合检索
+- **Chat Playground** — 对话式文献问答
+- **多模型 LLM** — OpenAI、Anthropic、阿里云百炼、火山引擎、Ollama
+- **LangGraph 流水线** — 状态图编排 + 人机交互
 
-  **🔍 多源检索**
-  联邦检索 Semantic Scholar、OpenAlex、arXiv、Crossref，统一标准化元数据。
+### 研究工具
+- **音频概述** — LLM 论文对话音频
+- **引用工具** — APA、MLA、Chicago、IEEE、GB/T 7714
+- **作者网络** — d3-force 合作网络可视化
+- **趋势分析** — 年度主题趋势
+- **缺口分析** — 研究空白识别
+- **版本追踪** — Semantic Scholar 版本监控
+- **论文对比** — 并排比较
 
-  **🧹 智能去重**
-  三阶段流水线：DOI 硬去重 → 标题相似度 → LLM 校验。
+### 协作与体验
+- **团队管理** — RBAC 权限
+- **国际化** — 完整中英文双语
+- **PWA** — 可安装、离线缓存
+- **暗色模式** — 跟随系统
 
-  **📡 增量订阅**
-  RSS 与 API 定时更新，自动跟踪最新论文。
-
-  **💬 对话式工作台**
-  类 ChatGPT 对话界面，支持 RAG 检索与写作辅助。
-
-  **🔌 多 LLM 支持**
-  集成 LangChain，支持 OpenAI、Anthropic、阿里云、火山引擎、Ollama 等厂商。
-
-  </td>
-  <td width="50%">
-
-  **📥 PDF 爬取**
-  Unpaywall、arXiv、直链多通道下载，智能回退策略。
-
-  **📝 OCR 解析**
-  MinerU（自动管理子进程）或 pdfplumber 原生提取，PaddleOCR GPU 加速处理扫描件。
-
-  **🧠 RAG 知识库**
-  LlamaIndex 引擎，ChromaDB 向量存储，GPU 感知嵌入，混合检索，带引用回答。
-
-  **✍️ 写作辅助**
-  论文摘要、引用生成（GB/T 7714、APA、MLA）、综述提纲、缺口分析。
-
-  **🔄 LangGraph 流水线**
-  流水线编排，支持人机协同中断/恢复与持久化检查点。
-
-  **⚡ GPU 资源管理**
-  TTL 自动卸载 GPU 模型、MinerU 子进程自动管理、监控 API、退出清理看门狗。
-
-  **🔗 MCP 集成**
-  Model Context Protocol 服务端，面向 AI IDE 客户端（Cursor、Claude Code 等）。
-
-  **🌐 国际化**
-  中英双语界面，基于 shadcn/ui 与 Radix 组件。
-
-  </td>
-</tr>
-</table>
-
-## 🏗️ 架构概览
-
-```
-Keywords ─→ Search ─→ Dedup ─→ Crawler ─→ OCR ─→ RAG ─→ Writing
-   │          │         │         │        │       │        │
-   ▼          ▼         ▼         ▼        ▼       ▼        ▼
-[LangChain] [Sources] [SQLite]  [PDFs]  [Paddle] [LlamaIndex] [LLM]
-   │                                                      │
-   └────────────────── LangGraph ─────────────────────────┘
-   │
-   └── MCP (Model Context Protocol) ──→ AI IDE clients
-```
+## 技术栈
 
 | 层级 | 技术 |
 |------|------|
-| **后端** | FastAPI、SQLAlchemy 2（异步）、Pydantic v2、Python 3.12 |
-| **前端** | React 18、Vite、TypeScript、TailwindCSS v4、shadcn/ui、Radix、TanStack Query |
-| **数据库** | SQLite + aiosqlite，Alembic 迁移 |
-| **向量库** | ChromaDB |
-| **RAG** | LlamaIndex，GPU 感知嵌入 |
-| **LLM** | LangChain（OpenAI、Anthropic、阿里云、火山引擎、Ollama） |
-| **编排** | LangGraph，支持人机协同中断与恢复 |
-| **OCR** | MinerU（自动管理）+ pdfplumber（原生）+ PaddleOCR（扫描件） |
-| **MCP** | Model Context Protocol 服务端 |
-| **文档** | VitePress（中英双语） |
+| 前端 | React 18, TypeScript, Vite, TailwindCSS v4, shadcn/ui |
+| 后端 | FastAPI, SQLAlchemy 2 (async), Pydantic v2, Python 3.12 |
+| 数据库 | SQLite + aiosqlite, Alembic |
+| 向量库 | ChromaDB + BAAI/bge-m3 |
+| LLM | LangChain (OpenAI, Anthropic, 阿里云, 火山引擎, Ollama) |
+| OCR | MinerU + pdfplumber + PaddleOCR |
+| 文档 | VitePress (中/英双语) |
 
-## 🚀 快速开始
-
-### 环境要求
-
-- [Conda](https://docs.conda.io/) 或 Miniconda
-- Node.js 22+
-- （可选）CUDA，用于 GPU 加速 OCR 与嵌入
-- （可选）API 密钥：OpenAI、Anthropic、阿里云百炼或火山引擎（LLM）；Semantic Scholar（提高速率限制）
-
-### 1. 克隆并创建环境
+## 快速开始
 
 ```bash
-git clone git@github.com:sylvanding/omelette.git
-cd omelette
+git clone git@github.com:sylvanding/omelette.git && cd omelette
 
-# Create conda env and install all backend dependencies
-conda env create -f environment.yml
-conda activate omelette
-```
-
-### 2. 配置
-
-```bash
+# 后端
+conda env create -f environment.yml && conda activate omelette
 cp .env.example .env
-# Edit .env with your API keys and data paths
-```
-
-<details>
-<summary><strong>主要环境变量</strong></summary>
-
-| 变量 | 说明 |
-|------|------|
-| `DATABASE_URL` | SQLite 路径（默认：`sqlite:///./data/omelette.db`） |
-| `DATA_DIR` | PDF、OCR 输出、ChromaDB 的根目录 |
-| `LLM_PROVIDER` | `openai`、`anthropic`、`aliyun`、`volcengine`、`ollama` 或 `mock` |
-| `OPENAI_API_KEY` | OpenAI API 密钥 |
-| `ANTHROPIC_API_KEY` | Anthropic API 密钥 |
-| `ALIYUN_API_KEY` | 阿里云百炼 API 密钥 |
-| `VOLCENGINE_API_KEY` | 火山引擎豆包 API 密钥 |
-| `SEMANTIC_SCHOLAR_API_KEY` | 可选；提高 Semantic Scholar 速率限制 |
-
-详见 [`.env.example`](.env.example)。
-
-</details>
-
-### 3. 启动后端
-
-```bash
-cd backend
-
-# 执行数据库迁移
-alembic upgrade head
-
-# 启动服务
+cd backend && alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 前端（新终端）
+cd frontend && npm install && npm run dev -- --port 3000
 ```
 
-启动时后端自动完成以下操作：
-- 写入 PID 文件到 `DATA_DIR/omelette.pid`
-- 启动 GPU 模型 TTL 监控（自动卸载空闲模型）
-- 若 `MINERU_AUTO_MANAGE=true`，自动管理 MinerU 子进程生命周期
-- 注册清理钩子（`atexit` + `SIGHUP`），即使进程意外退出也会释放 GPU 资源
+打开 [http://localhost:3000](http://localhost:3000)。
 
-### 4.（可选）GPU 看门狗
-
-为防止 `kill -9` 或崩溃导致资源泄漏，可运行外部看门狗：
+## 测试
 
 ```bash
-python backend/scripts/gpu_watchdog.py --daemon
+cd frontend && npm test     # 273 测试 (Vitest)
+cd backend && pytest tests/ # 861 测试 (pytest-asyncio)
+npx playwright test          # 39 E2E 测试
 ```
 
-看门狗会监控 Omelette 进程，在其异常终止后自动清理 GPU 资源。
-
-### 5. 启动前端
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-在浏览器中打开 [http://localhost:3000](http://localhost:3000)。
-
-### 6.（可选）MinerU 配置
-
-若使用 MinerU 解析 PDF（`PDF_PARSER=mineru`）：
-
-```bash
-# 为 MinerU 创建独立 conda 环境
-conda create -n mineru python=3.10
-conda activate mineru
-pip install magic-pdf[full]
-```
-
-在 `.env` 中设置 `MINERU_CONDA_ENV=mineru`，Omelette 将在需要时自动启动 MinerU。
-
-> **常见问题：** 若出现 `ModuleNotFoundError: No module named 'fastapi'`，请确认已激活 conda 环境：`conda activate omelette`。
-
-## 📂 项目结构
-
-```
-omelette/
-├── backend/              # FastAPI application
-│   ├── app/
-│   │   ├── api/v1/       # REST endpoints
-│   │   ├── models/       # SQLAlchemy ORM models
-│   │   ├── schemas/      # Pydantic request/response schemas
-│   │   ├── services/     # Business logic
-│   │   ├── pipelines/    # LangGraph pipeline definitions
-│   │   ├── config.py     # Settings from .env
-│   │   ├── database.py   # Async engine and session
-│   │   └── main.py       # App entry, lifespan, CORS
-│   ├── mcp_server.py     # MCP (Model Context Protocol) server
-│   ├── alembic/          # Database migrations
-│   ├── scripts/          # 工具脚本（gpu_watchdog.py）
-│   ├── tests/            # pytest-asyncio 测试（526 个）
-│   └── pyproject.toml    # Python dependencies
-├── frontend/             # React SPA
-│   └── src/
-│       ├── pages/        # Dashboard, ProjectDetail, Chat, modules
-│       ├── components/   # Layout, shared UI
-│       │   └── ui/       # shadcn/ui components
-│       ├── services/     # Typed API client
-│       ├── hooks/        # 自定义 hooks（useToastMutation 等）
-│       ├── stores/       # Zustand 状态管理
-│       ├── i18n/         # 国际化（zh/en）
-│       ├── test/         # Vitest 配置、MSW mock、测试 fixtures
-│       └── lib/          # Axios 客户端、工具函数
-├── e2e/                  # Playwright E2E 测试
-├── docs/                 # VitePress documentation (EN/ZH)
-├── assets/               # Banner, logo, mascot images
-├── environment.yml       # Conda env (Python 3.12)
-├── Makefile              # Dev workflow shortcuts
-├── .env.example          # Configuration template
-├── playwright.config.ts  # Playwright E2E 配置
-└── .github/workflows/    # CI（ruff、pytest、vitest、tsc、build、docs）
-```
-
-## 🛠️ 开发
-
-```bash
-make pre-commit-install   # Install pre-commit hooks
-make lint                 # Run linters
-make format               # Auto-format code
-make test                 # Run all tests
-make dev                  # Start both backend and frontend
-```
-
-### 运行测试
-
-```bash
-# 后端（526 个测试）
-cd backend && pytest tests/ -v
-
-# 前端单元测试（28 个测试 — Vitest + Testing Library + MSW）
-cd frontend && npm test
-
-# 前端类型检查与构建
-cd frontend && npx tsc --noEmit && npm run build
-
-# E2E 测试（可选 — 需要运行前端开发服务器）
-npx playwright test
-```
-
-## 📡 API 概览
-
-REST API 位于 `/api/v1/` 下：
-
-| 接口 | 说明 |
-|------|------|
-| `GET/POST /projects` | 项目 CRUD |
-| `GET/POST /projects/{id}/papers` | 论文管理 |
-| `GET/POST /projects/{id}/keywords` | 关键词管理 |
-| `GET /projects/{id}/keywords/search-formula` | 生成检索式 |
-| `POST /projects/{id}/search` | 执行多源检索 |
-| `POST /projects/{id}/dedup/run` | 执行去重 |
-| `POST /projects/{id}/crawl/start` | 启动 PDF 下载 |
-| `POST /projects/{id}/ocr/process` | 执行 OCR |
-| `POST /projects/{id}/rag/index` | 构建向量索引 |
-| `POST /projects/{id}/rag/query` | RAG 检索 |
-| `POST /projects/{id}/writing/assist` | 写作辅助 |
-| `POST /chat` | 对话消息（工作台） |
-| `GET/POST /conversations` | 会话 CRUD |
-| `GET/POST /pipelines` | 流水线管理 |
-| `GET/POST /subscriptions` | 订阅管理 |
-| `GET/POST /settings` | 设置与健康状态 |
-| `GET /settings/health` | 健康检查 |
-| `GET /gpu/status` | GPU 模型与显存状态 |
-| `POST /gpu/unload` | 手动卸载 GPU 模型 |
-
-MCP 服务端：`/mcp`（WebSocket/SSE，面向 AI IDE 客户端）
-
-完整文档：[API 参考](https://sylvanding.github.io/omelette/api/)
-
-## 🤝 参与贡献
-
-详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## 📄 许可证
+## 许可证
 
 [MIT License](LICENSE) — Copyright © 2026 [Sylvan Ding](https://github.com/sylvanding)
