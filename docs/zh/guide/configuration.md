@@ -1,107 +1,55 @@
-# 配置说明
+# 配置
 
-Omelette 通过环境变量配置。复制 `.env.example` 为 `.env` 并修改。
+复制 `.env.example` 为 `.env` 并自定义。
 
-## 应用
+## LLM 设置
 
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `APP_ENV` | development / production / testing | development |
-| `APP_DEBUG` | 调试模式 | true |
-| `APP_HOST` | 后端监听地址 | 0.0.0.0 |
-| `APP_PORT` | 后端端口 | 8000 |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `LLM_PROVIDER` | `openai`, `anthropic`, `aliyun`, `volcengine`, `ollama`, `mock` | `mock` |
+| `OPENAI_API_KEY` | OpenAI API 密钥 | — |
+| `ANTHROPIC_API_KEY` | Anthropic API 密钥 | — |
+| `ALIYUN_API_KEY` | 阿里云百炼 API 密钥 | — |
+| `VOLCENGINE_API_KEY` | 火山引擎豆包 API 密钥 | — |
 
-## 数据库
+## GPU 管理
 
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `DATABASE_URL` | SQLite 连接串 | sqlite:///./data/omelette.db |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `GPU_MODE` | `conservative`, `balanced`, `aggressive` | `balanced` |
+| `MODEL_TTL_SECONDS` | 空闲模型自动卸载时间（秒） | `300` |
+| `MINERU_AUTO_MANAGE` | 自动管理 MinerU 子进程 | `true` |
 
-## 数据存储
+## 数据与存储
 
-| 变量 | 说明 |
-|------|------|
-| `DATA_DIR` | PDF、OCR、ChromaDB 根目录 |
-| `PDF_DIR` | PDF 存储（默认 {DATA_DIR}/pdfs） |
-| `OCR_OUTPUT_DIR` | OCR 输出（默认 {DATA_DIR}/ocr_output） |
-| `CHROMA_DB_DIR` | ChromaDB 路径（默认 {DATA_DIR}/chroma_db） |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `DATABASE_URL` | SQLite 数据库路径 | `sqlite:///./data/omelette.db` |
+| `DATA_DIR` | 数据存储目录 | `data` |
 
-## LLM 提供商
+## PDF 处理
 
-`LLM_PROVIDER` 可选：`openai`、`anthropic`、`aliyun`、`volcengine`、`ollama`、`mock`。
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `PDF_PARSER` | `auto`, `mineru`, `pdfplumber` | `auto` |
+| `OCR_ENGINE` | `paddle` 或 `tesseract` | `paddle` |
 
-### OpenAI
+## 学术源
 
-| 变量 | 说明 |
-|------|------|
-| `OPENAI_API_KEY` | OpenAI API Key |
-| `OPENAI_MODEL` | 模型名（默认 gpt-4o-mini） |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `SEMANTIC_SCHOLAR_API_KEY` | 更高速率限制 | — |
 
-### Anthropic
+## 服务器
 
-| 变量 | 说明 |
-|------|------|
-| `ANTHROPIC_API_KEY` | Anthropic API Key |
-| `ANTHROPIC_MODEL` | 模型名（默认 claude-sonnet-4-20250514） |
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `APP_ENV` | `development` 或 `production` | `development` |
+| `APP_SECRET_KEY` | 会话签名密钥 | `change-me-to-a-random-secret-key` |
 
-### 阿里云百炼
+## Mock 模式
 
-| 变量 | 说明 |
-|------|------|
-| `ALIYUN_API_KEY` | 阿里云 API Key |
-| `ALIYUN_BASE_URL` | OpenAI 兼容端点 |
-| `ALIYUN_MODEL` | 模型名（如 qwen3.5-plus） |
-
-### 火山引擎豆包
-
-| 变量 | 说明 |
-|------|------|
-| `VOLCENGINE_API_KEY` | 火山引擎 API Key |
-| `VOLCENGINE_BASE_URL` | OpenAI 兼容端点 |
-| `VOLCENGINE_MODEL` | 模型名 |
-
-### Ollama（本地）
-
-| 变量 | 说明 |
-|------|------|
-| `OLLAMA_BASE_URL` | Ollama 服务地址（默认 http://localhost:11434） |
-| `OLLAMA_MODEL` | 模型名（默认 llama3） |
-
-### Mock
-
-使用 `LLM_PROVIDER=mock` 可在无 API Key 下测试，无需额外变量。
-
-## 嵌入
-
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `EMBEDDING_PROVIDER` | local / api / mock | local |
-| `EMBEDDING_MODEL` | 模型名（local 用 HuggingFace；api 用 OpenAI 兼容） | BAAI/bge-m3 |
-
-- **local**：使用 sentence-transformers，自动检测 GPU
-- **api**：使用 OpenAI 兼容嵌入 API
-- **mock**：确定性 mock，用于测试
-
-## GPU
-
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `CUDA_VISIBLE_DEVICES` | OCR/嵌入使用的 GPU ID（逗号分隔） | 0,3 |
-
-## 代理
-
-| 变量 | 说明 |
-|------|------|
-| `HTTP_PROXY` | HTTP 代理 URL |
-| `HTTPS_PROXY` | HTTPS 代理 URL |
-
-## 外部 API
-
-| 变量 | 说明 |
-|------|------|
-| `SEMANTIC_SCHOLAR_API_KEY` | 可选，提高 Semantic Scholar 限速 |
-| `UNPAYWALL_EMAIL` | Unpaywall PDF 查询所需 |
-
-## 前端设置
-
-LLM 提供商、模型、温度、API Key 等可在 Web 界面的 **设置** 页面（`/settings`）配置。这些设置会覆盖环境变量，按用户存储在数据库中，用于在不修改 `.env` 的情况下进行个性化配置。
+当 `LLM_PROVIDER=mock` 时，Omelette 返回预设响应，无需 API 密钥。适用于：
+- 无 API 成本的开发
+- 测试与 CI
+- 配置前探索 UI

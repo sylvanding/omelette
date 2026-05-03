@@ -1,92 +1,56 @@
-# 系统架构
+# 架构
 
-## 概览
+## 系统概览
 
-Omelette 采用流水线架构，数据按顺序流经各模块：
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Omelette 流水线                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Keywords → Search → Dedup → Crawler → OCR → RAG → Writing                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-## 对话与 RAG 流程
-
-对话与 RAG 子系统采用分层架构：
+Omelette 采用模块化管道架构，React 前端 + FastAPI 后端。
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           对话与 RAG 架构                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Chat UI → LLM (LangChain) → RAG (LlamaIndex) → Vector Store (ChromaDB)     │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│              前端 (React 18)                  │
+│   TypeScript · Vite · TailwindCSS · shadcn/ui │
+│         TanStack Query · Zustand              │
+├──────────────────────────────────────────────┤
+│              后端 (FastAPI)                   │
+│  Python 3.12 · SQLAlchemy 2 · Pydantic v2    │
+├─────────┬────────┬────────┬────────┬─────────┤
+│  检索   │  去重   │  爬虫   │  OCR   │  RAG   │
+│LangChain│Semantic│Unpaywal│ MinerU │LlamaIndx│
+│ OpenAlex│Scholar │ arXiv  │Paddle  │ChromaDB │
+├─────────┴────────┴────────┴────────┴─────────┤
+│            存储: SQLite + ChromaDB              │
+└──────────────────────────────────────────────┘
 ```
 
-- **Chat UI** — React 前端，支持对话历史
-- **LLM** — LangChain 负责对话编排（OpenAI、Anthropic、阿里云、火山引擎、Ollama、mock）
-- **RAG** — LlamaIndex 负责检索增强生成与混合检索
-- **Vector Store** — ChromaDB 存储向量与语义检索
-
-## LangGraph 流水线编排
-
-文献导入由 **LangGraph** 流水线编排：
-
-- **检索流水线**：`search → dedup → [有冲突时 HITL] → apply_resolution → import → crawl → ocr → index`
-- **上传流水线**：`extract_metadata → dedup → [有冲突时 HITL] → apply_resolution → import → ocr → index`
-
-两条流水线均支持条件分支：去重发现冲突时，会进入人机协同（HITL）步骤，人工确认后再导入项目。
-
-## MCP 集成
-
-Omelette 提供 **MCP（Model Context Protocol）** 服务端，供 AI IDE 连接：
-
-- **Streamable HTTP**：后端启动后挂载于 `/mcp`，可从 Claude Code、Codex、Cursor 通过 `http://host:port/mcp` 连接
-- **Tools**：`search_knowledge_base`、`lookup_paper`、`add_paper_by_doi` 等
-- **Resources**：项目元数据、论文详情
-- **Prompts**：文献综述、引用查找等预定义模板
-
-连接方法见 [快速开始](./getting-started#mcp-usage)。
-
-## 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 后端 | FastAPI、SQLAlchemy 2（异步）、Pydantic v2 |
-| 前端 | React 19、Vite 7、TypeScript、Tailwind CSS、shadcn/ui |
-| 数据库 | SQLite、Alembic（迁移） |
-| 向量库 | ChromaDB |
-| OCR | PaddleOCR |
-| LLM | LangChain（OpenAI、Anthropic、阿里云、火山引擎、Ollama、mock） |
-| RAG | LlamaIndex |
-| 流水线 | LangGraph |
-| 编排 | MCP（Model Context Protocol） |
-| 嵌入 | BAAI/bge-m3（sentence-transformers） |
-
-## 目录结构
+## 管道流程
 
 ```
-omelette/
-├── backend/              # FastAPI 应用
-│   ├── app/
-│   │   ├── api/v1/       # REST 接口
-│   │   ├── models/       # SQLAlchemy 模型
-│   │   ├── schemas/      # Pydantic 模式
-│   │   ├── services/     # 业务逻辑
-│   │   ├── pipelines/    # LangGraph 流水线定义
-│   │   ├── mcp_server.py # MCP 服务端（tools、resources、prompts）
-│   │   └── main.py
-│   ├── alembic/          # 数据库迁移
-│   └── tests/
-├── frontend/             # React SPA
-│   └── src/
-│       ├── pages/        # Dashboard、ProjectDetail、Settings
-│       ├── components/   # 布局、共享 UI（shadcn/ui）
-│       ├── stores/       # Zustand 状态
-│       └── lib/          # API 客户端、工具
-├── docs/                 # VitePress 文档
-├── environment.yml
-├── .env.example
-└── .github/workflows/
+关键词 → 检索 → 去重 → 爬虫 → OCR → RAG → 写作
+    │                                              │
+    └────────── LangGraph 编排 ─────────────────────┘
 ```
+
+## 后端模式
+
+### API 结构
+- 所有端点位于 `/api/v1/`
+- 统一响应格式：`{ code, message, data }`
+- 分页格式：`{ items, total, page, page_size, total_pages }`
+- `project_id` 路径参数限定项目资源
+
+### 数据库
+- SQLAlchemy 2 异步 + aiosqlite
+- Alembic 迁移管理 schema 变更
+- `selectinload()` 预加载关联查询
+- 项目删除时级联删除关联数据
+
+### LLM 集成
+- LangChain 提供商抽象层（OpenAI、Anthropic、阿里云、火山引擎、Ollama）
+- Mock 模式用于无 API 密钥的本地开发
+- GPU 模型 TTL 管理
+
+## 关键设计决策
+
+1. **SQLite** 适合单用户场景，无需额外配置。
+2. **自定义遮罩层** 用于全屏模态框（作者网络、参考文献生成器）。
+3. **LocalStorage** 存储阅读目标和引用样式偏好。
+4. **端口 3000** 为 Vite 开发服务器，代理 `/api` 到后端端口 8000。
