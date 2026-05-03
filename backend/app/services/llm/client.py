@@ -7,6 +7,7 @@ while delegating to the provider factory.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
@@ -80,7 +81,6 @@ class LLMClient:
             logger.info("[MockLLM] task_type=%s, messages=%d", task_type, len(messages))
             return MOCK_RESPONSES.get(task_type, MOCK_RESPONSES["default"])
 
-        model = self._get_model()
         lc_messages = _to_langchain_messages(messages)
 
         kwargs: dict[str, Any] = {}
@@ -89,14 +89,27 @@ class LLMClient:
         if max_tokens != self._config.max_tokens:
             kwargs["max_tokens"] = max_tokens
 
-        try:
-            result = await model.ainvoke(lc_messages, **kwargs)
-            content = result.content if isinstance(result.content, str) else str(result.content)
-            logger.info("[LLM:%s] task=%s len=%d", self.provider, task_type, len(content))
-            return content
-        except Exception:
-            logger.exception("[LLM:%s] Error during chat", self.provider)
-            raise
+        for attempt in range(3):
+            model = self._get_model()
+            try:
+                result = await model.ainvoke(lc_messages, **kwargs)
+                content = result.content if isinstance(result.content, str) else str(result.content)
+                logger.info("[LLM:%s] task=%s len=%d", self.provider, task_type, len(content))
+                return content
+            except Exception:
+                if attempt >= 2:
+                    logger.exception("[LLM:%s] Error during chat", self.provider)
+                    raise
+                logger.warning(
+                    "[LLM:%s] chat attempt %d failed; rebuilding client and retrying",
+                    self.provider,
+                    attempt + 1,
+                    exc_info=True,
+                )
+                self._model = None
+                await asyncio.sleep(0.5 * (attempt + 1))
+
+        raise RuntimeError("LLM chat failed after retries")
 
     async def chat_stream(
         self,

@@ -107,6 +107,47 @@ async def test_upload_rejects_duplicate_content(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_batch_upload_skips_duplicate_content_and_continues(client: AsyncClient):
+    """Batch upload should skip duplicate PDFs without dropping later new files."""
+    create_resp = await client.post("/api/v1/projects", json={"name": "Batch Dup Test"})
+    assert create_resp.status_code == 201
+    project_id = create_resp.json()["data"]["id"]
+
+    duplicate_content = b"%PDF-1.4 duplicate in batch"
+    new_content = b"%PDF-1.4 new file in batch"
+
+    with (
+        patch("app.api.v1.upload.extract_metadata", _mock_metadata(title="First Upload")),
+        patch("app.api.v1.upload.process_papers_background", AsyncMock()),
+    ):
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers/upload",
+            files={"files": _make_pdf(duplicate_content)},
+        )
+        assert resp.status_code == 200
+
+    with (
+        patch("app.api.v1.upload.extract_metadata", _mock_metadata(title="Batch New Upload")),
+        patch("app.api.v1.upload.process_papers_background", AsyncMock()),
+    ):
+        resp = await client.post(
+            f"/api/v1/projects/{project_id}/papers/upload",
+            files=[
+                ("files", _make_pdf(duplicate_content)),
+                ("files", _make_pdf(new_content)),
+            ],
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["data"]["total_uploaded"] == 1
+
+    async with async_session_factory() as session:
+        result = await session.execute(select(Paper).where(Paper.project_id == project_id))
+        assert len(result.scalars().all()) == 2
+
+
+@pytest.mark.asyncio
 async def test_upload_different_files_with_same_title_passes(client: AsyncClient):
     """Different PDF content but same title should NOT be rejected by content hash."""
     create_resp = await client.post("/api/v1/projects", json={"name": "Same Title Test"})

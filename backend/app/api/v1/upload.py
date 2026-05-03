@@ -75,6 +75,13 @@ async def upload_pdfs(
             # Check for exact content duplicate
             existing_by_hash = next((p for p in existing_papers if p.content_hash == content_hash), None)
             if existing_by_hash:
+                if len(files) > 1:
+                    logger.info(
+                        "Skipping duplicate PDF %s: same content as paper id=%s",
+                        upload_file.filename,
+                        existing_by_hash.id,
+                    )
+                    continue
                 raise HTTPException(
                     status_code=409,
                     detail=f"Duplicate PDF: same content as existing paper '{existing_by_hash.title}' (id={existing_by_hash.id})",
@@ -156,7 +163,7 @@ async def upload_pdfs(
     new_paper_ids = [p.id for p in new_paper_objects]
     await db.commit()
 
-    if new_paper_ids:
+    if new_paper_ids and settings.app_env != "testing":
         asyncio.create_task(process_papers_background(project_id, new_paper_ids))
 
     return ApiResponse(

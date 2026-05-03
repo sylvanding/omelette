@@ -140,14 +140,18 @@ Provide:
 
 For each section, suggest which papers are most relevant."""
 
-        outline = await self.llm.chat(
-            messages=[
-                {"role": "system", "content": WRITING_OUTLINE_SYSTEM},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.5,
-            task_type="default",
-        )
+        try:
+            outline = await self.llm.chat(
+                messages=[
+                    {"role": "system", "content": WRITING_OUTLINE_SYSTEM},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.5,
+                task_type="default",
+            )
+        except Exception:
+            logger.exception("LLM review outline failed; using metadata-based fallback")
+            outline = self._fallback_review_outline(topic=topic, papers=papers, language=language)
 
         return {
             "topic": topic,
@@ -175,20 +179,71 @@ Identify:
 4. Potential innovation points
 5. Suggested research directions"""
 
-        analysis = await self.llm.chat(
-            messages=[
-                {"role": "system", "content": WRITING_GAP_SYSTEM},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.5,
-            task_type="default",
-        )
+        try:
+            analysis = await self.llm.chat(
+                messages=[
+                    {"role": "system", "content": WRITING_GAP_SYSTEM},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.5,
+                task_type="default",
+            )
+        except Exception:
+            logger.exception("LLM gap analysis failed; using metadata-based fallback")
+            analysis = self._fallback_gap_analysis(research_topic=research_topic, papers=papers)
 
         return {
             "topic": research_topic,
             "analysis": analysis,
             "papers_analyzed": len(papers),
         }
+
+    @staticmethod
+    def _fallback_review_outline(topic: str, papers: list[Paper], language: str) -> str:
+        """Build a conservative outline from real project metadata when LLM is unavailable."""
+        paper_lines = "\n".join(f"- {p.title} ({p.year or 'n.d.'})" for p in papers[:8]) or "- No papers available"
+        if language == "zh":
+            return f"""# {topic} 文献综述提纲
+
+1. 研究背景与问题定义
+2. 已有文献的主要方向
+3. 方法与数据来源对比
+4. 证据强度、局限与争议
+5. 后续研究机会
+
+参考文献线索：
+{paper_lines}"""
+        return f"""# Literature Review Outline: {topic}
+
+1. Background and problem definition
+2. Major themes in the available literature
+3. Methods and data sources across papers
+4. Evidence strength, limitations, and open disagreements
+5. Future research opportunities
+
+Paper signals used:
+{paper_lines}"""
+
+    @staticmethod
+    def _fallback_gap_analysis(research_topic: str, papers: list[Paper]) -> str:
+        """Build a metadata-based gap analysis from real papers when LLM is unavailable."""
+        years = [p.year for p in papers if p.year]
+        year_span = f"{min(years)}-{max(years)}" if years else "unknown years"
+        journals = sorted({p.journal for p in papers if p.journal})[:5]
+        journal_line = ", ".join(journals) if journals else "journals unavailable"
+        sample_titles = "\n".join(f"- {p.title}" for p in papers[:8]) or "- No papers available"
+        return f"""Research topic: {research_topic}
+
+Metadata-based gap analysis from {len(papers)} papers ({year_span}; {journal_line}):
+
+1. Coverage gaps: verify whether the current collection spans enough venues, years, and experimental settings.
+2. Method gaps: compare whether papers rely on similar tooling or evaluation metrics, as repeated methods can leave alternatives under-tested.
+3. Evidence gaps: prioritize papers with full text and OCR chunks before drawing strong conclusions.
+4. Synthesis opportunities: cluster the collection by application, method, organism/system, and visualization target.
+5. Next step: add recent papers and run RAG evidence consensus after indexing.
+
+Paper signals used:
+{sample_titles}"""
 
     async def generate_literature_review(
         self,

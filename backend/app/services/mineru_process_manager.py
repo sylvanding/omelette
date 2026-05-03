@@ -28,7 +28,8 @@ class MinerUProcessManager:
 
     def __init__(self) -> None:
         self._process: subprocess.Popen[bytes] | None = None
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
+        self._lock_loop: asyncio.AbstractEventLoop | None = None
         self._last_used_at: float = 0.0
         self._cleanup_task: asyncio.Task[None] | None = None
         self._is_external: bool = False
@@ -85,7 +86,7 @@ class MinerUProcessManager:
         if not settings.mineru_auto_manage:
             return False
 
-        async with self._lock:
+        async with self._get_lock():
             if await self._health_check():
                 self._touch()
                 if self._process is None:
@@ -110,7 +111,7 @@ class MinerUProcessManager:
 
     async def shutdown_mineru(self) -> None:
         """Immediately stop the managed subprocess."""
-        async with self._lock:
+        async with self._get_lock():
             await self._kill_process()
 
     def get_status(self) -> dict[str, Any]:
@@ -146,6 +147,19 @@ class MinerUProcessManager:
 
     def _touch(self) -> None:
         self._last_used_at = time.monotonic()
+
+    def _get_lock(self) -> asyncio.Lock:
+        """Return a lock bound to the currently running event loop.
+
+        The manager is a module-level singleton. Test clients and reloadable
+        ASGI processes may reuse that singleton across multiple event loops,
+        while ``asyncio.Lock`` instances cannot safely cross loop boundaries.
+        """
+        loop = asyncio.get_running_loop()
+        if self._lock is None or self._lock_loop is not loop:
+            self._lock = asyncio.Lock()
+            self._lock_loop = loop
+        return self._lock
 
     async def _health_check(self) -> bool:
         try:

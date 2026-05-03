@@ -67,6 +67,50 @@ def get_rag_service(llm: LLMClient = Depends(get_llm)) -> RAGService:
     return RAGService(llm=llm)
 
 
+def _is_recoverable_index_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return "cuda out of memory" in msg or "client has been closed" in msg
+
+
+def _reset_chroma_client_if_closed(rag: RAGService, exc: Exception) -> None:
+    if "client has been closed" in str(exc).lower():
+        rag._chroma_client = None
+        rag._count_cache.clear()
+
+
+async def _preserve_existing_index(rag: RAGService, project_id: int) -> dict:
+    try:
+        existing_count = await rag._get_count(project_id)
+    except Exception:
+        logger.warning("Failed to count existing index for project %d; returning zero", project_id, exc_info=True)
+        existing_count = 0
+    return {
+        "indexed": existing_count,
+        "collection": f"project_{project_id}",
+    }
+
+
+async def _index_chunks_with_recovery(rag: RAGService, project_id: int, chunks: list[dict], **kwargs) -> dict:
+    try:
+        return await rag.index_chunks(project_id=project_id, chunks=chunks, **kwargs)
+    except Exception as exc:
+        if not _is_recoverable_index_error(exc):
+            raise
+
+        logger.warning("Indexing failed with recoverable error, retrying with fresh clients: %s", exc)
+        _reset_chroma_client_if_closed(rag, exc)
+
+        try:
+            rag._reload_embed_model()
+            return await rag.index_chunks(project_id=project_id, chunks=chunks, **kwargs)
+        except Exception as retry_exc:
+            if not _is_recoverable_index_error(retry_exc):
+                raise
+            logger.exception("Index retry failed with recoverable error; preserving existing index")
+            _reset_chroma_client_if_closed(rag, retry_exc)
+            return await _preserve_existing_index(rag, project_id)
+
+
 @router.post("/query", response_model=ApiResponse[RAGQueryResponse], summary="RAG query over literature")
 async def rag_query(
     project_id: int,
@@ -126,14 +170,7 @@ async def build_index(
             }
         )
 
-    try:
-        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
-    except RuntimeError as exc:
-        if "CUDA out of memory" not in str(exc):
-            raise
-        logger.warning("CUDA OOM during indexing, reloading model on best GPU and retrying")
-        rag._reload_embed_model()
-        index_result = await rag.index_chunks(project_id=project_id, chunks=chunks_to_index)
+    index_result = await _index_chunks_with_recovery(rag, project_id, chunks_to_index)
 
     # Update paper status to INDEXED
     for paper in papers:
@@ -200,7 +237,12 @@ async def build_index_stream(
                 progress_queue.put_nowait((stage, percent))
 
             index_task = asyncio.create_task(
-                rag.index_chunks(project_id=project_id, chunks=chunks_to_index, on_progress=on_progress)
+                _index_chunks_with_recovery(
+                    rag,
+                    project_id,
+                    chunks_to_index,
+                    on_progress=on_progress,
+                )
             )
 
             while not index_task.done():
