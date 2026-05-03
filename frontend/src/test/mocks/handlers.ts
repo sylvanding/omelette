@@ -37,6 +37,22 @@ export const handlers = [
       ),
     ),
   ),
+  http.get(`${apiBase}/projects/:id/overview`, () =>
+    HttpResponse.json(
+      mockResponse({
+        total_papers: 5,
+        papers_by_status: { pending: 2, indexed: 3 },
+        papers_by_reading: { unread: 1, reading: 1, completed: 3 },
+        papers_by_year: { 2024: 3, 2023: 2 },
+        avg_citations: 42,
+        recent_papers: [
+          { title: 'Test Paper', year: 2024, reading_status: 'read', added_at: '2024-01-15T00:00:00Z' },
+        ],
+        keyword_count: 3,
+        subscription_count: 1,
+      }),
+    ),
+  ),
   http.post(`${apiBase}/projects`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
     return HttpResponse.json(
