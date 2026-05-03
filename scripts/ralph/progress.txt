@@ -737,3 +737,26 @@ Tested 35 pages with real API data (5 papers, 8 reading sessions, 5 keywords, 1 
 PR #20-26: 7 PRs total, covering 3 bug fixes + 4 feature additions
 - 269 frontend tests, 856 backend tests, 39 E2E tests all pass
 ---
+
+## 2026-05-03 22:00 - Cycles 29-31
+
+### Cycle 29: i18n completeness
+- 10 hardcoded nav labels → t() calls
+- 57 missing zh translations → filled
+- Zero i18n key gaps between locales
+
+### Cycle 30: 100 debug point audit
+- Backend API validation (20) ✅
+- Search/filter edge cases (10) ✅
+- Interactive features (15) ✅
+- UI states (10) ✅
+- i18n completeness (10) ✅
+- Cross-cutting (10) ✅
+- 99/100 passed (1 test flake)
+
+### Cycle 31: Advanced search
+- Backend: author + journal query params with ILIKE
+- Frontend: Author + Journal filter inputs in PapersFilterBar
+- Verified: "Vaswani" → 1 paper, "NeurIPS" → 3 papers
+- PR #33 merged (13 total this session)
+---
