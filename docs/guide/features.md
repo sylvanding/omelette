@@ -1,77 +1,113 @@
-# 功能指南 / Feature Guide
+# Features
 
-## 智能补全 (Smart Autocomplete)
+## Literature Pipeline
 
-在聊天输入框中键入内容时，系统会自动预测并建议后续文本。
+### Keywords
+- Three-level hierarchy (L1 main term, L2 sub-term, L3 specific)
+- LLM-powered term expansion and related concept discovery
+- Auto-generated search formulas for Web of Science, Scopus, PubMed
 
-### 使用方式
-- 正常输入文字，当输入超过 10 个字符时自动触发补全
-- 按 **Tab** 键接受建议
-- 按 **Esc** 键忽略建议
-- 补全建议以灰色文字显示在光标后方
+### Multi-Source Search
+- Federated search across Semantic Scholar, OpenAlex, arXiv, Crossref
+- Standardized metadata with DOI matching
+- Batch import with conflict detection
 
-### 最佳实践
-- 输入越具体，补全越准确
-- 选中知识库后，补全会结合知识库上下文
+### Deduplication
+- Three-stage: DOI exact → title fingerprint → LLM verification
+- Side-by-side comparison with keep/skip/replace actions
+- Batch auto-resolve with LLM
 
----
+### Crawler
+- Multi-channel: Unpaywall → arXiv → direct URL
+- Status tracking per paper
+- Bulk download with priority modes
 
-## 引用图谱 (Citation Graph)
+### OCR
+- MinerU for born-digital PDFs (auto-managed subprocess)
+- PaddleOCR for scanned documents
+- pdfplumber for native text extraction
+- GPU acceleration with TTL-based model management
 
-可视化论文之间的引用关系网络。
+### Subscriptions
+- RSS feeds and API-based scheduled updates
+- Configurable frequency (daily/weekly/monthly)
+- Quick update check without creating subscription
 
-### 使用方式
-1. 进入项目论文列表
-2. 选择一篇论文，点击「引用图谱」按钮
-3. 系统自动从 Semantic Scholar 获取引用和被引用论文
-4. 图谱以力导向布局展示，可拖拽、缩放
+## AI & Knowledge
 
-### 图谱说明
-- **蓝色节点**：当前项目中已有的论文
-- **灰色节点**：外部论文
-- **绿色边**：引用关系（A → B 表示 A 引用了 B）
-- **橙色边**：被引用关系
-- 点击节点查看论文详情，可一键添加到项目
+### RAG Knowledge Base
+- LlamaIndex + ChromaDB vector store
+- BAAI/bge-m3 GPU-aware embeddings
+- Hybrid retrieval with bge-reranker-v2-m3 reranking
+- Cited answers with source attribution
 
----
+### Chat Playground
+- ChatGPT-style streaming interface
+- Tool modes: Q&A, Citation Lookup, Review Outline, Gap Analysis
+- Multi-KB parallel retrieval
+- Conversation history and management
 
-## 文献综述自动生成 (Auto Literature Review)
+### LangGraph Pipeline
+- StateGraph-based search and upload workflows
+- Conditional edges for branching logic
+- HITL interrupt/resume for deduplication conflicts
+- MemorySaver checkpointing (SqliteSaver planned)
 
-基于项目知识库，AI 自动生成结构化文献综述。
+### Writing Assistant
+- Summarization, citation formatting, review outlines
+- Gap analysis with novelty/feasibility scoring
+- Multi-format citation export (GB/T 7714, APA, MLA, Chicago, IEEE)
 
-### 使用方式
-1. 进入项目的「写作助手」页面
-2. 选择「综述生成」标签
-3. 配置参数：
-   - **主题**：指定综述主题（留空自动检测）
-   - **风格**：叙述式 / 系统式 / 主题式
-   - **引用格式**：编号 / APA / GB/T 7714
-   - **语言**：中文 / 英文
-4. 点击「开始生成」，内容实时流式输出
-5. 生成完成后可复制或下载为 Markdown 文件
+## Research Tools
 
-### 注意事项
-- 综述质量取决于知识库中的论文数量和质量
-- 建议至少上传 5 篇以上相关论文
-- 生成过程可随时中断
+### Analytics Dashboard
+- Reading progress breakdown
+- Weekly read bar chart
+- Top journals list
+- Reading activity heatmap (GitHub-style)
 
----
+### Trend Analysis
+- Year-binned publication volume
+- Citations over time
+- Emerging/declining topic detection
 
-## PDF 阅读与 AI 助手 (PDF Reader)
+### Author Network
+- d3-force directed graph of co-authorship
+- Centrality metrics and filtering
+- SVG/PNG export
 
-内置 PDF 阅读器，支持文本选取和 AI 问答。
+### Gap Analysis
+- LLM-powered research opportunity identification
+- Novelty and feasibility scoring
+- Candidate research questions
 
-### 使用方式
-1. 在论文列表中点击「阅读 PDF」按钮
-2. 左侧为 PDF 阅读区，右侧为 AI 助手面板
-3. 选中 PDF 中的文字后，可使用快捷操作：
-   - **解释**：AI 解释选中内容
-   - **翻译**：翻译选中文本
-   - **查找引用**：在知识库中查找相关引用
-4. 也可在输入框中直接提问
+### Paper Comparison
+- Side-by-side abstract, metadata, and citation comparison
+- Visual diff highlighting
+- Works with 2-5 papers
 
-### 阅读器功能
-- 支持缩放（50%-200%）
-- 翻页导航
-- 自动检测扫描件并提示 OCR
-- 面板大小可自由调整
+### Citation Tools
+- APA, MLA, Chicago, IEEE, GB/T 7714 styles
+- Bibliography builder with paper selection
+- Citation style picker with live preview
+
+### Version Tracking
+- Semantic Scholar polling for updates
+- Version history with diff generation
+- Upgrade preservation
+
+## Collaboration
+
+- **Team Members**: Invite with email, role assignment (read/write/admin), RBAC middleware
+- **API Keys**: SHA-256 hashed, scope-based access, `omk_` prefix
+- **Collections**: Custom paper groups with color coding and AI-suggested tags
+- **MCP Server**: Model Context Protocol for AI IDE integration
+
+## User Experience
+
+- **i18n**: Complete Chinese/English bilingual support
+- **Reading Goals**: Daily/weekly targets with streak tracking
+- **Reading History**: Session tracking with time stats
+- **Notes Dashboard**: Project-wide notes with Markdown/LaTeX rendering
+- **PWA**: Installable with service worker offline caching
+- **Responsive**: Mobile-optimized with horizontal scroll navigation
