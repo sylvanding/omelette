@@ -85,6 +85,13 @@ function AuthorDetailPanel({
 
 export function AuthorNetworkDialog({ projectId, onClose }: AuthorNetworkDialogProps) {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   const [selectedNode, setSelectedNode] = useState<SimNode | null>(null);
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
