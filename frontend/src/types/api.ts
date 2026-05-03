@@ -15,6 +15,8 @@ export interface PaginationParams {
 
 export interface PaperListFilters extends PaginationParams {
   q?: string;
+  author?: string;
+  journal?: string;
   status?: PaperStatus;
   reading_status?: ReadingStatus;
   year?: number;

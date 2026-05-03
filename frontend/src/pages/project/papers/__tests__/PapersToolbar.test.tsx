@@ -8,6 +8,8 @@ describe('PapersToolbar', () => {
     needsProcessing: false,
     isBatchDeleting: false,
     onBatchDelete: vi.fn(),
+    onBatchStatusChange: vi.fn(),
+    onBatchStatusUnread: vi.fn(),
     onProcessAll: vi.fn(),
     onAddPaper: vi.fn(),
     onCompare: vi.fn(),
