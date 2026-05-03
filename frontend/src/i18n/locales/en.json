@@ -26,8 +26,8 @@
     "progress": "Progress",
     "type": "Type",
     "output": "Output",
-    "asc": "↑ Asc",
-    "desc": "↓ Desc",
+    "asc": "\u2191 Asc",
+    "desc": "\u2193 Desc",
     "deleteSuccess": "Deleted successfully",
     "deleteFailed": "Delete failed",
     "createSuccess": "Created successfully",
@@ -79,7 +79,7 @@
     "system": "System"
   },
   "lang": {
-    "switchTo": "中文",
+    "switchTo": "\u4e2d\u6587",
     "label": "Language"
   },
   "playground": {
@@ -161,7 +161,7 @@
       "dropHint": "Drag and drop PDF files here",
       "pdfOnly": "Only .pdf files are accepted (max 50 MB each)",
       "selectFiles": "Select Files",
-      "fileCount": "{{count}} file(s) · {{size}}",
+      "fileCount": "{{count}} file(s) \u00b7 {{size}}",
       "removeFile": "Remove file",
       "upload": "Upload",
       "uploading": "Uploading...",
@@ -460,7 +460,7 @@
     "citeStyle": "Citation style",
     "language": "Language",
     "langEn": "English",
-    "langZh": "中文"
+    "langZh": "\u4e2d\u6587"
   },
   "tasks": {
     "title": "Tasks",
@@ -568,7 +568,7 @@
     "title": "API Keys",
     "generate": "Generate Key",
     "generateTitle": "Generate New API Key",
-    "generateDesc": "Create a key to programmatically access the Omelette API. Save it immediately — it won't be shown again.",
+    "generateDesc": "Create a key to programmatically access the Omelette API. Save it immediately \u2014 it won't be shown again.",
     "noKeys": "No API keys generated yet",
     "noKeysDesc": "Generate a key to access the API programmatically.",
     "keyName": "Key Name",
@@ -586,7 +586,7 @@
     "createSuccess": "API key created successfully",
     "createFailed": "Failed to create API key",
     "keyCreated": "API Key Created",
-    "keyWarning": "Copy this key now — it will not be shown again.",
+    "keyWarning": "Copy this key now \u2014 it will not be shown again.",
     "revoked": "Revoked",
     "neverUsed": "Never used",
     "usedRecently": "Used recently"
@@ -774,5 +774,20 @@
     "papersRead": "Papers Read",
     "emptyTitle": "No reading sessions yet",
     "emptyDesc": "Start reading papers to track your progress here."
+  },
+  "ocr": {
+    "title": "OCR"
+  },
+  "crawler": {
+    "title": "Crawler"
+  },
+  "dedup": {
+    "title": "Dedup"
+  },
+  "pipelines": {
+    "title": "Pipelines"
+  },
+  "contradictions": {
+    "title": "Contradictions"
   }
 }
