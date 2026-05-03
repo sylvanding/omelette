@@ -2,91 +2,93 @@
 
 ## System Overview
 
-Omelette follows a pipeline architecture where data flows through sequential modules:
+Omelette follows a modular pipeline architecture with a React frontend and FastAPI backend.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Omelette Pipeline                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Keywords → Search → Dedup → Crawler → OCR → RAG → Writing                   │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│              Frontend (React 18)              │
+│   TypeScript · Vite · TailwindCSS · shadcn/ui │
+│         TanStack Query · Zustand              │
+├──────────────────────────────────────────────┤
+│             Backend (FastAPI)                 │
+│  Python 3.12 · SQLAlchemy 2 · Pydantic v2    │
+├─────────┬────────┬────────┬────────┬─────────┤
+│ Search  │ Dedup  │Crawler │  OCR   │   RAG   │
+│LangChain│Semantic│Unpaywal│ MinerU │LlamaIndx│
+│ OpenAlex│Scholar │ arXiv  │Paddle  │ChromaDB │
+├─────────┴────────┴────────┴────────┴─────────┤
+│           Storage: SQLite + ChromaDB           │
+└──────────────────────────────────────────────┘
 ```
 
-## Chat & RAG Flow
-
-The chat and RAG subsystem uses a layered stack:
+## Pipeline Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Chat & RAG Architecture                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  Chat UI → LLM (LangChain) → RAG (LlamaIndex) → Vector Store (ChromaDB)      │
-└─────────────────────────────────────────────────────────────────────────────┘
+Keywords → Search → Dedup → Crawler → OCR → RAG → Writing
+    │                                                    │
+    └──────────── LangGraph Orchestration ────────────────┘
 ```
 
-- **Chat UI** — React frontend with conversation history
-- **LLM** — LangChain for chat orchestration (OpenAI, Anthropic, Aliyun, Volcengine, Ollama, mock)
-- **RAG** — LlamaIndex for retrieval-augmented generation and hybrid search
-- **Vector Store** — ChromaDB for embeddings and semantic search
+### 1. Keywords
+Three-level hierarchy. LLM-powered expansion generates related terms. Search formulas auto-generated for WOS, Scopus, PubMed.
 
-## LangGraph Pipeline Orchestration
+### 2. Multi-Source Search
+Federated queries to Semantic Scholar, OpenAlex, arXiv, and Crossref. Results standardized to a common schema with deduplication.
 
-Literature ingestion is orchestrated by **LangGraph** pipelines:
+### 3. Deduplication
+Three-stage pipeline: DOI exact match → title fingerprint similarity → LLM verification. HITL conflict resolution via LangGraph interrupt.
 
-- **Search Pipeline**: `search → dedup → [HITL if conflicts] → apply_resolution → import → crawl → ocr → index`
-- **Upload Pipeline**: `extract_metadata → dedup → [HITL if conflicts] → apply_resolution → import → ocr → index`
+### 4. Crawler
+Multi-channel PDF download: Unpaywall → arXiv → direct URL. Tracks download status per paper.
 
-Both pipelines support conditional flows: when deduplication detects conflicts, a human-in-the-loop (HITL) step allows manual resolution before papers are imported into the project.
+### 5. OCR Processing
+MinerU (auto-managed subprocess) for born-digital PDFs. PaddleOCR fallback for scanned documents. pdfplumber for native text extraction.
 
-## MCP Integration
+### 6. RAG Indexing
+LlamaIndex with `BAAI/bge-m3` embeddings and `BAAI/bge-reranker-v2-m3` reranking. Hybrid retrieval combining vector search with keyword matching.
 
-Omelette exposes an **MCP (Model Context Protocol)** server for AI IDEs:
+### 7. Writing & Chat
+ChatGPT-style interface with knowledge base selection, tool modes (QA, citation lookup, review outline, gap analysis), and streaming responses.
 
-- **Streamable HTTP**: Mounted at `/mcp` when the backend runs; connect from Claude Code, Codex, or Cursor via `http://host:port/mcp`
-- **Tools**: `search_knowledge_base`, `lookup_paper`, `add_paper_by_doi`, etc.
-- **Resources**: Project metadata, paper details
-- **Prompts**: Predefined templates for literature review and citation lookup
+## Backend Patterns
 
-See [Getting Started](./getting-started#mcp-usage) for connection instructions.
+### API Structure
+- All endpoints under `/api/v1/`
+- Consistent response format: `{ code, message, data }`
+- Pagination: `{ items, total, page, page_size, total_pages }`
+- `project_id` path parameter scopes all project resources
 
-## Tech Stack
+### Database
+- SQLAlchemy 2 async with aiosqlite
+- Alembic migrations for schema changes
+- Eager loading with `selectinload()` for relationship queries
+- Cascade deletes on project removal
 
-| Layer | Technology |
-|-------|------------|
-| Backend | FastAPI, SQLAlchemy 2 (async), Pydantic v2 |
-| Frontend | React 19, Vite 7, TypeScript, Tailwind CSS, shadcn/ui |
-| Database | SQLite, Alembic (migrations) |
-| Vector DB | ChromaDB |
-| OCR | PaddleOCR |
-| LLM | LangChain (OpenAI, Anthropic, Aliyun, Volcengine, Ollama, mock) |
-| RAG | LlamaIndex |
-| Pipeline | LangGraph |
-| Orchestration | MCP (Model Context Protocol) |
-| Embeddings | BAAI/bge-m3 (sentence-transformers) |
+### LLM Integration
+- LangChain provider abstraction (OpenAI, Anthropic, Aliyun, Volcengine, Ollama)
+- Mock provider for development without API keys
+- GPU model TTL management for resource efficiency
 
-## Directory Structure
+## Frontend Patterns
 
-```
-omelette/
-├── backend/              # FastAPI application
-│   ├── app/
-│   │   ├── api/v1/       # REST endpoints (keywords, search, dedup, crawler, ocr, rag, writing)
-│   │   ├── models/       # SQLAlchemy models (Project, Paper, Keyword, Task, etc.)
-│   │   ├── schemas/      # Pydantic request/response schemas
-│   │   ├── services/     # Business logic (LLM, search, crawler, OCR, RAG, writing)
-│   │   ├── pipelines/    # LangGraph pipeline definitions
-│   │   ├── mcp_server.py # MCP server (tools, resources, prompts)
-│   │   └── main.py       # App entry, lifespan, CORS
-│   ├── alembic/          # Database migrations
-│   └── tests/
-├── frontend/             # React SPA
-│   └── src/
-│       ├── pages/        # Dashboard, ProjectDetail, Settings
-│       ├── components/   # Layout, shared UI (shadcn/ui)
-│       ├── stores/       # Zustand state
-│       └── lib/          # API client, utils
-├── docs/                 # VitePress documentation
-├── environment.yml       # Conda environment
-├── .env.example         # Configuration template
-└── .github/workflows/   # CI and docs deploy
-```
+### State Management
+- TanStack Query for server state with 30s stale time
+- Zustand for client-only state (sidebar, theme)
+- React Router for URL-driven navigation
+
+### Component Architecture
+- `PageLayout` wraps all project pages with title/subtitle/actions
+- `ErrorBoundary` + `Suspense` on lazy-loaded routes
+- Custom hooks for reading timer, debounced save, reading goals
+
+### Testing
+- Vitest + Testing Library + MSW for frontend (273 tests)
+- MSW handlers mock all API endpoints in test fixtures
+- Playwright for E2E critical flows (39 tests)
+
+## Key Design Decisions
+
+1. **SQLite** chosen for single-user simplicity. No server setup needed.
+2. **Custom overlays** (not Dialog component) for full-screen modals like Author Network and Bibliography Builder.
+3. **LocalStorage** for reading goals and citation style preferences.
+4. **Port 3000** for Vite dev server with `/api` proxy to backend on port 8000.
