@@ -717,3 +717,23 @@ Tested 35 pages with real API data (5 papers, 8 reading sessions, 5 keywords, 1 
 - Backend: 856 pass | Frontend: 269 pass | E2E: 39 pass
 - 35 browser pages verified with real data
 ---
+
+## 2026-05-02 21:40 - Cycle 26-27: Final Bug Sweep
+
+### Bug Fix: Non-existent Project
+- **Issue**: Navigating to /projects/999 showed "Loading..." forever
+- **Fix**: Added isLoading/isError handling to ProjectDetail with proper not-found UI
+
+### Edge Case Testing (ALL PASS)
+- Search with special characters ✅
+- LaTeX rendering in notes ✅
+- Non-existent project (now shows error state) ✅
+- Rapid page navigation (4 pages in sequence) ✅
+- Combined filters (year, status, quality tags) ✅
+- Processing banner visible ✅
+- Pagination (hidden with <10 items, expected) ✅
+
+### PR Summary (All Merged)
+PR #20-26: 7 PRs total, covering 3 bug fixes + 4 feature additions
+- 269 frontend tests, 856 backend tests, 39 E2E tests all pass
+---
