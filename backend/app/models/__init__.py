@@ -5,6 +5,7 @@ from app.models.api_key import APIKey, APIKeyScope
 from app.models.audio_overview import AudioOverview
 from app.models.chunk import PaperChunk
 from app.models.collection import Collection, CollectionPaper
+from app.models.concept import Concept
 from app.models.conversation import Conversation
 from app.models.keyword import Keyword
 from app.models.message import Message
@@ -26,6 +27,7 @@ __all__ = [
     "AudioOverview",
     "Collection",
     "CollectionPaper",
+    "Concept",
     "Conversation",
     "Keyword",
     "Message",

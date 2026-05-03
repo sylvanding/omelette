@@ -29,6 +29,7 @@ class Project(Base):
     team_members = relationship("TeamMember", back_populates="project", cascade="all, delete-orphan")
     audio_overviews = relationship("AudioOverview", back_populates="project", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="project", cascade="all, delete-orphan")
+    concepts = relationship("Concept", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Project id={self.id} name={self.name!r}>"
