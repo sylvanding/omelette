@@ -8,22 +8,27 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('OverviewPage', () => {
-  it('renders reading progress', async () => {
+  it('renders with paper data', async () => {
     renderWithProviders(<OverviewPage />);
     await waitFor(() => {
-      expect(screen.getByText(/Reading Progress/i)).toBeInTheDocument();
+      expect(screen.getByText(/Test Paper/i)).toBeInTheDocument();
     });
   });
-  it('shows recently added papers', async () => {
+
+  it('shows reading progress bar', async () => {
     renderWithProviders(<OverviewPage />);
     await waitFor(() => {
-      expect(screen.getByText(/Recently Added/i)).toBeInTheDocument();
+      // Progress bar shows "Completed" label from papers_by_reading
+      expect(screen.getByText(/Completed/i)).toBeInTheDocument();
     });
   });
-  it('shows reading goals card', async () => {
+
+  it('shows stats from overview data', async () => {
     renderWithProviders(<OverviewPage />);
     await waitFor(() => {
-      expect(screen.getByText(/Reading Goals/i)).toBeInTheDocument();
+      // Total papers is 5 from mock
+      const fives = screen.getAllByText('5');
+      expect(fives.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
