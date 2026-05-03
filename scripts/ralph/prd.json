@@ -1,6 +1,6 @@
 {
   "project": "Omelette - Research Workflow Enhancement",
-  "branchName": "ralph/cycle-21",
+  "branchName": "ralph/cycle-30",
   "description": "Cycle 20: Paper quality scoring, bulk operations, and improved empty states",
   "userStories": [
     {
@@ -170,6 +170,19 @@
         "Tests: verify toolbar appears, tag mutation, status mutation"
       ],
       "priority": 7,
+      "passes": false
+    },
+    {
+      "id": "FEAT-038",
+      "title": "Add advanced search with multi-field filtering",
+      "description": "As a researcher, I want to search papers by author, journal, DOI, and year range.",
+      "acceptanceCriteria": [
+        "Search by author name",
+        "Search by journal",
+        "Filter by year range",
+        "Advanced toggle in search bar"
+      ],
+      "priority": 5,
       "passes": false
     }
   ]
