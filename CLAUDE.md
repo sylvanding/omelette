@@ -16,6 +16,21 @@
 - Do NOT ask the user for permission to merge — just do it
 - After merging, switch to `main`, pull, and create a new feature branch for the next cycle
 
+## Testing Conventions (CRITICAL)
+
+**Always test on port 3000, NOT port 5173.**
+
+- Vite dev server is configured on port 3000 with API proxy to backend
+- Port 5173 is the old/default Vite port without proxy configuration
+- Testing on port 5173 will show false failures because API calls return HTML instead of JSON
+- Start with: `cd frontend && npm run dev -- --port 3000`
+
+**Recreate test data after schema changes.**
+
+- Alembic migrations may reset the database or cause data loss
+- After any schema change, verify test data exists: `curl localhost:8000/api/v1/projects`
+- If empty, recreate: project → papers → keywords → reading sessions
+
 ## Development Commands
 
 ```bash
