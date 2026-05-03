@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -28,6 +28,8 @@ async def list_papers(
     reading_status: str | None = None,
     year: int | None = None,
     q: str | None = Query(default=None, description="Search title/abstract"),
+    author: str | None = Query(default=None, description="Filter by author name (ILIKE)"),
+    journal: str | None = Query(default=None, description="Filter by journal name (ILIKE)"),
     quality_tags: str | None = Query(default=None, description="Filter by quality tag"),
     collection_id: int | None = Query(default=None, description="Filter by collection"),
     sort_by: str = "created_at",
@@ -56,6 +58,15 @@ async def list_papers(
     if year:
         base = base.where(Paper.year == year)
         count_base = count_base.where(Paper.year == year)
+    if author:
+        like_author = f"%{author}%"
+        # authors is stored as JSON array of {name: str} dicts — search as text
+        base = base.where(Paper.authors.cast(String).ilike(like_author))
+        count_base = count_base.where(Paper.authors.cast(String).ilike(like_author))
+    if journal:
+        like_journal = f"%{journal}%"
+        base = base.where(Paper.journal.ilike(like_journal))
+        count_base = count_base.where(Paper.journal.ilike(like_journal))
     if q:
         like_q = f"%{q}%"
         base = base.where(Paper.title.ilike(like_q) | Paper.abstract.ilike(like_q))
