@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Loader2, Headphones, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,12 @@ export function AudioOverviewDialog({ projectId, paperIds, paperTitles, onClose,
   const [tone, setTone] = useState<'formal' | 'conversational'>('conversational');
   const [focusInput, setFocusInput] = useState('');
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   const generate = useToastMutation<AudioOverviewResponse, Error, void>({
     mutationFn: () =>
