@@ -37,6 +37,8 @@ export default function PapersPage() {
   const pid = Number(projectId!);
 
   const [search, setSearch] = useState('');
+  const [author, setAuthor] = useState('');
+  const [journal, setJournal] = useState('');
   const [status, setStatus] = useState<PaperStatus | ''>('');
   const [readingStatus, setReadingStatus] = useState<ReadingStatus | ''>('');
   const [qualityTag, setQualityTag] = useState('');
@@ -75,6 +77,8 @@ export default function PapersPage() {
       page,
       page_size: pageSize,
       q: search || undefined,
+      author: author || undefined,
+      journal: journal || undefined,
       status: status || undefined,
       reading_status: readingStatus || undefined,
       quality_tags: qualityTag || undefined,
@@ -82,7 +86,7 @@ export default function PapersPage() {
       sort_by: sortBy,
       order,
     }),
-    [page, pageSize, search, status, readingStatus, qualityTag, year, sortBy, order],
+    [page, pageSize, search, author, journal, status, readingStatus, qualityTag, year, sortBy, order],
   );
 
   const { data: projectData } = useQuery({
@@ -290,6 +294,8 @@ export default function PapersPage() {
       projectId={pid}
       paperFilters={{
         q: search || undefined,
+      author: author || undefined,
+      journal: journal || undefined,
         status: status || undefined,
         year: year ? Number(year) : undefined,
       }}
@@ -323,6 +329,8 @@ export default function PapersPage() {
 
         <PapersFilterBar
           search={search}
+          author={author}
+          journal={journal}
           status={status}
           readingStatus={readingStatus}
           qualityTag={qualityTag}
@@ -330,6 +338,8 @@ export default function PapersPage() {
           sortBy={sortBy}
           order={order}
           onSearchChange={setSearch}
+          onAuthorChange={setAuthor}
+          onJournalChange={setJournal}
           onStatusChange={setStatus}
           onReadingStatusChange={setReadingStatus}
           onQualityTagChange={setQualityTag}

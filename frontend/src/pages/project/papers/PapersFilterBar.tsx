@@ -13,6 +13,8 @@ import type { PaperStatus, ReadingStatus } from '@/types';
 
 interface PapersFilterBarProps {
   search: string;
+  author: string;
+  journal: string;
   status: PaperStatus | '';
   readingStatus: ReadingStatus | '';
   qualityTag: string;
@@ -20,6 +22,8 @@ interface PapersFilterBarProps {
   sortBy: string;
   order: 'asc' | 'desc';
   onSearchChange: (value: string) => void;
+  onAuthorChange: (value: string) => void;
+  onJournalChange: (value: string) => void;
   onStatusChange: (value: PaperStatus | '') => void;
   onReadingStatusChange: (value: ReadingStatus | '') => void;
   onQualityTagChange: (value: string) => void;
@@ -30,6 +34,8 @@ interface PapersFilterBarProps {
 
 export function PapersFilterBar({
   search,
+  author,
+  journal,
   status,
   readingStatus,
   qualityTag,
@@ -37,6 +43,8 @@ export function PapersFilterBar({
   sortBy,
   order,
   onSearchChange,
+  onAuthorChange,
+  onJournalChange,
   onStatusChange,
   onReadingStatusChange,
   onQualityTagChange,
@@ -85,6 +93,18 @@ export function PapersFilterBar({
             className="pl-9"
           />
         </div>
+        <Input
+          placeholder={t('papers.authorFilter', 'Author')}
+          value={author}
+          onChange={(e) => onAuthorChange(e.target.value)}
+          className="w-[150px]"
+        />
+        <Input
+          placeholder={t('papers.journalFilter', 'Journal')}
+          value={journal}
+          onChange={(e) => onJournalChange(e.target.value)}
+          className="w-[150px]"
+        />
         <Select
           value={status || '__all__'}
           onValueChange={(v) => onStatusChange(v === '__all__' ? '' : (v as PaperStatus))}
