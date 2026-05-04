@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Cpu, HardDrive, Loader2, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { gpuApi } from '@/services/api';
 
 export default function GPUStatusCard() {
+  const { t } = useTranslation();
   const { data: gpuStatus, isLoading, refetch } = useQuery({
     queryKey: queryKeys.gpu.status(),
     queryFn: gpuApi.status,
@@ -16,8 +18,8 @@ export default function GPUStatusCard() {
 
   const unloadMutation = useToastMutation({
     mutationFn: gpuApi.unload,
-    successMessage: 'GPU models unloaded',
-    errorMessage: 'Failed to unload GPU models',
+    successMessage: t('settings.gpu.unloadSuccess'),
+    errorMessage: t('settings.gpu.unloadFailed'),
     onSuccess: () => refetch(),
   });
 
@@ -38,11 +40,11 @@ export default function GPUStatusCard() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Cpu className="size-5" />
-            GPU Status
+            {t('settings.gpu.title')}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
             <Loader2 className={`mr-1 size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('settings.gpu.refresh')}
           </Button>
         </div>
       </CardHeader>
@@ -50,7 +52,7 @@ export default function GPUStatusCard() {
         {/* GPU Memory */}
         {memory.length > 0 ? (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">GPU Memory</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">{t('settings.gpu.memory')}</h4>
             {memory.map((gpu) => (
               <div key={gpu.gpu_id as string} className="rounded-lg border p-3">
                 <div className="flex items-center justify-between">
@@ -73,24 +75,24 @@ export default function GPUStatusCard() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
-            No GPU detected or CUDA not available
+            {t('settings.gpu.noGpu')}
           </div>
         )}
 
         {/* Loaded Models */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Loaded Models</h4>
+          <h4 className="text-sm font-medium text-muted-foreground">{t('settings.gpu.loadedModels')}</h4>
           {Object.keys(models).length > 0 ? (
             <div className="space-y-1">
               {Object.entries(models).map(([name, model]) => (
                 <div key={name} className="flex items-center justify-between rounded-lg border p-2">
                   <span className="font-mono text-sm">{name}</span>
-                  <Badge variant="secondary">{String((model as Record<string, unknown>).status ?? 'loaded')}</Badge>
+                  <Badge variant="secondary">{t(`settings.gpu.modelStatus.${(model as Record<string, unknown>).status ?? 'loaded'}`, { defaultValue: String((model as Record<string, unknown>).status ?? 'loaded') })}</Badge>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No models loaded</p>
+            <p className="text-sm text-muted-foreground">{t('settings.gpu.noModels')}</p>
           )}
         </div>
 
@@ -99,7 +101,7 @@ export default function GPUStatusCard() {
           <h4 className="text-sm font-medium text-muted-foreground">MinerU</h4>
           <div className="flex items-center gap-2">
             <Badge variant={(mineru.status as string) === 'running' ? 'default' : 'secondary'}>
-              {String(mineru.status ?? 'inactive')}
+              {t(`settings.gpu.mineruStatus.${mineru.status ?? 'inactive'}`, { defaultValue: String(mineru.status ?? 'inactive') })}
             </Badge>
             {mineru.pid != null && <span className="text-sm text-muted-foreground">PID: {String(mineru.pid)}</span>}
           </div>
@@ -115,7 +117,7 @@ export default function GPUStatusCard() {
             className="gap-1.5"
           >
             <Power className="size-3.5" />
-            Unload All Models
+            {t('settings.gpu.unloadAll')}
           </Button>
         </div>
       </CardContent>

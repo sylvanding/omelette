@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import {
   Loader2,
   RefreshCw,
@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { feedApi } from '@/services/api';
-import { useToastMutation } from '@/hooks/use-toast-mutation';
+import type { FeedResponse } from '@/types';
 
 interface PaperFeedback {
   index: number;
@@ -26,18 +26,25 @@ export default function FeedPage() {
 
   const [feedbacks, setFeedbacks] = useState<PaperFeedback[]>([]);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [feedResponse, setFeedResponse] = useState<FeedResponse | null>(null);
 
-  const { data: feedResponse, isLoading } = useQuery({
-    queryKey: ['feed', pid],
-    queryFn: () => feedApi.get(pid),
-    enabled: !!pid,
+  const generateMutation = useMutation({
+    mutationFn: () => feedApi.get(pid),
+    onSuccess: (data) => {
+      setFeedResponse(data);
+      setFeedbacks([]);
+    },
   });
 
-  const refreshMutation = useToastMutation({
+  const refreshMutation = useMutation({
     mutationFn: () => feedApi.refresh(pid),
-    invalidateKeys: [['feed', pid]],
-    onSuccess: () => setFeedbacks([]),
+    onSuccess: (data) => {
+      setFeedResponse(data);
+      setFeedbacks([]);
+    },
   });
+
+  const isLoading = generateMutation.isPending || refreshMutation.isPending;
 
   const handleFeedback = useCallback(
     (index: number, feedback: 'like' | 'dislike') => {
@@ -70,6 +77,10 @@ export default function FeedPage() {
     refreshMutation.mutate();
   }, [refreshMutation]);
 
+  const handleGenerate = useCallback(() => {
+    generateMutation.mutate();
+  }, [generateMutation]);
+
   const scoreColor = (score: number) => {
     if (score >= 0.8) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
     if (score >= 0.6) return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
@@ -91,11 +102,13 @@ export default function FeedPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshMutation.isPending}>
-          {refreshMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-          {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Feed'}
-          <RefreshCw className="ml-2 size-4" />
-        </Button>
+        {feedResponse && (
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            {refreshMutation.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Feed'}
+            <RefreshCw className="ml-2 size-4" />
+          </Button>
+        )}
       </div>
 
       {isLoading && (
@@ -105,10 +118,21 @@ export default function FeedPage() {
         </div>
       )}
 
-      {recommendations.length === 0 && !isLoading && (
+      {!feedResponse && !isLoading && (
+        <div className="flex flex-col items-center justify-center gap-4 py-12 text-muted-foreground">
+          <Sparkles className="size-12" />
+          <p className="text-sm">Generate personalized paper recommendations based on your library.</p>
+          <Button onClick={handleGenerate}>
+            <Sparkles className="mr-2 size-4" />
+            Generate Recommendations
+          </Button>
+        </div>
+      )}
+
+      {feedResponse && recommendations.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
           <Sparkles className="size-12" />
-          <p className="text-sm">No recommendations yet. Add papers to your library to get started.</p>
+          <p className="text-sm">No recommendations found. Try refreshing or adding more papers.</p>
         </div>
       )}
 

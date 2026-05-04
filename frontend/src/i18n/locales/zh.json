@@ -268,6 +268,25 @@
       "local": "本地 GPU/CPU",
       "api": "API"
     },
+    "gpu": {
+      "title": "GPU 状态",
+      "refresh": "刷新",
+      "memory": "GPU 显存",
+      "noGpu": "未检测到 GPU 或 CUDA 不可用",
+      "loadedModels": "已加载模型",
+      "noModels": "暂无已加载模型",
+      "unloadAll": "卸载所有模型",
+      "unloadSuccess": "GPU 模型已卸载",
+      "unloadFailed": "GPU 模型卸载失败",
+      "mineruStatus": {
+        "running": "运行中",
+        "stopped": "已停止",
+        "inactive": "未启动"
+      },
+      "modelStatus": {
+        "loaded": "已加载"
+      }
+    },
     "systemHealth": "系统健康",
     "healthOk": "正常",
     "healthError": "异常"
@@ -391,8 +410,9 @@
     "empty": "时间线上暂无论文",
     "emptyHint": "向项目添加论文后，它们将显示在按时间顺序排列的时间线上。",
     "paperCount": "{{count}} 篇论文",
-    "papers": "篇论文",
-    "citations": "{{count}} 次引用"
+    "papers_one": "篇论文",
+    "papers_other": "篇论文",
+    "citations": "{{count, number}} 次引用"
   },
   "keywords": {
     "title": "关键词",

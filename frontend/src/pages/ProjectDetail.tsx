@@ -98,7 +98,7 @@ export default function ProjectDetail() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full overflow-hidden">
       {/* Mobile horizontal nav */}
       <nav className="flex w-full overflow-x-auto border-b border-border bg-muted/30 px-2 py-1.5 md:hidden">
         {navItems.map((item) => {
@@ -145,7 +145,7 @@ export default function ProjectDetail() {
             </h2>
           )}
 
-          <nav className="flex flex-col gap-0.5">
+          <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto min-h-0">
             {navItems.map((item) => {
               const fullPath = item.path ? `${basePath}/${item.path}` : basePath;
               const isActive = item.path

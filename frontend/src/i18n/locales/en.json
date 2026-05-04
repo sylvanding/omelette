@@ -268,6 +268,25 @@
       "local": "Local GPU/CPU",
       "api": "API"
     },
+    "gpu": {
+      "title": "GPU Status",
+      "refresh": "Refresh",
+      "memory": "GPU Memory",
+      "noGpu": "No GPU detected or CUDA not available",
+      "loadedModels": "Loaded Models",
+      "noModels": "No models loaded",
+      "unloadAll": "Unload All Models",
+      "unloadSuccess": "GPU models unloaded",
+      "unloadFailed": "Failed to unload GPU models",
+      "mineruStatus": {
+        "running": "Running",
+        "stopped": "Stopped",
+        "inactive": "Inactive"
+      },
+      "modelStatus": {
+        "loaded": "Loaded"
+      }
+    },
     "systemHealth": "System Health",
     "healthOk": "Healthy",
     "healthError": "Unhealthy"
@@ -388,8 +407,9 @@
     "empty": "No papers on the timeline",
     "emptyHint": "Add papers to your project to see them on a chronological timeline.",
     "paperCount": "{{count}} paper(s)",
-    "papers": "papers",
-    "citations": "{{count}} citation(s)"
+    "papers_one": "paper",
+    "papers_other": "papers",
+    "citations": "{{count, number}} citation(s)"
   },
   "keywords": {
     "title": "Keywords",
