@@ -185,6 +185,19 @@ export interface SearchSource {
   status?: string;
 }
 
+export interface SearchSourceStats {
+  count?: number;
+  error?: string;
+}
+
+export interface SearchExecuteResponse {
+  papers: Paper[];
+  imported?: number;
+  created?: number;
+  total?: number;
+  source_stats?: Record<string, SearchSourceStats>;
+}
+
 export const searchApi = {
   execute: (projectId: number, data: {
     query?: string;
@@ -192,7 +205,7 @@ export const searchApi = {
     max_results?: number;
     auto_import?: boolean;
   }) =>
-    api.post<{ papers: Paper[]; imported: number; created?: number }>(
+    api.post<SearchExecuteResponse>(
       `/projects/${projectId}/search/execute`, data
     ).then(r => r.data),
   sources: (projectId: number) =>

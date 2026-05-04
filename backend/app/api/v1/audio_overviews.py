@@ -199,7 +199,17 @@ async def delete_audio_overview(
 def _parse_authors(authors_field: str | list | None) -> list[str]:
     """Parse authors field into a list of strings."""
     if isinstance(authors_field, list):
-        return authors_field
+        authors: list[str] = []
+        for author in authors_field:
+            if isinstance(author, str):
+                name = author
+            elif isinstance(author, dict):
+                name = str(author.get("name") or author.get("full_name") or "")
+            else:
+                name = str(author)
+            if name.strip():
+                authors.append(name.strip())
+        return authors
     if isinstance(authors_field, str):
         return [a.strip() for a in authors_field.split(";") if a.strip()]
     return []

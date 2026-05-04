@@ -61,8 +61,8 @@ export default function RAGPage() {
   };
 
   const stats = statsData as Record<string, unknown> | undefined;
-  const indexedCount = (stats?.indexed_count as number) ?? 0;
-  const totalChunks = (stats?.total_chunks as number) ?? 0;
+  const totalChunks = Number(stats?.total_chunks ?? 0);
+  const indexedCount = Number(stats?.indexed_count ?? stats?.vector_records ?? stats?.total_chunks ?? 0);
   const indexedPapers = papersData?.items?.filter(
     (p: Paper) => p.status === 'indexed' || p.status === 'ocr_complete'
   ).length ?? 0;
@@ -182,6 +182,7 @@ export default function RAGPage() {
                 <div className="space-y-2">
                   {sources.slice(0, 5).map((source, i) => {
                     const s = source as Record<string, unknown>;
+                    const pageNumber = Number(s.page_number);
                     return (
                       <div key={i} className="rounded-md border p-3">
                         <p className="text-sm font-medium">{String(s.paper_title ?? 'Unknown')}</p>
@@ -192,8 +193,11 @@ export default function RAGPage() {
                           {s.relevance != null && (
                             <span>Relevance: {(s.relevance as number).toFixed(2)}</span>
                           )}
+                          {s.relevance_score != null && (
+                            <span>Relevance: {(s.relevance_score as number).toFixed(2)}</span>
+                          )}
                           {s.page_number != null && (
-                            <span>Page {(s.page_number as number) + 1}</span>
+                            <span>Page {Number.isFinite(pageNumber) && pageNumber > 0 ? pageNumber : 'Unknown'}</span>
                           )}
                         </div>
                       </div>

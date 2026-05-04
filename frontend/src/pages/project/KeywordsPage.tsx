@@ -112,9 +112,12 @@ export default function KeywordsPage() {
   };
 
   const copyFormula = () => {
-    navigator.clipboard.writeText(formula);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    void navigator.clipboard.writeText(formula).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      setCopied(false);
+    });
   };
 
   const byLevel = {

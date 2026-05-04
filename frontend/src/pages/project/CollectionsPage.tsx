@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CollectionSidebar } from '@/components/collections/CollectionSidebar';
 import { collectionsApi, paperApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
 export default function CollectionsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const pid = Number(projectId);
+  const queryClient = useQueryClient();
 
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null);
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<number>>(new Set());
@@ -28,7 +29,7 @@ export default function CollectionsPage() {
 
   const { data: allPapers, isLoading: loadingPapers } = useQuery({
     queryKey: ['papers-for-collection', pid],
-    queryFn: () => paperApi.list(pid, { page: 1, page_size: 200 }),
+    queryFn: () => paperApi.list(pid, { page: 1, page_size: 100 }),
     enabled: selectedCollectionId !== null,
   });
 
@@ -57,12 +58,20 @@ export default function CollectionsPage() {
     if (!selectedCollectionId || selectedPaperIds.size === 0) return;
     await collectionsApi.addPapers(pid, selectedCollectionId, [...selectedPaperIds]);
     setSelectedPaperIds(new Set());
-  }, [pid, selectedCollectionId, selectedPaperIds]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['collection-detail', pid, selectedCollectionId] }),
+      queryClient.invalidateQueries({ queryKey: ['papers-for-collection', pid] }),
+    ]);
+  }, [pid, queryClient, selectedCollectionId, selectedPaperIds]);
 
   const handleRemovePaper = useCallback(async (paperId: number) => {
     if (!selectedCollectionId) return;
     await collectionsApi.removePapers(pid, selectedCollectionId, [paperId]);
-  }, [pid, selectedCollectionId]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['collection-detail', pid, selectedCollectionId] }),
+      queryClient.invalidateQueries({ queryKey: ['papers-for-collection', pid] }),
+    ]);
+  }, [pid, queryClient, selectedCollectionId]);
 
   if (!selectedCollectionId) {
     return (
@@ -198,6 +207,7 @@ export default function CollectionsPage() {
                       <button
                         type="button"
                         onClick={() => handleTogglePaper(paper.id)}
+                        aria-label={`${selectedPaperIds.has(paper.id) ? 'Deselect' : 'Select'} ${paper.title || 'paper'}`}
                         className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
                           selectedPaperIds.has(paper.id)
                             ? 'border-primary bg-primary text-primary-foreground'

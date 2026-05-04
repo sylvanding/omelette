@@ -30,8 +30,8 @@ export function BibliographyBuilderDialog({ projectId, onClose }: BibliographyBu
   const [copied, setCopied] = useState(false);
 
   const { data: papersData, isLoading } = useQuery({
-    queryKey: queryKeys.papers.list(projectId, { page: 1, page_size: 200 }),
-    queryFn: () => paperApi.list(projectId, { page: 1, page_size: 200 }),
+    queryKey: queryKeys.papers.list(projectId, { page: 1, page_size: 100 }),
+    queryFn: () => paperApi.list(projectId, { page: 1, page_size: 100 }),
   });
 
   const papers = useMemo(() => papersData?.items ?? [], [papersData]);

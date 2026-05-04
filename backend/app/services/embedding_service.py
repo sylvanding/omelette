@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.config import settings
@@ -167,15 +168,65 @@ def _build_local_embedding(model_name: str) -> BaseEmbedding:
     _inject_hf_env()
     _cleanup_gpu_memory()
 
-    has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
+    _has_gpu, _count, device = detect_gpu(pinned_gpu_id=settings.embed_gpu_id)
     batch_size = settings.embed_batch_size
-    logger.info("Loading local embedding model=%s device=%s batch_size=%d", model_name, device, batch_size)
+    resolved_model_name = _resolve_cached_hf_snapshot(model_name) or model_name
+    logger.info(
+        "Loading local embedding model=%s resolved=%s device=%s batch_size=%d",
+        model_name,
+        resolved_model_name,
+        device,
+        batch_size,
+    )
 
     return HuggingFaceEmbedding(
-        model_name=model_name,
+        model_name=resolved_model_name,
         device=device,
         embed_batch_size=batch_size,
+        local_files_only=True,
     )
+
+
+def _resolve_cached_hf_snapshot(model_name: str) -> str | None:
+    """Return a complete local HuggingFace snapshot path when one is cached."""
+    if Path(model_name).exists():
+        return model_name
+
+    if "/" not in model_name:
+        return None
+
+    try:
+        from huggingface_hub.constants import HF_HUB_CACHE
+    except Exception:
+        return None
+
+    model_dir = Path(HF_HUB_CACHE) / f"models--{model_name.replace('/', '--')}"
+    snapshots_dir = model_dir / "snapshots"
+    if not snapshots_dir.exists():
+        return None
+
+    ref_file = model_dir / "refs" / "main"
+    snapshot: Path | None = None
+    if ref_file.exists():
+        ref = ref_file.read_text(encoding="utf-8").strip()
+        candidate = snapshots_dir / ref
+        if candidate.exists():
+            snapshot = candidate
+
+    if snapshot is None:
+        candidates = sorted((p for p in snapshots_dir.iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime)
+        if candidates:
+            snapshot = candidates[-1]
+
+    if snapshot is None:
+        return None
+
+    required_files = ("config.json", "modules.json")
+    if not all((snapshot / file_name).exists() for file_name in required_files):
+        logger.warning("Ignoring incomplete HuggingFace cache snapshot for %s: %s", model_name, snapshot)
+        return None
+
+    return str(snapshot)
 
 
 def _build_api_embedding(model_name: str) -> BaseEmbedding:

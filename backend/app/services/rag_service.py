@@ -356,9 +356,13 @@ class RAGService:
         context_text = "\n\n---\n\n".join(contexts)
 
         if self.llm:
-            answer = await self._generate_answer(question, context_text)
+            try:
+                answer = await self._generate_answer(question, context_text)
+            except Exception as exc:
+                logger.warning("RAG answer generation failed; returning retrieval-only answer: %s", exc)
+                answer = self._build_retrieval_only_answer(question, sources, error=str(exc))
         else:
-            answer = f"Retrieved {len(sources)} relevant passages. LLM not available for answer generation."
+            answer = self._build_retrieval_only_answer(question, sources)
 
         avg_score = sum(s["relevance_score"] for s in sources) / len(sources) if sources else 0
 
@@ -367,6 +371,27 @@ class RAGService:
             "sources": sources if include_sources else [],
             "confidence": round(avg_score, 3),
         }
+
+    def _build_retrieval_only_answer(self, question: str, sources: list[dict], *, error: str | None = None) -> str:
+        if not sources:
+            return "No relevant documents found."
+
+        lines = [
+            f"Retrieved {len(sources)} relevant passages for: {question}",
+            "LLM answer generation is unavailable, so this response is based on retrieved source excerpts only.",
+        ]
+        if error:
+            lines.append(f"Generation error: {error}")
+
+        lines.append("Top evidence:")
+        for source in sources[:3]:
+            title = source.get("paper_title") or "Unknown paper"
+            page = source.get("page_number") or "?"
+            score = source.get("relevance_score", 0)
+            excerpt = (source.get("excerpt") or "").strip()
+            lines.append(f"- {title} (p.{page}, score {score}): {excerpt}")
+
+        return "\n".join(lines)
 
     async def retrieve_only(
         self,
