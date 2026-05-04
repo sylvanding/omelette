@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -78,15 +78,21 @@ def _reset_chroma_client_if_closed(rag: RAGService, exc: Exception) -> None:
         rag._count_cache.clear()
 
 
-async def _preserve_existing_index(rag: RAGService, project_id: int) -> dict:
+async def _preserve_existing_index(rag: RAGService, project_id: int, source_error: Exception) -> dict:
     try:
         existing_count = await rag._get_count(project_id)
     except Exception:
         logger.warning("Failed to count existing index for project %d; returning zero", project_id, exc_info=True)
         existing_count = 0
+    if existing_count <= 0:
+        raise HTTPException(
+            status_code=503,
+            detail=f"RAG indexing failed before any chunks were available in the index: {source_error}",
+        ) from source_error
     return {
         "indexed": existing_count,
         "collection": f"project_{project_id}",
+        "reused_existing_index": True,
     }
 
 
@@ -108,7 +114,7 @@ async def _index_chunks_with_recovery(rag: RAGService, project_id: int, chunks: 
                 raise
             logger.exception("Index retry failed with recoverable error; preserving existing index")
             _reset_chroma_client_if_closed(rag, retry_exc)
-            return await _preserve_existing_index(rag, project_id)
+            return await _preserve_existing_index(rag, project_id, retry_exc)
 
 
 @router.post("/query", response_model=ApiResponse[RAGQueryResponse], summary="RAG query over literature")

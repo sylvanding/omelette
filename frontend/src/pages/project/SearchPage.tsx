@@ -6,7 +6,7 @@ import { useToastMutation } from '@/hooks/use-toast-mutation';
 import { Search, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { searchApi, paperApi, type SearchSource } from '@/services/api';
+import { searchApi, paperApi, type SearchSource, type SearchSourceStats } from '@/services/api';
 import { cn } from '@/lib/utils';
 
 const SOURCE_OPTIONS = [
@@ -40,6 +40,8 @@ export default function SearchPage() {
   const [maxResults, setMaxResults] = useState(50);
   const [results, setResults] = useState<SearchPaper[]>([]);
   const [imported, setImported] = useState(0);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [sourceStats, setSourceStats] = useState<Record<string, SearchSourceStats>>({});
 
   const { data: sourcesData } = useQuery({
     queryKey: ['search', 'sources', pid],
@@ -59,6 +61,8 @@ export default function SearchPage() {
     onSuccess: (res) => {
       setResults((res?.papers as unknown as SearchPaper[]) ?? []);
       setImported(res?.imported ?? 0);
+      setSourceStats(res?.source_stats ?? {});
+      setHasSearched(true);
     },
   });
 
@@ -200,6 +204,34 @@ export default function SearchPage() {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {hasSearched && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <h2 className="mb-2 text-sm font-semibold text-foreground">Search diagnostics</h2>
+          {results.length === 0 && (
+            <p className="mb-2 text-sm text-muted-foreground">
+              No results were returned for this query.
+            </p>
+          )}
+          {Object.keys(sourceStats).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(sourceStats).map(([source, stats]) => (
+                <span
+                  key={source}
+                  className={cn(
+                    'inline-flex items-center rounded-full px-3 py-1 text-xs',
+                    stats.error
+                      ? 'bg-destructive/10 text-destructive'
+                      : 'bg-secondary text-muted-foreground'
+                  )}
+                >
+                  {source}: {stats.error ? stats.error : `${stats.count ?? 0} result(s)`}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

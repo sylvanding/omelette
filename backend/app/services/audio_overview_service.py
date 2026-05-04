@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
+
+from app.config import settings
 
 if TYPE_CHECKING:
     from app.services.llm.client import LLMClient
@@ -88,10 +91,13 @@ class AudioOverviewService:
         ]
 
         try:
-            result = await self.llm.chat_json(
-                messages,
-                temperature=0.7,
-                task_type="audio_overview_dialogue",
+            result = await asyncio.wait_for(
+                self.llm.chat_json(
+                    messages,
+                    temperature=0.7,
+                    task_type="audio_overview_dialogue",
+                ),
+                timeout=min(settings.rewrite_timeout, 15.0),
             )
             if not result or "script" not in result:
                 logger.warning("LLM returned invalid dialogue format, using fallback")

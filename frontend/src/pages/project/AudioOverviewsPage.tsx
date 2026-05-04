@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Headphones, Trash2, Play, Plus, Clock, Loader2 } from 'lucide-react';
-import { audioOverviewsApi, type AudioOverviewListItem, type DialogueEntry } from '@/services/api';
+import { audioOverviewsApi, paperApi, type AudioOverviewListItem, type DialogueEntry } from '@/services/api';
 import { queryKeys } from '@/lib/query-keys';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,11 @@ export default function AudioOverviewsPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: queryKeys.audioOverviews.all(pid),
     queryFn: () => audioOverviewsApi.list(pid),
+  });
+  const { data: papersData } = useQuery({
+    queryKey: queryKeys.papers.list(pid, { page: 1, page_size: 10 }),
+    queryFn: () => paperApi.list(pid, { page: 1, page_size: 10 }),
+    enabled: !!pid,
   });
 
   const deleteMutation = useToastMutation({
@@ -53,6 +58,7 @@ export default function AudioOverviewsPage() {
   }
 
   const items = data?.items ?? [];
+  const overviewPapers = papersData?.items ?? [];
 
   return (
     <PageLayout title={t('audioOverview.title', 'Audio Overviews')}>
@@ -117,8 +123,8 @@ export default function AudioOverviewsPage() {
         {showGenerateDialog && (
           <AudioOverviewDialog
             projectId={pid}
-            paperIds={[]}
-            paperTitles={[]}
+            paperIds={overviewPapers.map((paper) => paper.id)}
+            paperTitles={overviewPapers.map((paper) => paper.title || 'Untitled')}
             onClose={() => setShowGenerateDialog(false)}
             onGenerated={handleGenerated}
           />

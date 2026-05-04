@@ -128,6 +128,8 @@ export default function SettingsPage() {
   };
 
   const currentProvider = form.llm_provider ?? 'mock';
+  const healthStatus = (healthData as { status?: string } | undefined)?.status;
+  const isHealthy = healthStatus === 'ok' || healthStatus === 'healthy';
 
   const saveButton = (
     <Button
@@ -367,18 +369,16 @@ export default function SettingsPage() {
             ) : (
               <Badge
                 variant={
-                  (healthData as { status?: string }).status === 'ok' ? 'default' : 'destructive'
+                  isHealthy ? 'default' : 'destructive'
                 }
                 className="gap-1"
               >
-                {(healthData as { status?: string }).status === 'ok' ? (
+                {isHealthy ? (
                   <CheckCircle2 className="size-3" />
                 ) : (
                   <XCircle className="size-3" />
                 )}
-                {(healthData as { status?: string }).status === 'ok'
-                  ? t('settings.healthOk')
-                  : t('settings.healthError')}
+                {isHealthy ? t('settings.healthOk') : t('settings.healthError')}
               </Badge>
             )}
           </CardContent>
