@@ -75,6 +75,7 @@ export function usePapersColumns({
       header: t('papers.citations'),
       accessorKey: 'citation_count',
       sortable: true,
+      cell: ({ value }) => (value != null ? Number(value).toLocaleString() : '—'),
     },
     {
       id: 'impact_score',

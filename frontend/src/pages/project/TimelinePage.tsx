@@ -211,7 +211,7 @@ function TimelineBar({ groups, expandedYears, onYearClick }: TimelineBarProps) {
                 <TooltipContent>
                   <p className="font-medium">{group.year}</p>
                   <p className="text-xs text-muted-foreground">
-                    {group.papers.length} paper(s) · {group.totalCitations} citation(s)
+                    {group.papers.length} paper(s) · {group.totalCitations.toLocaleString()} citation(s)
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -247,10 +247,10 @@ function YearGroupSection({ group, isExpanded, onToggle, onPaperClick, t }: Year
           )}
           <span className="text-lg font-semibold">{group.year}</span>
           <Badge variant="secondary">
-            {group.papers.length} {t('timeline.papers')}
+            {group.papers.length} {t('timeline.papers', { count: group.papers.length })}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {t('timeline.citations', { count: group.totalCitations })}
+            {group.totalCitations.toLocaleString()} citation(s)
           </span>
         </div>
       </button>
@@ -316,7 +316,7 @@ function PaperCard({ paper, onClick }: PaperCardProps) {
             {paper.journal || '—'} · {paper.year ?? 'N/A'}
           </p>
           <p className="mt-1 text-xs font-medium">
-            {paper.citation_count} citation(s)
+            {paper.citation_count.toLocaleString()} citation(s)
           </p>
         </TooltipContent>
       </Tooltip>

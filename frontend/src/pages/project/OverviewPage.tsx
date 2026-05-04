@@ -52,9 +52,9 @@ function ReadingProgressBar({
   data: OverviewData;
 }) {
   const total = data.total_papers || 1;
-  const completed = data.papers_by_reading['completed'] || 0;
-  const reading = data.papers_by_reading['reading'] || 0;
-  const unread = data.papers_by_reading['unread'] || 0;
+  const completed = (data.papers_by_reading['completed'] ?? 0) + (data.papers_by_reading['read'] ?? 0);
+  const reading = data.papers_by_reading['reading'] ?? 0;
+  const unread = data.papers_by_reading['unread'] ?? 0;
 
   const completedPct = Math.round((completed / total) * 100);
   const readingPct = Math.round((reading / total) * 100);
@@ -139,7 +139,7 @@ function YearChart({ data }: { data: Record<string, number> }) {
                 style={{ height: `${Math.max((count / maxVal) * 80, 4)}px` }}
                 title={`${year}: ${count} papers`}
               />
-              <span className="text-xs text-muted-foreground">{year.slice(2)}</span>
+              <span className="text-xs text-muted-foreground">{year}</span>
             </div>
           ))}
         </div>
@@ -235,7 +235,7 @@ export default function OverviewPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard icon={FileText} label="Total Papers" value={d.total_papers} color="bg-blue-100 text-blue-700" />
-        <StatCard icon={BookOpen} label="Avg Citations" value={d.avg_citations} color="bg-purple-100 text-purple-700" />
+        <StatCard icon={BookOpen} label="Avg Citations" value={d.avg_citations.toLocaleString()} color="bg-purple-100 text-purple-700" />
         <StatCard icon={Tag} label="Keywords" value={d.keyword_count} color="bg-amber-100 text-amber-700" />
         <StatCard icon={Bell} label="Subscriptions" value={d.subscription_count} color="bg-emerald-100 text-emerald-700" />
       </div>

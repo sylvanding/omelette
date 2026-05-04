@@ -162,94 +162,19 @@ async def get_concept_graph(
     except Exception:
         db_concepts = []
 
-    if db_concepts:
-        nodes = [
-            ConceptNode(
-                name=c.name,
-                definition=c.definition,
-                frequency=c.frequency,
-                related_papers=(json.loads(c.related_papers) if c.related_papers else []) if c.related_papers else [],
-                related_concepts=(json.loads(c.related_concepts) if c.related_concepts else [])
-                if c.related_concepts
-                else [],
-            )
-            for c in db_concepts
-        ]
-        return ApiResponse(data=ConceptGraphResponse(nodes=nodes, edges=[], total_concepts=len(nodes)))
-
-    # Fall back to LLM extraction if nothing in DB
-    from app.api.deps import get_llm
-    from app.services.concept_service import ConceptService
-
-    paper_stmt = select(Paper).where(Paper.project_id == project_id)
-    paper_result = await db.execute(paper_stmt)
-    papers = paper_result.scalars().all()
-
-    if not papers:
-        return ApiResponse(data=ConceptGraphResponse(nodes=[], edges=[], total_concepts=0))
-
-    papers_for_analysis = [
-        {
-            "paper_id": p.id,
-            "title": p.title or "",
-            "abstract": p.abstract or "",
-        }
-        for p in papers
-    ]
-
-    llm = get_llm()
-    svc = ConceptService(llm)
-
-    concepts = await svc.extract_concepts(papers_for_analysis)
-    graph_data = await svc.build_concept_graph(concepts)
-
-    # Persist concepts to database
-    import json
-
-    from app.models.concept import Concept
-
-    del_stmt = select(Concept).where(Concept.project_id == project_id)
-    del_result = await db.execute(del_stmt)
-    for c in del_result.scalars().all():
-        await db.delete(c)
-
-    for n in graph_data["nodes"]:
-        concept = Concept(
-            project_id=project_id,
-            name=n["name"],
-            definition=n.get("definition", ""),
-            frequency=n.get("frequency", 1),
-            related_papers=json.dumps(n.get("related_papers", []))
-            if not isinstance(n.get("related_papers"), str)
-            else n["related_papers"],
-            related_concepts=json.dumps(n.get("related_concepts", []))
-            if not isinstance(n.get("related_concepts"), str)
-            else n["related_concepts"],
-        )
-        db.add(concept)
-    await db.flush()
-
     nodes = [
         ConceptNode(
-            name=n["name"],
-            definition=n["definition"],
-            frequency=n["frequency"],
-            related_papers=n.get("related_papers", []),
-            related_concepts=n.get("related_concepts", []),
+            name=c.name,
+            definition=c.definition,
+            frequency=c.frequency,
+            related_papers=(json.loads(c.related_papers) if c.related_papers else []) if c.related_papers else [],
+            related_concepts=(json.loads(c.related_concepts) if c.related_concepts else [])
+            if c.related_concepts
+            else [],
         )
-        for n in graph_data["nodes"]
+        for c in db_concepts
     ]
-    edges = [
-        ConceptEdge(
-            source=e["source"],
-            target=e["target"],
-            relation_type=e["relation_type"],
-            description=e["description"],
-        )
-        for e in graph_data["edges"]
-    ]
-
-    return ApiResponse(data=ConceptGraphResponse(nodes=nodes, edges=edges, total_concepts=len(nodes)))
+    return ApiResponse(data=ConceptGraphResponse(nodes=nodes, edges=[], total_concepts=len(nodes)))
 
 
 @router.get(
